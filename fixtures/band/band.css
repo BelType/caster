@@ -1,0 +1,6 @@
+/* The band above the page area (DESIGN.md S69), on case 78's small page: 30px margins, so the page area's top is 30px below the page box's. One paragraph is pulled up by exactly the margin, so its first line stands in the top margin, inside the page box, where Cicero paints it. One paragraph opens a page and is lifted 70px, so its line stands wholly above the page box, where the page host's own clip hides it. */
+@page { size: 300px 400px; margin: 30px; }
+html { font-size: 12px; line-height: 20px; }
+body, section, p { margin: 0; padding: 0; }
+.band { margin-top: -30px; }
+.lifted { break-before: page; position: relative; top: -70px; }

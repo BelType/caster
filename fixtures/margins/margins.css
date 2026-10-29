@@ -1,0 +1,29 @@
+/* The margins fixture: small pages so three paragraphs make several, and every margin shape Cicero delivers — text written into a cell, and an element slotted into one. */
+@font-face {
+  font-family: 'Crimson Text';
+  src: url('/@specimen/fonts/CrimsonText-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Crimson Text';
+  src: url('/@specimen/fonts/CrimsonText-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@page {
+  size: 105mm 148mm;
+  margin: 30mm 12mm 18mm;
+  @top-center { content: element(masthead); }
+  @bottom-left { content: "Margin literal"; font-family: 'Crimson Text'; font-size: 8pt; }
+  @bottom-right { content: counter(page); font-family: 'Crimson Text'; font-size: 8pt; }
+}
+
+:root { font-synthesis: none; }
+body { font-family: 'Crimson Text', serif; font-size: 10pt; line-height: 1.4; margin: 0; hyphens: none; }
+h1 { font-size: 14pt; font-weight: 700; }
+
+.masthead { position: running(masthead); text-align: center; font-size: 8pt; }
+.masthead p { margin: 0; }
+.mark { display: block; width: 12mm; height: auto; margin: 0 auto 1mm; }

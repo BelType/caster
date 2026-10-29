@@ -1,0 +1,7 @@
+# A venue whose one author sheet is LINKED (the `styles` key), so it reaches the page by the Dresser and not by the document itself — the road beltype#45 is about. The fonts are the addendum's own default faces, which are bytes.
+$adopts: beltype:document
+
+keys:
+  styles:
+    provide: ["./author.css"]
+    cascade: append

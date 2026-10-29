@@ -1,0 +1,109 @@
+/* The specimen's own sheet. Everything the printer needs a document to declare, declared once.
+ *
+ * THE FOUR FACES ARE THE POINT. D2: the printer embeds font PROGRAMS, so every face a measured run resolves to has to reach it as bytes the gateway can fetch. BelType's addendum ends its default stack in a system family, so a document that declared nothing here would refuse — deliberately, and with a message that says exactly this.
+ *
+ * `unicode-range` is at least as wide as each face's cmap (the guide's engine contract), and `font-synthesis: none` is on the root because Chromium's fake bold and fake italic change no advance: a synthesised face measures like the real one and prints as neither. The print preparation sets it again in its own frame, which is belt and braces on purpose — this file is what makes the LIVE preview honest too.
+ */
+
+@font-face {
+  font-family: 'Crimson Text';
+  src: url('../fonts/CrimsonText-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20BF, U+2190-21FF, U+2200-22FF;
+}
+@font-face {
+  font-family: 'Crimson Text';
+  src: url('../fonts/CrimsonText-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20BF, U+2190-21FF, U+2200-22FF;
+}
+@font-face {
+  font-family: 'Crimson Text';
+  src: url('../fonts/CrimsonText-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20BF, U+2190-21FF, U+2200-22FF;
+}
+/* THE VARIABLE FACE. One `wght` axis, 200 to 900, declared over the range the axis actually has rather than over the range everyone writes: a PDF carries no variable font, so the printer freezes the face at exactly the coordinate Chromium painted, and a descriptor claiming a weight the axis does not reach would be a claim about a coordinate that does not exist. Two weights are used below, which is what makes the file carry two instances of one program. */
+@font-face {
+  font-family: 'Crimson Pro';
+  src: url('../fonts/CrimsonPro-Variable.ttf') format('truetype-variations');
+  font-weight: 200 900;
+  font-style: normal;
+  unicode-range: U+0000-024F, U+2000-206F;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/JetBrainsMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  unicode-range: U+0000-024F, U+2000-206F;
+}
+
+/* The page. A margin box is the furniture R6 reads, and this document declares TWO of them: the folio, and a running element in `@top-left` (added 2026-09-18, packages/caster/DESIGN.md S60).
+ *
+ * It wanted two — a running head from `string-set` and a folio from `counter(page)`, which is what a printed book has and what §8 of the printer's plan asks the specimen to exercise. **The crash that was the reason is gone**: two margin boxes on one `@page` were measured killing the Chromium renderer under `--engine cicero` on 2026-09-07 (.claude/NEEDED-FIXES.md §1.4, packages/caster/DESIGN.md S18), and the same shapes were re-measured on 2026-09-09 up to all sixteen boxes over thirteen pages with no crash of any kind — `packages/essay/cases/31-where-in-the-band` has been holding six boxes on one rule, page for page with Chromium's own print, since the day the crash was recorded.
+ *
+ * What still withholds the running head is the other finding and not this one: Chromium drops `content: string(…)` as an unknown declaration, so the box would be declared, captured empty and printed empty. A second box carrying a literal would exercise a second grid row today, and whether the specimen wants one is the printer's question rather than the engine's.
+ *
+ * The folio is kept because it is the box whose text changes per page — which is what makes an artifact record per page mean anything. The running element is the other spelling a margin box's content has: `element()` re-seats the author's own element, markup and all, where the folio is a string. Its ORIGINAL is what it pins — an element each engine leaves in the flow with no rectangle (Cicero unassigned, Paged.js `display: none`), which each adapter has to keep out of the tree and out of the measurement (S57, S60). */
+@page {
+  size: A4;
+  margin: 20mm 22mm 24mm 22mm;
+
+  @top-left { content: element(mark); }
+  @bottom-center { content: counter(page); font-family: 'Crimson Text'; font-size: 9pt; }
+}
+
+.running-mark { position: running(mark); font-family: 'Crimson Text'; font-size: 9pt; }
+
+/* THE PAGE-LEVEL `--pdf-*` PROPERTIES LIVE HERE, ON THE ROOT, AND NOT IN `@page`.
+ *
+ * Measured before anything was built on it (packages/caster/DESIGN.md S11): Chromium's `@page` parser DISCARDS a custom property. A constructed sheet whose text is `@page { size: A4; --pdf-bleed: 3mm }` serialises back from the CSSOM as `@page { size: a4 }`, registered or not, so `@page` is not a channel that exists. `:root` is: a registered `<length>` computes to px there (`6mm` arrives as `22.6772px`, the guide's own frozen number) and `inherits: false` keeps it off every descendant, which is exactly the semantics the guide asks for. Named pages, `:first` and parity are not honoured this round, and the reason is the parser rather than a choice.
+ *
+ * `--pdf-page-label` is the same story taken one step further: the property was written for a PER-PAGE declaration, and there is no channel in which one could be written, so the root's declaration governs the whole document as a single `/PageLabels` run beginning at page 0. The prefix carries an en dash on purpose, because a `/P` goes into the file as a text string and a writer that escaped nothing would mangle it — written as the character rather than as `\2013`, because a registered `syntax: '*'` property hands back the token stream as the author wrote it and never unescapes it. */
+:root {
+  --pdf-trim-inset: 6mm;
+  --pdf-bleed: 3mm;
+  --pdf-page-label: decimal start 1 "S–";
+  font-synthesis: none;
+}
+
+body { font-family: 'Crimson Text', serif; font-size: 11pt; line-height: 1.5; hyphens: none; }
+code, pre, kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+/* `string-set` stays declared: it costs nothing, it is what a running head would read, and the day .claude/NEEDED-FIXES.md §1.4 closes the `@top-center` above comes back with no other change. */
+h1 { string-set: chapter content(text); font-size: 20pt; font-weight: 700; }
+h2 { string-set: chapter content(text); font-size: 15pt; font-weight: 700; }
+h3 { font-size: 12.5pt; font-weight: 700; }
+h4, h5, h6 { font-size: 11pt; font-weight: 700; }
+
+/* A `:ref` resolves from the target's OWN counter-increment, never an ancestor's (root CLAUDE.md's measured rule). */
+figure { counter-increment: figure; margin: 1em 0; }
+figcaption { font-size: 9.5pt; font-style: italic; }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 0.5pt solid #333; padding: 0.35em 0.5em; text-align: left; }
+thead th { font-weight: 700; }
+
+blockquote { margin: 1em 2em; font-style: italic; }
+hr { border: 0; border-top: 0.5pt solid #666; margin: 1.5em 0; }
+pre { background: #f2f2f2; padding: 0.6em 0.8em; }
+
+/* The footnote's relocation is the belt's `inlineFootnotes`; the float is the AUTHOR's, because `.footnote` is styled by no stratum (root CLAUDE.md). */
+.footnote { float: footnote; font-size: 9pt; }
+
+/* THE TWO COLOUR HINTS. `--pdf-color` on a paragraph names exact process black; `spot()` on a heading names an ink by its own name, which is what a `/Separation` carries. Each is registered `inherits: false`, so a declaration claims one element and never its subtree. */
+.exact-black { --pdf-color: device-cmyk(0 0 0 1); }
+.spot-heading { --pdf-color: spot('PANTONE 200 C', device-cmyk(0 1 0.65 0.15)); }
+
+.variable-heading { font-family: 'Crimson Pro'; font-weight: 700; }
+.variable-text { font-family: 'Crimson Pro'; font-weight: 400; }
+
+.straddler { orphans: 2; widows: 2; }
+.new-chapter { break-before: page; }
+
+/* A gradient BORDER-IMAGE, which the printer cannot paint: its border model is one flat colour per side. Left to fall through, it painted `currentColor` — the surrounding text colour — as a flat frame and said nothing (beltype#27). */
+.gradient-border { border: 3px solid; border-image: linear-gradient(135deg, #7a1f2b, #d4a44c) 1; padding: 0.5em 0.75em; }

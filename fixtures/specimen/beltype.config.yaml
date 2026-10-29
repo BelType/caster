@@ -1,0 +1,13 @@
+# Caster's specimen — a venue whose whole job is to exercise what the printer must answer, and nothing the belt cannot produce.
+#
+# A venue is a SCHEMA (.claude/decisions/project/a-venue-is-a-schema.md): it adopts BelType's root schema and then provides. The one value it provides is the stylesheet, because the specimen's whole point is that the DOCUMENT declares its own fonts — D2 makes a face without bytes an export error, and BelType's addendum ends its default stack in a system family.
+$adopts: beltype:document
+
+keys:
+  styles:
+    provide: ["./styles/specimen.css"]
+    cascade: append
+  markdown:
+    provide:
+      inlineFootnotes: true
+      gfm: { autolinks: true, tables: true }

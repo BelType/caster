@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>custom elements, ARIA roles and aria-hidden</title>
+<style>
+@font-face { font-family: 'Source Serif 4'; src: url('/_beltype/vendor/beltype-fonts/sourceserif4/SourceSerif4-Variable.woff2') format('woff2-variations'); font-weight: 200 900; font-style: normal; }
+@page { size: 105mm 148mm; margin: 10mm; }
+body { font: 9pt/12pt 'Source Serif 4', serif; }
+.s { width: 85mm; }
+x-chip { display: inline-block; padding: 0 1mm; }
+x-block, x-box, x-hidden, x-head, x-list, x-item { display: block; }
+x-head { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="s">
+<x-head role="heading" aria-level="1">A heading by role</x-head>
+<p>An inline <x-inline>custom word</x-inline> in a paragraph, and a <x-chip>chip</x-chip> laid out inline-block.</p>
+<x-block>Direct text in a block custom element.</x-block>
+<x-box><p>First paragraph in a box.</p><p>Second paragraph in a box.</p></x-box>
+<x-hidden aria-hidden="true">Decorative words nobody reads.</x-hidden>
+<x-list role="list"><x-item role="listitem">The first item</x-item><x-item role="listitem">The second item</x-item></x-list>
+<p role="heading" aria-level="2">A paragraph that is a heading</p>
+<div role="list"><div role="listitem">A div that is an item</div></div>
+<p>A <span role="button">button word</span> in a paragraph.</p>
+</div>
+</body>
+</html>

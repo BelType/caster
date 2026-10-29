@@ -1,0 +1,15 @@
+// src/capabilities.ts emitted again, alone, without rewriteRelativeImportExtensions, over the main build's copy. It has one computed import (`import(new URL(spec.url, import.meta.url).href)`), and under that option tsc wraps a computed import in a helper that rewrites a `.ts` path: identity on the URL it is given, but a change of the emitted program. This pass keeps the program and leaves its two relative specifiers saying `.ts`; scripts/rewrite-specifiers.js turns them into `.js`, which is all the option does to them. Checked and declared by the main build; this pass only emits (noCheck, noResolve).
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "noCheck": true,
+    "noResolve": true,
+    "declaration": false,
+    "outDir": "dist/src",
+    "rootDir": "src",
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": false
+  },
+  "include": ["src/capabilities.ts"]
+}

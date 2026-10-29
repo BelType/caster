@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>generated numbers</title>
+<style>
+@font-face { font-family: 'Source Serif 4'; src: url('/_beltype/vendor/beltype-fonts/sourceserif4/SourceSerif4-Variable.woff2') format('woff2-variations'); font-weight: 200 900; font-style: normal; }
+@page { size: 105mm 100mm; margin: 10mm; }
+html { line-height: 12pt } body { font: 9pt/12pt 'Source Serif 4', serif; counter-reset: chapter figure; }
+h1 { font-size: 12pt; margin: 0 0 6pt; break-before: page; }
+h1[id] { counter-increment: chapter; }
+.toc h1 { break-before: auto; }
+h1[id]::before { content: "CHAPTER " counter(chapter) " - "; }
+figure { margin: 6pt 0; counter-increment: figure; }
+figcaption::before { content: "FIGURE " counter(figure) ". "; }
+.toc a { text-decoration: none; color: inherit; }
+.toc a::after { content: " PAGE " target-counter(attr(href url), page); }
+a.xref::after { content: " (FIGURE " target-counter(attr(href url), figure) ")"; }
+a.mixed::after { content: " [CH " counter(chapter) " P " target-counter(attr(href url), page) "]"; }
+</style></head><body>
+<section class="toc">
+<h1>Contents</h1>
+<p><a href="#c1">One</a></p>
+<p><a href="#c2">Two</a></p>
+</section>
+<h1 id="c1">One</h1>
+<p>See the picture <a class="xref" href="#f1">here</a> and <a class="xref" href="#f2">there</a>.</p>
+<figure id="f1"><img alt="a pixel" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="40" height="20"><figcaption>first</figcaption></figure>
+<h1 id="c2">Two</h1>
+<p>Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. See <a class="mixed" href="#f2">the figure</a> and <a class="mixed" href="#c1">chapter one</a>.</p>
+<p>Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Words fill this paragraph so that it runs over the foot of the page and on to the next one. Again <a class="mixed" href="#f2">the figure</a>.</p>
+<figure id="f2"><img alt="a pixel" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="40" height="20"><figcaption>second</figcaption></figure>
+</body></html>

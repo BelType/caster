@@ -1,0 +1,7 @@
+/* Author-only pseudo-elements the addendum does not write, and one it does (figcaption::before) restyled. Distinctive on purpose: the words are what the PDF is searched for. */
+body { counter-reset: chapter figure; }
+figure { counter-increment: figure; margin: 1em 0; }
+figcaption::before { content: 'Figura ' counter(figure) ': '; font-weight: 800; letter-spacing: 0.1em; }
+p.note::after { content: ' [AUTHOR-ONLY-AFTER]'; font-style: italic; }
+h2 { counter-increment: chapter; }
+h2::before { content: 'Cap. ' counter(chapter) ' - '; }

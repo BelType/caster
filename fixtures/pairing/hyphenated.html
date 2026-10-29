@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pairing — a composed paragraph hyphenated past the cut</title>
+  <style>
+    /* A narrow justified measure over long English words, so the Compositor's Liang hyphenation breaks words on every page, and one paragraph long enough to divide across several pages: its continuation carries hyphenated lines, and compose-dom.js writes each hyphen as its own U+2010 text node before a the word `break`. */
+    @page { size: 220px 300px; margin: 30px; }
+    html { font-family: Georgia, "Times New Roman", serif; font-size: 12px; line-height: 18px; }
+    body { margin: 0; }
+    p { margin: 0; text-align: justify; hyphens: auto; }
+  </style>
+</head>
+<body>
+<p>Internationalization considerations notwithstanding, characteristically incomprehensible administrative documentation regularly accompanies extraordinarily complicated organizational restructuring. Representatives responsible for implementation recommended comprehensive reconsideration, emphasizing unquestionably significant interdependencies, disproportionate expenditures, and unsatisfactory communication throughout decentralized departments. Nevertheless, notwithstanding misunderstandings, the establishment demonstrated remarkable determination, incorporating transformational methodologies, experimental prototypes, and multidisciplinary collaborations. Subsequently, extraordinarily enthusiastic participants acknowledged overwhelmingly encouraging accomplishments, commemorating unprecedented achievements with celebratory presentations. Environmental sustainability, technological modernization, and intergenerational responsibility characterized the conversations, while philosophical disagreements concerning institutional accountability remained fundamentally unresolved. Correspondingly, the administration commissioned independent investigations, whose recommendations emphasized transparency, interoperability, and uncompromising professionalism. Consequently, departmental representatives, understandably apprehensive, requested supplementary clarification regarding implementation timelines, budgetary allocations, and interdepartmental responsibilities.</p>
+</body>
+</html>

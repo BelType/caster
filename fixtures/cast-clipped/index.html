@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>A visually hidden heading</title>
+  <style>
+    @font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; }
+    @page { size: 120mm 90mm; margin: 12mm; }
+    html { font-family: 'Source Sans 3', sans-serif; font-size: 10pt; line-height: 1.4; }
+    body { margin: 0; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+  <p>A section whose heading is for a screen reader only, as GFM's footnotes section writes it.</p>
+  <section>
+    <h2 class="sr-only">Footnotes</h2>
+    <ol>
+      <li><p>The first note, which the page shows below a heading it does not draw.</p></li>
+      <li><p>The second note.</p></li>
+    </ol>
+  </section>
+</body>
+</html>

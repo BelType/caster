@@ -1,0 +1,85 @@
+/* A hand-written sheet for a hand-written document: nothing here knows BelType. */
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url(SourceSans3-Variable.woff2) format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url(SourceSans3-Italic-Variable.woff2) format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+}
+
+@page {
+  size: 120mm 170mm;
+  margin: 18mm 14mm 20mm;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 9pt;
+  color: #555;
+
+  @top-center {
+    content: string(section);
+  }
+
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+  }
+}
+
+@page :first {
+  @top-center {
+    content: none;
+  }
+}
+
+html {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  color: #222;
+}
+
+body {
+  margin: 0;
+}
+
+h1 {
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 6mm;
+}
+
+h2 {
+  string-set: section content();
+  font-size: 13pt;
+  font-weight: 600;
+  margin: 6mm 0 2mm;
+  break-after: avoid;
+}
+
+p {
+  margin: 0 0 2.5mm;
+}
+
+figure {
+  margin: 4mm 0;
+  text-align: center;
+}
+
+figure img {
+  width: 48mm;
+}
+
+figcaption {
+  font-style: italic;
+  font-size: 9pt;
+}
+
+ul.loose > li > p {
+  margin: 0 0 2mm;
+}

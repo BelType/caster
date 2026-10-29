@@ -1,0 +1,14 @@
+# The default-faces fixture — a venue that PROVIDES NOTHING, deliberately.
+#
+# It exists so the fixture has a venue of its own rather than inheriting whatever
+# directory a run was invoked from (the venue probe looks beside the document, else
+# at the invoking directory). Every other venue in this package provides a stylesheet
+# with `@font-face` rules in it, because until 2026-09-14 a document without one could
+# not be printed at all: the printer embeds font PROGRAMS and a system family is not
+# bytes a tab can read.
+#
+# This one provides no stylesheet, and that is the whole test. The faces it prints with
+# are BelType's own — declared by the addendum, vendored in `packages/core/assets/fonts`
+# (.claude/decisions/project/print-default-faces.md) — and if they stop being declared or stop being
+# served, this fixture refuses and the acceptance says which family had no bytes.
+$adopts: beltype:document

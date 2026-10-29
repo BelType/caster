@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Duplication probe</title>
+<script type="importmap">{ "imports": { "@egildo/beltype-common/": "/common/" } }</script>
+<style>
+/* Part C of the interval round's stage 1 (DESIGN.md S71): the shape that opens each of the three runs the Paged.js manual presents twice — a long code block, a heading, a table with a header row as tall as a page — under the rules the manual gives them: the addendum's four (`core/assets/beltype-ua.css`, `@layer beltype`, copied here unlayered) and the manual's own `table { break-inside: avoid }` (`docs/assets/syntax.css`). A5 with 15 mm margins leaves a 180 mm page area. Measured 2026-10-08: Paged.js 0.4.3 lays the table out twice — once in an overflow column to the right of the heading's page, which it never removes, and again on the next pages — and only where BOTH the heading's `break-after: avoid` and the table's `break-inside: avoid` hold. The harness replaces the VARIANT sheet below with one of the probe's variants. */
+@font-face { font-family: 'Source Sans 3'; src: url('/fonts/sourcesans3/SourceSans3-Variable.woff2') format('woff2-variations'); font-weight: 200 900; }
+@page { size: A5; margin: 15mm; }
+body { margin: 0; font-family: 'Source Sans 3'; font-size: 9pt; }
+code, pre { font-family: inherit; }
+pre { line-height: 1.4; margin: 0 0 1em; }
+table { border-collapse: collapse; width: 100%; }
+td, th { border: 0.25mm solid #888; padding: 1.5mm; text-align: left; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+figure, pre, blockquote, dl { break-inside: avoid; }
+tr, thead { break-inside: avoid; }
+thead { display: table-header-group; }
+table { break-inside: avoid; }
+</style>
+<style id="variant"></style>
+<script>window.PagedConfig = { auto: false };</script>
+<script src="/paged.polyfill.js"></script>
+</head>
+<body>
+<p>A lead paragraph before the code block, as the manual's reference chapter has one before its long listing.</p>
+<pre><code>line 01 of a code block that runs for sixty lines
+line 02 of a code block that runs for sixty lines
+line 03 of a code block that runs for sixty lines
+line 04 of a code block that runs for sixty lines
+line 05 of a code block that runs for sixty lines
+line 06 of a code block that runs for sixty lines
+line 07 of a code block that runs for sixty lines
+line 08 of a code block that runs for sixty lines
+line 09 of a code block that runs for sixty lines
+line 10 of a code block that runs for sixty lines
+line 11 of a code block that runs for sixty lines
+line 12 of a code block that runs for sixty lines
+line 13 of a code block that runs for sixty lines
+line 14 of a code block that runs for sixty lines
+line 15 of a code block that runs for sixty lines
+line 16 of a code block that runs for sixty lines
+line 17 of a code block that runs for sixty lines
+line 18 of a code block that runs for sixty lines
+line 19 of a code block that runs for sixty lines
+line 20 of a code block that runs for sixty lines
+line 21 of a code block that runs for sixty lines
+line 22 of a code block that runs for sixty lines
+line 23 of a code block that runs for sixty lines
+line 24 of a code block that runs for sixty lines
+line 25 of a code block that runs for sixty lines
+line 26 of a code block that runs for sixty lines
+line 27 of a code block that runs for sixty lines
+line 28 of a code block that runs for sixty lines
+line 29 of a code block that runs for sixty lines
+line 30 of a code block that runs for sixty lines
+line 31 of a code block that runs for sixty lines
+line 32 of a code block that runs for sixty lines
+line 33 of a code block that runs for sixty lines
+line 34 of a code block that runs for sixty lines
+line 35 of a code block that runs for sixty lines
+line 36 of a code block that runs for sixty lines
+line 37 of a code block that runs for sixty lines
+line 38 of a code block that runs for sixty lines
+line 39 of a code block that runs for sixty lines
+line 40 of a code block that runs for sixty lines
+line 41 of a code block that runs for sixty lines
+line 42 of a code block that runs for sixty lines
+line 43 of a code block that runs for sixty lines
+line 44 of a code block that runs for sixty lines
+line 45 of a code block that runs for sixty lines
+line 46 of a code block that runs for sixty lines
+line 47 of a code block that runs for sixty lines
+line 48 of a code block that runs for sixty lines
+line 49 of a code block that runs for sixty lines
+line 50 of a code block that runs for sixty lines
+line 51 of a code block that runs for sixty lines
+line 52 of a code block that runs for sixty lines
+line 53 of a code block that runs for sixty lines
+line 54 of a code block that runs for sixty lines
+line 55 of a code block that runs for sixty lines
+line 56 of a code block that runs for sixty lines
+line 57 of a code block that runs for sixty lines
+line 58 of a code block that runs for sixty lines
+line 59 of a code block that runs for sixty lines
+line 60 of a code block that runs for sixty lines</code></pre>
+<h3>A heading before the table</h3>
+<table>
+<thead><tr><th>Module</th><th>Export</th><th>Stage</th><th>Contract</th></tr></thead>
+<tbody>
+<tr><td><code>mod1.js</code></td><td>export1</td><td>stage 1</td><td>Row 1 of the table that follows the code block.</td></tr>
+<tr><td><code>mod2.js</code></td><td>export2</td><td>stage 2</td><td>Row 2 of the table that follows the code block.</td></tr>
+<tr><td><code>mod3.js</code></td><td>export3</td><td>stage 3</td><td>Row 3 of the table that follows the code block.</td></tr>
+<tr><td><code>mod4.js</code></td><td>export4</td><td>stage 4</td><td>Row 4 of the table that follows the code block.</td></tr>
+<tr><td><code>mod5.js</code></td><td>export5</td><td>stage 5</td><td>Row 5 of the table that follows the code block.</td></tr>
+<tr><td><code>mod6.js</code></td><td>export6</td><td>stage 6</td><td>Row 6 of the table that follows the code block.</td></tr>
+<tr><td><code>mod7.js</code></td><td>export7</td><td>stage 7</td><td>Row 7 of the table that follows the code block.</td></tr>
+<tr><td><code>mod8.js</code></td><td>export8</td><td>stage 8</td><td>Row 8 of the table that follows the code block.</td></tr>
+<tr><td><code>mod9.js</code></td><td>export9</td><td>stage 9</td><td>Row 9 of the table that follows the code block.</td></tr>
+<tr><td><code>mod10.js</code></td><td>export10</td><td>stage 10</td><td>Row 10 of the table that follows the code block.</td></tr>
+<tr><td><code>mod11.js</code></td><td>export11</td><td>stage 11</td><td>Row 11 of the table that follows the code block.</td></tr>
+<tr><td><code>mod12.js</code></td><td>export12</td><td>stage 12</td><td>Row 12 of the table that follows the code block.</td></tr>
+<tr><td><code>mod13.js</code></td><td>export13</td><td>stage 13</td><td>Row 13 of the table that follows the code block.</td></tr>
+<tr><td><code>mod14.js</code></td><td>export14</td><td>stage 14</td><td>Row 14 of the table that follows the code block.</td></tr>
+<tr><td><code>mod15.js</code></td><td>export15</td><td>stage 15</td><td>Row 15 of the table that follows the code block.</td></tr>
+<tr><td><code>mod16.js</code></td><td>export16</td><td>stage 16</td><td>Row 16 of the table that follows the code block.</td></tr>
+<tr><td><code>mod17.js</code></td><td>export17</td><td>stage 17</td><td>Row 17 of the table that follows the code block.</td></tr>
+<tr><td><code>mod18.js</code></td><td>export18</td><td>stage 18</td><td>Row 18 of the table that follows the code block.</td></tr>
+<tr><td><code>mod19.js</code></td><td>export19</td><td>stage 19</td><td>Row 19 of the table that follows the code block.</td></tr>
+<tr><td><code>mod20.js</code></td><td>export20</td><td>stage 20</td><td>Row 20 of the table that follows the code block.</td></tr>
+<tr><td><code>mod21.js</code></td><td>export21</td><td>stage 21</td><td>Row 21 of the table that follows the code block.</td></tr>
+<tr><td><code>mod22.js</code></td><td>export22</td><td>stage 22</td><td>Row 22 of the table that follows the code block.</td></tr>
+<tr><td><code>mod23.js</code></td><td>export23</td><td>stage 23</td><td>Row 23 of the table that follows the code block.</td></tr>
+<tr><td><code>mod24.js</code></td><td>export24</td><td>stage 24</td><td>Row 24 of the table that follows the code block.</td></tr>
+<tr><td><code>mod25.js</code></td><td>export25</td><td>stage 25</td><td>Row 25 of the table that follows the code block.</td></tr>
+<tr><td><code>mod26.js</code></td><td>export26</td><td>stage 26</td><td>Row 26 of the table that follows the code block.</td></tr>
+<tr><td><code>mod27.js</code></td><td>export27</td><td>stage 27</td><td>Row 27 of the table that follows the code block.</td></tr>
+<tr><td><code>mod28.js</code></td><td>export28</td><td>stage 28</td><td>Row 28 of the table that follows the code block.</td></tr>
+<tr><td><code>mod29.js</code></td><td>export29</td><td>stage 29</td><td>Row 29 of the table that follows the code block.</td></tr>
+<tr><td><code>mod30.js</code></td><td>export30</td><td>stage 30</td><td>Row 30 of the table that follows the code block.</td></tr>
+<tr><td><code>mod31.js</code></td><td>export31</td><td>stage 31</td><td>Row 31 of the table that follows the code block.</td></tr>
+<tr><td><code>mod32.js</code></td><td>export32</td><td>stage 32</td><td>Row 32 of the table that follows the code block.</td></tr>
+<tr><td><code>mod33.js</code></td><td>export33</td><td>stage 33</td><td>Row 33 of the table that follows the code block.</td></tr>
+<tr><td><code>mod34.js</code></td><td>export34</td><td>stage 34</td><td>Row 34 of the table that follows the code block.</td></tr>
+<tr><td><code>mod35.js</code></td><td>export35</td><td>stage 35</td><td>Row 35 of the table that follows the code block.</td></tr>
+<tr><td><code>mod36.js</code></td><td>export36</td><td>stage 36</td><td>Row 36 of the table that follows the code block.</td></tr>
+<tr><td><code>mod37.js</code></td><td>export37</td><td>stage 37</td><td>Row 37 of the table that follows the code block.</td></tr>
+<tr><td><code>mod38.js</code></td><td>export38</td><td>stage 38</td><td>Row 38 of the table that follows the code block.</td></tr>
+<tr><td><code>mod39.js</code></td><td>export39</td><td>stage 39</td><td>Row 39 of the table that follows the code block.</td></tr>
+<tr><td><code>mod40.js</code></td><td>export40</td><td>stage 40</td><td>Row 40 of the table that follows the code block.</td></tr>
+</tbody>
+</table>
+<p>The first paragraph after the table.</p>
+<p>The second paragraph after the table.</p>
+<p>The third paragraph after the table.</p>
+</body>
+</html>

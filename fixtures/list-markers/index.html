@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>List markers: disc, circle and square</title>
+<style>
+@font-face { font-family: 'Source Serif 4'; src: url('/_beltype/vendor/beltype-fonts/sourceserif4/SourceSerif4-Variable.woff2') format('woff2-variations'); font-weight: 200 900; font-style: normal; }
+@font-face { font-family: 'Source Serif 4'; src: url('/_beltype/vendor/beltype-fonts/sourceserif4/SourceSerif4-Italic-Variable.woff2') format('woff2-variations'); font-weight: 200 900; font-style: italic; }
+@page { size: 105mm 148mm; margin: 10mm; }
+body { font: 9pt/12pt 'Source Serif 4', serif; margin: 0; width: 85mm; }
+ul { margin: 0 0 4pt; }
+.disc { list-style: disc; }
+.circle { list-style: circle; }
+.square { list-style: square; }
+.inside { list-style: square inside; }
+.loose p { margin: 2pt 0; }
+</style>
+</head>
+<body>
+<ul class="disc"><li>disc, one</li><li>disc, two, which runs on to a second line so the marker has to sit on the first line alone</li></ul>
+<ul class="circle"><li>circle, one</li><li>circle, two</li></ul>
+<ul class="square"><li>square, one</li><li>square, two</li></ul>
+<ul class="inside"><li>square inside, one</li><li>square inside, two</li></ul>
+<ul class="disc loose"><li><p>disc loose, one</p></li><li><p>disc loose, two</p></li></ul>
+</body>
+</html>

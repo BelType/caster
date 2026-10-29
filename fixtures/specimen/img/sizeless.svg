@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120">
+  <rect x="2" y="2" width="236" height="116" fill="#f4f1ea" stroke="#7a1f2b" stroke-width="2"/>
+  <circle cx="60" cy="60" r="28" fill="none" stroke="#7a1f2b" stroke-width="3"/>
+  <path d="M 100 92 L 140 28 L 180 92 Z" fill="#d4a44c" stroke="#7a1f2b" stroke-width="2"/>
+  <text x="120" y="112" text-anchor="middle" font-family="Crimson Text" font-size="11" fill="#7a1f2b">sizeless</text>
+</svg>
