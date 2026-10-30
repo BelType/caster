@@ -160,13 +160,20 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   if (item.querySelector(`:scope > .${MARKER_CLASS}`)) return null;
   const hangs = style.listStylePosition !== 'inside' && opensWithBlock(view, item);
   const parent = item.parentElement;
+  // The list's items are taken before this item changes `display` on any path, so an item whose marker is hidden still counts, as Blink counts it (the seventh review of the Press round: `none, 2., 3.` printed `none, 1., 2.`).
+  if (parent) itemsOf(parent);
   // An `<li>` in a `<ul>`/`<ol>` reads `list-style-type` off the list, as D9 wrote it; anything else reads its own.
   const list = item.tagName === 'LI' && parent && (parent.tagName === 'UL' || parent.tagName === 'OL') ? parent : null;
   const listStyle = list ? view.getComputedStyle(list).listStyleType : style.listStyleType;
   const content = view.getComputedStyle(item, '::marker').content;
   let text;
   let source;
-  if (!content || content === 'normal' || content === 'none') {
+  // `content: none` generates no marker box at all (css-lists-3), so Blink paints nothing and there is nothing to make: the item is reified like one whose text is empty (the sixth review of the Press round: a disc list with `::marker { content: none }` printed three bullets).
+  if (content === 'none') {
+    item.style.setProperty('display', 'block', 'important');
+    return null;
+  }
+  if (!content || content === 'normal') {
     source = 'counter';
     if (SHAPE_MARKERS.includes(listStyle)) return shapeMarkerSpan(view, item, style, listStyle, hangs, out);
     try {
@@ -228,7 +235,8 @@ function shapeMarkerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclara
   span.style.setProperty('margin-left', `${marginStart}px`);
   span.style.setProperty('margin-right', `${marginEnd}px`);
   span.style.setProperty('padding-right', `${width}px`);
-  if (hangs) { span.style.setProperty('position', 'absolute'); span.style.setProperty('margin-top', `${lead}px`); }
+  // The lead is an offset and not a margin: an absolutely positioned box's margin collapses with nothing, so it never adjoins a break. Cicero gives the box a page resumes at and its first child `margin-top: 0 !important` (`adjoin`, css-break-3 §5.2), and this span is that first child, so it rose by its lead at a page's top (1 px on the cast fixture's loose item that opens page 4, 2026-10-29). Written `!important` on the element, it outranks any sheet's important rule, a cascade layer's included.
+  if (hangs) { span.style.setProperty('position', 'absolute'); span.style.setProperty('margin-top', `${lead}px`, 'important'); }
   out.markers.push({ li: item, text: '', source: 'counter' });
   return span;
 }
