@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — 2026-10-30
+
+- **`@beltype/common` comes from npm.** The dependency was a Codeberg git address over SSH, which only an installer with a Codeberg key could reach; it is now `0.1.1`, exact, from npmjs.com. `private` is gone from `package.json`, so the package can be published. No code change.
+- **The tests take Cicero from npm.** The devDependency `@beltype/cicero` was a Codeberg git address over SSH, which the release workflow on GitHub cannot reach; it is now `0.1.4`, exact.
+- **The release workflow**, `.github/workflows/release.yml`: a tag `vX.Y.Z` publishes to npm by trusted publishing, once the tag, `package.json` and this heading agree. `repository.url` names the GitHub mirror, as npm's provenance asks; `homepage` and `bugs` name Codeberg.
+
 ## 0.1.2 — 2026-10-30
 
 - **A word Blink hyphenates is drawn as Blink lays it out.** With `hyphens: auto`, Blink draws a hyphen that is in no text node and reports its box inside the rects of the characters on both sides of the break. `splitByRect` took each character's first rect, so the first character after the break was filed on the line before it: "temp" / "erature", no hyphen, and the rest of the word set one character in. Each character is now placed by the rects that are its alone; the box the two share is the hyphen, which joins the piece before the break. That piece draws `hyphenate-character` (`auto` is U+2010, or U+002D where the face has no U+2010), and the text it stands for is a soft hyphen, so an extraction rejoins the word.
