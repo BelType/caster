@@ -20,7 +20,7 @@ const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/e
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
+<script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
 <style>
 @font-face { font-family: "Crimson Text"; src: url("/fonts/CrimsonText-Regular.ttf"); }
 body { margin: 0; }

@@ -2,7 +2,7 @@
 
 ## 0.1.4 — 2026-10-30
 
-- **The flag table is declared in `@beltype/common`'s shape.** `options.ts` builds `casterFlags` with `defineFlags('caster', FLAGS)` and exports it from the package, so the command line can read the table. `FLAGS`, `DEFAULTS`, `resolveOptions`, `colourOn` and `CasterOptions` keep their names, rows, comments and messages; a bad option is still a `CasterError` carrying `flag` (`resolveOptions` catches the table's `FlagError` and rethrows it, the smaller diff than moving `CasterError` under `FlagError`). `title` and `lang` stay outside the table. No output moves.
+- **The flag table is declared in `@beltype/common`'s shape.** `options.ts` builds `casterFlags` with `defineFlags('caster', FLAGS)` and exports it from the package, so the command line can read the table. `FLAGS`, `DEFAULTS`, `resolveOptions`, `colourOn` and `CasterOptions` keep their names, rows, comments and messages; a bad option is still a `CasterError` carrying `flag` (`resolveOptions` catches the table's `FlagError` and rethrows it, the smaller diff than moving `CasterError` under `FlagError`). `title` and `lang` stay outside the table. No output moves. **A page that loads Caster 0.1.4 must map `@beltype/common/flags`** in its import map beside `errors`, `data-beltype` and `mime`: `options.ts` imports it, and a page whose map lacks it fails with `Failed to resolve module specifier`.
 
 ## 0.1.3 — 2026-10-30
 
