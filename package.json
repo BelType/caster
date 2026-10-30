@@ -1,6 +1,6 @@
 {
   "name": "@beltype/caster",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Caster, BelType's browser-side PDF 2.0 / PDF/UA-2 printer over an engine's presented pages: a DOM walk, Range measurement, HarfBuzz shaping and subsetting, vector painting, exact CMYK and spot colour, a structure tree, all inside the tab.",
   "type": "module",
   "license": "MIT",

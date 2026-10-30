@@ -563,29 +563,48 @@ function rectsOf(node: Text, start: number, end: number): DOMRect[] {
  * Split a segment that produced more than one rect at the character where the next rect starts.
  *
  * @remarks
- * A hyphenless wrap inside a non-whitespace run cannot happen in this fixture, so this exists to turn "impossible" into "recorded and handled" rather than into a dropped word: each returned piece is one rect's worth of characters.
+ * Each returned piece is one line's worth of characters, so a word the line breaker divided is drawn in two pieces, each at its own place.
+ *
+ * Blink's own hyphenation (`hyphens: auto`, or a soft hyphen it breaks at) draws a hyphen that is in no text node, and reports its box inside the rects of both characters around the break: `tem‐` / `perature` answers the hyphen's box for `m` after its glyph and for `p` before its glyph. Each character is therefore placed by the rects that are its alone, and a box the two share is the hyphen: it joins the piece before the break, which is marked `hyphen` so the drawing can add the glyph (measured 2026-10-30 on Chromium 153, `hyphens: auto` in a 46 mm column).
  */
 function splitByRect(node: Text, start: number, end: number) {
-    const pieces: { start: number; end: number; rect: DOMRect; }[] = [];
+    const pieces: { start: number; end: number; rect: DOMRect; hyphen: boolean; }[] = [];
+    const rects = Array.from({ length: end - start }, (_, k) => rectsOf(node, start + k, start + k + 1));
+    const shared = (a: DOMRect[] | undefined, b: DOMRect[] | undefined) => (a && b ? a.find((r) => b.some((q) => sameRect(r, q) && Math.abs(r.width - q.width) <= 0.05)) : undefined);
     let pieceStart = start;
     let pieceRect: DOMRect|null = null;
+    const union = (a: DOMRect, b: DOMRect) => new DOMRect(Math.min(a.left, b.left), a.top, Math.max(a.right, b.right) - Math.min(a.left, b.left), a.height);
     for (let i = start; i < end; i++) {
-        const [rect] = rectsOf(node, i, i + 1);
+        const own = rects[i - start] ?? [];
+        const before = shared(rects[i - start - 1], own);
+        const after = shared(own, rects[i - start + 1]);
+        const rect = own.find((r) => r !== before && r !== after && !(before && sameRect(r, before)) && !(after && sameRect(r, after))) ?? own[0];
         if (!rect)
             continue;
         if (pieceRect && Math.abs(rect.top - pieceRect.top) > 0.5) {
-            pieces.push({ start: pieceStart, end: i, rect: pieceRect });
+            const hyphen = shared(rects[i - start - 1], own);
+            pieces.push({ start: pieceStart, end: i, rect: hyphen && Math.abs(hyphen.top - pieceRect.top) <= 0.5 ? union(pieceRect, hyphen) : pieceRect, hyphen: Boolean(hyphen) });
             pieceStart = i;
             pieceRect = rect;
             continue;
         }
-        pieceRect = pieceRect
-            ? new DOMRect(Math.min(pieceRect.left, rect.left), pieceRect.top, Math.max(pieceRect.right, rect.right) - Math.min(pieceRect.left, rect.left), pieceRect.height)
-            : rect;
+        pieceRect = pieceRect ? union(pieceRect, rect) : rect;
     }
     if (pieceRect)
-        pieces.push({ start: pieceStart, end, rect: pieceRect });
+        pieces.push({ start: pieceStart, end, rect: pieceRect, hyphen: false });
     return pieces;
+}
+/**
+ * The character Blink draws where it hyphenates a word in `element`: `hyphenate-character`, whose `auto` is U+2010.
+ *
+ * @remarks
+ * Blink draws U+2010 for `auto` when the face has it and U+002D otherwise; the caller shapes the first and falls back to the second on a missing glyph.
+ */
+function hyphenateCharacterOf(element: Element): string {
+    const value = (getComputedStyle(element).hyphenateCharacter || 'auto').trim();
+    if (value === 'auto' || value === '') return '\u2010';
+    const quoted = /^(["'])(.*)\1$/.exec(value);
+    return quoted ? (quoted[2] ?? '') : value;
 }
 /** A zero-size inline-block whose bottom margin edge is the baseline of its line. */
 function baselineProbeElement(): HTMLElement {
@@ -964,11 +983,14 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                     const rects = rectsOf(item.node, part.start, part.end);
                     if (rects.length === 0)
                         throw new CasterError(`caster: no rect for ${JSON.stringify(item.node.data.slice(part.start, part.end))}`);
-                    const pieces: { start: number; end: number; rect: DOMRect; }[] = rects.length === 1
-                        ? [{ start: part.start, end: part.end, rect: rects[0] }]
+                    const pieces: { start: number; end: number; rect: DOMRect; hyphen: boolean; }[] = rects.length === 1
+                        ? [{ start: part.start, end: part.end, rect: rects[0], hyphen: false }]
                         : splitByRect(item.node, part.start, part.end);
                     pieces.forEach((piece, pieceIndex) => {
-                        const text = transformCase(item.node.data.slice(piece.start, piece.end), style, pathOf(parent), piece.start === item.start);
+                        const word = transformCase(item.node.data.slice(piece.start, piece.end), style, pathOf(parent), piece.start === item.start);
+                        // Where Blink hyphenated, the piece draws its hyphenation character after the word, and the text it stands for is a soft hyphen, so a reader's extraction rejoins the word (PDF 2.0 §14.8.2.2.3).
+                        const hyphen = piece.hyphen ? hyphenateCharacterOf(parent) : '';
+                        const text = hyphen.length === 1 ? word + '\u00AD' : word + hyphen;
                         // The one hub, when a frame is installed; the inline column arithmetic of E3 (`text-emission.md`), to the bit, when there is not.
                         const local = localOf(piece.rect, blockPage);
                         const page = local ? local.page : Math.max(0, Math.floor((piece.rect.left - containerRect.left) / COLUMN_WIDTH_PX));
@@ -977,7 +999,9 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                         if (clipped(page, topPx, local ? local.hPx : piece.rect.height, parent)) return;
                         origins.push({ node: item.node, start: piece.start, end: piece.end, rect: piece.rect, segment: segments.length });
                         neutralHeightPx.push(local?.hPx ?? piece.rect.height);
-                        const shaped = shapeWord(match.face.url, text, sizePx, features, undefined, shaperVariations(coords));
+                        let shaped = shapeWord(match.face.url, word + hyphen, sizePx, features, undefined, shaperVariations(coords));
+                        if (hyphen === '\u2010' && shaped.gids[shaped.gids.length - 1] === 0)
+                            shaped = shapeWord(match.face.url, word + '-', sizePx, features, undefined, shaperVariations(coords));
                         const upem = upemOf(match.face.url);
                         // The PART's own family, not the element's first one: a fallback run is set in the face the walk found, and `ascentPx(fontString)` below reads the baseline off it. Naming the text face for an emoji run would place the picture on the text face's ascent.
                         const fontString = `${style.fontStyle} ${style.fontWeight} ${sizePx}px "${match.face.family}"`;

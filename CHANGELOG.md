@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 — 2026-10-30
+
+- **A word Blink hyphenates is drawn as Blink lays it out.** With `hyphens: auto`, Blink draws a hyphen that is in no text node and reports its box inside the rects of the characters on both sides of the break. `splitByRect` took each character's first rect, so the first character after the break was filed on the line before it: "temp" / "erature", no hyphen, and the rest of the word set one character in. Each character is now placed by the rects that are its alone; the box the two share is the hyphen, which joins the piece before the break. That piece draws `hyphenate-character` (`auto` is U+2010, or U+002D where the face has no U+2010), and the text it stands for is a soft hyphen, so an extraction rejoins the word.
+- **`test/hyphenation.test.ts`**, a host strip of one box read back with mupdf: red before ("Decomposition temperat", no hyphen), green after. 198 tests, 198 pass.
+
 ## 0.1.1 — 2026-10-30
 
 - **Three marker fixes carried from the monorepo** (the Press's review rounds five to eight, BelType `main` at 42b348b5), in `adapters/reify`:
