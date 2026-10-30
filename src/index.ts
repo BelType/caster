@@ -708,7 +708,7 @@ function now() { return typeof performance === 'object' ? performance.now() : Da
 export { PX_TO_PT } from './coordinates/units.ts';
 export { CasterError } from './errors.ts';
 export { CAPABILITIES } from './capabilities.ts';
-export { FLAGS, DEFAULTS, resolveOptions } from './options.ts';
+export { FLAGS, DEFAULTS, resolveOptions, casterFlags } from './options.ts';
 export { adaptCicero } from './adapters/cicero.ts';
 export { deriveIntervals } from './adapters/intervals.ts';
 export { sourceSnapshotOf, SOURCE_ATTRIBUTE } from './adapters/prepare.ts';

@@ -12,6 +12,8 @@
  * @packageDocumentation
  */
 
+import { defineFlags } from '@beltype/common/flags';
+import { FlagError } from '@beltype/common/errors';
 import { CasterError } from './errors.ts';
 
 export type CasterOptions = {
@@ -83,12 +85,17 @@ export const FLAGS = (({
 } as const) satisfies { [K in FlagName]: FlagSpec<K> });
 
 /**
+ * The flag table in `@beltype/common`'s shape — `casterFlags.table` is {@link FLAGS}, and the command line reads it from here.
+ */
+export const casterFlags = defineFlags('caster', FLAGS);
+
+/**
  * Every flag at its default — the options a run gets when it asks for nothing.
  *
  * @remarks
- * `Object.fromEntries` answers a string-keyed record and forgets which key holds which default, so the value is asserted back to {@link CasterOptions} through `unknown`; the assertion is sound because `FLAGS`'s `@satisfies` proves every flag has a row whose default its option accepts.
+ * `defineFlags` answers its defaults keyed by the table; the value is asserted back to {@link CasterOptions} through `unknown`, which is sound because `FLAGS`'s `@satisfies` proves every flag has a row whose default its option accepts.
  */
-export const DEFAULTS = ((Object.fromEntries(Object.entries(FLAGS).map(([name, spec]) => [name, spec.default])) as unknown) as CasterOptions);
+export const DEFAULTS = (casterFlags.defaults as unknown) as CasterOptions;
 
 /**
  * Fill in the defaults and refuse anything the table does not name.
@@ -97,19 +104,16 @@ export const DEFAULTS = ((Object.fromEntries(Object.entries(FLAGS).map(([name, s
  * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi`, or a value outside a flag's set — carrying `flag`.
  */
 export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOptions {
-  const out: Record<string,unknown> = { ...DEFAULTS };
-  for (const [key, value] of Object.entries(given)) {
-    if (value === undefined) continue;
-    if (key === 'title' || key === 'lang') { out[key] = value; continue; }
-    const spec = (FLAGS as Record<string, { values: readonly unknown[] | null } | undefined>)[key];
-    if (!spec) throw new CasterError(`caster: unknown option '${key}'. The flags are ${Object.keys(FLAGS).join(', ')}.`, { flag: key });
-    if (spec.values === null) {
-      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) throw new CasterError(`caster: '${key}' takes a positive number; got ${JSON.stringify(value)}.`, { flag: key });
-    } else if (!spec.values.includes(value)) {
-      throw new CasterError(`caster: '${key}' takes ${spec.values.map(( v: unknown) => JSON.stringify(v)).join(' or ')}; got ${JSON.stringify(value)}.`, { flag: key });
-    }
-    out[key] = value;
+  const { title, lang, ...flags } = given;
+  let out: Record<string,unknown>;
+  try { out = { ...casterFlags.resolve(flags as never) }; }
+  catch (e) {
+    // The table refuses with a FlagError; Caster's one family is CasterError, so the refusal crosses as that, message and flag unchanged.
+    if (e instanceof FlagError) throw new CasterError(e.message, { flag: e.flag });
+    throw e;
   }
+  if (title !== undefined) out['title'] = title;
+  if (lang !== undefined) out['lang'] = lang;
   return (out as CasterOptions);
 }
 

@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FLAGS, DEFAULTS, resolveOptions, colourOn } from '../src/options.ts';
+import { FLAGS, DEFAULTS, resolveOptions, colourOn, casterFlags } from '../src/options.ts';
 import { CasterError } from '../src/errors.ts';
 
 test('every flag of the guide\'s table is present with the guide\'s default', () => {
@@ -43,4 +43,13 @@ test('colour: auto is on for a colour hint, for a black-text policy, and for a c
 test('FLAGS names a positive number rather than a set for rasterDpi alone', () => {
   const free = Object.entries(FLAGS).filter(([, spec]) => spec.values === null).map(([name]) => name);
   assert.deepEqual(free, ['rasterDpi']);
+});
+
+test('casterFlags is the table in common\'s shape: the same rows, the same defaults, and parse reads a command-line string', () => {
+  assert.equal(casterFlags.owner, 'caster');
+  assert.equal(casterFlags.table, FLAGS);
+  assert.deepEqual(casterFlags.defaults, DEFAULTS);
+  assert.equal(casterFlags.parse('shaper', 'fontkit'), 'fontkit');
+  assert.equal(casterFlags.parse('photoRule', 'false'), false);
+  assert.equal(casterFlags.parse('rasterDpi', '150'), 150);
 });

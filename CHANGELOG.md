@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 — 2026-10-30
+
+- **The flag table is declared in `@beltype/common`'s shape.** `options.ts` builds `casterFlags` with `defineFlags('caster', FLAGS)` and exports it from the package, so the command line can read the table. `FLAGS`, `DEFAULTS`, `resolveOptions`, `colourOn` and `CasterOptions` keep their names, rows, comments and messages; a bad option is still a `CasterError` carrying `flag` (`resolveOptions` catches the table's `FlagError` and rethrows it, the smaller diff than moving `CasterError` under `FlagError`). `title` and `lang` stay outside the table. No output moves.
+
 ## 0.1.3 — 2026-10-30
 
 - **`@beltype/common` comes from npm.** The dependency was a Codeberg git address over SSH, which only an installer with a Codeberg key could reach; it is now `0.1.1`, exact, from npmjs.com. `private` is gone from `package.json`, so the package can be published. No code change.
