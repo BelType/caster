@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
 import { BUILD } from './rebuild-harfbuzz.js';
-import { CasterError } from '../src/errors.js';
+import { CasterError } from '../src/errors.ts';
 
 /** @import { PluginBuild } from 'esbuild' */
 
