@@ -90,7 +90,7 @@ const FEATURES: ReadonlyMap<string,ReadonlyMap<string,readonly string[]>> = new 
 ]);
 
 /**
- * The OpenType feature tags the `font-variant-*` longhands of one computed style ask for, in the order CSS Fonts 4 §6 gives them.
+ * The OpenType feature tags the `font-variant-*` longhands, `font-kerning` and `text-rendering` of one computed style ask for, the longhands in the order CSS Fonts 4 §6 gives them.
  *
  * @remarks
  * The longhands are read one at a time through `getPropertyValue`, because the shorthand is not a computed value in every engine and because a longhand's keywords are what a reader of the stylesheet wrote. A value that is a list of keywords (`common-ligatures no-discretionary-ligatures`) contributes the features of each keyword. The caller combines the result with `font-feature-settings` and letter-spacing: this function knows nothing about the cascade between them.
