@@ -11,11 +11,11 @@
  *
  * E3 (`text-emission.md`) wrote `Type0` / `Identity-H` / `CIDFontType2` for TrueType and embedded the whole file. This generalises that in four directions and in no others. **Outlines**: `glyf` still goes to `CIDFontType2` with `FontFile2`, and CFF — plain, CID-keyed, or downgraded from CFF2 — goes to `CIDFontType0` with `FontFile3`. **Subsetting**: `hb_subset` with `RETAIN_GIDS`, so the shaper's glyph ids stay the CIDs, `/CIDToGIDMap` stays `/Identity`, and the emitter's `TJ` hex strings mean the same thing before and after. **Instancing**: a variable face is pinned to the coordinate the browser painted at *before* any metric is read, so the `/W` array is the instance's `hmtx` and not the default master's. **Precision**: `/W` carries as many decimals as the caller asks for, and the emitter's pen is tracked on the written value either way.
  *
- * The one-pass shape is what keeps instancing cheap, and honest by a check. Layout takes its advances from fontkit's instance of the source (`hmtx` plus `HVAR`); nothing is pinned until `finish()`, where a single `hb_subset` call pins the axes and cuts the used glyphs together (DESIGN.md S98). The cut program's own `hmtx` is then read back for every used glyph and compared with the advance layout used, so the numbers written into the file and the numbers in the file's program cannot drift apart unnoticed — which the node checker asserts as well.
+ * The one-pass shape is what keeps instancing cheap, and honest by a check. Layout takes its advances from HarfBuzz's font for the instance, the very font the words were shaped with (`advanceOf`, DESIGN.md S99); nothing is pinned until `finish()`, where a single `hb_subset` call pins the axes and cuts the used glyphs together (S98). The cut program's own `hmtx` is then read back for every used glyph and compared with the advance layout used, exactly, so the numbers written into the file and the numbers in the file's program cannot drift apart unnoticed — which the node checker asserts as well.
  *
  * PDF 2.0 accepts no variable font. `fvar`, `gvar`, `CFF2` and `HVAR` are ignored by viewers, so a `CFF2` that survived pinning is not a smaller problem than a wrong width: it is a file that renders as nothing. It is an error here, named as one.
  *
- * Two roundings of one fractional advance may sit one font unit apart (fontkit's, HarfBuzz's), and `/W` takes fontkit's; a difference of more than one unit is refused, naming the face and the glyph. Pinning a **CFF2** face in HarfBuzz 14.4.0 instances the charstrings and drops `HVAR` **without baking its advance deltas into `hmtx`**, so such a face is expected to be refused by that check; no CFF2 variable face has been available to test it (CHANGELOG 0.1.4). A PDF reader advances by `/W` and is required to ignore the widths in the font program (ISO 32000-2 9.7.4.3), so the refusal is the check being strict, not the file being wrong.
+ * HarfBuzz computes the advance both for layout and for the `hmtx` it bakes into the cut program, so the two agree to the unit and a difference is refused, naming the face and the glyph. fontkit rounds an HVAR-interpolated advance differently and is one unit off on some glyphs; a caller that gives no `advanceOf` (the whole-face embedder) takes fontkit's widths and is allowed one unit. Pinning a **CFF2** face in HarfBuzz 14.4.0 instances the charstrings and drops `HVAR` **without baking its advance deltas into `hmtx`**, so such a face is expected to be refused by the check; no CFF2 variable face has been available to test it (CHANGELOG 0.1.4). A PDF reader advances by `/W` and is required to ignore the widths in the font program (ISO 32000-2 9.7.4.3), so the refusal is the check being strict, not the file being wrong.
  *
  * @packageDocumentation
  */
@@ -55,6 +55,8 @@ export type FontEmbedSpec = {
   sourceFormat: 'ttf'|'otf'|'woff'|'woff2';
   /** Axis coordinates to pin. Empty for a static face. */
   coords: Coords;
+  /** The advance of a glyph of this instance in font units, from the shaper layout measured with. When given, `/W` takes it and the cut program's `hmtx` must equal it exactly; absent, fontkit's instance supplies the widths and one font unit of rounding is allowed. */
+  advanceOf?: (gid: number) => number;
   profile: FontProfile;
   /** CID to text, built from the whole document by `toUnicode.js`. Without it the map is the first text each glyph was used for, which is the rule of `text-emission.md` (E3). */
   toUnicodeText?: Map<number, string>;
@@ -219,7 +221,7 @@ export function instanceRequest(spec: Pick<FontEmbedSpec, 'id' | 'bytes' | 'coor
  * Embed one instance of one face.
  *
  * @remarks
- * Nothing is written until `finish()`: the `/W` array and the `ToUnicode` CMap can only be built once every page has been emitted, and the subset can only be cut once the glyph set is closed. The instancing waits for it too; the widths the emitter asks for while it lays out the pages are fontkit's instance of the source.
+ * Nothing is written until `finish()`: the `/W` array and the `ToUnicode` CMap can only be built once every page has been emitted, and the subset can only be cut once the glyph set is closed. The instancing waits for it too; the widths the emitter asks for while it lays out the pages are the shaper's (`advanceOf`).
  *
  * @throws {CasterError} From `finish()`: a face that still carries a CFF2 table after pinning, a glyph whose `hmtx` in the cut program is more than one font unit from the advance layout used, a CID-keyed CFF whose charset cannot be made the identity even with `CFF_IDENTITY_CHARSET`, a CFF2 program, or a glyph the face draws and the subset left with no outline (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45).
  */
@@ -229,8 +231,9 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
     const clock = () => performance.now();
     const ms3 = ( n: number) => Math.round(n * 1000) / 1000;
     const started = clock();
-    // The layout widths are fontkit's own instance of the source (hmtx plus HVAR); the program is pinned once, at finish(), over the used glyphs only, and its hmtx is then checked against these widths.
-    const font: FontkitFont = pinned ? create(spec.bytes).getVariation(spec.coords) : create(spec.bytes);
+    // With `advanceOf` the widths are HarfBuzz's for the instance, which is the shaper layout used and the arithmetic that bakes `hmtx` into the cut program; fontkit then only describes the face. Without it they are fontkit's own instance of the source (hmtx plus HVAR). Either way the program is pinned once, at finish(), over the used glyphs only, and its hmtx is then checked against the widths.
+    const source: FontkitFont = create(spec.bytes);
+    const font: FontkitFont = pinned && !spec.advanceOf ? source.getVariation(spec.coords) : source;
     const upem = font.unitsPerEm;
     const scale = PDF_GLYPH_UNITS / upem;
     const instanceMs = 0;
@@ -253,9 +256,8 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         const hit = advanceCache.get(gid);
         if (hit !== undefined)
             return hit;
-        // The instance's advance is fractional where an HVAR delta interpolates; HarfBuzz and Blink both work in whole font units at this scale, so it is rounded to the number they use.
-        const own = font.getGlyph(gid).advanceWidth;
-        const value = pinned ? Math.round(own) : own;
+        // fontkit's advance is fractional where an HVAR delta interpolates, and rounds it differently from HarfBuzz, which Blink and the cut program follow (DESIGN.md S99).
+        const value = spec.advanceOf ? spec.advanceOf(gid) : pinned ? Math.round(font.getGlyph(gid).advanceWidth) : font.getGlyph(gid).advanceWidth;
         advanceCache.set(gid, value);
         return value;
     };
@@ -305,12 +307,13 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             throw new CasterError(`caster: ${spec.id} still carries a CFF2 table after pinning ${JSON.stringify(spec.coords)}; ` +
                 'PDF 2.0 has no CFF2 font program and a viewer would render nothing');
         }
-        // The widths layout used against the widths the file's own program carries. They are two roundings of one fractional advance (fontkit's from hmtx plus HVAR, HarfBuzz's from the instanced outline), so they may sit one font unit apart; anything further means the program is not the instance layout measured, which is what a CFF2 face pinned by HarfBuzz 14.4.0 does (its hmtx stays at the default master).
+        // The widths layout used against the widths the file's own program carries. HarfBuzz's are the same arithmetic as the program's, so they must be equal; fontkit's (no `advanceOf`) are another rounding of the same fractional advance, so one unit is allowed. A larger gap means the program is not the instance layout measured, which is what a CFF2 face pinned by HarfBuzz 14.4.0 does (its hmtx stays at the default master).
         const carried = hmtxAdvances(programBytes);
+        const tolerance = spec.advanceOf ? 0 : 1;
         for (const gid of gids) {
             const wanted = advance(gid);
             const have = carried(gid);
-            if (Math.abs(have - wanted) > 1) {
+            if (Math.abs(have - wanted) > tolerance) {
                 throw new CasterError(`caster: ${spec.id} glyph ${gid}: layout used an advance of ${wanted} but the embedded program's hmtx carries ${have}` +
                     (pinned ? ` after pinning ${JSON.stringify(spec.coords)}` : ''));
             }
@@ -368,7 +371,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         const useTypo = os2?.fsSelection.useTypoMetrics === true;
         const ascent = useTypo && os2 ? os2.typoAscender : font.hhea.ascent;
         const descent = useTypo && os2 ? os2.typoDescender : font.hhea.descent;
-        const capHeight = os2?.capHeight && os2.capHeight > 0 ? os2.capHeight : capHeightFromH(font);
+        const capHeight = os2?.capHeight && os2.capHeight > 0 ? os2.capHeight : capHeightFromH(pinned && spec.advanceOf ? source.getVariation(spec.coords) : font);
         context.assign(descriptorRef, context.obj({
             Type: 'FontDescriptor',
             FontName: pdf().PDFName.of(psName),

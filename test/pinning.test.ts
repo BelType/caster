@@ -8,6 +8,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 import { launchBrowser } from './launch.ts';
 import { contentType } from '@beltype/common/mime';
 
@@ -59,7 +60,9 @@ async function printStrip(port: number) {
             pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
           },
         }, {});
-        return { faces: (printed.report.emission?.faces ?? []).map((f: any) => ({ coords: f.coords, outlineType: f.outlineType, used: f.usedGlyphs, stale: f.staleAdvances })) };
+        let binary = '';
+        for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
+        return { base64: btoa(binary), faces: (printed.report.emission?.faces ?? []).map((f: any) => ({ coords: f.coords, outlineType: f.outlineType, used: f.usedGlyphs, stale: f.staleAdvances })) };
       } catch (error) {
         return { refused: String((error as Error).message) };
       }
@@ -82,6 +85,53 @@ test('each weight of a variable face is one pinned instance, and its hmtx agrees
       assert.equal(face.stale, 0);
     }
     assert.equal(new Set(printed.faces.map((f: { coords: unknown }) => JSON.stringify(f.coords))).size, printed.faces.length, 'one instance per coordinate');
+  } finally {
+    server.close();
+  }
+});
+
+/** Every `/W` entry of every CID font in the file against the `hmtx` of the program embedded for it: `[gid, /W width, hmtx width in thousandths]`. */
+function widthsAgainstHmtx(file: Buffer): [number, number, number][] {
+  const text = file.toString('latin1');
+  const objects = new Map<number, { body: string; at: number }>();
+  for (const match of text.matchAll(/(\d+) 0 obj([\s\S]*?)endobj/g)) objects.set(Number(match[1]), { body: match[2]!, at: match.index! + match[0].indexOf(match[2]!) });
+  const rows: [number, number, number][] = [];
+  for (const { body } of objects.values()) {
+    if (!body.includes('/CIDFontType2')) continue;
+    const start = body.indexOf('/W [') + 3;
+    let depth = 0, end = start;
+    for (; end < body.length; end++) { if (body[end] === '[') depth++; else if (body[end] === ']' && --depth === 0) break; }
+    const tokens = body.slice(start + 1, end).match(/\[|\]|-?[\d.]+/g) ?? [];
+    const descriptor = objects.get(Number(/\/FontDescriptor (\d+) 0 R/.exec(body)![1]))!;
+    const fileObject = objects.get(Number(/\/FontFile2 (\d+) 0 R/.exec(descriptor.body)![1]))!;
+    const length = Number(/\/Length (\d+)/.exec(fileObject.body)![1]);
+    const begin = fileObject.at + fileObject.body.indexOf('stream') + 'stream'.length + (fileObject.body[fileObject.body.indexOf('stream') + 6] === '\r' ? 2 : 1);
+    const font = zlib.inflateSync(file.subarray(begin, begin + length));
+    const table = (tag: string) => { for (let i = 0; i < font.readUInt16BE(4); i++) if (font.toString('latin1', 12 + 16 * i, 16 + 16 * i) === tag) return font.readUInt32BE(20 + 16 * i); throw new Error(`no ${tag}`); };
+    const upem = font.readUInt16BE(table('head') + 18);
+    const metrics = font.readUInt16BE(table('hhea') + 34);
+    const hmtx = table('hmtx');
+    const advance = (gid: number) => font.readUInt16BE(hmtx + Math.min(gid, metrics - 1) * 4);
+    for (let i = 0; i < tokens.length;) {
+      const gid = Number(tokens[i++]);
+      i++; // [
+      for (let g = gid; tokens[i] !== ']'; g++, i++) rows.push([g, Number(tokens[i]), (advance(g) * 1000) / upem]);
+      i++; // ]
+    }
+  }
+  return rows;
+}
+
+test('under the harfbuzz shaper /W is the cut program’s hmtx, to the thousandth, for every pinned weight', async () => {
+  const server = await serve();
+  const port = (server.address() as { port: number }).port;
+  try {
+    const printed = await printStrip(port);
+    assert.ok('base64' in printed, JSON.stringify(printed).slice(0, 400));
+    const rows = widthsAgainstHmtx(Buffer.from((printed as { base64: string }).base64, 'base64'));
+    assert.ok(rows.length >= 30, `the three weights use some glyphs (${rows.length})`);
+    const apart = rows.filter(([, width, carried]) => Math.abs(width - carried) > 0.0005);
+    assert.deepEqual(apart, [], 'every /W width equals the program’s own hmtx');
   } finally {
     server.close();
   }

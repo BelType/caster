@@ -27,7 +27,9 @@ import { ColorEmitter } from '../colour/colorResources.ts';
 import { ShadingBuilder } from '../vectors/shading.ts';
 import { TransparencyBuilder } from '../vectors/transparency.ts';
 import { ResourceScope, vectorOperators } from '../vectors/vectorEmit.ts';
+import { shaperVariations } from '../fonts/axisMap.ts';
 import { embedFace, WHOLE_FONT_PROFILE } from '../fonts/fontEmbed.ts';
+import { glyphAdvance } from '../fonts/hbShaper.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
 import { mul } from '../images/imagePlace.ts';
@@ -248,6 +250,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             bytes,
             sourceFormat: instance.sourceFormat,
             coords: instance.coords,
+            advanceOf: (gid) => glyphAdvance(instance.url, gid, shaperVariations(instance.coords)),
             profile,
             ...(perInstance ? { toUnicodeText: perInstance.text, cidToText: perInstance.cidToText } : {}),
             ...(perInstance ? { ambiguousCids: perInstance.ambiguous.map((a) => a.cid) } : {}),

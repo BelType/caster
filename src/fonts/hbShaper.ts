@@ -86,6 +86,14 @@ export function upemOf(key: string): number {
         throw new CasterError(`caster: the shaper was asked for a font it was never handed bytes for: ${key}`);
     return cached.upem;
 }
+/**
+ * The advance of one glyph in font units, from the cached font the words were shaped with.
+ *
+ * @throws {CasterError} Nothing was loaded under `key`.
+ */
+export function glyphAdvance(key: string, gid: number, variations?: Coords): number {
+    return fontFor(key, variations).font.glyphHAdvance(gid);
+}
 /** The harfbuzzjs version string, as the loaded bundle reports it. */
 export function versionString() {
     return hb().versionString();
