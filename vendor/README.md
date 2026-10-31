@@ -9,9 +9,18 @@ Each is loaded by `src/capabilities.js` through `new URL(rel, import.meta.url)`,
 | `pdf-lib.js` | pdf-lib 1.17.1 | 439211 | the object layer: contexts, streams, pages, operators, the writer |
 | `fontkit.js` | fontkit 2.0.4 | 366064 | table parsing, glyph outlines, metrics, glyph intercepts. The browser build has NO default export — use the named `create` |
 | `fast-png.js` | fast-png 8.0.0 | 33626 | a correct PNG decode where one is forced (alpha, Adam7, palette+tRNS) |
-| `harfbuzz.js` | harfbuzzjs 1.6.1 | 42823 | shaping that reproduces every browser width and glyph sequence. Emscripten glue: `harfbuzz.wasm` must sit beside this file |
 | `lcms.js` | lcms-wasm 1.0.5 | 42023 | offline RGB->CMYK under `convertRgb: 'wasm'`. Emscripten glue: `lcms.wasm` must sit beside this file |
 | `wawoff2.js` | wawoff2 2.0.1 | 307400 | WOFF2 to SFNT in a tab. Its own wasm is a base64 data: URI inside the glue, so nothing sits beside this file; the export patch above is what makes the browser branch reachable |
-| `harfbuzz.wasm` | harfbuzzjs/dist/harfbuzz.wasm | 426620 | located by harfbuzz.js through import.meta.url |
 | `harfbuzz-subset.wasm` | harfbuzzjs/dist/harfbuzz-subset.wasm | 622493 | fetched and instantiated directly by fonts/hbSubset.js — no glue |
 | `lcms.wasm` | lcms-wasm/dist/lcms.wasm | 315910 | located by lcms.js through import.meta.url |
+| `harfbuzz.js` | harfbuzzjs 1.6.1, rebuilt | 41194 | shaping that reproduces every browser width and glyph sequence, marks included. Emscripten glue: `harfbuzz.wasm` must sit beside this file |
+| `harfbuzz.wasm` | harfbuzzjs 1.6.1, rebuilt | 456589 | located by harfbuzz.js through import.meta.url |
+
+## `harfbuzz.js` and `harfbuzz.wasm` are rebuilt, not copied
+
+The npm build of harfbuzzjs compiles with `-DHB_TINY`, which drops HarfBuzz's fallback shaping: a face that leaves its combining marks out of the GDEF glyph classes (Arial Unicode's Hebrew points) then keeps each mark's advance, where Blink zeroes it and places the mark. These two are the same harfbuzzjs 1.6.1 sources with one line added to its `config-override.h`, `#undef HB_NO_LEGACY` (DESIGN.md S101). `scripts/rebuild-harfbuzz.js` writes them; `bundle-vendor.js` leaves them alone.
+
+- Emscripten emscripten/emsdk:6.0.13, image digest `sha256:fb7864e398acfda863dfcea78b8bc8adad359fa60c6a0bbeb845931de64aa68a`. The harfbuzzjs Makefile is unchanged, and its CI uses 4.0.13: the same sources rebuilt there with no override are byte-identical to the stock `harfbuzz.wasm` this directory held before (426620 bytes), and their glue, bundled, to the stock `harfbuzz.js`. The 6.0.13 glue names node builtins with a `node:` prefix, so `rebuild-harfbuzz.js` aliases those to the stub as well.
+- harfbuzzjs 1.6.1 (tag `v1.6.1`) with HarfBuzz 14.4.0 at commit `36cb489cb02ce4b92099669ba9f9bea348eff93f`, the submodule commit that tag pins.
+- The override: `#undef HB_NO_LEGACY`, appended to `config-override.h`. Nothing else in harfbuzzjs or HarfBuzz is edited. `harfbuzz-subset.wasm` is untouched: it has its own override file and shapes nothing.
+- To rebuild: `docker pull emscripten/emsdk@sha256:fb7864e398acfda863dfcea78b8bc8adad359fa60c6a0bbeb845931de64aa68a`, then `node scripts/rebuild-harfbuzz.js <harfbuzzjs v1.6.1 checkout> <harfbuzz checkout at the commit above>` (the script runs `docker run --rm -v <work>:/src -w /src emscripten/emsdk@sha256:fb7864e398acfda863dfcea78b8bc8adad359fa60c6a0bbeb845931de64aa68a make harfbuzz`), then `docker rmi` the image.

@@ -39,3 +39,7 @@ a9ddeb8fa48e547d3d80a2f75aa69cb0031fbc34377bfdfea1acd394fdaa9606  rgb16.png
 ```
 
 The `arith.jpg` checksum is the one `harness/tools/images.mjs` pins against `https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/main/testimages/testimgari.jpg`; the other twelve are the checksums of that repository's generated files as committed.
+
+## `fonts/UnclassifiedMarks.ttf`
+
+A 860-byte TrueType font written for `test/unclassifiedMarks.test.ts`, with no third-party outlines: .notdef, space, Bet (U+05D1), Lamed (U+05DC) and Qamats (U+05B8), the letters and the mark as plain rectangles. The two letters are in the GDEF glyph classes as bases; the Qamats is left out of them and its width table entry is 300 of 1000 units, which is how Arial Unicode gives its Hebrew points a width while Blink's HarfBuzz zeroes them. `fonts/make-unclassified-marks.py` regenerates it (fontTools); it is released under the package's own licence.

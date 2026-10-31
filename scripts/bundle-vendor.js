@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
+import { BUILD } from './rebuild-harfbuzz.js';
 import { CasterError } from '../src/errors.js';
 
 /** @import { PluginBuild } from 'esbuild' */
@@ -69,14 +70,18 @@ const BUNDLES = [
   { out: 'pdf-lib.js', pkg: 'pdf-lib', note: 'the object layer: contexts, streams, pages, operators, the writer' },
   { out: 'fontkit.js', pkg: 'fontkit', note: 'table parsing, glyph outlines, metrics, glyph intercepts. The browser build has NO default export — use the named `create`' },
   { out: 'fast-png.js', pkg: 'fast-png', note: 'a correct PNG decode where one is forced (alpha, Adam7, palette+tRNS)' },
-  { out: 'harfbuzz.js', pkg: 'harfbuzzjs', note: 'shaping that reproduces every browser width and glyph sequence. Emscripten glue: `harfbuzz.wasm` must sit beside this file' },
   { out: 'lcms.js', pkg: 'lcms-wasm', note: 'offline RGB->CMYK under `convertRgb: \'wasm\'`. Emscripten glue: `lcms.wasm` must sit beside this file' },
   { out: 'wawoff2.js', pkg: 'wawoff2', entry: `export { default as decompress } from 'wawoff2/decompress.js';`, plugins: [EXPORT_THE_MODULE], note: 'WOFF2 to SFNT in a tab. Its own wasm is a base64 data: URI inside the glue, so nothing sits beside this file; the export patch above is what makes the browser branch reachable' }
 ];
 
+/** The pair this script does not write: `scripts/rebuild-harfbuzz.js` compiles harfbuzzjs with HarfBuzz's fallback shaping left in (DESIGN.md S101), and a copy from the npm package would put the stock build back. */
+const HELD = [
+  { out: 'harfbuzz.js', source: 'harfbuzzjs 1.6.1, rebuilt', note: 'shaping that reproduces every browser width and glyph sequence, marks included. Emscripten glue: `harfbuzz.wasm` must sit beside this file' },
+  { out: 'harfbuzz.wasm', source: 'harfbuzzjs 1.6.1, rebuilt', note: 'located by harfbuzz.js through import.meta.url' }
+];
+
 /** Plain file copies — a wasm nothing bundles, or a wasm an Emscripten bundle locates through `import.meta.url`. */
 const COPIES = [
-  { out: 'harfbuzz.wasm', from: 'harfbuzzjs/dist/harfbuzz.wasm', note: 'located by harfbuzz.js through import.meta.url' },
   { out: 'harfbuzz-subset.wasm', from: 'harfbuzzjs/dist/harfbuzz-subset.wasm', note: 'fetched and instantiated directly by fonts/hbSubset.js — no glue' },
   { out: 'lcms.wasm', from: 'lcms-wasm/dist/lcms.wasm', note: 'located by lcms.js through import.meta.url' }
 ];
@@ -117,6 +122,12 @@ for (const copy of COPIES) {
   console.log(`vendor/${copy.out}: ${bytes.length} bytes`);
 }
 
+for (const held of HELD) {
+  const bytes = fs.statSync(path.join(vendorDir, held.out)).size;
+  rows.push({ file: held.out, source: held.source, bytes, note: held.note });
+  console.log(`vendor/${held.out}: ${bytes} bytes (held: scripts/rebuild-harfbuzz.js)`);
+}
+
 const readme = [
   '# `vendor/` — the committed bundles',
   '',
@@ -127,6 +138,15 @@ const readme = [
   '| file | source | bytes | what it buys |',
   '| :--- | :--- | ---: | :--- |',
   ...rows.map((r) => `| \`${r.file}\` | ${r.source} | ${r.bytes} | ${r.note} |`),
+  '',
+  '## `harfbuzz.js` and `harfbuzz.wasm` are rebuilt, not copied',
+  '',
+  'The npm build of harfbuzzjs compiles with `-DHB_TINY`, which drops HarfBuzz\'s fallback shaping: a face that leaves its combining marks out of the GDEF glyph classes (Arial Unicode\'s Hebrew points) then keeps each mark\'s advance, where Blink zeroes it and places the mark. These two are the same harfbuzzjs 1.6.1 sources with one line added to its `config-override.h`, `#undef HB_NO_LEGACY` (DESIGN.md S101). `scripts/rebuild-harfbuzz.js` writes them; `bundle-vendor.js` leaves them alone.',
+  '',
+  `- Emscripten ${BUILD.image}, image digest \`${BUILD.digest}\`. The harfbuzzjs Makefile is unchanged, and its CI uses 4.0.13: the same sources rebuilt there with no override are byte-identical to the stock \`harfbuzz.wasm\` this directory held before (426620 bytes), and their glue, bundled, to the stock \`harfbuzz.js\`. The 6.0.13 glue names node builtins with a \`node:\` prefix, so \`rebuild-harfbuzz.js\` aliases those to the stub as well.`,
+  `- harfbuzzjs ${BUILD.harfbuzzjs} (tag \`v${BUILD.harfbuzzjs}\`) with HarfBuzz 14.4.0 at commit \`${BUILD.harfbuzz}\`, the submodule commit that tag pins.`,
+  `- The override: \`${BUILD.override}\`, appended to \`config-override.h\`. Nothing else in harfbuzzjs or HarfBuzz is edited. \`harfbuzz-subset.wasm\` is untouched: it has its own override file and shapes nothing.`,
+  '- To rebuild: `docker pull emscripten/emsdk@' + BUILD.digest + '`, then `node scripts/rebuild-harfbuzz.js <harfbuzzjs v1.6.1 checkout> <harfbuzz checkout at the commit above>` (the script runs `docker run --rm -v <work>:/src -w /src emscripten/emsdk@' + BUILD.digest + ' make harfbuzz`), then `docker rmi` the image.',
   ''
 ].join('\n');
 fs.writeFileSync(path.join(vendorDir, 'README.md'), readme);
