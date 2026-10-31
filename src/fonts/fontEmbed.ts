@@ -11,11 +11,11 @@
  *
  * E3 (`text-emission.md`) wrote `Type0` / `Identity-H` / `CIDFontType2` for TrueType and embedded the whole file. This generalises that in four directions and in no others. **Outlines**: `glyf` still goes to `CIDFontType2` with `FontFile2`, and CFF — plain, CID-keyed, or downgraded from CFF2 — goes to `CIDFontType0` with `FontFile3`. **Subsetting**: `hb_subset` with `RETAIN_GIDS`, so the shaper's glyph ids stay the CIDs, `/CIDToGIDMap` stays `/Identity`, and the emitter's `TJ` hex strings mean the same thing before and after. **Instancing**: a variable face is pinned to the coordinate the browser painted at *before* any metric is read, so the `/W` array is the instance's `hmtx` and not the default master's. **Precision**: `/W` carries as many decimals as the caller asks for, and the emitter's pen is tracked on the written value either way.
  *
- * The two-step shape is what makes instancing honest. A variable face is first put through `hb_subset` with `keep_everything` and the axes pinned, which produces a static SFNT with no `fvar`, no `gvar` and no `HVAR`; every metric in the descriptor and every entry in `/W` is then read out of *those* bytes. The used-glyph subset at `finish()` is a second pass over the same static font, so the numbers written into the file and the numbers in the file's own `hmtx` cannot disagree — which the node checker asserts rather than trusts.
+ * The one-pass shape is what keeps instancing cheap, and honest by a check. Layout takes its advances from fontkit's instance of the source (`hmtx` plus `HVAR`); nothing is pinned until `finish()`, where a single `hb_subset` call pins the axes and cuts the used glyphs together (DESIGN.md S98). The cut program's own `hmtx` is then read back for every used glyph and compared with the advance layout used, so the numbers written into the file and the numbers in the file's program cannot drift apart unnoticed — which the node checker asserts as well.
  *
  * PDF 2.0 accepts no variable font. `fvar`, `gvar`, `CFF2` and `HVAR` are ignored by viewers, so a `CFF2` that survived pinning is not a smaller problem than a wrong width: it is a file that renders as nothing. It is an error here, named as one.
  *
- * One thing the two-step shape does *not* get for free, and it is measured rather than assumed. Pinning a `glyf` variable face rewrites `hmtx`, because an instanced outline carries its own phantom points; pinning a **CFF2** face in HarfBuzz 14.4.0 instances the charstrings and drops `HVAR` **without baking its advance deltas into `hmtx`**, so the embedded program's `hmtx` is still the default master's. Every advance is therefore checked against the same face instanced by fontkit, which reads `hmtx` plus `HVAR` directly, and the reference value wins where they disagree. A PDF reader advances by `/W` and is required to ignore the widths in the font program (ISO 32000-2 9.7.4.3), so a file whose `/W` is the instance's is correct whatever the stale table says — but only because the disagreement was looked for.
+ * Two roundings of one fractional advance may sit one font unit apart (fontkit's, HarfBuzz's), and `/W` takes fontkit's; a difference of more than one unit is refused, naming the face and the glyph. Pinning a **CFF2** face in HarfBuzz 14.4.0 instances the charstrings and drops `HVAR` **without baking its advance deltas into `hmtx`**, so such a face is expected to be refused by that check; no CFF2 variable face has been available to test it (CHANGELOG 0.1.4). A PDF reader advances by `/W` and is required to ignore the widths in the font program (ISO 32000-2 9.7.4.3), so the refusal is the check being strict, not the file being wrong.
  *
  * @packageDocumentation
  */
@@ -147,6 +147,7 @@ export type EmbedTiming = {
 import { coordsKey } from './axisMap.ts';
 import { cffStats, outlineTableOf, programStats, sfntEntries, sfntTableBytes } from './fontProgram.ts';
 import { DEFAULT_SUBSET_FLAGS, SUBSET_FLAGS, subsetFace } from './hbSubset.ts';
+import type { SubsetRequest } from './hbSubset.ts';
 /** Glyph-space units per em in a PDF font dictionary. */
 const PDF_GLYPH_UNITS = 1000;
 /** FontDescriptor /Flags bits, by their PDF 32000-2 names. */
@@ -203,45 +204,38 @@ export function subsetTagFor(faceId: string, coords: Coords, gids: number[]): st
 /** A PDF name may not carry a space or a delimiter; a PostScript name should not either. */
 const cleanName = (name: string): string => name.replace(/[\s()<>[\]{}/%#]/g, '');
 /**
+ * The subsetter request that pins a variable face to its instance, or `null` for a static face.
+ *
+ * @remarks
+ * A CFF2 face has to come back as CFF1 or it is unusable: no viewer reads CFF2 out of a PDF. HarfBuzz does the conversion only when asked, and only when every axis is pinned, which is exactly the case here. Used at `finish()` for the profile that embeds the face whole, and for the empty-glyph check.
+ */
+export function instanceRequest(spec: Pick<FontEmbedSpec, 'id' | 'bytes' | 'coords'>): SubsetRequest | null {
+    if (Object.keys(spec.coords).length === 0)
+        return null;
+    const flags = DEFAULT_SUBSET_FLAGS | (outlineTableOf(spec.bytes) === 'cff2' ? SUBSET_FLAGS.DOWNGRADE_CFF2 : 0);
+    return { bytes: spec.bytes, gids: [], pins: spec.coords, flags, keepEverything: true, label: `${spec.id} (instancing)` };
+}
+/**
  * Embed one instance of one face.
  *
  * @remarks
- * Nothing is written until `finish()`: the `/W` array and the `ToUnicode` CMap can only be built once every page has been emitted, and the subset can only be cut once the glyph set is closed. What *is* done eagerly is the instancing, because the widths the emitter asks for while it lays out the pages have to be the instance's widths.
+ * Nothing is written until `finish()`: the `/W` array and the `ToUnicode` CMap can only be built once every page has been emitted, and the subset can only be cut once the glyph set is closed. The instancing waits for it too; the widths the emitter asks for while it lays out the pages are fontkit's instance of the source.
  *
- * @throws {CasterError} Eagerly, a face that still carries a CFF2 table after pinning. From `finish()`: a CID-keyed CFF whose charset cannot be made the identity even with `CFF_IDENTITY_CHARSET`, a CFF2 program, or a glyph the face draws and the subset left with no outline (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45).
+ * @throws {CasterError} From `finish()`: a face that still carries a CFF2 table after pinning, a glyph whose `hmtx` in the cut program is more than one font unit from the advance layout used, a CID-keyed CFF whose charset cannot be made the identity even with `CFF_IDENTITY_CHARSET`, a CFF2 program, or a glyph the face draws and the subset left with no outline (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45).
  */
 export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
     const { profile } = spec;
     const pinned = Object.keys(spec.coords).length > 0;
-    // A CFF2 face has to come back as CFF1 or it is unusable: no viewer reads CFF2 out of a PDF. HarfBuzz does the conversion only when asked, and only when every axis is pinned, which is exactly the case here.
-    const sourceOutline = outlineTableOf(spec.bytes);
-    const instanceFlags = DEFAULT_SUBSET_FLAGS | (sourceOutline === 'cff2' ? SUBSET_FLAGS.DOWNGRADE_CFF2 : 0);
     const clock = () => performance.now();
     const ms3 = ( n: number) => Math.round(n * 1000) / 1000;
-    let started = clock();
-    const instanceBytes = pinned
-        ? subsetFace({
-            bytes: spec.bytes,
-            gids: [],
-            pins: spec.coords,
-            flags: instanceFlags,
-            keepEverything: true,
-            label: `${spec.id} (instancing)`,
-        }).bytes
-        : spec.bytes;
-    if (outlineTableOf(instanceBytes) === 'cff2') {
-        throw new CasterError(`caster: ${spec.id} still carries a CFF2 table after pinning ${JSON.stringify(spec.coords)}; ` +
-            'PDF 2.0 has no CFF2 font program and a viewer would render nothing');
-    }
-    const instanceMs = ms3(clock() - started);
-    started = clock();
-    const font: FontkitFont = create(instanceBytes);
+    const started = clock();
+    // The layout widths are fontkit's own instance of the source (hmtx plus HVAR); the program is pinned once, at finish(), over the used glyphs only, and its hmtx is then checked against these widths.
+    const font: FontkitFont = pinned ? create(spec.bytes).getVariation(spec.coords) : create(spec.bytes);
     const upem = font.unitsPerEm;
     const scale = PDF_GLYPH_UNITS / upem;
-    // The same face instanced a second way, by fontkit reading hmtx plus HVAR. It is the reference the embedded program's own advances are checked against; see the module comment for why that check is not paranoia.
-    const reference: FontkitFont|null = pinned ? create(spec.bytes).getVariation(spec.coords) : null;
+    const instanceMs = 0;
     const parseMs = ms3(clock() - started);
-    let staleAdvances = 0;
+    const staleAdvances = 0;
     const fontRef = context.nextRef();
     const cidFontRef = context.nextRef();
     const descriptorRef = context.nextRef();
@@ -259,11 +253,9 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         const hit = advanceCache.get(gid);
         if (hit !== undefined)
             return hit;
+        // The instance's advance is fractional where an HVAR delta interpolates; HarfBuzz and Blink both work in whole font units at this scale, so it is rounded to the number they use.
         const own = font.getGlyph(gid).advanceWidth;
-        // The reference is fractional where an HVAR delta interpolates; HarfBuzz and Blink both work in whole font units at this scale, so it is rounded to the number they use rather than kept at a precision nothing else has.
-        const value = reference ? Math.round(reference.getGlyph(gid).advanceWidth) : own;
-        if (reference && value !== own)
-            staleAdvances += 1;
+        const value = pinned ? Math.round(own) : own;
         advanceCache.set(gid, value);
         return value;
     };
@@ -279,18 +271,23 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
     const finish = (): CidFontStats => {
         const gids = [...used].sort((a, b) => a - b);
         const textOf = (gid: number): string => spec.toUnicodeText?.get(gid) ?? firstSeen.get(gid) ?? '';
-        let programBytes = instanceBytes;
+        const pinFlags = pinned && outlineTableOf(spec.bytes) === 'cff2' ? SUBSET_FLAGS.DOWNGRADE_CFF2 : 0;
+        const pins = pinned ? { pins: spec.coords } : {};
+        // The whole instance, which only the profile that embeds the face whole and the empty-glyph check below need.
+        const wholeInstance = (): Uint8Array => pinned ? subsetFace(instanceRequest(spec)!).bytes : spec.bytes;
+        let programBytes = spec.bytes;
         let charsetRetried = false;
         let finishStarted = clock();
         if (profile.subset) {
             const label = `${spec.id} (${gids.length} glyphs)`;
-            let result = subsetFace({ bytes: instanceBytes, gids, flags: DEFAULT_SUBSET_FLAGS, label });
+            let result = subsetFace({ bytes: spec.bytes, gids, ...pins, flags: DEFAULT_SUBSET_FLAGS | pinFlags, label });
             // A CIDFontType0 addresses glyphs through the CFF charset, and /Ordering (Identity) with CID = GID is a claim about that charset. Noto Sans JP's is not the identity and hb_subset preserves the original CIDs, so the claim has to be made true rather than asserted.
             if (!charsetIsIdentity(result.bytes)) {
                 result = subsetFace({
-                    bytes: instanceBytes,
+                    bytes: spec.bytes,
                     gids,
-                    flags: DEFAULT_SUBSET_FLAGS | SUBSET_FLAGS.CFF_IDENTITY_CHARSET,
+                    ...pins,
+                    flags: DEFAULT_SUBSET_FLAGS | pinFlags | SUBSET_FLAGS.CFF_IDENTITY_CHARSET,
                     label: `${label} with CFF_IDENTITY_CHARSET`,
                 });
                 charsetRetried = true;
@@ -300,6 +297,23 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
                 }
             }
             programBytes = result.bytes;
+        }
+        else if (pinned) {
+            programBytes = wholeInstance();
+        }
+        if (outlineTableOf(programBytes) === 'cff2') {
+            throw new CasterError(`caster: ${spec.id} still carries a CFF2 table after pinning ${JSON.stringify(spec.coords)}; ` +
+                'PDF 2.0 has no CFF2 font program and a viewer would render nothing');
+        }
+        // The widths layout used against the widths the file's own program carries. They are two roundings of one fractional advance (fontkit's from hmtx plus HVAR, HarfBuzz's from the instanced outline), so they may sit one font unit apart; anything further means the program is not the instance layout measured, which is what a CFF2 face pinned by HarfBuzz 14.4.0 does (its hmtx stays at the default master).
+        const carried = hmtxAdvances(programBytes);
+        for (const gid of gids) {
+            const wanted = advance(gid);
+            const have = carried(gid);
+            if (Math.abs(have - wanted) > 1) {
+                throw new CasterError(`caster: ${spec.id} glyph ${gid}: layout used an advance of ${wanted} but the embedded program's hmtx carries ${have}` +
+                    (pinned ? ` after pinning ${JSON.stringify(spec.coords)}` : ''));
+            }
         }
         const subsetMs = ms3(clock() - finishStarted);
         finishStarted = clock();
@@ -311,7 +325,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         // A glyph with no outline that carries text is the subsetter having dropped something the shaper chose — unless the face never drew it in the first place, which is M10 and is a real and ordinary thing for a face to do (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45). JetBrains Mono builds `->`, `=>`, `!=` and `<=` by substituting every character but the last for one deliberately empty glyph, so the monospace advance is kept while the last character's glyph draws the whole ligature backwards over them; measured on `fixtures/specimen/fonts/JetBrainsMono-Regular.ttf`, gid 1751 is that spacer and its `loca` entry is zero bytes long in the file. The subset kept exactly what it was given, and the check was reading the font's own design as its own failure. So the question is asked of the difference rather than of the output: a glyph the program handed to the subsetter could draw, and the subset cannot, is the defect this guards against.
         let missing = gids.filter((gid) => !stats.nonEmptyGids.includes(gid) && textOf(gid).trim() !== '');
         if (missing.length > 0) {
-            const before = new Set(programStats(instanceBytes).nonEmptyGids);
+            const before = new Set(programStats(wholeInstance()).nonEmptyGids);
             missing = missing.filter((gid) => before.has(gid));
         }
         if (missing.length > 0) {
@@ -344,6 +358,8 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             // /CIDToGIDMap is a CIDFontType2 entry only; a CIDFontType0 has no such key at all and writing one would be a syntax error, not a redundancy.
             ...(isTrueType ? { CIDToGIDMap: 'Identity' } : {}),
         }));
+        // The box is the instance's own, which only the pinned program knows: the source's head belongs to the default master.
+        const bbox = pinned ? create(programBytes).bbox : font.bbox;
         const os2 = font['OS/2'];
         const italic = font.italicAngle !== 0 || os2?.fsSelection.italic === true;
         // sFamilyClass's high byte is the IBM family class: 1-7 are the serif classes, 8 is sans-serif, 0 is "no classification". Every face the harness measured declared 0, so the bit stays off rather than being asserted from a family name.
@@ -358,10 +374,10 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             FontName: pdf().PDFName.of(psName),
             Flags: FLAG_SYMBOLIC | (serif ? FLAG_SERIF : 0) | (italic ? FLAG_ITALIC : 0),
             FontBBox: [
-                Math.round(font.bbox.minX * scale),
-                Math.round(font.bbox.minY * scale),
-                Math.round(font.bbox.maxX * scale),
-                Math.round(font.bbox.maxY * scale),
+                Math.round(bbox.minX * scale),
+                Math.round(bbox.minY * scale),
+                Math.round(bbox.maxX * scale),
+                Math.round(bbox.maxY * scale),
             ],
             ItalicAngle: font.italicAngle,
             Ascent: Math.round(ascent * scale),
@@ -418,6 +434,20 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         };
     };
     return { id: spec.id, ref: fontRef, postScriptName: font.postscriptName, upem, advance, width, use, finish };
+}
+/**
+ * The advance of a glyph as the program's own `hmtx` carries it, in font units.
+ *
+ * @throws {CasterError} The program has no `hmtx` or `hhea` table.
+ */
+function hmtxAdvances(bytes: Uint8Array): (gid: number) => number {
+    const hhea = sfntTableBytes(bytes, 'hhea');
+    const hmtx = sfntTableBytes(bytes, 'hmtx');
+    if (!hhea || !hmtx)
+        throw new CasterError('caster: the embedded program has no hhea/hmtx table to check the layout widths against');
+    const count = new DataView(hhea.buffer, hhea.byteOffset, hhea.byteLength).getUint16(34);
+    const view = new DataView(hmtx.buffer, hmtx.byteOffset, hmtx.byteLength);
+    return (gid) => view.getUint16(Math.min(gid, count - 1) * 4);
 }
 /** True unless the program is a CID-keyed CFF whose charset renumbers glyphs. */
 function charsetIsIdentity(bytes: Uint8Array): boolean {
