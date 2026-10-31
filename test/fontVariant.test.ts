@@ -137,3 +137,13 @@ test('letter-spacing adds its off-tags after small-caps, as it does after any ot
     assert.deepEqual(spaced, ['smcp', ...LETTER_SPACED_FEATURES]);
     assert.deepEqual(featureTagsFor(styleOf({ 'font-variant-caps': 'small-caps' }), 0), ['smcp']);
 });
+
+test('font-kerning: none is kern off, and text-rendering: optimizeSpeed turns the common ligatures and calt off unless asked back', () => {
+    assert.deepEqual(fontVariantTags(styleOf({ 'font-kerning': 'none' })), ['-kern']);
+    assert.deepEqual(fontVariantTags(styleOf({ 'font-kerning': 'normal' })), []);
+    assert.deepEqual(fontVariantTags(styleOf({ 'text-rendering': 'optimizeSpeed' })), ['-liga', '-clig', '-calt']);
+    assert.deepEqual(fontVariantTags(styleOf({ 'text-rendering': 'optimizeSpeed', 'font-variant-ligatures': 'common-ligatures' })), ['liga', 'clig', '-calt']);
+    assert.deepEqual(fontVariantTags(styleOf({ 'text-rendering': 'optimizeSpeed', 'font-variant-ligatures': 'contextual' })), ['calt', '-liga', '-clig']);
+    for (const value of ['auto', 'optimizeLegibility', 'geometricPrecision'])
+        assert.deepEqual(fontVariantTags(styleOf({ 'text-rendering': value })), []);
+});

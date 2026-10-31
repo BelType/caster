@@ -116,5 +116,16 @@ export function fontVariantTags(style: StyleReader, context: CasterErrorContext 
             throw new CasterError(`caster: ${property}: ${JSON.stringify(value)} is refused: ${why}. A value this printer cannot shape is refused, never ignored, because the glyphs it would substitute are the wrong ones on the page.`, context);
         }
     }
+    // font-kerning: none is `kern` off, as `font-feature-settings: "kern" 0` is; `auto` and `normal` are silent. An author's `"kern" 1` still wins, because it comes later (measured in Blink).
+    if (style.getPropertyValue('font-kerning').trim() === 'none')
+        tags.push('-kern');
+    // text-rendering: optimizeSpeed turns the common ligatures and the contextual alternates off and leaves kerning on, whatever font-kerning says. The author's word beats it, in the longhand or in font-feature-settings alike: `common-ligatures` and `"liga" 1` bring liga and clig back, `contextual` and `"calt" 1` bring calt back (all measured in Blink, on a page of its own for each, because Blink's word cache carries shapes from one style to the next). discretionary and historical ligatures are off by default, and optimizeLegibility, geometricPrecision and auto add nothing.
+    if (style.getPropertyValue('text-rendering').trim().toLowerCase() === 'optimizespeed') {
+        const asked = style.getPropertyValue('font-variant-ligatures').split(/\s+/u);
+        if (!asked.includes('common-ligatures'))
+            tags.push('-liga', '-clig');
+        if (!asked.includes('contextual'))
+            tags.push('-calt');
+    }
     return tags;
 }
