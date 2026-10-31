@@ -223,7 +223,7 @@ export function instanceRequest(spec: Pick<FontEmbedSpec, 'id' | 'bytes' | 'coor
  * @remarks
  * Nothing is written until `finish()`: the `/W` array and the `ToUnicode` CMap can only be built once every page has been emitted, and the subset can only be cut once the glyph set is closed. The instancing waits for it too; the widths the emitter asks for while it lays out the pages are the shaper's (`advanceOf`).
  *
- * @throws {CasterError} From `finish()`: a face that still carries a CFF2 table after pinning, a glyph whose `hmtx` in the cut program is more than one font unit from the advance layout used, a CID-keyed CFF whose charset cannot be made the identity even with `CFF_IDENTITY_CHARSET`, a CFF2 program, or a glyph the face draws and the subset left with no outline (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45).
+ * @throws {CasterError} From `finish()`: a face that still carries a CFF2 table after pinning, a glyph whose `hmtx` in the cut program differs from the advance layout used (exactly with `advanceOf`, by more than one font unit without it), a CID-keyed CFF whose charset cannot be made the identity even with `CFF_IDENTITY_CHARSET`, a CFF2 program, or a glyph the face draws and the subset left with no outline (*a face's own empty glyph was read as a dropped one*, DESIGN.md S45).
  */
 export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
     const { profile } = spec;
