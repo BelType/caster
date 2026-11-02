@@ -31,7 +31,7 @@ const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.met
 const FIXTURES = path.join(PACKAGE, 'fixtures');
 const LISTS = path.join(FIXTURES, 'lists');
 const CLI = path.resolve(process.env.BELTYPE_CLI ?? path.join(PACKAGE, '..', 'cli'));
-const SPECIMENS = path.join(CLI, 'node_modules', '@beltype', 'specimens', 'specimens');
+const SPECIMENS = path.join(path.dirname(fileURLToPath(import.meta.resolve('@beltype/specimens/package.json'))), 'specimens');
 
 /** The CLI's own constants (`src/print.ts`), copied because the CLI exports none of them. */
 const ORIGIN = 'https://print.invalid';

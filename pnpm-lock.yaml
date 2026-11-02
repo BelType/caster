@@ -15,6 +15,9 @@ importers:
       '@beltype/cicero':
         specifier: 0.1.4
         version: 0.1.4
+      '@beltype/specimens':
+        specifier: 0.1.0
+        version: 0.1.0
       '@types/node':
         specifier: ^22.20.4
         version: 22.20.5
@@ -57,6 +60,10 @@ packages:
 
   '@beltype/common@0.1.1':
     resolution: {integrity: sha512-WXj/dcjx9DdwF8+cgIYEo0Bhfgun3BszBljccglTcP4+PV4gyXD1APxUo8jyRm+eWlg8XCM3ow6izutfq6yiGw==}
+    engines: {node: '>=22'}
+
+  '@beltype/specimens@0.1.0':
+    resolution: {integrity: sha512-8F34pZKrsg+bIOm+pvxCgxlyy6wGxpkLRtrpDiYk3cP5vg2XSDK2qPiP7G2/0JIbkywvjRDSZk+YllMlTuqgXA==}
     engines: {node: '>=22'}
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -1024,6 +1031,10 @@ snapshots:
       pdfjs-dist: 6.2.108
 
   '@beltype/common@0.1.1': {}
+
+  '@beltype/specimens@0.1.0':
+    dependencies:
+      '@beltype/common': 0.1.1
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
