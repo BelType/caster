@@ -318,14 +318,15 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
 /**
  * Replay every saved list in node and compare bytes.
  *
- * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`.
+ * @remarks
+ * No stub is left: the writer is handed the list, and beside it only `originOf`, the report's join to the walk's text origins, answered here by a dummy. The bytes do not depend on it (the dummy's answers are not the page's, and the files are identical); stage 4 of the plan takes it out of the writer's arguments.
+ *
+ * @param without - Stubs to leave out, to measure what each one stands in for; kept for the stubs a later stage may need, and none is installed now.
  */
 async function replay(dir: string, without: Set<string>) {
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
-  const { listSegments } = await import('../src/emit/textEmit.ts');
-  const { buildToUnicode } = await import('../src/fonts/toUnicode.ts');
   const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
   await load(['pdf', 'fontkit', 'hbSubset', 'fastPng']);
   await loadSubsetter();
@@ -334,7 +335,7 @@ async function replay(dir: string, without: Set<string>) {
     const listFile = path.join(dir, `${entry.name}.json`);
     if (!fs.existsSync(listFile)) { gaps.push({ name: entry.name, stubs: [], result: 'no saved list (record with --list-out)', ms: 0 }); continue; }
     const started = performance.now();
-    const stubs = ['originOf', 'toUnicode'].filter((s) => !without.has(s));
+    const stubs: string[] = [];
     let result: string;
     try {
       const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
@@ -347,7 +348,6 @@ async function replay(dir: string, without: Set<string>) {
       const originOf = (page: number, index: number) => ({ run: index, paragraph: 0, path: `replay:${page}:${index}`, color: '', rectPt: [0, 0, 0, 0] as [number, number, number, number] });
       const colour = list.writing.colour !== undefined;
       const emitted = await emitStructure(list, {
-        ...(without.has('toUnicode') ? {} : { toUnicode: buildToUnicode(listSegments(list, originOf)) }),
         originOf
       });
       const now = Buffer.from(emitted.bytes);
@@ -359,7 +359,7 @@ async function replay(dir: string, without: Set<string>) {
     gaps.push({ name: entry.name, stubs, result, ms: performance.now() - started });
   }
   for (const gap of gaps) console.log(`${gap.name.padEnd(18)} ${seconds(gap.ms).padStart(7)}  ${gap.result}`);
-  console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ')}${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
+  console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ') || 'none'}; beside the list, the report-only originOf (a dummy)${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
   return gaps.every((g) => g.result.startsWith('identical')) ? 0 : 1;
 }
 
@@ -373,7 +373,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));

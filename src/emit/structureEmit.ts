@@ -35,7 +35,8 @@ import { PHOTO_PIXEL_THRESHOLD, PHOTO_PSNR_TARGET, PHOTO_RUN_THRESHOLD, PHOTO_UN
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { keepWhenEmpty } from '../walk/structure.ts';
-import { emitRun, lineWrap, round3, setupPages } from './textEmit.ts';
+import { emitRun, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
+import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba } from '../images/canvasDecode.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
 import { buildOutline } from './outline.ts';
@@ -47,7 +48,6 @@ import { clusterKindOf, codePointsOf } from '../measure/emoji.ts';
 const pdf = () => capability('pdf');
 
 import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
-import type { ToUnicodeResult } from '../fonts/toUnicode.ts';
 import type { EmbeddedImage } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
@@ -96,8 +96,6 @@ export type AttributeDict = Record<string, string|number|PDFString|number[]|PDFS
 
 /** Everything `emitStructure` is told beyond the list; every member is optional because each is an experiment's addition, and each is absent in every fixture before it. */
 export type EmitStructureOptions = {
-  /** The document-wide ToUnicode map with its ambiguity rule. Without it each glyph's destination is the first text it was used for, which is the rule of E3 (`text-emission.md`) and is right for a document where no CID is ambiguous. */
-  toUnicode?: ToUnicodeResult;
   /** The PNG-decoder comparison the browser measured, for the report. */
   decoderComparison?: ReportDecoderComparison;
   /** E9 (`vector-painting.md`): vector painting. Absent, no vector is emitted and the order is DOM order. */
@@ -207,11 +205,13 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         throw new CasterError(`caster: the writer reads a display list of version 2, and this one is version ${String(list.version)}`);
     // How the list asks to be written: the font profile, the photo rule and the colour story are the list's, and no option reaches a byte.
     const profile = list.writing.fontProfile;
+    // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
+    const toUnicode = buildToUnicode(listSegments(list));
     const fonts = new Map<any, any>();
     const fontPrograms = new Map<any, any>();
     for (const [instanceKey, instance] of Object.entries(list.resources.fonts)) {
         const bytes = blobOf(list, instance.blob);
-        const perInstance = options.toUnicode?.byInstance.get(instanceKey);
+        const perInstance = toUnicode.byInstance.get(instanceKey);
         fonts.set(instanceKey, embedFace(context, {
             id: instanceKey,
             faceId: instance.faceId,
@@ -463,7 +463,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     onKern: () => {
                         kernAdjustments += 1;
                     },
-                    ...(options.toUnicode ? { actualTextFor: options.toUnicode.actualTextFor } : {}),
+                    actualTextFor: toUnicode.actualTextFor,
                     onActualText: () => {
                         actualTextSpans += 1;
                     },

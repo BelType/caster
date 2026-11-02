@@ -162,7 +162,8 @@ export type TextSegment = {
   upem: number;
   spaceBefore: boolean;
   instanceKey: string;
-  blockPath: string;
+  /** Where the segment's item sits in the display list, which a refusal of the ToUnicode map names. Absent on a view made before the map asked. */
+  place?: { page: number, item: number };
 };
 
 /** The text of each of an item's segments: the run's string, cut where one segment ends and the next begins, less the space between them when DOM whitespace put one there. */
@@ -181,9 +182,9 @@ const segmentViewCache = new WeakMap<any, any>();
  * The item holds the run as one string and its glyphs as flat arrays; a segment is cut back out of them by `segments.start` and `firstGlyph`, and its clusters moved back onto its own text, which is what `textForGlyph` and the map read.
  *
  * @param upem - The font's units per em (`resources.fonts[item.font].upem`).
- * @param blockPath - The paragraph's path, which a refusal of the ToUnicode map names; the first call decides, and the views are kept.
+ * @param place - Where the item sits in the display list, which a refusal of the ToUnicode map names; the first call decides, and the views are kept.
  */
-export function segmentViews(item: TextItem, upem: number, blockPath: string = ''): TextSegment[] {
+export function segmentViews(item: TextItem, upem: number, place?: { page: number, item: number }): TextSegment[] {
     const held = segmentViewCache.get(item);
     if (held)
         return held;
@@ -200,20 +201,20 @@ export function segmentViews(item: TextItem, upem: number, blockPath: string = '
             upem,
             spaceBefore: spaceBefore[index],
             instanceKey: item.font,
-            blockPath,
+            ...(place ? { place } : {}),
         };
     });
     segmentViewCache.set(item, views);
     return views;
 }
 
-/** Every segment the list sets, in painting order, as the writer reads them: what the ToUnicode map is built over. */
-export function listSegments(list: DisplayList, originOf: (page: number,index: number) => TextOrigin): TextSegment[] {
+/** Every segment the list sets, in painting order, as the writer reads them: what the ToUnicode map is built over, each view knowing its item's place. */
+export function listSegments(list: DisplayList): TextSegment[] {
     const segments: TextSegment[] = [];
     for (const [at, page] of list.pages.entries()) {
         for (const [index, item] of page.items.entries()) {
             if (item.kind === 'text')
-                segments.push(...segmentViews(item, (list.resources.fonts[item.font].upem as number), originOf(at, index).path));
+                segments.push(...segmentViews(item, (list.resources.fonts[item.font].upem as number), { page: at, item: index }));
         }
     }
     return segments;

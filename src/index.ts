@@ -32,7 +32,6 @@ import { defaultIntrinsics, domPathOf, holdDomPaths, measureText, releaseDomPath
 import { assertConserved, assertGeneratedConserved } from './measure/conservation.ts';
 import { assertTiled } from './measure/tiling.ts';
 import { deriveIntervals } from './adapters/intervals.ts';
-import { buildToUnicode } from './fonts/toUnicode.ts';
 import { instanceCoords } from './fonts/axisMap.ts';
 import { loadFont as loadHbFont } from './fonts/hbShaper.ts';
 import { registerBytes as registerVarBytes } from './fonts/varShaper.ts';
@@ -40,7 +39,6 @@ import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
-import { listSegments } from './emit/textEmit.ts';
 import { imageRecord } from './images/imageEmbed.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
@@ -418,9 +416,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       }
     });
     const displayListMs = now() - listStart;
+    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
     const emitted = await emitStructure(displayList, {
       originOf: (page, index) => origins[page][index],
-      toUnicode: buildToUnicode(listSegments(displayList, (page, index) => origins[page][index])),
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       container: report.container,
       timing: report.timing,
@@ -436,6 +434,12 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
         ctmReadings: svg.readings,
         figures: walk.svgs.map((s) => ({ path: s.domPath, tag: s.tag, alt: s.alt ?? '' }))
       }
+    }).catch((error) => {
+      if (error instanceof CasterError && error.listItem && error.element === undefined) {
+        const origin = origins[error.listItem.page]?.[error.listItem.item];
+        if (origin) error.element = origin.path;
+      }
+      throw error;
     });
     step('emit');
 
