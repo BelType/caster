@@ -250,6 +250,7 @@ function textItem(line: MeasuredLine, runInLine: number, owner: string, lineInde
             fill: fillOf(run),
             baseline: yToPt(line.baselinePx, page),
             ...(line.chain ? { transform: toPdfMatrix(line.chain, pageGeometryFor(page)) } : {}),
+            ...(line.clips ? { clips: line.clips.map((clip, i) => ({ path: plain(clip.path, new Map(), `line ${lineIndex} clip ${i}`), rule: clip.evenOdd ? 'evenodd' as const : 'nonzero' as const })) } : {}),
             text,
             leadingSpace,
             space: spaceGlyph(run.url, run.features, run.coords).gid,

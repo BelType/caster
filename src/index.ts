@@ -25,7 +25,7 @@ import { prepare } from './adapters/prepare.ts';
 import { reify } from './adapters/reify.ts';
 import { beginFrame, endFrame, toLocalOn } from './coordinates/frame.ts';
 import { clearPageGeometry, geometryOfPage, pageGeometries, pageGeometryFor, setPageGeometry, xToPt, yToPt } from './coordinates/pageGeometry.ts';
-import { beginChains } from './coordinates/ctm.ts';
+import { beginChains, toPdfMatrix } from './coordinates/ctm.ts';
 import { walkStructure } from './walk/structure.ts';
 import { paintOrderOf } from './walk/paintOrder.ts';
 import { defaultIntrinsics, domPathOf, holdDomPaths, measureText, releaseDomPaths } from './measure/textMeasure.ts';
@@ -43,7 +43,7 @@ import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
 import { PAGE_LABEL_PROPERTY } from './emit/pageLabels.ts';
-import { collectCssBoxes, decorationOf, textDecorationVectors } from './vectors/cssBoxes.ts';
+import { collectCssBoxes, decorationOf, textClips, textDecorationVectors } from './vectors/cssBoxes.ts';
 import { walkDecorations } from './vectors/decorations.ts';
 import { BAND_INSET_PX, BLINK_SOURCE, MAX_DILATION_PX, glyphsOfRun, skipInkUnderlines, underlinesOf } from './vectors/skipInk.ts';
 import { collectTableBorders } from './vectors/tableBorders.ts';
@@ -305,6 +305,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       // The instancing of `font-embedding.md` (E4). A PDF carries no variable font, so a variable face has to be frozen at exactly the coordinate Chromium painted, and the coordinate is derived from the computed style — the cascade, the clamping and the defaults have all happened by then. Unwired, every variable face was shaped, measured and embedded at its default master under the browser's own rectangles, with no refusal anywhere to say so.
       coordsOf: (parent, face) => instanceCoords(getComputedStyle(parent), face.axes ?? {}),
       pageElementOf: strip.pageElementOf,
+      // The clips of an element that hides its overflow bind its text as they bind its boxes, through the same function: text outside the padding box is not painted by the browser, and so not by the file.
+      clipsOf: (parent, page, chain) => textClips(parent, container, container.getBoundingClientRect(), page, chains as ChainContext, chain ? toPdfMatrix(chain, pageGeometryFor(page)) : null),
       imageIntrinsicsOf: (request, index) => {
         // A facsimile is CONTAINED in its element's box, centred, as the preview's canvas is (`object-fit: contain`, set by the presenter on the canvas, not on the element — the element shows fallback content and is not a replaced element, so its own computed `object-fit` is not the fit). When the box has the page's ratio, contain and fill are the same rectangle.
         const loaded = facsimiles.get(walk.images[index].src);

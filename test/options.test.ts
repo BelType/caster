@@ -13,7 +13,7 @@ test('every flag of the guide\'s table is present with the guide\'s default', ()
   assert.deepEqual(DEFAULTS, {
     shaper: 'harfbuzz', subset: 'hb', cffContainer: 'bare', widthDecimals: 3,
     pngDecoder: 'fast-png', photoRule: true, rasterDpi: 300, paintOrder: 'css',
-    styledBorders: false, blackText: 'none', convertRgb: 'none', skipInk: true,
+    styledBorders: true, blackText: 'none', convertRgb: 'none', skipInk: true,
     colour: 'auto', unknownElements: 'infer'
   });
 });
@@ -26,7 +26,7 @@ test('an unknown flag, and a value outside a flag\'s set, refuse by name', () =>
 
 test('the defaults survive an empty call, and a given flag rides through', () => {
   assert.equal(resolveOptions().shaper, 'harfbuzz');
-  assert.equal(resolveOptions({ styledBorders: true }).styledBorders, true);
+  assert.equal(resolveOptions({ styledBorders: false }).styledBorders, false);
   assert.equal(resolveOptions({ title: 'A specimen' }).title, 'A specimen');
 });
 

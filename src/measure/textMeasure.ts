@@ -37,7 +37,7 @@ import type { ChainContext } from '../coordinates/ctm.ts';
 import type { ElementColor, OverprintMode, ResolvedColor } from '../colour/colorHints.ts';
 import type { TextDecoration } from '../vectors/cssBoxes.ts';
 import type { SvgTextRequest } from '../vectors/svgGeometry.ts';
-import type { MeasuredVector, VectorRequest } from '../vectors/vector.ts';
+import type { ClipSpec, MeasuredVector, VectorRequest } from '../vectors/vector.ts';
 
 /**
  * An image the caller wants placed, named by the element that owns its content item.
@@ -228,6 +228,8 @@ export type MeasureOptions = {
   clipToPage?: (page: number, element: Element) => { topPx: number, bottomPx: number }|null;
   /** An already-open chain builder, when the caller opened one itself. From the integration of E9 (`vector-painting.md`) and E10 (`coordinates-and-pages.md`) a vector pass runs *before* the text pass and has to read its rectangles in the same neutralised window: one `beginChains` for the whole export rather than one per module, because a second `beginChains` would capture the transforms the first one had already set to `none` and find no chain at all. The caller owns it; `end()` here is idempotent and restoring it twice is harmless. */
   chains?: ChainContext;
+  /** The clips an element's overflow imposes on the text it holds, page-local and inside the element's chain (`textClips`, `vectors/cssBoxes.ts`). Absent, no text is clipped. Answers are kept per element and page, so a paragraph of many segments asks once. */
+  clipsOf?: (parent: Element, page: number, chain: Matrix|null) => ClipSpec[];
 };
 /** One segment — a maximal run of non-whitespace in one text node — with the engine's rectangle and the shaper's glyphs. */
 export type MeasuredSegment = {
@@ -303,6 +305,8 @@ export type MeasuredSegment = {
   advanceWidthPx: number;
   /** E10 (`coordinates-and-pages.md`): the in-page CTM chain from the page element down to this segment, in page-local px. Absent when the chain is the identity, which is every segment of every fixture before E10. */
   chain?: Matrix;
+  /** The clips the segment's element and its ancestors impose (`overflow: hidden`, `clip-path`), outermost first, in the space inside `chain`. Absent when there are none. */
+  clips?: ClipSpec[];
   /** E10 (`coordinates-and-pages.md`): the same rectangle as the plan's other method recovers it — the painted bounding box mapped back through `chain⁻¹`. Present only for a segment that carries a chain. */
   inverseRectPx?: { xPx: number; yPx: number; wPx: number; hPx: number };
   /** E10 (`coordinates-and-pages.md`): the worst of the four differences between the two, in px. */
@@ -344,6 +348,8 @@ export type MeasuredLine = {
   baselinePx: number;
   /** E10 (`coordinates-and-pages.md`): the chain every segment of the line shares. A line is the unit the `cm` wraps, because a `q`/`Q` pair may not straddle a `BT`/`ET`, so lines split where the chain changes as surely as runs split where the font does. */
   chain?: Matrix;
+  /** The clips every segment of the line shares. A `q`/`Q` pair may not straddle a text object, so lines split where the clips change, as they do where the chain changes. */
+  clips?: ClipSpec[];
   runs: MeasuredRun[];
 };
 /** One letter-spaced segment's evidence for whether Blink adds spacing after the last glyph. */
@@ -895,6 +901,18 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
     const origins: { node: Text; start: number; end: number; rect: DOMRect; segment: number; }[] = [];
     /** E10 (`coordinates-and-pages.md`): each segment's untransformed rect height, for the inverse comparison. */
     const neutralHeightPx: number[] = [];
+    /** The segments that end in a hyphen Blink drew: its hyphen is the last glyph and carries no letter-spacing, so it is no part of the trailing-spacing vote. */
+    const hyphenated = new Set<number>();
+    const clipMemo = new Map<Element, Map<number, ClipSpec[]>>();
+    const clipsOfCached = (parent: Element, page: number, chain: Matrix|null): ClipSpec[] => {
+        let byPage = clipMemo.get(parent);
+        if (!byPage)
+            clipMemo.set(parent, byPage = new Map());
+        let clips = byPage.get(page);
+        if (!clips)
+            byPage.set(page, clips = (options.clipsOf as NonNullable<MeasureOptions['clipsOf']>)(parent, page, chain));
+        return clips;
+    };
     {
         for (const p of blocks) {
             const named = describe(p);
@@ -999,6 +1017,8 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                         // R5's clip comes before the pushes, and that order is load-bearing: `origins` and `segments` are read back in lockstep by the baseline-probe pass below, so a piece dropped after its origin was recorded would shift every probe by one from there on.
                         if (clipped(page, topPx, local ? local.hPx : piece.rect.height, parent)) return;
                         origins.push({ node: item.node, start: piece.start, end: piece.end, rect: piece.rect, segment: segments.length });
+                        if (hyphen)
+                            hyphenated.add(segments.length);
                         neutralHeightPx.push(local?.hPx ?? piece.rect.height);
                         let shaped = shapeWord(match.face.url, word + hyphen, sizePx, features, undefined, shaperVariations(coords));
                         if (hyphen === '\u2010' && shaped.gids[shaped.gids.length - 1] === 0)
@@ -1007,6 +1027,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                         // The PART's own family, not the element's first one: a fallback run is set in the face the walk found, and `ascentPx(fontString)` below reads the baseline off it. Naming the text face for an emoji run would place the picture on the text face's ascent.
                         const fontString = `${style.fontStyle} ${style.fontWeight} ${sizePx}px "${match.face.family}"`;
                         const chain = chains?.chainOf(parent) ?? null;
+                        const clips = options.clipsOf ? clipsOfCached(parent, page, chain && !isIdentityMatrix(chain.matrix) ? chain.matrix : null) : [];
                         segments.push({
                             index: segments.length,
                             paragraph,
@@ -1036,6 +1057,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                             topPx,
                             rectWidthPx: local ? local.wPx : piece.rect.width,
                             ...(chain && !isIdentityMatrix(chain.matrix) ? { chain: chain.matrix } : {}),
+                            ...(clips.length > 0 ? { clips } : {}),
                             baselineAscentPx: topPx + ascentPx(fontString),
                             baselineProbePx: Number.NaN,
                             baselineProbeBeforePx: Number.NaN,
@@ -1166,7 +1188,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
         .map((s) => ({
         block: s.block,
         text: s.text,
-        glyphs: s.gids.length,
+        glyphs: s.gids.length - (hyphenated.has(s.index) ? 1 : 0),
         letterSpacingPx: s.letterSpacingPx,
         ratio: (s.rectWidthPx - s.advanceWidthPx) / s.letterSpacingPx,
     }));
@@ -1254,6 +1276,8 @@ export function defaultIntrinsics(request: ImageRequest): ImageIntrinsics {
     }
     throw new CasterError(`caster: ${element.tagName.toLowerCase()} has no intrinsic size in the DOM; pass imageIntrinsicsOf with the size the file stores`);
 }
+/** What a line's clips are, for comparing two: each clip's reason names the element that imposes it. */
+const clipKeyOf = (clips: ClipSpec[]|undefined) => (clips ? clips.map((clip) => clip.reason).join('|') : '');
 /** Lines in emission order, each carrying its runs. Lines never cross a paragraph. */
 function groupLines(segments: MeasuredSegment[]): MeasuredLine[] {
     const lines: MeasuredLine[] = [];
@@ -1263,12 +1287,14 @@ function groupLines(segments: MeasuredSegment[]): MeasuredLine[] {
         let line = lines[lines.length - 1];
         // E10 (`coordinates-and-pages.md`): the chain joins the line key. The `cm` that carries it wraps the whole `BT … ET`, and a `q`/`Q` pair may not straddle a text object, so two segments under different transforms cannot share a line however close their baselines are.
         const chainKey = segment.chain ? segment.chain.join(',') : '';
+        const clipKey = clipKeyOf(segment.clips);
         if (!line ||
             line.paragraph !== segment.paragraph ||
             line.page !== segment.page ||
             line.baselinePx !== baselinePx ||
-            (line.chain ? line.chain.join(',') : '') !== chainKey) {
-            line = { paragraph: segment.paragraph, page: segment.page, baselinePx, ...(segment.chain ? { chain: segment.chain } : {}), runs: [] };
+            (line.chain ? line.chain.join(',') : '') !== chainKey ||
+            clipKeyOf(line.clips) !== clipKey) {
+            line = { paragraph: segment.paragraph, page: segment.page, baselinePx, ...(segment.chain ? { chain: segment.chain } : {}), ...(segment.clips ? { clips: segment.clips } : {}), runs: [] };
             lines.push(line);
         }
         const run = line.runs[line.runs.length - 1];
