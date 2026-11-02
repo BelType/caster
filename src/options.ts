@@ -33,7 +33,7 @@ export type CasterOptions = {
   rasterDpi: number;
   /** Default `'css'` since 2026-09-08. It was `'dom'` because `'css'` moves every block background before every word — a background at paint index 45 of 350 with its own text at 298 — so switching re-records every stream, and not re-recording the experiments' streams was worth more than an ordering nothing they measured exercised. It is not worth more here: a `<th>` with a shaded row and a `<code>` with a rounded box are ordinary, and under `'dom'` each background is emitted after the words it sits behind and paints them out — measured on a three-page report whose whole header row and every inline code span came out blank. `'dom'` stays, as the flag that reproduces a recorded stream. */
   paintOrder: 'dom'|'css';
-  /** Default `false`. Basis: turning it on repaints any recorded stream with a dotted or dashed border; the arithmetic itself is exact. */
+  /** Default `true`. Basis: a dotted or dashed border prints as the author wrote it; `false` is the opt-out, which paints every border solid. Flipped from `false` on 2026-11-02 at Egildo's ruling: none of the corpus's eight documents has a styled border, so no recorded byte moves. */
   styledBorders: boolean;
   /** Default `'none'`. Basis: on for print — without it, `0 0 0 rg` lands ink on all four process plates. */
   blackText: 'none'|'100k';
@@ -76,7 +76,7 @@ export const FLAGS = (({
   photoRule: { values: [true, false], default: true },
   rasterDpi: { values: null, default: 300 },
   paintOrder: { values: ['css', 'dom'], default: 'css' },
-  styledBorders: { values: [true, false], default: false },
+  styledBorders: { values: [true, false], default: true },
   blackText: { values: ['none', '100k'], default: 'none' },
   convertRgb: { values: ['none', 'endpoint', 'wasm'], default: 'none' },
   skipInk: { values: [true, false], default: true },

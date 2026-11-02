@@ -46,7 +46,7 @@
   "photoRule": true,
   "rasterDpi": 300,
   "paintOrder": "css",
-  "styledBorders": false,
+  "styledBorders": true,
   "blackText": "100k",
   "convertRgb": "none",
   "skipInk": true,
