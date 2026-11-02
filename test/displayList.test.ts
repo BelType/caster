@@ -21,10 +21,11 @@ import { load } from '../src/capabilities.ts';
 import { loadSubsetter } from '../src/fonts/hbSubset.ts';
 import { emitStructure } from '../src/emit/structureEmit.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
+import { resolveStructure } from '../src/displayList/structure.ts';
 import { CasterError } from '../src/errors.ts';
 import { launchBrowser } from './launch.ts';
 
-import type { DisplayList, LinkItem, TextItem } from '../src/displayList.ts';
+import type { DisplayList, LinkItem, StructElement, TextItem } from '../src/displayList.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const LISTS = path.join(PACKAGE, 'fixtures', 'lists');
@@ -69,6 +70,161 @@ test('the same list prints the same bytes: every committed list the writer can w
     const emitted = await emitStructure(list, { originOf });
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
+});
+
+/** The list's tree resolved beside the writer's own: what the builder decides from the walk's tree and the pages' tags and links. */
+function resolvedOf(list: any) {
+  const contents: { page: number; item: number; owner: string; seq: number }[] = [];
+  const links: { order: number; owner: string; dest?: string }[] = [];
+  const linkAt: { page: number; item: LinkItem }[] = [];
+  list.pages.forEach((page: any, p: number) => page.items.forEach((item: any, i: number) => {
+    if (item.kind === 'tag' && item.start && 'struct' in item.start) contents.push({ page: p, item: i, owner: item.start.struct, seq: item.start.seq });
+    if (item.kind === 'link') { links.push({ order: item.order, owner: item.struct, ...(item.target.dest ? { dest: item.target.dest.struct } : {}) }); linkAt.push({ page: p, item }); }
+  }));
+  const resolved = resolveStructure(list.structure, contents, links, list.figureBoxes, list.outline.map((h: any) => h.path));
+  return { elements: resolved.structure.elements, links: linkAt.map(({ page, item }, i) => ({ page, order: item.order, element: resolved.linkElement[i], dest: resolved.destElement[i] })) };
+}
+
+/**
+ * Read the file's structure tree back and hold it to the resolved one: element for element in allocation order, every `/K` entry in order, every entry and attribute object, every `/Dest`.
+ *
+ * @returns How many elements were compared.
+ */
+function assertTreeIsWritten(name: string, list: DisplayList, tree: { elements: StructElement[]; links: { page: number; order: number; element: number; dest?: number }[] }, bytes: Uint8Array): number {
+  const doc = mupdf.Document.openDocument(Buffer.from(bytes), 'application/pdf') as mupdf.PDFDocument;
+  const pageRefs = list.pages.map((_, i) => doc.findPage(i).asIndirect());
+  // The MCID of a content start is its place among its page's content starts.
+  const mcidAt = list.pages.map((page) => {
+    const at = new Map<number, number>();
+    page.items.forEach((item, i) => { if (item.kind === 'tag' && 'start' in item && !('artifact' in item.start)) at.set(i, at.size); });
+    return at;
+  });
+  const text = (obj: mupdf.PDFObject) => (obj.isNull() ? undefined : obj.asString());
+  const plainOf = (obj: mupdf.PDFObject): unknown => {
+    if (obj.isName()) return obj.asName();
+    if (obj.isNumber()) return Math.round(obj.asNumber() * 1000) / 1000; // mupdf reads a real as a float
+    if (obj.isString()) return obj.asString();
+    if (obj.isArray()) { const out: unknown[] = []; for (let i = 0; i < obj.length; i++) out.push(plainOf(obj.get(i))); return out; }
+    const out: Record<string, unknown> = {};
+    obj.forEach((value, key) => { out[String(key)] = plainOf(value); });
+    return out;
+  };
+  const objects: number[] = [];
+  const visit = (index: number, obj: mupdf.PDFObject, parent: number) => {
+    const element = tree.elements[index];
+    const where = `${name}: element ${index} (${element.path})`;
+    objects[index] = obj.asIndirect();
+    assert.equal(obj.get('S').asName(), element.type, `${where}: /S`);
+    assert.equal(obj.get('P').asIndirect(), parent, `${where}: /P`);
+    for (const [key, member] of [['Lang', 'lang'], ['Alt', 'alt'], ['E', 'expansion'], ['ID', 'id']] as const) assert.equal(text(obj.get(key)), element[member], `${where}: /${key}`);
+    const a = obj.get('A');
+    assert.deepEqual(a.isNull() ? undefined : a.isArray() ? plainOf(a) : [plainOf(a)], element.attributes, `${where}: /A`);
+    const k = obj.get('K');
+    assert.equal(k.length, element.children.length, `${where}: /K length`);
+    element.children.forEach((child, j) => {
+      const entry = k.get(j);
+      if (typeof child === 'number') return visit(child, entry, obj.asIndirect());
+      if ('link' in child) {
+        assert.equal(entry.get('Type').asName(), 'OBJR', `${where}: /K[${j}] an /OBJR`);
+        return assert.equal(entry.get('Obj').get('StructParent').asNumber(), list.info.pageCount + child.link, `${where}: /K[${j}] the link of order ${child.link}`);
+      }
+      const mcid = mcidAt[child.page].get(child.item);
+      assert.notEqual(mcid, undefined, `${where}: /K[${j}] names a content start`);
+      if (entry.isNumber()) {
+        assert.equal(entry.asNumber(), mcid, `${where}: /K[${j}] the MCID`);
+        assert.equal(obj.get('Pg').asIndirect(), pageRefs[child.page], `${where}: /Pg`);
+      } else {
+        assert.equal(entry.get('MCID').asNumber(), mcid, `${where}: /K[${j}] the /MCR's MCID`);
+        assert.equal(entry.get('Pg').asIndirect(), pageRefs[child.page], `${where}: /K[${j}] the /MCR's page`);
+      }
+    });
+  };
+  const root = doc.getTrailer().get('Root').get('StructTreeRoot');
+  assert.equal(root.get('K').length, 1, `${name}: one root element`);
+  visit(0, root.get('K').get(0), doc.getTrailer().get('Root').get('StructTreeRoot').asIndirect());
+  assert.equal(objects.filter((n) => n !== undefined).length, tree.elements.length, `${name}: every element is written once`);
+  assert.ok(objects.every((n, i) => i === 0 || n > objects[i - 1]), `${name}: the elements are allocated in the array's order`);
+  for (const link of tree.links) {
+    const annots = doc.findPage(link.page).get('Annots');
+    let annot: mupdf.PDFObject | null = null;
+    for (let i = 0; i < annots.length; i++) if (annots.get(i).get('StructParent').asNumber() === list.info.pageCount + link.order) annot = annots.get(i);
+    assert.ok(annot, `${name}: the link of order ${link.order} is an annotation on page ${link.page + 1}`);
+    const dest = annot.get('Dest');
+    assert.equal(dest.isNull() ? undefined : objects.indexOf(dest.get(0).asIndirect()), link.dest, `${name}: the link of order ${link.order} names the element its destination resolved to`);
+  }
+  return tree.elements.length;
+}
+
+test('the resolved tree is the tree the writer writes: every element, every /K in order, every attribute, every destination', async () => {
+  let compared = 0;
+  for (const { name } of corpus.filter((e) => !DECODED_IN_THE_WRITER.has(e.name))) {
+    const list = listOf(name);
+    compared += assertTreeIsWritten(name, list, resolvedOf(list), (await emitStructure(list, { originOf })).bytes);
+  }
+  assert.ok(compared > 150, `${compared} elements compared`);
+});
+
+// --- the resolver's rules, one by one, on a tree made by hand ----------------------------------------------
+
+/** A walk node. */
+const n = (tag: string, path: string, kids: any[] = [], attrs: Record<string, unknown> = {}) => ({ tag, path, attrs, kids });
+
+test('the resolver prunes an element that owns nothing, and keeps an empty cell and the row around it', () => {
+  const tree = n('Document', 'D', [n('P', 'D/P0'), n('Sect', 'D/S0', [n('P', 'D/S0/P0')]), n('Table', 'D/T0', [n('TR', 'D/T0/TR0', [n('TD', 'D/T0/TR0/TD0'), n('TD', 'D/T0/TR0/TD1')])])]);
+  const { structure } = resolveStructure(tree, [{ page: 0, item: 0, owner: 'D/T0/TR0/TD1', seq: 5 }], [], {}, []);
+  assert.deepEqual(structure.elements.map((e) => e.path), ['D', 'D/T0', 'D/T0/TR0', 'D/T0/TR0/TD0', 'D/T0/TR0/TD1'], 'the empty P and the Sect around an empty P are gone; the empty TD stays, in DOM order');
+});
+
+test('the resolver orders /K by reading key: content and children by the earliest content under them, an empty child after the sibling before it, the annotation last', () => {
+  const tree = n('Document', 'D', [n('P', 'D/P0', [n('Link', 'D/P0/Link0')]), n('TD', 'D/TD0'), n('P', 'D/P1'), n('TD', 'D/TD1')]);
+  const contents = [
+    { page: 0, item: 1, owner: 'D/P1', seq: 1 },
+    { page: 0, item: 4, owner: 'D/P0', seq: 3 },
+    { page: 0, item: 7, owner: 'D/P0/Link0', seq: 2 },
+    { page: 1, item: 0, owner: 'D/P0', seq: 1e6 },
+  ];
+  const { structure } = resolveStructure(tree, contents, [{ order: 0, owner: 'D/P0/Link0' }], {}, []);
+  const [root, p0, link, td0, p1, td1] = structure.elements;
+  assert.deepEqual(structure.elements.map((e) => e.path), ['D', 'D/P0', 'D/P0/Link0', 'D/TD0', 'D/P1', 'D/TD1'], 'allocation is DOM order');
+  assert.deepEqual(root.children, [4, 5, 1, 3], 'P1 reads first and P0 second; an empty TD has no key of its own and takes that of the sibling declared before it, so TD1 follows P1 and TD0 follows P0');
+  assert.deepEqual(p0.children, [2, { page: 0, item: 4 }, { page: 1, item: 0 }], 'the Link (key 2) before P0\'s own content (3, then the next page)');
+  assert.deepEqual(link.children, [{ page: 0, item: 7 }, { link: 0 }], 'the /OBJR after the content');
+  assert.deepEqual([td0.children, p1.children, td1.children], [[], [{ page: 0, item: 1 }], []]);
+});
+
+test('the resolver points a destination at the first element under its target with content of its own, and refuses one with none', () => {
+  const tree = n('Document', 'D', [n('Sect', 'D/S0', [n('Div', 'D/S0/Div0', [n('P', 'D/S0/Div0/P0')]), n('H2', 'D/S0/H0'), n('Div', 'D/S0/Div1')]), n('Link', 'D/L0'), n('Sect', 'D/S1', [n('TD', 'D/S1/TD0')])]);
+  const contents = [{ page: 0, item: 0, owner: 'D/S0/H0', seq: 1 }, { page: 0, item: 2, owner: 'D/S0/Div0/P0', seq: 2 }, { page: 0, item: 4, owner: 'D/L0', seq: 3 }];
+  const resolved = resolveStructure(tree, contents, [{ order: 0, owner: 'D/L0', dest: 'D/S0' }, { order: 1, owner: 'D/L0' }], {}, ['D/S0/H0']);
+  const at = (path: string) => resolved.structure.elements.findIndex((e) => e.path === path);
+  assert.deepEqual(resolved.destElement, [at('D/S0/H0'), undefined], 'the Sect has no /Pg; its first child in reading order, the heading, does');
+  assert.deepEqual(resolved.linkElement, [at('D/L0'), at('D/L0')]);
+  assert.deepEqual(resolved.structure.elements[at('D/L0')].children, [{ page: 0, item: 4 }, { link: 1 }], 'one element, two links: the later one is its /OBJR, as the writer always kept it');
+  assert.deepEqual(resolved.headingElement, [at('D/S0/H0')]);
+  assert.throws(() => resolveStructure(tree, contents, [{ order: 0, owner: 'D/L0', dest: 'D/S1' }], {}, []), /the destination at D\/S1 has no content anywhere under it/);
+  assert.throws(() => resolveStructure(tree, contents, [], {}, ['D/S0/Div1']), /the heading at D\/S0\/Div1 was pruned/);
+  assert.throws(() => resolveStructure(tree, contents, [{ order: 0, owner: 'D/Nowhere' }], {}, []), /the link at D\/Nowhere has no structure element/);
+  assert.throws(() => resolveStructure(tree, [{ page: 0, item: 9, owner: 'D/Nowhere', seq: 0 }], [], {}, []), (error: unknown) => error instanceof CasterError && error.listItem?.item === 9);
+});
+
+test('the resolver writes the attribute objects /A carries, in order, and leaves out an empty entry', () => {
+  const tree = n('Document', 'D', [
+    n('Figure', 'D/F0', [], { alt: 'A chart', lang: 'it' }),
+    n('L', 'D/L0', [n('LI', 'D/L0/LI0', [n('LBody', 'D/L0/LI0/LBody0')])], { listNumbering: 'Decimal' }),
+    n('TH', 'D/TH0', [], { scope: 'Column', id: 'h1', rowSpan: 1, colSpan: 2 }),
+    n('TD', 'D/TD0', [], { headers: ['h1'], rowSpan: 3 }),
+    n('TD', 'D/TD1', [], { headers: [] }),
+    n('Span', 'D/Span0', [], { textPosition: 'Sup', alt: '', expansion: 'Portable Document Format' }),
+  ]);
+  const contents = ['D/F0', 'D/L0/LI0/LBody0', 'D/TH0', 'D/TD0', 'D/Span0'].map((owner, item) => ({ page: 0, item, owner, seq: item }));
+  const byPath = Object.fromEntries(resolveStructure(tree, contents, [], { 'D/F0': [10, 20, 30.0004, 40] }, []).structure.elements.map((e) => [e.path, e]));
+  assert.deepEqual(byPath['D/F0'], { type: 'Figure', path: 'D/F0', lang: 'it', alt: 'A chart', attributes: [{ O: 'Layout', BBox: [10, 20, 40, 60] }], children: [{ page: 0, item: 0 }] }, 'the box as a PDF rectangle, to thousandths');
+  assert.deepEqual(byPath['D/L0'].attributes, [{ O: 'List', ListNumbering: 'Decimal' }]);
+  assert.deepEqual(byPath['D/TH0'].attributes, [{ O: 'Table', Scope: 'Column', ColSpan: 2 }], 'a span of one is not written');
+  assert.equal(byPath['D/TH0'].id, 'h1');
+  assert.deepEqual(byPath['D/TD0'].attributes, [{ O: 'Table', Headers: ['h1'], RowSpan: 3 }]);
+  assert.equal(byPath['D/TD1'].attributes, undefined, 'a cell with nothing to say has no /A');
+  assert.deepEqual(byPath['D/Span0'], { type: 'Span', path: 'D/Span0', expansion: 'Portable Document Format', attributes: [{ O: 'Layout', TextPosition: 'Sup' }], children: [{ page: 0, item: 4 }] }, 'an empty /Alt is left out');
 });
 
 test('the widths cover every glyph a text item shows and every space glyph it names, and the writer refuses one that is missing', async () => {

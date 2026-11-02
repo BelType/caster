@@ -466,6 +466,50 @@ export type LinkTarget = {
   uri?: string;
 };
 
+/**
+ * The structure tree as the writer writes it: every element the file carries, pruned, ordered and resolved by the builder.
+ *
+ * @remarks
+ * Element 0 is the root (`Document`). The array's order is the order the writer allocates the elements' objects in, which is the walk's DOM order with the pruned elements left out; an element's `children` are its `/K` in reading order. Every decision is the builder's (`displayList/structure.js`): which elements survive (an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never), the order of every `/K`, the element an internal link's `/Dest` names, the attribute objects. The writer numbers each page's content starts 0, 1, 2 … as its MCIDs and writes what it is given: the ParentTree, the IDTree, each element's `/P`, and `/Pg` with bare MCIDs where all of an element's content is on one page, follow from the children. Version 4.
+ */
+export type Structure = {
+  elements: StructElement[];
+};
+
+/** One structure element, as its dictionary is written. */
+export type StructElement = {
+  /** The PDF 2.0 standard-namespace structure type, `/S`. */
+  type: string;
+  /** The walk's structure path, e.g. `Document/Sect[0]/P[2]`. Only the report reads it. */
+  path: string;
+  /** `/Lang`, a byte string. Each of the four entries is present only when it is written: the builder leaves out an empty one. */
+  lang?: string;
+  /** `/Alt`, a text string. */
+  alt?: string;
+  /** `/E`, the expansion of an abbreviation, a text string. */
+  expansion?: string;
+  /** `/ID`, a byte string, which `/Headers` and the IDTree name the element by. */
+  id?: string;
+  /** `/A`: the attribute objects in the order they are written; one is written as the dictionary itself, more than one as an array. Absent when there is none. */
+  attributes?: StructAttribute[];
+  /** `/K` in reading order. */
+  children: StructChild[];
+};
+
+/**
+ * One attribute object of `/A`, keyed as its dictionary is written (`/O` first).
+ *
+ * @remarks
+ * Every string value is a PDF name except each entry of `Headers`, which is a byte string (the `/ID` of a header cell). `BBox` is a PDF rectangle `[llx lly urx ury]` in page points, to thousandths. A `Table` object is a cell's: `Scope` on a `TH`, `Headers` where its header set is not empty, `RowSpan` and `ColSpan` only above 1.
+ */
+export type StructAttribute = { O: 'List', ListNumbering: string }
+  | { O: 'Layout', BBox: [number, number, number, number] }
+  | { O: 'Table', Scope?: 'Column' | 'Row' | 'Both', Headers?: string[], RowSpan?: number, ColSpan?: number }
+  | { O: 'Layout', TextPosition: 'Sub' | 'Sup' };
+
+/** One entry of an element's `/K`: another element by its index in `elements`; a marked-content sequence by the page and the index in that page's `items` of the `tag` item that opens it; or the annotation of the `link` item whose `order` this is, as an `/OBJR`. */
+export type StructChild = number | { page: number, item: number } | { link: number };
+
 /** `start` opens one marked-content sequence and `end` closes it; they pair in one item list. */
 export type TagItem = { kind: 'tag', start: ContentStart } | { kind: 'tag', start: ArtifactStart } | { kind: 'tag', end: true };
 
