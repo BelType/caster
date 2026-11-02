@@ -721,7 +721,10 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     }
     return { refs };
 }
-/** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string. The keys keep the list's order. */
+/** The order an attribute object's keys are written in, `/O` first: the order of the schema's `StructAttribute`, so the dictionary does not depend on the order a JSON reader kept the keys in. */
+const ATTRIBUTE_KEYS = ['O', 'ListNumbering', 'BBox', 'Scope', 'Headers', 'RowSpan', 'ColSpan', 'TextPosition'] as const;
+/** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string, and the keys in `ATTRIBUTE_KEYS` order whatever order the list holds them in. */
 function attributeObject(attribute: StructAttribute): Record<string, string|number|number[]|PDFString[]> {
-    return Object.fromEntries(Object.entries(attribute).map(([key, value]) => [key, key === 'Headers' ? (value as string[]).map((id) => pdf().PDFString.of(id)) : (value as string|number|number[])]));
+    const entries = attribute as Record<string, string|number|number[]|string[]|undefined>;
+    return Object.fromEntries(ATTRIBUTE_KEYS.filter((key) => entries[key] !== undefined).map((key) => [key, key === 'Headers' ? (entries[key] as string[]).map((id) => pdf().PDFString.of(id)) : (entries[key] as string|number|number[])]));
 }
