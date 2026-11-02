@@ -268,6 +268,12 @@ function viaCli(doc: Doc): Buffer {
   }
 }
 
+/** The commits the corpus is printed with: this checkout's, and the Cicero checkout's the CLI's door serves (`node_modules/@beltype/cicero`, a link to the sibling), each short. */
+function heads(): { caster: string; cicero: string } {
+  const rev = (cwd: string) => execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd }).toString().trim();
+  return { caster: rev(PACKAGE), cicero: rev(fs.realpathSync(path.join(CLI, 'node_modules', '@beltype', 'cicero'))) };
+}
+
 // ---- the verbs -------------------------------------------------------------------------------------------------------
 
 /** One recorded document, as `corpus.json` lists it: a file's hash and size, or, for a document that `refuses`, the writer's refusal. */
@@ -295,7 +301,7 @@ async function record(dir: string, listOut: string | null) {
     entries.push(entry);
     console.log(`${doc.name.padEnd(18)} ${file ? `${String(file.length).padStart(9)} bytes` : '  refused'}  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
   });
-  fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ caster: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PACKAGE }).toString().trim(), documents: entries }, null, 1)}\n`);
+  fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ ...heads(), documents: entries }, null, 1)}\n`);
   console.log(`recorded ${entries.length} documents into ${dir} in ${seconds(Date.now() - started)}`);
   return 0;
 }
@@ -306,7 +312,10 @@ function cliVerdict(doc: Doc, file: Buffer): string {
 }
 
 async function check(dir: string) {
-  const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  const recorded: { caster?: string; cicero?: string; documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  // A Cicero that moved layout makes the corpus differ with no change in Caster (the stage 0 results of the Rust writer); naming both commits when they moved says where to look first.
+  const now = heads();
+  if (recorded.caster !== now.caster || recorded.cicero !== now.cicero) console.log(`recorded with caster ${recorded.caster ?? '?'} and cicero ${recorded.cicero ?? '?'}; printing with caster ${now.caster} and cicero ${now.cicero}`);
   const names = new Set(recorded.documents.map((d) => d.name));
   const started = Date.now();
   let failures = 0;
