@@ -60,7 +60,7 @@ const CORPUS: Doc[] = [
   { name: 'facsimile', file: path.join(FIXTURES, 'roads', 'facsimile.html'), root: FIXTURES, why: 'a page of another PDF, reopened by pdf-lib inside the writer' },
   { name: 'webp', file: path.join(FIXTURES, 'roads', 'webp.html'), root: FIXTURES, why: 'a WebP, which the writer decodes through the browser' },
   { name: 'arithmetic', file: path.join(FIXTURES, 'roads', 'arithmetic.html'), root: FIXTURES, why: 'an arithmetic-coded JPEG, which the writer decodes through the browser' },
-  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 260 000 pixels, which the photo rule may re-encode through the browser' }
+  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule may re-encode through the browser' }
 ];
 
 // ---- small helpers ---------------------------------------------------------------------------------------------------

@@ -100,7 +100,7 @@
   },
   {
    "name": "photo",
-   "why": "an opaque 8-bit RGB PNG of 260 000 pixels, which the photo rule may re-encode through the browser",
+   "why": "an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule may re-encode through the browser",
    "sha256": "2b0bdde1b0d80346346f33fccbd4c703ade80feaeaca9c3213818113dcb00eff",
    "bytes": 38346,
    "list": {
