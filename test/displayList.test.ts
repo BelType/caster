@@ -2,7 +2,7 @@
  * The display list is all the writer is handed: the same list prints the same bytes, in node, with no page.
  *
  * @remarks
- * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. Since stage 4 the writer returns its records and no report, and `recordsOf` over those records gives every member of each committed report snapshot that the list and the writer decide, from the writer's own return and from the same records through JSON, as a foreign writer would hand them back. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
+ * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it: every document of the corpus the oracle printed, since stage 3 moved the browser's decoders before the list, and a list recorded with the oracle's refusal is refused again with the same message. Since stage 4 the writer returns its records and no report, and `recordsOf` over those records gives every member of each committed report snapshot that the list and the writer decide, from the writer's own return and from the same records through JSON, as a foreign writer would hand them back. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stages 1 and 4)
  * @packageDocumentation
@@ -40,14 +40,17 @@ const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/e
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 const ROADS = path.join(PACKAGE, 'fixtures', 'roads');
 
-type Entry = { name: string; list: { blobs: string[] } };
-const corpus: Entry[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents;
+type Entry = { name: string; list: { blobs: string[] }; refused?: string };
+/** Every committed list, a refused one among them. */
+const committed: Entry[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents;
+/** The lists the oracle printed, each beside its file and its report. */
+const corpus: Entry[] = committed.filter((e) => e.refused === undefined);
 
 /** A committed list with its blobs, each checked against its name. */
 function listOf(name: string): DisplayList {
   const list = JSON.parse(fs.readFileSync(path.join(LISTS, `${name}.json`), 'utf8'));
   list.resources.blobs = {};
-  for (const hash of corpus.find((e) => e.name === name)!.list.blobs) {
+  for (const hash of committed.find((e) => e.name === name)!.list.blobs) {
     const bytes = new Uint8Array(fs.readFileSync(path.join(LISTS, 'blobs', hash)));
     assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), hash, `the blob ${hash} is what its name says`);
     list.resources.blobs[hash] = bytes;
@@ -69,6 +72,14 @@ test('the same list prints the same bytes: every committed list gives the commit
     assert.equal(list.version, 5, `${name}: a version 5 list`);
     const emitted = await emitStructure(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
+  }
+});
+
+test('a list the oracle refuses is refused again: every committed list recorded with a refusal gives the writer\'s same message, in node', async () => {
+  const refused = committed.filter((e) => e.refused !== undefined);
+  assert.ok(refused.some((e) => e.name === 'cff2'), 'the CFF2 face is among them');
+  for (const { name, refused: message } of refused) {
+    await assert.rejects(emitStructure(listOf(name)), (error: Error) => error.message === message, `${name}: refused with the recorded message`);
   }
 });
 

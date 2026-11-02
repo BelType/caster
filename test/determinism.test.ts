@@ -21,7 +21,8 @@ import { validateList } from '../src/displayList/validate.ts';
 import type { DisplayList, StructChild } from '../src/displayList.ts';
 
 const LISTS = path.join(path.dirname(fileURLToPath(new URL('../package.json', import.meta.url))), 'fixtures', 'lists');
-const corpus: { name: string; list: { blobs: string[] } }[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents;
+/** The lists the oracle printed; a list recorded with the oracle's refusal has no file to be deterministic about. */
+const corpus: { name: string; list: { blobs: string[] }; refused?: string }[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents.filter((e: { refused?: string }) => e.refused === undefined);
 
 /** A committed list with its blobs, in the pool's order or reversed. */
 function listOf(name: string, reverseBlobs = false): DisplayList {

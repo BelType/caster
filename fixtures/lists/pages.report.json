@@ -1,0 +1,3601 @@
+{
+ "page": {
+  "widthPt": 283.465,
+  "heightPt": 226.772
+ },
+ "elements": [],
+ "capabilities": [
+  {
+   "name": "pdf",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "fontkit",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "harfbuzz",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "hbSubset",
+   "bytes": 622493,
+   "loaded": true
+  },
+  {
+   "name": "woff2",
+   "bytes": 0,
+   "loaded": true
+  }
+ ],
+ "conformance": "pdfua2",
+ "options": {
+  "shaper": "harfbuzz",
+  "subset": "hb",
+  "cffContainer": "bare",
+  "widthDecimals": 3,
+  "pngDecoder": "fast-png",
+  "photoRule": true,
+  "rasterDpi": 300,
+  "paintOrder": "css",
+  "styledBorders": true,
+  "blackText": "none",
+  "convertRgb": "none",
+  "skipInk": true,
+  "colour": "auto",
+  "unknownElements": "infer"
+ },
+ "errors": [],
+ "warnings": [],
+ "needs": {
+  "forcedPngDecode": false,
+  "woff2Only": true,
+  "colourHints": false,
+  "hasTables": false,
+  "hasSvg": false,
+  "hasEmoji": false,
+  "faces": 1
+ },
+ "color": {
+  "registrations": [
+   {
+    "name": "--pdf-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-top-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-right-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-bottom-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-left-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-fill",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-stroke",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-overprint",
+    "registered": true,
+    "emptyInitialValue": true
+   }
+  ]
+ },
+ "container": {
+  "scaleRecovered": 1,
+  "scaleFromHeight": 1,
+  "scaleFromWidthRatio": 0.9999986770316824,
+  "scaleFromHeightRatio": 1.0000012443630355,
+  "linear": [
+   1,
+   0,
+   0,
+   1
+  ],
+  "offAxisPx": 0,
+  "cornersAxisAligned": true,
+  "pageRectPx": [
+   [
+    411.03125,
+    24,
+    377.9375,
+    301.359375
+   ],
+   [
+    411.03125,
+    341.359375,
+    377.9375,
+    301.359375
+   ],
+   [
+    411.03125,
+    658.71875,
+    377.9375,
+    301.359375
+   ],
+   [
+    411.03125,
+    976.078125,
+    377.9375,
+    301.359375
+   ],
+   [
+    411.03125,
+    1293.4375,
+    377.9375,
+    301.359375
+   ]
+  ],
+  "untransformedWidthPx": [
+   377.938,
+   377.938,
+   377.938,
+   377.938,
+   377.938
+  ],
+  "offsetWidthPx": [
+   378,
+   378,
+   378,
+   378,
+   378
+  ],
+  "widthSource": "computed",
+  "zoomSeen": [],
+  "scrollPx": {
+   "windowX": 0,
+   "windowY": 0,
+   "ancestorX": 0,
+   "ancestorY": 0
+  },
+  "devicePixelRatio": 1,
+  "warnings": [],
+  "errors": []
+ },
+ "pageBoxes": [
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    283.465,
+    226.772
+   ],
+   "measuredWidthPx": 377.938,
+   "measuredHeightPx": 301.359
+  },
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    283.465,
+    226.772
+   ],
+   "measuredWidthPx": 377.938,
+   "measuredHeightPx": 301.359
+  },
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    283.465,
+    226.772
+   ],
+   "measuredWidthPx": 377.938,
+   "measuredHeightPx": 301.359
+  },
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    283.465,
+    226.772
+   ],
+   "measuredWidthPx": 377.938,
+   "measuredHeightPx": 301.359
+  },
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    283.465,
+    226.772
+   ],
+   "measuredWidthPx": 377.938,
+   "measuredHeightPx": 301.359
+  }
+ ],
+ "inferred": [],
+ "svgImages": [],
+ "emission": {
+  "pageCount": 5,
+  "baselineMethod": "measureText",
+  "columnWidthPx": 794,
+  "kernAdjustments": 40,
+  "actualTextSpans": 0,
+  "faces": [
+   {
+    "id": "Source Sans 3#1|wght=700",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 16,
+    "fontFileBytes": 17736,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 700
+    },
+    "glyphsUsed": [
+     1,
+     16,
+     21,
+     28,
+     30,
+     31,
+     32,
+     33,
+     36,
+     41,
+     42,
+     45,
+     46,
+     47,
+     50,
+     1388
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 17736,
+    "subsetFlateBytes": 2824,
+    "numGlyphs": 2319,
+    "nonEmptyGlyphs": 22,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "YJYDBX",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "16": [
+      "O"
+     ],
+     "21": [
+      "T"
+     ],
+     "28": [
+      "a"
+     ],
+     "30": [
+      "c"
+     ],
+     "31": [
+      "d"
+     ],
+     "32": [
+      "e"
+     ],
+     "33": [
+      "f"
+     ],
+     "36": [
+      "i"
+     ],
+     "41": [
+      "n"
+     ],
+     "42": [
+      "o"
+     ],
+     "45": [
+      "r"
+     ],
+     "46": [
+      "s"
+     ],
+     "47": [
+      "t"
+     ],
+     "50": [
+      "w"
+     ],
+     "1388": [
+      ","
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   },
+   {
+    "id": "Source Sans 3#1|wght=400",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 26,
+    "fontFileBytes": 19160,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 400
+    },
+    "glyphsUsed": [
+     1,
+     2,
+     21,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35,
+     36,
+     38,
+     39,
+     41,
+     42,
+     43,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     1387,
+     1388
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 19160,
+    "subsetFlateBytes": 3692,
+    "numGlyphs": 2319,
+    "nonEmptyGlyphs": 34,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "MSDXUG",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "2": [
+      "A"
+     ],
+     "21": [
+      "T"
+     ],
+     "28": [
+      "a"
+     ],
+     "29": [
+      "b"
+     ],
+     "30": [
+      "c"
+     ],
+     "31": [
+      "d"
+     ],
+     "32": [
+      "e"
+     ],
+     "33": [
+      "f"
+     ],
+     "34": [
+      "g"
+     ],
+     "35": [
+      "h"
+     ],
+     "36": [
+      "i"
+     ],
+     "38": [
+      "k"
+     ],
+     "39": [
+      "l"
+     ],
+     "41": [
+      "n"
+     ],
+     "42": [
+      "o"
+     ],
+     "43": [
+      "p"
+     ],
+     "45": [
+      "r"
+     ],
+     "46": [
+      "s"
+     ],
+     "47": [
+      "t"
+     ],
+     "48": [
+      "u"
+     ],
+     "49": [
+      "v"
+     ],
+     "50": [
+      "w"
+     ],
+     "51": [
+      "x"
+     ],
+     "1387": [
+      "."
+     ],
+     "1388": [
+      ","
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   }
+  ],
+  "runs": [
+   {
+    "index": 0,
+    "page": 0,
+    "line": 0,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 1,
+    "page": 0,
+    "line": 1,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 1
+   },
+   {
+    "index": 2,
+    "page": 0,
+    "line": 1,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 238)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   },
+   {
+    "index": 3,
+    "page": 0,
+    "line": 2,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 238)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   },
+   {
+    "index": 4,
+    "page": 0,
+    "line": 3,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 238)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   },
+   {
+    "index": 5,
+    "page": 0,
+    "line": 3,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 3
+   },
+   {
+    "index": 6,
+    "page": 0,
+    "line": 4,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 3
+   },
+   {
+    "index": 7,
+    "page": 1,
+    "line": 5,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 15,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 8,
+    "page": 1,
+    "line": 6,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 11.7,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 1
+   },
+   {
+    "index": 9,
+    "page": 1,
+    "line": 7,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   },
+   {
+    "index": 10,
+    "page": 2,
+    "line": 8,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 15,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 11,
+    "page": 2,
+    "line": 9,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 1
+   },
+   {
+    "index": 12,
+    "page": 3,
+    "line": 10,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 13,
+    "page": 4,
+    "line": 11,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 15,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 14,
+    "page": 4,
+    "line": 12,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 1
+   }
+  ],
+  "marginPt": 0,
+  "pageWidthPt": 283.465,
+  "pageHeightPt": 226.772,
+  "trailingLetterSpacing": false,
+  "trailingSamples": [],
+  "baselineAgreementPt": null,
+  "usableProbes": 54,
+  "probeMoved": 0,
+  "probeOffLine": 0,
+  "probeBeforeOffLine": 0,
+  "containerScrollWidthPx": 1200,
+  "paragraphs": [
+   {
+    "block": "H1",
+    "path": "Document/H1[0]",
+    "text": "One",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[0]",
+    "text": "A link whose words run past the end of this narrow line and onto the next, so it has two rectangles.",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 1
+     },
+     {
+      "page": 0,
+      "mcid": 2
+     },
+     {
+      "page": 0,
+      "mcid": 3
+     }
+    ]
+   },
+   {
+    "block": "H2",
+    "path": "Document/H2[0]",
+    "text": "One, first",
+    "mcids": [
+     {
+      "page": 1,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "H3",
+    "path": "Document/H3[0]",
+    "text": "One, first, a",
+    "mcids": [
+     {
+      "page": 1,
+      "mcid": 1
+     }
+    ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[1]",
+    "text": "The third level of the outline.",
+    "mcids": [
+     {
+      "page": 1,
+      "mcid": 2
+     }
+    ]
+   },
+   {
+    "block": "H2",
+    "path": "Document/H2[1]",
+    "text": "One, second",
+    "mcids": [
+     {
+      "page": 2,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[2]",
+    "text": "A second branch at the second level.",
+    "mcids": [
+     {
+      "page": 2,
+      "mcid": 1
+     }
+    ]
+   },
+   {
+    "block": "H1",
+    "path": "Document/H1[1]",
+    "text": "Two",
+    "mcids": [
+     {
+      "page": 3,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "H2",
+    "path": "Document/H2[2]",
+    "text": "Two, first",
+    "mcids": [
+     {
+      "page": 4,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[3]",
+    "text": "The last page, where the wrapped link lands.",
+    "mcids": [
+     {
+      "page": 4,
+      "mcid": 1
+     }
+    ]
+   }
+  ],
+  "words": [
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "One",
+    "xPt": 28.336,
+    "rightPt": 63.809,
+    "topPt": 182.792,
+    "baselineMeasureTextPt": 162.542,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     16,
+     41,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     13.68,
+     11.44,
+     10.36
+    ],
+    "advanceWidthPt": 35.48,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 1,
+    "runIndex": 1,
+    "block": "P",
+    "text": "A",
+    "xPt": 28.336,
+    "rightPt": 33.773,
+    "topPt": 137.897,
+    "baselineMeasureTextPt": 127.397,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     2
+    ],
+    "clusters": [
+     0
+    ],
+    "advancePt": [
+     5.43
+    ],
+    "advanceWidthPt": 5.43,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 1,
+    "runIndex": 1,
+    "block": "P",
+    "text": "link",
+    "xPt": 35.766,
+    "rightPt": 51.199,
+    "topPt": 137.897,
+    "baselineMeasureTextPt": 127.397,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     36,
+     41,
+     38
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     2.55,
+     2.46,
+     5.47,
+     4.95
+    ],
+    "advanceWidthPt": 15.43,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.002
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 2,
+    "block": "P",
+    "text": "whose",
+    "xPt": 53.191,
+    "rightPt": 80.367,
+    "topPt": 137.897,
+    "baselineMeasureTextPt": 127.397,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     35,
+     42,
+     46,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.19,
+     5.44,
+     5.4,
+     4.19,
+     4.96
+    ],
+    "advanceWidthPt": 27.18,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 2,
+    "block": "P",
+    "text": "words",
+    "xPt": 82.359,
+    "rightPt": 108.047,
+    "topPt": 137.897,
+    "baselineMeasureTextPt": 127.397,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     42,
+     45,
+     31,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.15,
+     5.42,
+     3.37,
+     5.55,
+     4.19
+    ],
+    "advanceWidthPt": 25.68,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 3.192
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 2,
+    "block": "P",
+    "text": "run",
+    "xPt": 110.027,
+    "rightPt": 124.418,
+    "topPt": 137.897,
+    "baselineMeasureTextPt": 127.397,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     48,
+     41
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.47,
+     5.44,
+     5.47
+    ],
+    "advanceWidthPt": 14.38,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.193
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "past",
+    "xPt": 28.336,
+    "rightPt": 46.16,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     28,
+     46,
+     47
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     5.41,
+     5.04,
+     3.99,
+     3.38
+    ],
+    "advanceWidthPt": 17.82,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "the",
+    "xPt": 48.152,
+    "rightPt": 61.945,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.395
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "end",
+    "xPt": 63.926,
+    "rightPt": 79.91,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     32,
+     41,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     4.96,
+     5.47,
+     5.55
+    ],
+    "advanceWidthPt": 15.98,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.596
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "of",
+    "xPt": 81.891,
+    "rightPt": 90.223,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     33
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     5.4,
+     2.92
+    ],
+    "advanceWidthPt": 8.32,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.496
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "this",
+    "xPt": 92.215,
+    "rightPt": 107.695,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     36,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     2.46,
+     4.19
+    ],
+    "advanceWidthPt": 15.47,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.597
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "P",
+    "text": "narrow",
+    "xPt": 109.688,
+    "rightPt": 139.617,
+    "topPt": 121.409,
+    "baselineMeasureTextPt": 110.909,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     41,
+     28,
+     45,
+     45,
+     42,
+     50
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     5.47,
+     5.04,
+     3.47,
+     3.37,
+     5.38,
+     7.19
+    ],
+    "advanceWidthPt": 29.92,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.304
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "P",
+    "text": "line",
+    "xPt": 28.336,
+    "rightPt": 43.781,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     36,
+     41,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     2.55,
+     2.46,
+     5.47,
+     4.96
+    ],
+    "advanceWidthPt": 15.44,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "P",
+    "text": "and",
+    "xPt": 45.762,
+    "rightPt": 61.828,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     28,
+     41,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.04,
+     5.47,
+     5.55
+    ],
+    "advanceWidthPt": 16.06,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.396
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "P",
+    "text": "onto",
+    "xPt": 63.82,
+    "rightPt": 83.379,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     41,
+     47,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     5.42,
+     5.47,
+     3.24,
+     5.42
+    ],
+    "advanceWidthPt": 19.55,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.195
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "P",
+    "text": "the",
+    "xPt": 85.371,
+    "rightPt": 99.152,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.105
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "P",
+    "text": "next",
+    "xPt": 101.145,
+    "rightPt": 119.18,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     41,
+     32,
+     51,
+     47
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     5.47,
+     4.89,
+     4.22,
+     3.38
+    ],
+    "advanceWidthPt": 17.96,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.596
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 5,
+    "block": "P",
+    "text": ",",
+    "xPt": 119.18,
+    "rightPt": 121.676,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     1388
+    ],
+    "clusters": [
+     0
+    ],
+    "advancePt": [
+     2.49
+    ],
+    "advanceWidthPt": 2.49,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 5,
+    "block": "P",
+    "text": "so",
+    "xPt": 123.668,
+    "rightPt": 133.289,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     42
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     4.19,
+     5.42
+    ],
+    "advanceWidthPt": 9.61,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.199
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 5,
+    "block": "P",
+    "text": "it",
+    "xPt": 135.281,
+    "rightPt": 141.129,
+    "topPt": 104.92,
+    "baselineMeasureTextPt": 94.42,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     36,
+     47
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     2.46,
+     3.38
+    ],
+    "advanceWidthPt": 5.84,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.303
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 6,
+    "block": "P",
+    "text": "has",
+    "xPt": 28.336,
+    "rightPt": 43.02,
+    "topPt": 88.432,
+    "baselineMeasureTextPt": 77.932,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     35,
+     28,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.44,
+     5.04,
+     4.19
+    ],
+    "advanceWidthPt": 14.67,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 6,
+    "block": "P",
+    "text": "two",
+    "xPt": 45,
+    "rightPt": 60.961,
+    "topPt": 88.432,
+    "baselineMeasureTextPt": 77.932,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     50,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     7.15,
+     5.42
+    ],
+    "advanceWidthPt": 15.95,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.596
+   },
+   {
+    "page": 0,
+    "mcid": 3,
+    "runIndex": 6,
+    "block": "P",
+    "text": "rectangles.",
+    "xPt": 62.953,
+    "rightPt": 108.656,
+    "topPt": 88.432,
+    "baselineMeasureTextPt": 77.932,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     32,
+     30,
+     47,
+     28,
+     41,
+     34,
+     39,
+     32,
+     46,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "advancePt": [
+     3.37,
+     4.96,
+     4.46,
+     3.17,
+     5.04,
+     5.47,
+     5.04,
+     2.55,
+     4.96,
+     4.19,
+     2.49
+    ],
+    "advanceWidthPt": 45.7,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.305
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 7,
+    "block": "H2",
+    "text": "One,",
+    "xPt": 28.336,
+    "rightPt": 59.449,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     16,
+     41,
+     32,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     10.26,
+     8.58,
+     7.77,
+     4.5
+    ],
+    "advanceWidthPt": 31.11,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 7,
+    "block": "H2",
+    "text": "first",
+    "xPt": 62.438,
+    "rightPt": 89.648,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     33,
+     36,
+     45,
+     46,
+     47
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     5.115,
+     4.14,
+     5.85,
+     6.345,
+     5.745
+    ],
+    "advanceWidthPt": 27.195,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.533
+   },
+   {
+    "page": 1,
+    "mcid": 1,
+    "runIndex": 8,
+    "block": "H3",
+    "text": "One,",
+    "xPt": 28.336,
+    "rightPt": 52.605,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 136.045,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     16,
+     41,
+     32,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     8.003,
+     6.692,
+     6.061,
+     3.51
+    ],
+    "advanceWidthPt": 24.266,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 1,
+    "mcid": 1,
+    "runIndex": 8,
+    "block": "H3",
+    "text": "first,",
+    "xPt": 54.938,
+    "rightPt": 79.523,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 136.045,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     33,
+     36,
+     45,
+     46,
+     47,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     3.99,
+     3.229,
+     4.563,
+     4.949,
+     4.329,
+     3.51
+    ],
+    "advanceWidthPt": 24.57,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.325
+   },
+   {
+    "page": 1,
+    "mcid": 1,
+    "runIndex": 8,
+    "block": "H3",
+    "text": "a",
+    "xPt": 81.855,
+    "rightPt": 88.031,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 136.045,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     28
+    ],
+    "clusters": [
+     0
+    ],
+    "advancePt": [
+     6.166
+    ],
+    "advanceWidthPt": 6.166,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.599
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "The",
+    "xPt": 28.336,
+    "rightPt": 44.098,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     21,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.36,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 15.76,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "third",
+    "xPt": 46.078,
+    "rightPt": 66.293,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     36,
+     45,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     2.46,
+     3.37,
+     5.55
+    ],
+    "advanceWidthPt": 20.2,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.796
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "level",
+    "xPt": 68.285,
+    "rightPt": 87.996,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     32,
+     49,
+     32,
+     39
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     2.55,
+     5.01,
+     4.63,
+     4.96,
+     2.55
+    ],
+    "advanceWidthPt": 19.7,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.706
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "of",
+    "xPt": 89.977,
+    "rightPt": 98.309,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     33
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     5.4,
+     2.92
+    ],
+    "advanceWidthPt": 8.32,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.795
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "the",
+    "xPt": 100.301,
+    "rightPt": 114.082,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.597
+   },
+   {
+    "page": 1,
+    "mcid": 2,
+    "runIndex": 9,
+    "block": "P",
+    "text": "outline.",
+    "xPt": 116.074,
+    "rightPt": 148.242,
+    "topPt": 117.061,
+    "baselineMeasureTextPt": 106.561,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     48,
+     47,
+     39,
+     36,
+     41,
+     32,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "advancePt": [
+     5.42,
+     5.44,
+     3.38,
+     2.55,
+     2.46,
+     5.47,
+     4.96,
+     2.49
+    ],
+    "advanceWidthPt": 32.17,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.696
+   },
+   {
+    "page": 2,
+    "mcid": 0,
+    "runIndex": 10,
+    "block": "H2",
+    "text": "One,",
+    "xPt": 28.336,
+    "rightPt": 59.449,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     16,
+     41,
+     32,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     10.26,
+     8.58,
+     7.77,
+     4.5
+    ],
+    "advanceWidthPt": 31.11,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 2,
+    "mcid": 0,
+    "runIndex": 10,
+    "block": "H2",
+    "text": "second",
+    "xPt": 62.438,
+    "rightPt": 108.961,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     32,
+     30,
+     42,
+     41,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     6.645,
+     7.77,
+     6.6,
+     8.325,
+     8.58,
+     8.595
+    ],
+    "advanceWidthPt": 46.515,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.533
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "A",
+    "xPt": 28.336,
+    "rightPt": 33.773,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     2
+    ],
+    "clusters": [
+     0
+    ],
+    "advancePt": [
+     5.43
+    ],
+    "advanceWidthPt": 5.43,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "second",
+    "xPt": 35.766,
+    "rightPt": 65.695,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     32,
+     30,
+     42,
+     41,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     4.19,
+     4.96,
+     4.35,
+     5.42,
+     5.47,
+     5.55
+    ],
+    "advanceWidthPt": 29.94,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.002
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "branch",
+    "xPt": 67.688,
+    "rightPt": 96.973,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     29,
+     45,
+     28,
+     41,
+     30,
+     35
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     5.53,
+     3.23,
+     5.04,
+     5.47,
+     4.56,
+     5.44
+    ],
+    "advanceWidthPt": 29.27,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.792
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "at",
+    "xPt": 98.953,
+    "rightPt": 107.25,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     28,
+     47
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     4.9,
+     3.38
+    ],
+    "advanceWidthPt": 8.28,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.492
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "the",
+    "xPt": 109.242,
+    "rightPt": 123.035,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.902
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "second",
+    "xPt": 125.016,
+    "rightPt": 154.957,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     32,
+     30,
+     42,
+     41,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     4.19,
+     4.96,
+     4.35,
+     5.42,
+     5.47,
+     5.55
+    ],
+    "advanceWidthPt": 29.94,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.596
+   },
+   {
+    "page": 2,
+    "mcid": 1,
+    "runIndex": 11,
+    "block": "P",
+    "text": "level.",
+    "xPt": 156.949,
+    "rightPt": 179.145,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     32,
+     49,
+     32,
+     39,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     2.55,
+     5.01,
+     4.63,
+     4.96,
+     2.55,
+     2.49
+    ],
+    "advanceWidthPt": 22.19,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.692
+   },
+   {
+    "page": 3,
+    "mcid": 0,
+    "runIndex": 12,
+    "block": "H1",
+    "text": "Two",
+    "xPt": 28.336,
+    "rightPt": 65.438,
+    "topPt": 182.792,
+    "baselineMeasureTextPt": 162.542,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     21,
+     50,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     10.64,
+     15.36,
+     11.1
+    ],
+    "advanceWidthPt": 37.1,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 4,
+    "mcid": 0,
+    "runIndex": 13,
+    "block": "H2",
+    "text": "Two,",
+    "xPt": 28.336,
+    "rightPt": 60.527,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     21,
+     50,
+     42,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     7.98,
+     11.52,
+     8.175,
+     4.5
+    ],
+    "advanceWidthPt": 32.175,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 4,
+    "mcid": 0,
+    "runIndex": 13,
+    "block": "H2",
+    "text": "first",
+    "xPt": 63.516,
+    "rightPt": 90.715,
+    "topPt": 184.491,
+    "baselineMeasureTextPt": 169.491,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     33,
+     36,
+     45,
+     46,
+     47
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     5.115,
+     4.14,
+     5.85,
+     6.345,
+     5.745
+    ],
+    "advanceWidthPt": 27.195,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.333
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "The",
+    "xPt": 28.336,
+    "rightPt": 44.098,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     21,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.36,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 15.76,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "last",
+    "xPt": 46.078,
+    "rightPt": 61.055,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     28,
+     46,
+     47
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     2.55,
+     5.04,
+     3.99,
+     3.38
+    ],
+    "advanceWidthPt": 14.96,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.796
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "page,",
+    "xPt": 63.047,
+    "rightPt": 85.863,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     28,
+     34,
+     32,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     5.41,
+     5.04,
+     4.9,
+     4.96,
+     2.49
+    ],
+    "advanceWidthPt": 22.8,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.905
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "where",
+    "xPt": 87.855,
+    "rightPt": 113.766,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     35,
+     32,
+     45,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.19,
+     5.44,
+     4.96,
+     3.37,
+     4.96
+    ],
+    "advanceWidthPt": 25.92,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.806
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "the",
+    "xPt": 115.758,
+    "rightPt": 129.551,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.693
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "wrapped",
+    "xPt": 131.531,
+    "rightPt": 168.598,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     45,
+     28,
+     43,
+     43,
+     32,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "advancePt": [
+     7.19,
+     3.23,
+     5.04,
+     5.55,
+     5.55,
+     4.96,
+     5.55
+    ],
+    "advanceWidthPt": 37.07,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.696
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "link",
+    "xPt": 170.59,
+    "rightPt": 186.023,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     36,
+     41,
+     38
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     2.55,
+     2.46,
+     5.47,
+     4.95
+    ],
+    "advanceWidthPt": 15.43,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.09
+   },
+   {
+    "page": 4,
+    "mcid": 1,
+    "runIndex": 14,
+    "block": "P",
+    "text": "lands.",
+    "xPt": 188.016,
+    "rightPt": 213.316,
+    "topPt": 148.045,
+    "baselineMeasureTextPt": 137.545,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     28,
+     41,
+     31,
+     46,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     2.55,
+     5.04,
+     5.47,
+     5.55,
+     4.19,
+     2.49
+    ],
+    "advanceWidthPt": 25.29,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.396
+   }
+  ]
+ },
+ "structure": {
+  "namespace": "http://iso.org/pdf2/ssn",
+  "lang": "en",
+  "expectedTree": {
+   "tag": "Document",
+   "path": "Document",
+   "mcids": [],
+   "attrs": {},
+   "kids": [
+    {
+     "tag": "H1",
+     "path": "Document/H1[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "P",
+     "path": "Document/P[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 1
+      },
+      {
+       "page": 0,
+       "mcid": 3
+      }
+     ],
+     "attrs": {},
+     "kids": [
+      {
+       "tag": "Link",
+       "path": "Document/P[0]/Link[0]",
+       "pg": 0,
+       "mcids": [
+        {
+         "page": 0,
+         "mcid": 2
+        }
+       ],
+       "attrs": {},
+       "objr": {
+        "page": 0,
+        "structParent": 5
+       },
+       "kids": []
+      }
+     ]
+    },
+    {
+     "tag": "H2",
+     "path": "Document/H2[0]",
+     "pg": 1,
+     "mcids": [
+      {
+       "page": 1,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "H3",
+     "path": "Document/H3[0]",
+     "pg": 1,
+     "mcids": [
+      {
+       "page": 1,
+       "mcid": 1
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "P",
+     "path": "Document/P[1]",
+     "pg": 1,
+     "mcids": [
+      {
+       "page": 1,
+       "mcid": 2
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "H2",
+     "path": "Document/H2[1]",
+     "pg": 2,
+     "mcids": [
+      {
+       "page": 2,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "P",
+     "path": "Document/P[2]",
+     "pg": 2,
+     "mcids": [
+      {
+       "page": 2,
+       "mcid": 1
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "H1",
+     "path": "Document/H1[1]",
+     "pg": 3,
+     "mcids": [
+      {
+       "page": 3,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "H2",
+     "path": "Document/H2[2]",
+     "pg": 4,
+     "mcids": [
+      {
+       "page": 4,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "P",
+     "path": "Document/P[3]",
+     "pg": 4,
+     "mcids": [
+      {
+       "page": 4,
+       "mcid": 1
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    }
+   ]
+  },
+  "annots": [
+   {
+    "structParent": 5,
+    "page": 0,
+    "ownerPath": "Document/P[0]/Link[0]",
+    "href": "#three",
+    "contents": "whose words run past the end of this narrow line and onto the next",
+    "rectPt": [
+     28.336,
+     90.67,
+     139.617,
+     137.897
+    ],
+    "quads": [
+     53.191,
+     137.897,
+     124.418,
+     137.897,
+     53.191,
+     123.647,
+     124.418,
+     123.647,
+     28.336,
+     121.409,
+     139.617,
+     121.409,
+     28.336,
+     107.159,
+     139.617,
+     107.159,
+     28.336,
+     104.92,
+     119.18,
+     104.92,
+     28.336,
+     90.67,
+     119.18,
+     90.67
+    ]
+   }
+  ],
+  "artifacts": [
+   {
+    "path": "artifact:decoration:p[0]#0",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   },
+   {
+    "path": "artifact:decoration:p[0]#1",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   },
+   {
+    "path": "artifact:decoration:p[0]#2",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   }
+  ],
+  "pages": [
+   {
+    "mcidOwners": [
+     "Document/H1[0]",
+     "Document/P[0]",
+     "Document/P[0]/Link[0]",
+     "Document/P[0]"
+    ]
+   },
+   {
+    "mcidOwners": [
+     "Document/H2[0]",
+     "Document/H3[0]",
+     "Document/P[1]"
+    ]
+   },
+   {
+    "mcidOwners": [
+     "Document/H2[1]",
+     "Document/P[2]"
+    ]
+   },
+   {
+    "mcidOwners": [
+     "Document/H1[1]"
+    ]
+   },
+   {
+    "mcidOwners": [
+     "Document/H2[2]",
+     "Document/P[3]"
+    ]
+   }
+  ],
+  "tagCounts": [
+   {
+    "tag": "Document",
+    "count": 1
+   },
+   {
+    "tag": "H1",
+    "count": 2
+   },
+   {
+    "tag": "H2",
+    "count": 3
+   },
+   {
+    "tag": "H3",
+    "count": 1
+   },
+   {
+    "tag": "Link",
+    "count": 1
+   },
+   {
+    "tag": "P",
+    "count": 4
+   }
+  ],
+  "headings": [
+   {
+    "path": "Document/H1[0]",
+    "level": 1
+   },
+   {
+    "path": "Document/H2[0]",
+    "level": 2
+   },
+   {
+    "path": "Document/H3[0]",
+    "level": 3
+   },
+   {
+    "path": "Document/H2[1]",
+    "level": 2
+   },
+   {
+    "path": "Document/H1[1]",
+    "level": 1
+   },
+   {
+    "path": "Document/H2[2]",
+    "level": 2
+   }
+  ]
+ },
+ "outline": [
+  {
+   "path": "Document/H1[0]",
+   "title": "One",
+   "level": 1,
+   "depth": 0,
+   "page": 0,
+   "topPt": 182.792,
+   "count": 3
+  },
+  {
+   "path": "Document/H2[0]",
+   "title": "One, first",
+   "level": 2,
+   "depth": 1,
+   "page": 1,
+   "topPt": 184.491,
+   "count": 1
+  },
+  {
+   "path": "Document/H3[0]",
+   "title": "One, first, a",
+   "level": 3,
+   "depth": 2,
+   "page": 1,
+   "topPt": 148.045,
+   "count": 0
+  },
+  {
+   "path": "Document/H2[1]",
+   "title": "One, second",
+   "level": 2,
+   "depth": 1,
+   "page": 2,
+   "topPt": 184.491,
+   "count": 0
+  },
+  {
+   "path": "Document/H1[1]",
+   "title": "Two",
+   "level": 1,
+   "depth": 0,
+   "page": 3,
+   "topPt": 182.792,
+   "count": 1
+  },
+  {
+   "path": "Document/H2[2]",
+   "title": "Two, first",
+   "level": 2,
+   "depth": 1,
+   "page": 4,
+   "topPt": 184.491,
+   "count": 0
+  }
+ ],
+ "links": [
+  {
+   "ownerPath": "Document/P[0]/Link[0]",
+   "href": "#three",
+   "kind": "internal",
+   "action": "Dest",
+   "page": 0,
+   "targetId": "three",
+   "destPage": 4,
+   "destLeftPt": 28.336,
+   "destTopPt": 185.991,
+   "destStructPath": "Document/H2[2]"
+  }
+ ],
+ "skipInk": {
+  "maxDilationPx": 13,
+  "bandInsetPx": 0.5,
+  "source": "third_party/blink/renderer/core/paint/text_painter.cc at chromium 141.0.7390.37 (TextPainter::ClipDecorationLine, kDecorationClipMaxDilation)",
+  "runs": [
+   {
+    "path": "p[0]",
+    "text": "whose words run",
+    "sizePx": 13.3333,
+    "bandPx": [
+     1.167,
+     1.5
+    ],
+    "dilationPx": 1.333,
+    "paintedThicknessPx": 0.667,
+    "bandThicknessPx": 1.333,
+    "gapsPt": [],
+    "piecesPt": [
+     [
+      53.191,
+      124.418
+     ]
+    ],
+    "removedFraction": 0
+   },
+   {
+    "path": "p[0]",
+    "text": "past the end of this narrow",
+    "sizePx": 13.3333,
+    "bandPx": [
+     1.167,
+     1.5
+    ],
+    "dilationPx": 1.333,
+    "paintedThicknessPx": 0.667,
+    "bandThicknessPx": 1.333,
+    "gapsPt": [
+     [
+      28.336,
+      30.976
+     ]
+    ],
+    "piecesPt": [
+     [
+      30.976,
+      139.617
+     ]
+    ],
+    "removedFraction": 0.0237
+   },
+   {
+    "path": "p[0]",
+    "text": "line and onto the next",
+    "sizePx": 13.3333,
+    "bandPx": [
+     1.167,
+     1.5
+    ],
+    "dilationPx": 1.333,
+    "paintedThicknessPx": 0.667,
+    "bandThicknessPx": 1.333,
+    "gapsPt": [],
+    "piecesPt": [
+     [
+      28.336,
+      119.18
+     ]
+    ],
+    "removedFraction": 0
+   }
+  ]
+ },
+ "paint": [
+  {
+   "path": "p[0]",
+   "owner": "artifact:decoration:p[0]#0",
+   "kind": "decoration",
+   "label": "decoration:underline",
+   "page": 0,
+   "paintIndex": 14.5,
+   "artifact": true,
+   "geometry": [
+    53.191,
+    126.397,
+    124.418,
+    126.897
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0,
+     0.933
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "p[0]",
+   "owner": "artifact:decoration:p[0]#1",
+   "kind": "decoration",
+   "label": "decoration:underline",
+   "page": 0,
+   "paintIndex": 14.5,
+   "artifact": true,
+   "geometry": [
+    30.976,
+    109.897,
+    139.617,
+    110.397
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0,
+     0.933
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "p[0]",
+   "owner": "artifact:decoration:p[0]#2",
+   "kind": "decoration",
+   "label": "decoration:underline",
+   "page": 0,
+   "paintIndex": 14.5,
+   "artifact": true,
+   "geometry": [
+    28.336,
+    93.397,
+    119.18,
+    93.897
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0,
+     0.933
+    ],
+    "opacity": 1
+   }
+  }
+ ],
+ "paintOrder": [
+  "#decoration",
+  "h1[0]#decoration",
+  "p[0]#decoration",
+  "p[0]/a[0]#decoration",
+  "h2[0]#decoration",
+  "h3[0]#decoration",
+  "p[1]#decoration",
+  "h2[1]#decoration",
+  "p[2]#decoration",
+  "h1[1]#decoration",
+  "h2[2]#decoration",
+  "p[3]#decoration",
+  "#content",
+  "h1[0]#content",
+  "p[0]#content",
+  "p[0]/a[0]#content",
+  "h2[0]#content",
+  "h3[0]#content",
+  "p[1]#content",
+  "h2[1]#content",
+  "p[2]#content",
+  "h1[1]#content",
+  "h2[2]#content",
+  "p[3]#content"
+ ],
+ "deferred": [],
+ "rasterDpi": 300,
+ "vectorNotes": {
+  "paintOrderMode": "css",
+  "stackingContexts": [
+   {
+    "path": "",
+    "reason": "the container the exporter was handed",
+    "zIndex": "auto",
+    "position": "static"
+   }
+  ],
+  "decorations": [
+   {
+    "path": "artifact:decoration:p[0]#0",
+    "line": "underline",
+    "page": 0,
+    "rectPt": [
+     53.1914,
+     126.397,
+     71.2266,
+     0.5
+    ],
+    "thicknessPt": 0.5,
+    "fontUnits": {
+     "position": -50,
+     "thickness": 50,
+     "upem": 1000
+    },
+    "source": "post.underlinePosition",
+    "rgb": [
+     0,
+     0,
+     0.9333333333333333
+    ],
+    "skipInkIgnored": false
+   },
+   {
+    "path": "artifact:decoration:p[0]#1",
+    "line": "underline",
+    "page": 0,
+    "rectPt": [
+     28.3359,
+     109.897,
+     111.2813,
+     0.5
+    ],
+    "thicknessPt": 0.5,
+    "fontUnits": {
+     "position": -50,
+     "thickness": 50,
+     "upem": 1000
+    },
+    "source": "post.underlinePosition",
+    "rgb": [
+     0,
+     0,
+     0.9333333333333333
+    ],
+    "skipInkIgnored": false
+   },
+   {
+    "path": "artifact:decoration:p[0]#2",
+    "line": "underline",
+    "page": 0,
+    "rectPt": [
+     28.3359,
+     93.397,
+     90.8438,
+     0.5
+    ],
+    "thicknessPt": 0.5,
+    "fontUnits": {
+     "position": -50,
+     "thickness": 50,
+     "upem": 1000
+    },
+    "source": "post.underlinePosition",
+    "rgb": [
+     0,
+     0,
+     0.9333333333333333
+    ],
+    "skipInkIgnored": false
+   }
+  ],
+  "ctmReadings": [],
+  "resources": {
+   "shadings": 0,
+   "patterns": 0,
+   "extGStates": 0,
+   "forms": 0
+  },
+  "streamOrder": [
+   "p[0]#decoration:underline",
+   "p[0]#decoration:underline",
+   "p[0]#decoration:underline"
+  ],
+  "figures": []
+ },
+ "pageLabels": [
+  {
+   "page": 0,
+   "declared": "lower-roman start 3 \"A-\"",
+   "style": "r",
+   "start": 3,
+   "prefix": "A-",
+   "opensRun": true,
+   "label": "A-iii"
+  },
+  {
+   "page": 1,
+   "declared": "",
+   "style": "r",
+   "start": 3,
+   "prefix": "A-",
+   "opensRun": false,
+   "label": "A-iv"
+  },
+  {
+   "page": 2,
+   "declared": "",
+   "style": "r",
+   "start": 3,
+   "prefix": "A-",
+   "opensRun": false,
+   "label": "A-v"
+  },
+  {
+   "page": 3,
+   "declared": "",
+   "style": "r",
+   "start": 3,
+   "prefix": "A-",
+   "opensRun": false,
+   "label": "A-vi"
+  },
+  {
+   "page": 4,
+   "declared": "",
+   "style": "r",
+   "start": 3,
+   "prefix": "A-",
+   "opensRun": false,
+   "label": "A-vii"
+  }
+ ],
+ "langs": [
+  {
+   "path": "catalog",
+   "tag": "html",
+   "lang": "en",
+   "source": "documentElement"
+  }
+ ],
+ "bytes": 17627
+}

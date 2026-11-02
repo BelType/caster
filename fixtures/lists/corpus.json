@@ -1,14 +1,14 @@
 {
- "caster": "21677a5",
+ "caster": "821c54e",
  "documents": [
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "ff2ec5eb2f9946ea737d880f787bf3837fba5828c52d1b70870c1a1783b20acd",
-   "bytes": 109746,
+   "sha256": "f5b5a47dd0f618b758dfa0fea21fb07b6e8b2407eafd69876197e4f80e02fd72",
+   "bytes": 109728,
    "cli": "same",
    "list": {
-    "bytes": 188354,
+    "bytes": 188320,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -19,11 +19,11 @@
   {
    "name": "cast",
    "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
-   "sha256": "c697ce772cefeb42ac2697edb7c1e7f3ba84370cbab4104da04e062358dc7cfb",
-   "bytes": 35152,
+   "sha256": "a1bb53f766281f7baa12dc44344e980537a83343c5c70471cbd77cea17ca9013",
+   "bytes": 35149,
    "cli": "same",
    "list": {
-    "bytes": 90465,
+    "bytes": 90464,
     "blobs": [
      "0d19fed95fab5835ad6e85c857b6ac150cffcfeb83b75436f972300de6160697",
      "16dae91cc8620c4870c3cf3beb61f263fe648976fd4b815dff7a29b08af17752",
@@ -46,16 +46,16 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "daee92e9f9ad220d9a3d61751cb366975056cdb565525ecb211269f7af6b8ea3",
-   "bytes": 175665,
+   "sha256": "1acdfefdcf3e04e420a11f556da62518b71c14dd6a349dca1fc7db0321f888e7",
+   "bytes": 175657,
    "options": {
     "blackText": "100k"
    },
    "list": {
-    "bytes": 33519,
+    "bytes": 33542,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "49b68686afe1136817d04232b95c955b878104b31128f7c3cba1b0c09e326f85",
+     "49a94c9cc47d57564a954f83d6932a1915048bcb77059734efad2c0e36c5029c",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
@@ -110,6 +110,89 @@
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "90047c45011fc5f796e495d71874e619dc6d2d39073f5640bf127eab121c8972"
+    ]
+   }
+  },
+  {
+   "name": "faces",
+   "why": "a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2",
+   "sha256": "6159a43916d2bdef659fa90ce22ad45ade1a696615844159af5edea6ba25c50d",
+   "bytes": 35478,
+   "list": {
+    "bytes": 7623,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "48e6c5d5ad1d01599d374ecb817e15890d1feb3b8a3a88e527d44c90389e1f06",
+     "cd978d919f1c6015f2b61530ece710215762bc39ba54e0b977005582c9b86a1d"
+    ]
+   }
+  },
+  {
+   "name": "cff2",
+   "why": "a CFF2 variable face with `HVAR` (HarfBuzz's subset of Source Serif 4 Variable) at weight 700, away from its default master",
+   "refused": "caster: Source Serif 4 Variable#2|opsz=32,wght=700 glyph 1: layout used an advance of 635 but the embedded program's hmtx carries 645 after pinning {\"wght\":700,\"opsz\":32}",
+   "list": {
+    "bytes": 5428,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "5b572e01c0e07cad835bc3ed5ea4df977cac57993ebeb238956bbd9b9c21670b"
+    ]
+   }
+  },
+  {
+   "name": "images",
+   "why": "a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel",
+   "sha256": "d05f12b03b26c7a9938fc6d7023c9375b7b0f6e4a7fd926a9e24dc56bb49c81a",
+   "bytes": 26472,
+   "list": {
+    "bytes": 13209,
+    "blobs": [
+     "18a5c0178233370f7d628b46a29c5124c002ee40b48cd4e23606edb8cae5f379",
+     "19f49185f5e4a4d97f34ed9ac3d60976a5080bc64bccb5e351d3e57a2f55ef96",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "52a98b74c62461190e28ca12eb301a1b94d55f329a8b43e867a7cc1447122638",
+     "552530795c2419f904114506dc5dbc884ca7e52eb938613f883eaf461fcd2fc1",
+     "558590b1006577a28e3ba3bda027138c11c566858061b0e67c03cbcf2cb8f805",
+     "899d042028cda0a51b9728d707d7c2353ccfafc5becd87193a04d7f10a5e610a",
+     "99b35dfd94df719e9e06891d0f1af7b5ad16e1ac3f71a62cb65a943c5aa20172",
+     "eaf98d9c521d03dd3bf10d62e3880b517a60712f4bb32a8ba77098f79cc38657"
+    ]
+   }
+  },
+  {
+   "name": "facsimile-pages",
+   "why": "two pages of one facsimile file",
+   "sha256": "bc3fb807ada18f90bd87c9be6d31b3dc430de6d91a9879dc895a700c8187575e",
+   "bytes": 111424,
+   "list": {
+    "bytes": 3208,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "ca5f3785f28f421b2a8ecfd5ebbe9bfdf395e6832f6fa67d48ad8603faf36cbd"
+    ]
+   }
+  },
+  {
+   "name": "vectors",
+   "why": "an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)",
+   "sha256": "58ad8b00638a80e2187f57d6baf276486d825aa7a5383fe56da5f9dc0ae7cbdd",
+   "bytes": 8752,
+   "list": {
+    "bytes": 8027,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "pages",
+   "why": "a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)",
+   "sha256": "90b686c9c8803835cad2205270bcd75547483abc89e12d3177aa37e84133445a",
+   "bytes": 17627,
+   "list": {
+    "bytes": 13628,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
    }
   }
