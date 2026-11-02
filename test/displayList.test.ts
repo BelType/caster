@@ -23,6 +23,7 @@ import { emitStructure } from '../src/emit/structureEmit.ts';
 import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from '../src/displayList/records.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
 import { resolveStructure } from '../src/displayList/structure.ts';
+import { validateList } from '../src/displayList/validate.ts';
 import { CasterError } from '../src/errors.ts';
 import { deflate } from '../src/images/imageEmbed.ts';
 import { prepareImage } from '../src/images/imagePass.ts';
@@ -383,6 +384,46 @@ test('the writer refuses a list of another version', async () => {
   const list = listOf('cast');
   (list as { version: number }).version = 2;
   await assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
+});
+
+// --- validateList: what a writer could not write, refused before a byte -----------------------------
+
+test('every committed list is one the writer can write: validateList passes it, and takes well under a millisecond on the paper', (t) => {
+  for (const { name } of corpus) validateList(listOf(name));
+  const list = listOf('paper');
+  const times = Array.from({ length: 31 }, () => { const started = performance.now(); validateList(list); return performance.now() - started; }).sort((a, b) => a - b);
+  t.diagnostic(`validateList on the paper: median ${times[15].toFixed(3)} ms of 31, slowest ${times[30].toFixed(3)} ms`);
+  assert.ok(times[15] < 5, `median ${times[15]} ms`);
+});
+
+test('validateList refuses, with a sentence each, a list the writer could not write', () => {
+  /** A copy of `name`'s list changed by `change`, refused with a message matching `pattern`. */
+  const refused = (pattern: RegExp, change: (list: DisplayList) => void, name = 'cast') => {
+    const list = listOf(name);
+    change(list);
+    assert.throws(() => validateList(list), (error: unknown) => error instanceof CasterError && pattern.test(error.message), String(pattern));
+  };
+  const firstText = (list: DisplayList) => list.pages[0].items.find((i): i is TextItem => i.kind === 'text')!;
+  const tags = (list: DisplayList) => list.pages[0].items.map((item, at) => ({ item, at })).filter(({ item }) => item.kind === 'tag');
+  refused(/reads a display list of version 5, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
+  refused(/the font instance .* names the blob 0+, and the display list holds no bytes/, (list) => { list.resources.fonts[0].blob = '0'.repeat(64); });
+  refused(/image \d+'s photo JPEG names the blob/, (list) => { Object.values(list.resources.images)[0].jpeg = 'f'.repeat(64); });
+  refused(/two font instances under the key/, (list) => { list.resources.fonts.push({ ...list.resources.fonts[0] }); });
+  refused(/a text item names the font nowhere/, (list) => { firstText(list).font = 'nowhere'; });
+  refused(/holds no width for glyph 99999 of/, (list) => { firstText(list).glyphs.ids[0] = 99999; });
+  refused(/are not one unit per glyph id in ascending order/, (list) => { list.resources.fonts.find((f) => f.widths.gids.length > 1)!.widths.gids.reverse(); });
+  refused(/the image at item \d+ of page \d+ names source 77/, (list) => { list.pages.flatMap((p) => p.items).find((i) => i.kind === 'image')!.source = 77; });
+  refused(/the marked content end at item \d+ of page 1 closes nothing/, (list) => { const [first] = tags(list); list.pages[0].items[first.at] = { kind: 'tag', end: true }; });
+  refused(/opens inside the one opened at item/, (list) => { const ends = tags(list).filter(({ item }) => 'end' in item); list.pages[0].items.splice(ends[0].at, 1); });
+  refused(/is never closed/, (list) => { const ends = tags(list).filter(({ item }) => 'end' in item); list.pages[0].items.splice(ends[ends.length - 1].at, 1); });
+  refused(/the marked content at item \d+ of page 1 names structure element 999/, (list) => { const start = tags(list).find(({ item }) => 'start' in item && 'element' in item.start)!; (start.item as any).start.element = 999; });
+  refused(/the bookmark .* names structure element -3/, (list) => { list.outline[0].element = -3; }, 'paper');
+  refused(/lists child \d+, which is not an element below the root/, (list) => { list.structure.elements[0].children.push(list.structure.elements.length); });
+  refused(/which is not a content start/, (list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object'))!; e.children[e.children.findIndex((c) => typeof c === 'object')] = { page: 0, item: list.pages[0].items.findIndex((i) => i.kind === 'text') }; });
+  refused(/is in no element's children/, (list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object' && 'page' in c))!; e.children = e.children.filter((c) => !(typeof c === 'object' && 'page' in c)); });
+  refused(/carries an attribute object with the key Placement, which the schema does not name/, (list) => { const e = list.structure.elements.find((x) => x.attributes)!; (e.attributes![0] as any).Placement = 'Block'; }, 'paper');
+  refused(/the link at place \d+ among the document.s links has order \d+; the orders run 0, 1, 2/, (list) => { list.pages.flatMap((p) => p.items).filter((i): i is LinkItem => i.kind === 'link').at(-1)!.order += 1; }, 'paper');
+  refused(/has neither a destination in the file nor a URI/, (list) => { const link = list.pages.flatMap((p) => p.items).find((i): i is LinkItem => i.kind === 'link' && !i.target.dest)!; delete link.target.uri; }, 'roads');
 });
 
 // --- the image roads, as the image pass left them ---------------------------------------------

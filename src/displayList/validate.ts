@@ -2,7 +2,7 @@
  * `displayList/validate.js` — `validateList(list)`: the refusals of a list a writer could not write, each a sentence, before a byte is written.
  *
  * @remarks
- * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
+ * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
  *
  * @packageDocumentation
  */
@@ -28,8 +28,8 @@ export function validateList(list: DisplayList): void {
   checkBlobs(list);
   checkFonts(list);
   checkItems(list);
-  checkTree(list);
   checkLinks(list);
+  checkTree(list);
 }
 
 /** Every blob key a resource names is a key of `resources.blobs`. */
