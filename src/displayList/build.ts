@@ -38,6 +38,8 @@ import type { PageMarks } from '../coordinates/printMarks.ts';
 /** What the builder is told beyond the measurement and the walk: the slice of `emitStructure`'s options that decides rather than writes. */
 export type BuildInputs = {
   title: string;
+  /** The list's `info.created`, an ISO 8601 instant in UTC. */
+  created: string;
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
   paintOrder?: 'dom' | 'css';
   /** The `@page` ground each page paints, already resolved. */
@@ -824,6 +826,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             // *The printer guesses, says so, and withdraws the claim* (S90): a guess in the tree withdraws the claim.
             conformance: walk.inferred?.length ? 'tagged' : 'pdfua2',
             pageCount: measurement.pageCount,
+            created: inputs.created,
         },
         resources,
         structure: copy(walk.tree, 'the structure tree'),

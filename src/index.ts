@@ -79,6 +79,8 @@ export type PrintInput = {
   document: Document;
   /** *`print()` takes a strip from its host* (S62): the pages, where the host knows them better than the two built-in adapters could — anything that is not Cicero's `<beltype-root>` or Paged.js's `.pagedjs_pages`. Absent, the document is read for the root one of those engines wrote. */
   strip?: PageStrip;
+  /** The moment the file says it was made, an ISO 8601 instant in UTC as `Date.prototype.toISOString` writes it; it becomes the display list's `info.created`. Absent, the wall clock when the list is built. A host that needs the same bytes from the same document twice (the identity gate) sets it. */
+  created?: string;
   /** The gateway's asset manifest. Same-origin needs none. */
   manifest?: ReadonlyMap<string, string>;
   /** Progress, per capability, as it lands. */
@@ -390,6 +392,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const listStart = now();
     const { list: displayList, origins } = await buildDisplayList(measurement, walk, {
       title: options.title ?? doc.title ?? 'Untitled',
+      created: input.created ?? new Date().toISOString(),
       paintOrder: options.paintOrder,
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),

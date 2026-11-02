@@ -569,6 +569,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         creator: PRODUCER,
         // *The printer guesses, says so, and withdraws the claim* (S90): a guess in the tree withdraws the claim.
         conformance: list.info.conformance,
+        created: list.info.created,
     };
     setInfo(pdfDoc, info);
     addXmpMetadata(pdfDoc, info);

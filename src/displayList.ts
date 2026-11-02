@@ -41,6 +41,8 @@ export type DocumentInfo = {
   /** `tagged` once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90). */
   conformance: 'pdfua2' | 'tagged';
   pageCount: number;
+  /** The moment the file says it was made: an ISO 8601 instant in UTC, `YYYY-MM-DDTHH:mm:ss` with optional fractional seconds and a final `Z`, as `Date.prototype.toISOString` writes it. Set by `print()` from the host's `created`, or from the wall clock when the host gives none; the writer writes it at whole seconds into both `/CreationDate` and `/ModDate`, and reads no clock. Version 3. */
+  created: string;
 };
 
 /** What the items name by key, and the bytes behind them. */

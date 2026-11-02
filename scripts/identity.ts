@@ -2,7 +2,7 @@
  * `npm run identity -- record|check|replay [dir]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list.
  *
  * @remarks
- * Ported from the monorepo's `packages/caster/scripts/identity.js` (Caster 0.32.0), which is a model and not a dependency: its corpus and doors (the editing tools, the CLI's `Orchestrator`, Paged.js) are not this repository's. The shape is kept: `record` prints the corpus and writes each file with `/CreationDate` and `/ModDate` zeroed, `check` prints it again and compares bytes, and a file in which the pattern matches no date is a failure, so a change of pdf-lib that moved the dates cannot turn the gate into a quiet pass.
+ * Ported from the monorepo's `packages/caster/scripts/identity.js` (Caster 0.32.0), which is a model and not a dependency: its corpus and doors (the editing tools, the CLI's `Orchestrator`, Paged.js) are not this repository's. The shape is kept: `record` prints the corpus and writes each file, `check` prints it again and compares bytes. **No byte is masked.** The door hands every print the same `created` (2000-01-01T00:00:00Z), which the display list carries as `info.created` and the writer writes into `/CreationDate` and `/ModDate`, so the gate compares the files exactly; a file that does not carry that date in both entries is a failure, so a writer that went back to a clock cannot turn the gate into a quiet pass.
  *
  * **The door is the CLI's.** Each document is served from disk on the CLI's made-up origin, cut by Cicero with the CLI's own `cutInPage` and its own Cicero (both read from the CLI checkout at `BELTYPE_CLI`, the sibling `../cli` by default, never declared as a dependency), and printed by this checkout's `dist/` in the page, which hands back the display list and the report beside the bytes. A document marked `cli` is also printed by `beltype print` itself, and its file must equal the door's, which is what makes the door the CLI's and not a second one.
  *
@@ -37,8 +37,10 @@ const ORIGIN = 'https://print.invalid';
 const VIEWPORT = { width: 1200, height: 1600 };
 const ARGS = ['--font-render-hinting=none', '--force-device-scale-factor=1', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'];
 
-/** What replaces a date. The same length as pdf-lib's `D:YYYYMMDDHHmmssZ`, so no offset after it moves. */
+/** The date every file the door prints carries, as the writer writes it. */
 const FIXED_DATE = 'D:20000101000000Z';
+/** The display list's `info.created` the door hands every print, which the writer writes as {@link FIXED_DATE}. */
+const FIXED_CREATED = '2000-01-01T00:00:00.000Z';
 const DATE_PATTERN = /(\/(?:CreationDate|ModDate) \()D:[^)]*\)/gu;
 
 /**
@@ -68,14 +70,27 @@ const sha256 = (bytes: Uint8Array) => crypto.createHash('sha256').update(bytes).
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
 /**
- * Zero the two dates pdf-lib writes.
+ * The file as printed, once it is shown to carry {@link FIXED_DATE} in both dates.
  *
- * @throws {CasterError} Where the file has no date to zero, because that is a change of pdf-lib and not a pass.
+ * @throws {CasterError} Where either date is missing or another, because then the list's `info.created` did not reach the file.
  */
-function zeroDates(bytes: Uint8Array): Buffer {
+function fixedDated(bytes: Uint8Array): Buffer {
+  const file = Buffer.from(bytes);
+  const dates = [...file.toString('latin1').matchAll(DATE_PATTERN)].map((m) => m[0]);
+  const wanted = [`/ModDate (${FIXED_DATE})`, `/CreationDate (${FIXED_DATE})`];
+  if (dates.length !== 2 || !wanted.every((w) => dates.includes(w))) throw new CasterError(`identity: the file's dates are ${JSON.stringify(dates)}, not the ${FIXED_DATE} the door handed the print as created; the list's info.created did not reach the file`);
+  return file;
+}
+
+/**
+ * The CLI's file with its two dates set to {@link FIXED_DATE}: `beltype print` hands Caster no `created`, so its file carries the wall clock. The one mask left in the harness, and it is on the CLI's file, never on the door's.
+ *
+ * @throws {CasterError} Where the file has no date to set.
+ */
+function cliDated(bytes: Uint8Array): Buffer {
   let count = 0;
   const text = Buffer.from(bytes).toString('latin1').replace(DATE_PATTERN, (_, head) => { count++; return `${head}${FIXED_DATE})`; });
-  if (count === 0) throw new CasterError('identity: no /CreationDate or /ModDate found in the file; the dates moved and the gate must be taught where');
+  if (count === 0) throw new CasterError('identity: no /CreationDate or /ModDate found in the CLI\'s file; the dates moved and the harness must be taught where');
   return Buffer.from(text, 'latin1');
 }
 
@@ -134,12 +149,12 @@ async function cliParts() {
 /**
  * Caster prints the presented pages and hands back everything this script records. Runs in the page, so it closes over nothing.
  */
-async function printInPage(options: Record<string, unknown>) {
+async function printInPage({ options, created }: { options: Record<string, unknown>; created: string }) {
   try {
     const load = (url: string) => import(url);
     const caster = await load('/_beltype/caster/src/index.js');
     const started = performance.now();
-    const printed = await caster.print({ document }, options);
+    const printed = await caster.print({ document, created }, options);
     const ms = performance.now() - started;
     const base64 = (bytes: Uint8Array) => {
       let binary = '';
@@ -204,7 +219,7 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
         await page.goto(ORIGIN + docPath, { waitUntil: 'load' });
         const cut: { refused?: string; at?: string } = await page.evaluate(parts.cutInPage, { cicero: {}, measures: false });
         if (cut.refused !== undefined) throw new CasterError(`identity: ${doc.name}: the ${cut.at} step refused: ${cut.refused}`);
-        const answer = await page.evaluate(printInPage, doc.options ?? {});
+        const answer = await page.evaluate(printInPage, { options: doc.options ?? {}, created: FIXED_CREATED });
         if ('refused' in answer) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
         if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
         const blobs = Object.fromEntries(Object.entries(answer.blobs).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
@@ -218,13 +233,13 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
   }
 }
 
-/** The same document printed by `beltype print` itself, dates zeroed. */
+/** The same document printed by `beltype print` itself, its dates set to the door's. */
 function viaCli(doc: Doc): Buffer {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'caster-identity-'));
   try {
     const out = path.join(dir, 'out.pdf');
     execFileSync(process.execPath, [path.join(CLI, 'dist', 'src', 'cli.js'), 'print', doc.file, '-o', out, '--printer', 'caster'], { stdio: 'pipe' });
-    return zeroDates(fs.readFileSync(out));
+    return cliDated(fs.readFileSync(out));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -240,10 +255,10 @@ async function record(dir: string, listOut: string | null) {
   const entries: Entry[] = [];
   const started = Date.now();
   await printCorpus(CORPUS, (doc, printed) => {
-    const zeroed = zeroDates(printed.bytes);
-    fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), zeroed);
-    const entry: Entry = { name: doc.name, why: doc.why, sha256: sha256(zeroed), bytes: zeroed.length, ...(doc.options ? { options: doc.options } : {}) };
-    if (doc.cli) entry.cli = cliVerdict(doc, zeroed);
+    const file = fixedDated(printed.bytes);
+    fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), file);
+    const entry: Entry = { name: doc.name, why: doc.why, sha256: sha256(file), bytes: file.length, ...(doc.options ? { options: doc.options } : {}) };
+    if (doc.cli) entry.cli = cliVerdict(doc, file);
     if (listOut) {
       fs.mkdirSync(path.join(listOut, 'blobs'), { recursive: true });
       for (const [hash, bytes] of Object.entries(printed.blobs)) {
@@ -256,16 +271,16 @@ async function record(dir: string, listOut: string | null) {
       entry.list = { bytes: Buffer.byteLength(printed.list), blobs: Object.keys(printed.blobs).sort() };
     }
     entries.push(entry);
-    console.log(`${doc.name.padEnd(18)} ${String(zeroed.length).padStart(9)} bytes  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
+    console.log(`${doc.name.padEnd(18)} ${String(file.length).padStart(9)} bytes  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
   });
   fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ caster: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PACKAGE }).toString().trim(), documents: entries }, null, 1)}\n`);
   console.log(`recorded ${entries.length} documents into ${dir} in ${seconds(Date.now() - started)}`);
   return 0;
 }
 
-function cliVerdict(doc: Doc, zeroed: Buffer): string {
+function cliVerdict(doc: Doc, file: Buffer): string {
   const cli = viaCli(doc);
-  return cli.equals(zeroed) ? 'same' : `differs: ${describe(zeroed, cli).split('\n')[0]}`;
+  return cli.equals(file) ? 'same' : `differs: ${describe(file, cli).split('\n')[0]}`;
 }
 
 async function check(dir: string) {
@@ -277,7 +292,7 @@ async function check(dir: string) {
   await printCorpus(CORPUS.filter((d) => names.has(d.name)), (doc, printed) => {
     seen++;
     const entry = recorded.documents.find((d) => d.name === doc.name) as Entry;
-    const now = zeroDates(printed.bytes);
+    const now = fixedDated(printed.bytes);
     const problems: string[] = [];
     if (sha256(now) !== entry.sha256) {
       const file = path.join(dir, `${doc.name}.pdf`);
@@ -306,7 +321,7 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
 /**
  * Replay every saved list in node and compare bytes.
  *
- * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`, `fontProfile`, `photoRule`, `baseUri`, `colour`, `dates` (the files compared as printed, with the replay's own dates).
+ * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`, `fontProfile`, `photoRule`, `baseUri`, `colour`.
  */
 async function replay(dir: string, without: Set<string>) {
   const { load } = await import('../src/capabilities.ts');
@@ -325,7 +340,7 @@ async function replay(dir: string, without: Set<string>) {
     const listFile = path.join(dir, `${entry.name}.json`);
     if (!fs.existsSync(listFile)) { gaps.push({ name: entry.name, stubs: [], result: 'no saved list (record with --list-out)', ms: 0 }); continue; }
     const started = performance.now();
-    const stubs = ['originOf', 'toUnicode', 'fontProfile', 'photoRule', 'baseUri', 'dates'].filter((s) => !without.has(s));
+    const stubs = ['originOf', 'toUnicode', 'fontProfile', 'photoRule', 'baseUri'].filter((s) => !without.has(s));
     let result: string;
     try {
       const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
@@ -348,7 +363,7 @@ async function replay(dir: string, without: Set<string>) {
         originOf,
         ...(colour && !without.has('colour') ? { color: { profileBytes: icc('default_cmyk.icc'), srgbBytes: icc('srgb.icc'), condition: 'Artifex CMYK SWOP Profile', info: 'Ghostscript default CMYK profile, standing in for a press characterisation', blackText: options.blackText } } : {})
       });
-      const now = without.has('dates') ? Buffer.from(emitted.bytes) : zeroDates(emitted.bytes);
+      const now = Buffer.from(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
       result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}`;
     } catch (error) {
@@ -371,7 +386,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode,fontProfile,photoRule,baseUri,colour,dates]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode,fontProfile,photoRule,baseUri,colour]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));
