@@ -73,7 +73,7 @@ export type ColourWriting = {
 
 /** What the items name by key, and the bytes behind them. */
 export type Resources = {
-  /** Bytes keyed by their SHA-256, in hex: font programs as the writer reads them, image files as fetched, the RGBA samples of a raster fallback or a colour cluster, a facsimile's PDF, the colour story's ICC profiles. The one place the list holds a typed array. */
+  /** Bytes keyed by their SHA-256, in hex: font programs as the writer reads them, image files as fetched, the RGBA samples of a raster fallback or a colour cluster, a facsimile's PDF, the colour story's ICC profiles. The one place the list holds a typed array. The pool's order is not data, nor is any object's key order anywhere in the list. */
   blobs: Record<string, Uint8Array>;
   /** Every font instance the text is set in, each carrying its key. The order is data: the writer embeds the instances in this order and names them `F0`, `F1`, … on every page, so a reader keeps the array as it is and never re-sorts it. */
   fonts: FontInstance[];
@@ -237,7 +237,7 @@ export type Page = {
   size: [number, number];
   /** `media` is `[0 0 w h]` and, where the page grew to hold its printer's marks, the grown box. */
   boxes: { media: BoxPt, trim?: BoxPt, bleed?: BoxPt };
-  /** In painting order, the page's `link` items last. */
+  /** In painting order, the page's `link` items last. The order is data: the writer writes the items in it, and two items swapped are another file. */
   items: Item[];
 };
 
@@ -522,6 +522,7 @@ export type LinkTarget = {
  * Element 0 is the root (`Document`). The array's order is the order the writer allocates the elements' objects in, which is the walk's DOM order with the pruned elements left out; an element's `children` are its `/K` in reading order. Every decision is the builder's (`displayList/structure.js`): which elements survive (an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never), the order of every `/K`, the element an internal link's `/Dest` names, the attribute objects. The writer numbers each page's content starts 0, 1, 2 … as its MCIDs and writes what it is given: the ParentTree, the IDTree, each element's `/P`, and `/Pg` with bare MCIDs where all of an element's content is on one page, follow from the children. Version 4.
  */
 export type Structure = {
+  /** The order is data: the order the writer allocates the elements' objects in, which every index into the array names. */
   elements: StructElement[];
 };
 
@@ -541,7 +542,7 @@ export type StructElement = {
   id?: string;
   /** `/A`: the attribute objects in the order they are written; one is written as the dictionary itself, more than one as an array. Absent when there is none. */
   attributes?: StructAttribute[];
-  /** `/K` in reading order. */
+  /** `/K` in reading order. The order is data: the writer writes `/K` in it. */
   children: StructChild[];
 };
 
