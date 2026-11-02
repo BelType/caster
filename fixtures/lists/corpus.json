@@ -1,0 +1,115 @@
+{
+ "caster": "844f8ca",
+ "documents": [
+  {
+   "name": "paper",
+   "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
+   "sha256": "ff2ec5eb2f9946ea737d880f787bf3837fba5828c52d1b70870c1a1783b20acd",
+   "bytes": 109746,
+   "cli": "same",
+   "list": {
+    "bytes": 187866,
+    "blobs": [
+     "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "7d5aa61995830438c40fb380949b37b5ea7ff06f1b9e91662ba4f2757a29ae01"
+    ]
+   }
+  },
+  {
+   "name": "cast",
+   "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
+   "sha256": "c697ce772cefeb42ac2697edb7c1e7f3ba84370cbab4104da04e062358dc7cfb",
+   "bytes": 35152,
+   "cli": "same",
+   "list": {
+    "bytes": 90118,
+    "blobs": [
+     "0d19fed95fab5835ad6e85c857b6ac150cffcfeb83b75436f972300de6160697",
+     "16dae91cc8620c4870c3cf3beb61f263fe648976fd4b815dff7a29b08af17752",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "cast-divided-row",
+   "why": "a table row divided across pages",
+   "sha256": "2468c6478cc028752753dd135d19bc2cafd2d93162036314514385a69a9ebe50",
+   "bytes": 22462,
+   "list": {
+    "bytes": 92198,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "roads",
+   "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
+   "sha256": "157103d113476d287449db132b6e757a077818d5eec45880d4720aa5b99b6be3",
+   "bytes": 175764,
+   "options": {
+    "blackText": "100k"
+   },
+   "list": {
+    "bytes": 32840,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "49b68686afe1136817d04232b95c955b878104b31128f7c3cba1b0c09e326f85"
+    ]
+   }
+  },
+  {
+   "name": "facsimile",
+   "why": "a page of another PDF, reopened by pdf-lib inside the writer",
+   "sha256": "dd6b979c0f7109421d746532247bc28dc939e37aa78596e6b8c5f703fc4fb867",
+   "bytes": 115296,
+   "list": {
+    "bytes": 4275,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "ca5f3785f28f421b2a8ecfd5ebbe9bfdf395e6832f6fa67d48ad8603faf36cbd"
+    ]
+   }
+  },
+  {
+   "name": "webp",
+   "why": "a WebP, which the writer decodes through the browser",
+   "sha256": "397c4772f8910474c0b0fa6a92ec2844b358991cc79ed1bcff4c87f1f4bcaef5",
+   "bytes": 15794,
+   "list": {
+    "bytes": 3875,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "7423d68a67364ef0f312cbef4a09f2e995a52efd77c997117842579ff6cd94f1"
+    ]
+   }
+  },
+  {
+   "name": "arithmetic",
+   "why": "an arithmetic-coded JPEG, which the writer decodes through the browser",
+   "sha256": "bc48b6d069eba55caf6fc787e01e660c43f01f85875f032e29e76dccee684ef8",
+   "bytes": 14233,
+   "list": {
+    "bytes": 4508,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "495a93be484b5c3a4b3f1278561f179c3a121aa1104f6abef4ae39364e2ae5fc"
+    ]
+   }
+  },
+  {
+   "name": "photo",
+   "why": "an opaque 8-bit RGB PNG of 260 000 pixels, which the photo rule may re-encode through the browser",
+   "sha256": "2b0bdde1b0d80346346f33fccbd4c703ade80feaeaca9c3213818113dcb00eff",
+   "bytes": 38346,
+   "list": {
+    "bytes": 5581,
+    "blobs": [
+     "16eaad56377a7d61f309a56b72e7a9b011b4b3f26819832d98d5401ee5ebeecd",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  }
+ ]
+}

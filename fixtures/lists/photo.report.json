@@ -1,0 +1,1966 @@
+{
+ "page": {
+  "widthPt": 340.157,
+  "heightPt": 340.157
+ },
+ "elements": [],
+ "capabilities": [
+  {
+   "name": "pdf",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "fontkit",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "harfbuzz",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "hbSubset",
+   "bytes": 622493,
+   "loaded": true
+  },
+  {
+   "name": "fastPng",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "woff2",
+   "bytes": 0,
+   "loaded": true
+  }
+ ],
+ "conformance": "pdfua2",
+ "options": {
+  "shaper": "harfbuzz",
+  "subset": "hb",
+  "cffContainer": "bare",
+  "widthDecimals": 3,
+  "pngDecoder": "fast-png",
+  "photoRule": true,
+  "rasterDpi": 300,
+  "paintOrder": "css",
+  "styledBorders": false,
+  "blackText": "none",
+  "convertRgb": "none",
+  "skipInk": true,
+  "colour": "auto",
+  "unknownElements": "infer"
+ },
+ "errors": [],
+ "warnings": [],
+ "needs": {
+  "forcedPngDecode": true,
+  "woff2Only": true,
+  "colourHints": false,
+  "hasTables": false,
+  "hasSvg": false,
+  "hasEmoji": false,
+  "faces": 1
+ },
+ "color": {
+  "registrations": [
+   {
+    "name": "--pdf-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-top-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-right-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-bottom-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-left-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-fill",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-stroke",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-overprint",
+    "registered": true,
+    "emptyInitialValue": true
+   }
+  ]
+ },
+ "container": {
+  "scaleRecovered": 1,
+  "scaleFromHeight": 1,
+  "scaleFromWidthRatio": 1.0000005512302357,
+  "scaleFromHeightRatio": 1.0000005524483406,
+  "linear": [
+   1,
+   0,
+   0,
+   1
+  ],
+  "offAxisPx": 0,
+  "cornersAxisAligned": true,
+  "pageRectPx": [
+   [
+    373.234375,
+    24,
+    453.53125,
+    452.53125
+   ]
+  ],
+  "untransformedWidthPx": [
+   453.531
+  ],
+  "offsetWidthPx": [
+   454
+  ],
+  "widthSource": "computed",
+  "zoomSeen": [],
+  "scrollPx": {
+   "windowX": 0,
+   "windowY": 0,
+   "ancestorX": 0,
+   "ancestorY": 0
+  },
+  "devicePixelRatio": 1,
+  "warnings": [],
+  "errors": []
+ },
+ "pageBoxes": [
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    340.157,
+    340.157
+   ],
+   "measuredWidthPx": 453.531,
+   "measuredHeightPx": 452.531
+  }
+ ],
+ "inferred": [],
+ "svgImages": [],
+ "emission": {
+  "pageCount": 1,
+  "baselineMethod": "measureText",
+  "columnWidthPx": 794,
+  "kernAdjustments": 18,
+  "actualTextSpans": 0,
+  "faces": [
+   {
+    "id": "Source Sans 3#1|wght=700",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 32,
+    "fontFileBytes": 21176,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 700
+    },
+    "glyphsUsed": [
+     1,
+     2,
+     3,
+     8,
+     15,
+     17,
+     19,
+     28,
+     30,
+     31,
+     32,
+     35,
+     36,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52,
+     1333,
+     1335,
+     1338,
+     1388,
+     1415
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 21176,
+    "subsetFlateBytes": 4151,
+    "numGlyphs": 2460,
+    "nonEmptyGlyphs": 41,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "OYRNHR",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "2": [
+      "A"
+     ],
+     "3": [
+      "B"
+     ],
+     "8": [
+      "G"
+     ],
+     "15": [
+      "N"
+     ],
+     "17": [
+      "P"
+     ],
+     "19": [
+      "R"
+     ],
+     "28": [
+      "a"
+     ],
+     "30": [
+      "c"
+     ],
+     "31": [
+      "d"
+     ],
+     "32": [
+      "e"
+     ],
+     "35": [
+      "h"
+     ],
+     "36": [
+      "i"
+     ],
+     "39": [
+      "l"
+     ],
+     "40": [
+      "m"
+     ],
+     "41": [
+      "n"
+     ],
+     "42": [
+      "o"
+     ],
+     "43": [
+      "p"
+     ],
+     "44": [
+      "q"
+     ],
+     "45": [
+      "r"
+     ],
+     "46": [
+      "s"
+     ],
+     "47": [
+      "t"
+     ],
+     "48": [
+      "u"
+     ],
+     "49": [
+      "v"
+     ],
+     "50": [
+      "w"
+     ],
+     "51": [
+      "x"
+     ],
+     "52": [
+      "y"
+     ],
+     "1333": [
+      "0"
+     ],
+     "1335": [
+      "2"
+     ],
+     "1338": [
+      "5"
+     ],
+     "1388": [
+      ","
+     ],
+     "1415": [
+      "-"
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   },
+   {
+    "id": "Source Sans 3#1|wght=400",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 33,
+    "fontFileBytes": 21296,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 400
+    },
+    "glyphsUsed": [
+     1,
+     2,
+     3,
+     8,
+     15,
+     17,
+     19,
+     28,
+     30,
+     31,
+     32,
+     35,
+     36,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52,
+     1333,
+     1335,
+     1338,
+     1387,
+     1388,
+     1415
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 21296,
+    "subsetFlateBytes": 4207,
+    "numGlyphs": 2460,
+    "nonEmptyGlyphs": 44,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "RRSAVI",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "2": [
+      "A"
+     ],
+     "3": [
+      "B"
+     ],
+     "8": [
+      "G"
+     ],
+     "15": [
+      "N"
+     ],
+     "17": [
+      "P"
+     ],
+     "19": [
+      "R"
+     ],
+     "28": [
+      "a"
+     ],
+     "30": [
+      "c"
+     ],
+     "31": [
+      "d"
+     ],
+     "32": [
+      "e"
+     ],
+     "35": [
+      "h"
+     ],
+     "36": [
+      "i"
+     ],
+     "39": [
+      "l"
+     ],
+     "40": [
+      "m"
+     ],
+     "41": [
+      "n"
+     ],
+     "42": [
+      "o"
+     ],
+     "43": [
+      "p"
+     ],
+     "44": [
+      "q"
+     ],
+     "45": [
+      "r"
+     ],
+     "46": [
+      "s"
+     ],
+     "47": [
+      "t"
+     ],
+     "48": [
+      "u"
+     ],
+     "49": [
+      "v"
+     ],
+     "50": [
+      "w"
+     ],
+     "51": [
+      "x"
+     ],
+     "52": [
+      "y"
+     ],
+     "1333": [
+      "0"
+     ],
+     "1335": [
+      "2"
+     ],
+     "1338": [
+      "5"
+     ],
+     "1387": [
+      "."
+     ],
+     "1388": [
+      ","
+     ],
+     "1415": [
+      "-"
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   }
+  ],
+  "runs": [
+   {
+    "index": 0,
+    "page": 0,
+    "line": 0,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 1,
+    "page": 0,
+    "line": 1,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 2,
+    "page": 0,
+    "line": 2,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 3,
+    "page": 0,
+    "line": 3,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   },
+   {
+    "index": 4,
+    "page": 0,
+    "line": 4,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 2
+   }
+  ],
+  "marginPt": 0,
+  "pageWidthPt": 340.157,
+  "pageHeightPt": 340.157,
+  "trailingLetterSpacing": false,
+  "trailingSamples": [],
+  "baselineAgreementPt": null,
+  "usableProbes": 28,
+  "probeMoved": 0,
+  "probeOffLine": 0,
+  "probeBeforeOffLine": 0,
+  "containerScrollWidthPx": 1200,
+  "paragraphs": [
+   {
+    "block": "H1",
+    "path": "Document/H1[0]",
+    "text": "An opaque RGB PNG over 250 000 pixels, which the photo rule may re-encode",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 0
+     }
+    ]
+   },
+   {
+    "block": "Caption",
+    "path": "Document/Figure[0]/Caption[0]",
+    "text": "An opaque RGB PNG over 250 000 pixels, which the photo rule may re-encode.",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 2
+     }
+    ]
+   }
+  ],
+  "words": [
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "An",
+    "xPt": 34.008,
+    "rightPt": 56.906,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     2,
+     41
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     11.46,
+     11.44
+    ],
+    "advanceWidthPt": 22.9,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "opaque",
+    "xPt": 60.891,
+    "rightPt": 126.949,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     43,
+     28,
+     44,
+     48,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     11.1,
+     11.24,
+     10.54,
+     11.46,
+     11.36,
+     10.36
+    ],
+    "advanceWidthPt": 66.06,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.852
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "RGB",
+    "xPt": 130.934,
+    "rightPt": 168.059,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     19,
+     8,
+     3
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     12.26,
+     12.76,
+     12.1
+    ],
+    "advanceWidthPt": 37.12,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.854
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "PNG",
+    "xPt": 172.055,
+    "rightPt": 210.047,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     17,
+     15,
+     8
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     11.92,
+     13.3,
+     12.76
+    ],
+    "advanceWidthPt": 37.98,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.047
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "over",
+    "xPt": 214.031,
+    "rightPt": 253.57,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     49,
+     32,
+     45
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     10.94,
+     10.3,
+     10.36,
+     7.96
+    ],
+    "advanceWidthPt": 39.56,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.202
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "250",
+    "xPt": 257.566,
+    "rightPt": 289.254,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     1335,
+     1338,
+     1333
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     10.56,
+     10.56,
+     10.56
+    ],
+    "advanceWidthPt": 31.68,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.253
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 1,
+    "block": "H1",
+    "text": "000",
+    "xPt": 34.008,
+    "rightPt": 65.684,
+    "topPt": 257.505,
+    "baselineMeasureTextPt": 237.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     1333,
+     1333,
+     1333
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     10.56,
+     10.56,
+     10.56
+    ],
+    "advanceWidthPt": 31.68,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 1,
+    "block": "H1",
+    "text": "pixels,",
+    "xPt": 69.68,
+    "rightPt": 127.348,
+    "topPt": 257.505,
+    "baselineMeasureTextPt": 237.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     36,
+     51,
+     32,
+     39,
+     46,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "advancePt": [
+     11.46,
+     5.52,
+     9.76,
+     10.36,
+     5.72,
+     8.86,
+     6
+    ],
+    "advanceWidthPt": 57.68,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.402
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 1,
+    "block": "H1",
+    "text": "which",
+    "xPt": 131.332,
+    "rightPt": 184.594,
+    "topPt": 257.505,
+    "baselineMeasureTextPt": 237.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     35,
+     36,
+     30,
+     35
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     15.52,
+     11.42,
+     5.52,
+     9.36,
+     11.42
+    ],
+    "advanceWidthPt": 53.24,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.404
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 1,
+    "block": "H1",
+    "text": "the",
+    "xPt": 188.578,
+    "rightPt": 218.016,
+    "topPt": 257.505,
+    "baselineMeasureTextPt": 237.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     7.66,
+     11.42,
+     10.36
+    ],
+    "advanceWidthPt": 29.44,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.296
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 1,
+    "block": "H1",
+    "text": "photo",
+    "xPt": 222.012,
+    "rightPt": 273.855,
+    "topPt": 257.505,
+    "baselineMeasureTextPt": 237.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     35,
+     42,
+     47,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     11.46,
+     11.42,
+     10.58,
+     7.3,
+     11.1
+    ],
+    "advanceWidthPt": 51.86,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.302
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 2,
+    "block": "H1",
+    "text": "rule",
+    "xPt": 34.008,
+    "rightPt": 69.41,
+    "topPt": 224.505,
+    "baselineMeasureTextPt": 204.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     48,
+     39,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     7.96,
+     11.36,
+     5.72,
+     10.36
+    ],
+    "advanceWidthPt": 35.4,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 2,
+    "block": "H1",
+    "text": "may",
+    "xPt": 73.395,
+    "rightPt": 111.516,
+    "topPt": 224.505,
+    "baselineMeasureTextPt": 204.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     40,
+     28,
+     52
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     17.14,
+     10.54,
+     10.42
+    ],
+    "advanceWidthPt": 38.1,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.652
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 2,
+    "block": "H1",
+    "text": "re-encode",
+    "xPt": 115.5,
+    "rightPt": 203.953,
+    "topPt": 224.505,
+    "baselineMeasureTextPt": 204.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     32,
+     1415,
+     32,
+     41,
+     30,
+     42,
+     31,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "advancePt": [
+     7.76,
+     10.56,
+     6.64,
+     10.36,
+     11.44,
+     8.8,
+     11.1,
+     11.46,
+     10.36
+    ],
+    "advanceWidthPt": 88.48,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.247
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "An",
+    "xPt": 64.008,
+    "rightPt": 74.906,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     2,
+     41
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     5.43,
+     5.47
+    ],
+    "advanceWidthPt": 10.9,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "opaque",
+    "xPt": 76.898,
+    "rightPt": 108.715,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     43,
+     28,
+     44,
+     48,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     5.42,
+     5.41,
+     5.04,
+     5.55,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 31.82,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.997
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "RGB",
+    "xPt": 110.707,
+    "rightPt": 128.461,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     19,
+     8,
+     3
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.69,
+     6.17,
+     5.88
+    ],
+    "advanceWidthPt": 17.74,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.091
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "PNG",
+    "xPt": 130.441,
+    "rightPt": 148.758,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     17,
+     15,
+     8
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     5.66,
+     6.47,
+     6.17
+    ],
+    "advanceWidthPt": 18.3,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.595
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "over",
+    "xPt": 150.75,
+    "rightPt": 169.195,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     49,
+     32,
+     45
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     5.38,
+     4.63,
+     4.96,
+     3.47
+    ],
+    "advanceWidthPt": 18.44,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.905
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "250",
+    "xPt": 171.188,
+    "rightPt": 186.105,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     1335,
+     1338,
+     1333
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     4.97,
+     4.97,
+     4.97
+    ],
+    "advanceWidthPt": 14.91,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.195
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "000",
+    "xPt": 188.098,
+    "rightPt": 203.016,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     1333,
+     1333,
+     1333
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     4.97,
+     4.97,
+     4.97
+    ],
+    "advanceWidthPt": 14.91,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.004
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "pixels,",
+    "xPt": 204.996,
+    "rightPt": 231.504,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     36,
+     51,
+     32,
+     39,
+     46,
+     1388
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "advancePt": [
+     5.55,
+     2.46,
+     4.29,
+     4.96,
+     2.55,
+     4.19,
+     2.49
+    ],
+    "advanceWidthPt": 26.49,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.196
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "which",
+    "xPt": 233.484,
+    "rightPt": 258.586,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     35,
+     36,
+     30,
+     35
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.19,
+     5.44,
+     2.46,
+     4.56,
+     5.44
+    ],
+    "advanceWidthPt": 25.09,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.193
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 3,
+    "block": "Caption",
+    "text": "the",
+    "xPt": 260.566,
+    "rightPt": 274.359,
+    "topPt": 68.458,
+    "baselineMeasureTextPt": 57.958,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.38,
+     5.44,
+     4.96
+    ],
+    "advanceWidthPt": 13.78,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.793
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "Caption",
+    "text": "photo",
+    "xPt": 64.008,
+    "rightPt": 88.91,
+    "topPt": 51.969,
+    "baselineMeasureTextPt": 41.469,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     35,
+     42,
+     47,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     5.55,
+     5.44,
+     5.25,
+     3.24,
+     5.42
+    ],
+    "advanceWidthPt": 24.9,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "Caption",
+    "text": "rule",
+    "xPt": 90.902,
+    "rightPt": 107.32,
+    "topPt": 51.969,
+    "baselineMeasureTextPt": 41.469,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     48,
+     39,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     3.47,
+     5.44,
+     2.55,
+     4.96
+    ],
+    "advanceWidthPt": 16.42,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.593
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "Caption",
+    "text": "may",
+    "xPt": 109.313,
+    "rightPt": 127.324,
+    "topPt": 51.969,
+    "baselineMeasureTextPt": 41.469,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     40,
+     28,
+     52
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     8.29,
+     5.04,
+     4.67
+    ],
+    "advanceWidthPt": 18,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.896
+   },
+   {
+    "page": 0,
+    "mcid": 2,
+    "runIndex": 4,
+    "block": "Caption",
+    "text": "re-encode.",
+    "xPt": 129.316,
+    "rightPt": 174.047,
+    "topPt": 51.969,
+    "baselineMeasureTextPt": 41.469,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     32,
+     1415,
+     32,
+     41,
+     30,
+     42,
+     31,
+     32,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "advancePt": [
+     3.37,
+     5.06,
+     3.11,
+     4.96,
+     5.47,
+     4.35,
+     5.42,
+     5.55,
+     4.96,
+     2.49
+    ],
+    "advanceWidthPt": 44.74,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.305
+   }
+  ]
+ },
+ "structure": {
+  "namespace": "http://iso.org/pdf2/ssn",
+  "lang": "en",
+  "expectedTree": {
+   "tag": "Document",
+   "path": "Document",
+   "mcids": [],
+   "attrs": {},
+   "kids": [
+    {
+     "tag": "H1",
+     "path": "Document/H1[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "Figure",
+     "path": "Document/Figure[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 1
+      }
+     ],
+     "attrs": {
+      "alt": "An opaque RGB PNG over 250 000 pixels, which the photo rule may re-encode"
+     },
+     "kids": [
+      {
+       "tag": "Caption",
+       "path": "Document/Figure[0]/Caption[0]",
+       "pg": 0,
+       "mcids": [
+        {
+         "page": 0,
+         "mcid": 2
+        }
+       ],
+       "attrs": {},
+       "kids": []
+      }
+     ]
+    }
+   ]
+  },
+  "annots": [],
+  "artifacts": [],
+  "pages": [
+   {
+    "mcidOwners": [
+     "Document/H1[0]",
+     "Document/Figure[0]",
+     "Document/Figure[0]/Caption[0]"
+    ]
+   }
+  ],
+  "tagCounts": [
+   {
+    "tag": "Caption",
+    "count": 1
+   },
+   {
+    "tag": "Document",
+    "count": 1
+   },
+   {
+    "tag": "Figure",
+    "count": 1
+   },
+   {
+    "tag": "H1",
+    "count": 1
+   }
+  ],
+  "headings": [
+   {
+    "path": "Document/H1[0]",
+    "level": 1
+   }
+  ]
+ },
+ "outline": [
+  {
+   "path": "Document/H1[0]",
+   "title": "An opaque RGB PNG over 250 000 pixels, which the photo rule may re-encode",
+   "level": 1,
+   "depth": 0,
+   "page": 0,
+   "topPt": 290.505,
+   "count": 0
+  }
+ ],
+ "photoRule": {
+  "pixelThreshold": 250000,
+  "uniqueRatioThreshold": 0.3,
+  "runThreshold": 64,
+  "psnrTargetDb": 40,
+  "candidates": [
+   {
+    "quality": 0.85,
+    "bytes": 22757,
+    "psnrDb": 43.59,
+    "subsampling": "4:2:0"
+   },
+   {
+    "quality": 0.9,
+    "bytes": 28642,
+    "psnrDb": 44.82,
+    "subsampling": "4:2:0"
+   },
+   {
+    "quality": 0.95,
+    "bytes": 42124,
+    "psnrDb": 46.54,
+    "subsampling": "4:2:0"
+   }
+  ],
+  "chosenQuality": 0.85,
+  "photoUniqueRatio": 0.955,
+  "photoLongestRun": 8,
+  "screenshotRejected": false,
+  "reason": "nothing above the pixel threshold was refused"
+ },
+ "paint": [],
+ "paintOrder": [
+  "#decoration",
+  "h1[0]#decoration",
+  "figure[0]#decoration",
+  "figure[0]/img[0]#decoration",
+  "figure[0]/figcaption[0]#decoration",
+  "#content",
+  "h1[0]#content",
+  "figure[0]#content",
+  "figure[0]/img[0]#content",
+  "figure[0]/figcaption[0]#content"
+ ],
+ "deferred": [],
+ "rasterDpi": 300,
+ "vectorNotes": {
+  "paintOrderMode": "css",
+  "stackingContexts": [
+   {
+    "path": "",
+    "reason": "the container the exporter was handed",
+    "zIndex": "auto",
+    "position": "static"
+   }
+  ],
+  "decorations": [],
+  "ctmReadings": [],
+  "resources": {
+   "shadings": 0,
+   "patterns": 0,
+   "extGStates": 0,
+   "forms": 0
+  },
+  "streamOrder": [],
+  "figures": []
+ },
+ "images": [
+  {
+   "src": "https://print.invalid/roads/photo.png",
+   "domPath": "figure[0]/img[0]",
+   "format": "image/png",
+   "path": "decode-jpeg",
+   "filter": "DCTDecode",
+   "bpc": 8,
+   "colorSpace": "DeviceRGB",
+   "hasSMask": false,
+   "intrinsic": [
+    510,
+    500
+   ],
+   "displayedIntrinsic": [
+    510,
+    500
+   ],
+   "paintedRectPt": [
+    64.008,
+    69.208,
+    113.379,
+    111.152
+   ],
+   "cm": [
+    113.379,
+    0,
+    0,
+    111.152,
+    64.008,
+    69.208
+   ],
+   "xobjectHash": "e35d817233800fab992f53a025503fd16b602eef1501a6569ec40b4fd9ae3e42",
+   "xobjectName": "Im0",
+   "page": 0,
+   "tag": "Figure",
+   "alt": "An opaque RGB PNG over 250 000 pixels, which the photo rule may re-encode",
+   "effectiveDpi": 323.9,
+   "bytesIn": 210991,
+   "bytesOut": 22757,
+   "icc": "none",
+   "gammaOnly": false,
+   "interpolate": true,
+   "objectFit": "fill",
+   "objectPosition": "50% 50%",
+   "transform": "none",
+   "reason": "the photo rule chose JPEG at quality 0.85"
+  }
+ ],
+ "xobjects": 1,
+ "langs": [
+  {
+   "path": "catalog",
+   "tag": "html",
+   "lang": "en",
+   "source": "documentElement"
+  }
+ ],
+ "bytes": 38346
+}
