@@ -10,7 +10,9 @@
  *
  * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, holds it to `validateList`, hands it to `emitStructure` with nothing beside it, and compares the bytes with the recorded file. What differs or throws is a writer that is no longer a function of the list; nothing here fixes it.
  *
- * Kept out of `npm test`: it prints eight documents in Chromium.
+ * **A document that `refuses`** is one the oracle refuses in its writer (the CFF2 face, whose pinned `hmtx` is not the instance's): its page loads the writer through a wrapper that keeps the list it was handed, and `corpus.json` records the refusal's message with no file and no report; `check` asks for the same refusal and the same list, and `replay` for the same refusal from the saved list.
+ *
+ * Kept out of `npm test`: it prints fourteen documents in Chromium.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stage 0)
  * @packageDocumentation
@@ -50,8 +52,9 @@ const DATE_PATTERN = /(\/(?:CreationDate|ModDate) \()D:[^)]*\)/gu;
  * @property options - Caster's flags for this print; the defaults when absent, as `beltype print` passes them.
  * @property cli - Also printed by `beltype print`, whose file must equal the door's.
  * @property why - The road the document is in the corpus for.
+ * @property refuses - The oracle is expected to refuse the print in its writer: the list the builder handed the writer is recorded, with the refusal, and no file.
  */
-type Doc = { name: string; file: string; root?: string; options?: Record<string, unknown>; cli?: boolean; why: string };
+type Doc = { name: string; file: string; root?: string; options?: Record<string, unknown>; cli?: boolean; why: string; refuses?: true };
 
 const CORPUS: Doc[] = [
   { name: 'paper', file: path.join(SPECIMENS, 'paper', 'index.html'), cli: true, why: 'the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces' },
@@ -61,7 +64,13 @@ const CORPUS: Doc[] = [
   { name: 'facsimile', file: path.join(FIXTURES, 'roads', 'facsimile.html'), root: FIXTURES, why: 'a page of another PDF, reopened by pdf-lib inside the writer' },
   { name: 'webp', file: path.join(FIXTURES, 'roads', 'webp.html'), root: FIXTURES, why: 'a WebP, which the image pass decodes through the browser before the list' },
   { name: 'arithmetic', file: path.join(FIXTURES, 'roads', 'arithmetic.html'), root: FIXTURES, why: 'an arithmetic-coded JPEG, which the browser refuses to decode, so the image pass hands the file through' },
-  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list' }
+  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list' },
+  { name: 'faces', file: path.join(FIXTURES, 'roads', 'faces.html'), root: FIXTURES, why: 'a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2' },
+  { name: 'cff2', file: path.join(FIXTURES, 'roads', 'cff2.html'), root: FIXTURES, why: 'a CFF2 variable face with `HVAR` (HarfBuzz\'s subset of Source Serif 4 Variable) at weight 700, away from its default master', refuses: true },
+  { name: 'images', file: path.join(FIXTURES, 'roads', 'images.html'), root: FIXTURES, why: 'a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel' },
+  { name: 'facsimile-pages', file: path.join(FIXTURES, 'roads', 'facsimile-pages.html'), root: FIXTURES, why: 'two pages of one facsimile file' },
+  { name: 'vectors', file: path.join(FIXTURES, 'roads', 'vectors.html'), root: FIXTURES, why: 'an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)' },
+  { name: 'pages', file: path.join(FIXTURES, 'roads', 'pages.html'), root: FIXTURES, why: 'a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)' }
 ];
 
 // ---- small helpers ---------------------------------------------------------------------------------------------------
@@ -130,7 +139,7 @@ function firstDifference(a: unknown, b: unknown, at = ''): string | null {
 // ---- the door --------------------------------------------------------------------------------------------------------
 
 /** What the page hands back: the file, the list without its blobs, the blobs and the report. */
-type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; ms: number };
+type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; ms: number; refused?: string };
 
 /** The CLI's modules, from its checkout: its in-page cut and the Cicero it serves. */
 async function cliParts() {
@@ -146,31 +155,42 @@ async function cliParts() {
 
 /**
  * Caster prints the presented pages and hands back everything this script records. Runs in the page, so it closes over nothing.
+ *
+ * @remarks
+ * Where the print refuses and the writer had been handed a list (`__identityList`, set by {@link CAPTURE_EMIT} for a document that `refuses`), the list comes back beside the refusal's message.
  */
 async function printInPage({ options, created }: { options: Record<string, unknown>; created: string }) {
+  const base64 = (bytes: Uint8Array) => {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(binary);
+  };
+  const bare = (list: { resources: { blobs: Record<string, Uint8Array> } }) => {
+    const blobs: Record<string, string> = {};
+    for (const [hash, bytes] of Object.entries(list.resources.blobs)) blobs[hash] = base64(bytes);
+    return { list: JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } }), blobs };
+  };
   try {
     const load = (url: string) => import(url);
     const caster = await load('/_beltype/caster/src/index.js');
     const started = performance.now();
     const printed = await caster.print({ document, created }, options);
     const ms = performance.now() - started;
-    const base64 = (bytes: Uint8Array) => {
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      return btoa(binary);
-    };
-    const list = printed.displayList;
-    const blobs: Record<string, string> = {};
-    for (const [hash, bytes] of Object.entries(list.resources.blobs as Record<string, Uint8Array>)) blobs[hash] = base64(bytes);
-    const bare = JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } });
-    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), ms };
+    return { base64: base64(printed.bytes), ...bare(printed.displayList), report: JSON.stringify(printed.report), ms };
   } catch (error) {
-    return { refused: String((error as Error | undefined)?.stack ?? error) };
+    const handed = (globalThis as { __identityList?: Parameters<typeof bare>[0] }).__identityList;
+    return { refused: String((error as Error | undefined)?.stack ?? error), message: String((error as Error | undefined)?.message ?? error), ...(handed ? bare(handed) : {}) };
   }
 }
 
+/** The writer's module as the page of a document that `refuses` loads it, through its import map: the real one, whose `emitStructure` keeps the list it is handed where {@link printInPage} finds it after a refusal. */
+const CAPTURE_EMIT = `import * as real from '/_beltype/caster/src/emit/structureEmit.js?real';
+export * from '/_beltype/caster/src/emit/structureEmit.js?real';
+export async function emitStructure(list, ...rest) { globalThis.__identityList = list; return real.emitStructure(list, ...rest); }
+`;
+
 /** Every request answered from disk, as `beltype print` answers it; anything else is a refusal. */
-async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: { root: string; docPath: string; served: string; dirs: Record<string, string>; files: Record<string, string> }) {
+async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: { root: string; docPath: string; served: string; dirs: Record<string, string>; files: Record<string, string>; bodies?: Record<string, string> }) {
   const within = (dir: string, rel: string) => {
     const file = path.resolve(dir, rel);
     const inside = path.relative(dir, file);
@@ -180,6 +200,8 @@ async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: 
     const url = new URL(route.request().url());
     if (url.origin !== ORIGIN) { missing.add(url.href); return route.abort('blockedbyclient'); }
     if (url.pathname === o.docPath) return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: o.served });
+    const body = o.bodies?.[url.pathname];
+    if (body !== undefined) return route.fulfill({ status: 200, contentType: 'text/javascript; charset=utf-8', body });
     const pathname = decodeURIComponent(url.pathname);
     let file: string | null = null;
     if (pathname.startsWith('/_beltype/')) {
@@ -208,20 +230,23 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
       const started = Date.now();
       const root = doc.root ?? path.dirname(doc.file);
       const docPath = `/${path.relative(root, doc.file).split(path.sep).map(encodeURIComponent).join('/')}`;
-      const served = parts.spliceHead(fs.readFileSync(doc.file, 'utf8'), `<script type="importmap">${JSON.stringify({ imports })}</script>\n  ${parts.ciceroEngine.headHtml('/')}`);
+      const capture = doc.refuses ? { '/_beltype/caster/src/emit/structureEmit.js': '/_beltype/identity/capture-emit.js' } : {};
+      const served = parts.spliceHead(fs.readFileSync(doc.file, 'utf8'), `<script type="importmap">${JSON.stringify({ imports: { ...imports, ...capture } })}</script>\n  ${parts.ciceroEngine.headHtml('/')}`);
       const context = await browser.newContext({ viewport: VIEWPORT, serviceWorkers: 'block' });
       try {
         const missing = new Set<string>();
-        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files });
+        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files, ...(doc.refuses ? { bodies: { '/_beltype/identity/capture-emit.js': CAPTURE_EMIT } } : {}) });
         const page = await context.newPage();
         await page.goto(ORIGIN + docPath, { waitUntil: 'load' });
         const cut: { refused?: string; at?: string } = await page.evaluate(parts.cutInPage, { cicero: {}, measures: false });
         if (cut.refused !== undefined) throw new CasterError(`identity: ${doc.name}: the ${cut.at} step refused: ${cut.refused}`);
         const answer = await page.evaluate(printInPage, { options: doc.options ?? {}, created: FIXED_CREATED });
-        if ('refused' in answer) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
+        if ('refused' in answer && !(doc.refuses && answer.list)) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
+        if (doc.refuses && !('refused' in answer)) throw new CasterError(`identity: ${doc.name}: the print was expected to refuse in the writer, and printed`);
         if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
-        const blobs = Object.fromEntries(Object.entries(answer.blobs).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
-        await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), ms: Date.now() - started });
+        const blobs = Object.fromEntries(Object.entries(answer.blobs ?? {}).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
+        if ('refused' in answer) await each(doc, { bytes: Buffer.alloc(0), list: answer.list as string, blobs, report: null, ms: Date.now() - started, refused: answer.message });
+        else await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), ms: Date.now() - started });
       } finally {
         await context.close();
       }
@@ -245,18 +270,18 @@ function viaCli(doc: Doc): Buffer {
 
 // ---- the verbs -------------------------------------------------------------------------------------------------------
 
-/** One recorded document, as `corpus.json` lists it. */
-type Entry = { name: string; why: string; sha256: string; bytes: number; options?: Record<string, unknown>; cli?: 'same' | string; list?: { bytes: number; blobs: string[] } };
+/** One recorded document, as `corpus.json` lists it: a file's hash and size, or, for a document that `refuses`, the writer's refusal. */
+type Entry = { name: string; why: string; sha256?: string; bytes?: number; refused?: string; options?: Record<string, unknown>; cli?: 'same' | string; list?: { bytes: number; blobs: string[] } };
 
 async function record(dir: string, listOut: string | null) {
   fs.mkdirSync(dir, { recursive: true });
   const entries: Entry[] = [];
   const started = Date.now();
   await printCorpus(CORPUS, (doc, printed) => {
-    const file = fixedDated(printed.bytes);
-    fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), file);
-    const entry: Entry = { name: doc.name, why: doc.why, sha256: sha256(file), bytes: file.length, ...(doc.options ? { options: doc.options } : {}) };
-    if (doc.cli) entry.cli = cliVerdict(doc, file);
+    const file = printed.refused === undefined ? fixedDated(printed.bytes) : null;
+    if (file) fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), file);
+    const entry: Entry = { name: doc.name, why: doc.why, ...(file ? { sha256: sha256(file), bytes: file.length } : { refused: printed.refused }), ...(doc.options ? { options: doc.options } : {}) };
+    if (doc.cli && file) entry.cli = cliVerdict(doc, file);
     if (listOut) {
       fs.mkdirSync(path.join(listOut, 'blobs'), { recursive: true });
       for (const [hash, bytes] of Object.entries(printed.blobs)) {
@@ -264,11 +289,11 @@ async function record(dir: string, listOut: string | null) {
         fs.writeFileSync(path.join(listOut, 'blobs', hash), bytes);
       }
       fs.writeFileSync(path.join(listOut, `${doc.name}.json`), `${printed.list}\n`);
-      fs.writeFileSync(path.join(listOut, `${doc.name}.report.json`), `${JSON.stringify(snapshot(printed.report), null, 1)}\n`);
+      if (file) fs.writeFileSync(path.join(listOut, `${doc.name}.report.json`), `${JSON.stringify(snapshot(printed.report), null, 1)}\n`);
       entry.list = { bytes: Buffer.byteLength(printed.list), blobs: Object.keys(printed.blobs).sort() };
     }
     entries.push(entry);
-    console.log(`${doc.name.padEnd(18)} ${String(file.length).padStart(9)} bytes  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
+    console.log(`${doc.name.padEnd(18)} ${file ? `${String(file.length).padStart(9)} bytes` : '  refused'}  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
   });
   fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ caster: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PACKAGE }).toString().trim(), documents: entries }, null, 1)}\n`);
   console.log(`recorded ${entries.length} documents into ${dir} in ${seconds(Date.now() - started)}`);
@@ -289,8 +314,18 @@ async function check(dir: string) {
   await printCorpus(CORPUS.filter((d) => names.has(d.name)), (doc, printed) => {
     seen++;
     const entry = recorded.documents.find((d) => d.name === doc.name) as Entry;
-    const now = fixedDated(printed.bytes);
     const problems: string[] = [];
+    if (entry.refused !== undefined || printed.refused !== undefined) {
+      if (printed.refused !== entry.refused) problems.push(`refused ${JSON.stringify(printed.refused ?? null)}, recorded ${JSON.stringify(entry.refused ?? null)}`);
+      const listFile = path.join(dir, `${doc.name}.json`);
+      if (fs.existsSync(listFile)) {
+        const differs = firstDifference(JSON.parse(fs.readFileSync(listFile, 'utf8')), JSON.parse(printed.list));
+        if (differs) problems.push(`the list differs first at ${differs}`);
+      }
+      if (problems.length) { failures++; console.log(`DIFFERS ${doc.name}\n  ${problems.join('\n  ')}`); } else console.log(`same    ${doc.name.padEnd(18)} ${seconds(printed.ms)}  refused as recorded`);
+      return;
+    }
+    const now = fixedDated(printed.bytes);
     if (sha256(now) !== entry.sha256) {
       const file = path.join(dir, `${doc.name}.pdf`);
       problems.push(fs.existsSync(file) ? describe(fs.readFileSync(file), now) : `the file's SHA-256 is ${sha256(now)}, recorded ${entry.sha256}`);
@@ -350,6 +385,12 @@ async function replay(dir: string, without: Set<string>) {
       validateList(list);
       const validMs = performance.now() - checked;
       const colour = list.writing.colour !== undefined;
+      if (entry.refused !== undefined) {
+        const refusal = await emitStructure(list).then(() => null, (error) => String((error as Error)?.message ?? error));
+        result = refusal === entry.refused ? 'refused as recorded' : `DIFFERS: refused ${JSON.stringify(refusal)}, recorded ${JSON.stringify(entry.refused)}`;
+        gaps.push({ name: entry.name, stubs, result, ms: performance.now() - started });
+        continue;
+      }
       const emitted = await emitStructure(list);
       const now = Buffer.from(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
@@ -361,7 +402,7 @@ async function replay(dir: string, without: Set<string>) {
   }
   for (const gap of gaps) console.log(`${gap.name.padEnd(18)} ${seconds(gap.ms).padStart(7)}  ${gap.result}`);
   console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ') || 'none'}; nothing beside the list${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
-  return gaps.every((g) => g.result.startsWith('identical')) ? 0 : 1;
+  return gaps.every((g) => g.result.startsWith('identical') || g.result === 'refused as recorded') ? 0 : 1;
 }
 
 const all = process.argv.slice(2);
