@@ -15,7 +15,7 @@
  *
  * @packageDocumentation
  */
-import { apply } from '../images/imagePlace.ts';
+import { apply } from '../coordinates/matrix.ts';
 import { CasterError } from '../errors.ts';
 
 import type { Matrix, PathSegment } from '../images/imagePlace.ts';

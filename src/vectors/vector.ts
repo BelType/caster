@@ -17,7 +17,8 @@
  */
 import { COLUMN_WIDTH_PX, PX_TO_PT } from '../coordinates/units.ts';
 import { activeFrame, quantisePx, toLocal, toLocalOn } from '../coordinates/frame.ts';
-import { IDENTITY, mul, PIXELS_TO_PAGE } from '../images/imagePlace.ts';
+import { IDENTITY, mul } from '../coordinates/matrix.ts';
+import { PIXELS_TO_PAGE } from '../images/imagePlace.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { CasterError } from '../errors.ts';
 

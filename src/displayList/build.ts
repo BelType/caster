@@ -11,7 +11,7 @@
 
 import { CasterError } from '../errors.ts';
 import { bboxOf } from '../vectors/cssBoxes.ts';
-import { apply } from '../images/imagePlace.ts';
+import { apply } from '../coordinates/matrix.ts';
 import { ownsContent } from '../walk/structure.ts';
 import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';

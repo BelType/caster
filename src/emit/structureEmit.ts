@@ -30,7 +30,7 @@ import { ResourceScope, vectorOperators } from '../vectors/vectorEmit.ts';
 import { embedFace } from '../fonts/fontEmbed.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
-import { mul } from '../images/imagePlace.ts';
+import { mul } from '../coordinates/matrix.ts';
 import { PHOTO_PIXEL_THRESHOLD, PHOTO_PSNR_TARGET, PHOTO_RUN_THRESHOLD, PHOTO_UNIQUE_RATIO_THRESHOLD } from '../images/photoRule.ts';
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
