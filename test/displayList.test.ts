@@ -262,7 +262,7 @@ test('the fonts array order is the resource order: the writer embeds and names F
     const list = listOf('paper');
     if (reversed) list.resources.fonts.reverse();
     const emitted = await emitStructure(list);
-    const faces = emitted.report.emission!.faces;
+    const faces = emitted.records.faces;
     assert.deepEqual(faces.map((f) => f.id), list.resources.fonts.map((f) => f.key), 'the faces are recorded in the array order');
     const doc = mupdf.Document.openDocument(Buffer.from(emitted.bytes), 'application/pdf') as mupdf.PDFDocument;
     const fonts = doc.loadPage(0).getObject().get('Resources').get('Font');

@@ -9,10 +9,138 @@
 import { parseJpeg } from '../images/jpeg.ts';
 import { parsePng } from '../images/png.ts';
 import { fontOf, fontsByKey, round3, segmentTexts } from '../emit/textEmit.ts';
+import { linkGeometry, PDF_2_NAMESPACE } from '../emit/structureEmit.ts';
+import { outlineItems } from '../emit/outline.ts';
+import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { CasterError } from '../errors.ts';
 
-import type { DisplayList, ImageSource, ImageUse, ListPlace, TextItem, TextOrigin, WriterPen, WrittenColour } from '../displayList.ts';
-import type { ReportColor, ReportColorElement, ReportRun, ReportWorklistEntry } from '../report.ts';
+import type { DisplayList, ImageSource, ImageUse, LinkItem, ListPlace, StructElement, TextItem, TextOrigin, WriterPen, WriterRecords, WrittenColour } from '../displayList.ts';
+import type { ReportColor, ReportColorElement, ReportEmission, ReportLink, ReportOutlineItem, ReportRun, ReportStructure, ReportStructureAnnot, ReportStructureArtifact, ReportStructureNode, ReportWorklistEntry } from '../report.ts';
+
+/** The members of the report's `emission` that the measurement holds or joins, which `print()` adds. */
+export type MeasuredEmissionKeys = 'runs' | 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
+
+/**
+ * Everything the report says of the file that the list and the writer's records decide: derivable, with no measurement in it.
+ *
+ * @remarks
+ * Keyed as the report keys it, or by the item where `print()` still joins the measurement (`runs`, `words`).
+ */
+export type ListRecords = {
+  /** The emission's own members: the list's page count and two constants, the writer's counters, and each face with its URL. */
+  emission: Omit<ReportEmission, MeasuredEmissionKeys>;
+  runs: RunNote[];
+  words: WordNote[];
+  /** The structure tree as written, its annotations and artifacts, each page's MCID owners and the tag counts; the headings are the walk's. */
+  structure: Omit<ReportStructure, 'headings'>;
+  /** Present when the list has bookmarks. */
+  outline?: ReportOutlineItem[];
+  /** Every link and which of the two actions it became, in `order`. */
+  links: ReportLink[];
+  /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
+  idTree: string[];
+  /** The element paths the content streams painted vectors for, in stream order. */
+  streamOrder: string[];
+  /** One note per image the writer painted, parallel to `WriterRecords.images`. */
+  images: ImageNote[];
+};
+
+/**
+ * What the report says of a printed list, from the list and the writer's records.
+ *
+ * @remarks
+ * A pure function: node and the page give the same answer, and a foreign writer that returns `WriterRecords` gets the same report as this one wherever its choices agree.
+ *
+ * @throws {CasterError} A record naming an item, a source or a blob the list does not hold (`textNotesOf`, `imageNotesOf`).
+ */
+export function recordsOf(list: DisplayList, written: WriterRecords): ListRecords {
+  const elements = list.structure.elements;
+  const pageCount = list.pages.length;
+  const mcidAt = written.mcids.map((items) => new Map(items.map((item, mcid) => [item, mcid])));
+  // The links in `order`, which is the order the annotations are written and numbered in.
+  const linkItems = list.pages.flatMap((page, at) => page.items.filter((item): item is LinkItem => item.kind === 'link').map((item) => ({ item, page: at }))).sort((a, b) => a.item.order - b.item.order);
+  const annots: ReportStructureAnnot[] = [];
+  const links: ReportLink[] = [];
+  for (const { item: link, page } of linkItems) {
+    const { rectPt, quads } = linkGeometry(link);
+    const ownerPath = elements[link.element].path;
+    const dest = link.target.dest;
+    links.push({
+      ownerPath,
+      href: link.target.href,
+      kind: link.target.kind,
+      action: dest ? 'Dest' : 'URI',
+      page,
+      ...(link.target.targetId ? { targetId: link.target.targetId } : {}),
+      ...(dest ? { destPage: dest.page, destLeftPt: dest.x, destTopPt: dest.y, destStructPath: dest.struct } : {}),
+    });
+    annots.push({ structParent: pageCount + link.order, page, ownerPath, href: link.target.href, contents: link.contents, rectPt, quads });
+  }
+  const artifacts: ReportStructureArtifact[] = [];
+  const streamOrder: string[] = [];
+  list.pages.forEach(({ items }, page) => {
+    for (const item of items) {
+      if (item.kind === 'tag') {
+        if ('start' in item && 'artifact' in item.start && item.start.path !== undefined) {
+          const start = item.start;
+          artifacts.push({ path: start.path as string, type: start.artifact.type, ...(start.artifact.subtype ? { subtype: (start.artifact.subtype as 'Header' | 'Footer' | 'PageNum') } : {}), page, kind: (start.kind as 'paint' | 'image' | 'text') });
+        }
+        continue;
+      }
+      // What the writer paints through the vector writer: everything but a rectangle, the marks, an image, a colour cluster, a run and a link.
+      if ((item.kind === 'shape' && 'rect' in item) || item.kind === 'marks' || item.kind === 'image' || (item.kind === 'raster' && item.table === 'emoji') || item.kind === 'text' || item.kind === 'link') continue;
+      streamOrder.push(`${item.origin.domPath}#${item.origin.label}`);
+    }
+  });
+  const mcidOwners = written.mcids.map((items, page) => items.map((at) => {
+    const start = list.pages[page].items[at];
+    return elements[(start as { start: { element: number } }).start.element].path;
+  }));
+  /** The tree in the report's shape, which is the shape the node checker reads back: content in the order it was written, kids in reading order. */
+  const expected = (index: number): ReportStructureNode => {
+    const element = elements[index];
+    const contents = element.children.filter((c): c is ListPlace => typeof c === 'object' && 'page' in c).sort((a, b) => a.page - b.page || a.item - b.item);
+    const onePage = contents.length > 0 && contents.every((c) => c.page === contents[0].page);
+    const link = element.children.find((c): c is { link: number } => typeof c === 'object' && 'link' in c);
+    return {
+      tag: element.type,
+      path: element.path,
+      ...(onePage ? { pg: contents[0].page } : {}),
+      mcids: contents.map((c) => ({ page: c.page, mcid: mcidAt[c.page].get(c.item) as number })),
+      attrs: reportAttrs(element),
+      ...(link ? { objr: { page: linkItems[link.link].page, structParent: pageCount + link.link } } : {}),
+      kids: element.children.filter((c): c is number => typeof c === 'number').map(expected),
+    };
+  };
+  const { runs, words } = textNotesOf(list, written.mcids, written.pens);
+  return {
+    emission: {
+      pageCount: list.info.pageCount,
+      baselineMethod: 'measureText',
+      columnWidthPx: COLUMN_WIDTH_PX,
+      kernAdjustments: written.kernAdjustments,
+      actualTextSpans: written.actualTextSpans,
+      faces: written.faces.map((stats, at) => ({ ...stats, url: list.resources.fonts[at].url })),
+    },
+    runs,
+    words,
+    structure: {
+      namespace: PDF_2_NAMESPACE,
+      lang: list.info.lang,
+      expectedTree: expected(0),
+      annots,
+      artifacts,
+      pages: mcidOwners.map((owners) => ({ mcidOwners: owners })),
+      tagCounts: tagCountsOf(elements),
+    },
+    ...(list.outline.length > 0 ? { outline: outlineItems(list.outline.map((heading) => ({ path: elements[heading.element].path, title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt }))) } : {}),
+    links,
+    // The `/IDTree` is a name tree, sorted by byte value: a plain code-unit comparison of the ids as written.
+    idTree: elements.flatMap((element) => (element.id ? [element.id] : [])).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+    streamOrder,
+    images: imageNotesOf(list, written.images),
+  };
+}
 
 /** A text item as the report's `runs` see it, without the two members the measurement holds (the run's index and its computed colour), which `print()` joins by the item. Derivable. */
 export type RunNote = ListPlace & Omit<ReportRun, 'index' | 'page' | 'color'>;
@@ -180,4 +308,41 @@ function blobOf(list: DisplayList, key: string | undefined): Uint8Array {
   const bytes = key === undefined ? undefined : list.resources.blobs[key];
   if (!bytes) throw new CasterError(`caster: the display list names the blob ${String(key)} and holds no bytes for it`);
   return bytes;
+}
+
+/** What the report's tree records of an element's attributes, in the walk's names. */
+function reportAttrs(element: StructElement): ReportStructureNode['attrs'] {
+  const attrs: ReportStructureNode['attrs'] = {};
+  for (const attribute of element.attributes ?? []) {
+    if (attribute.O === 'List')
+      attrs.listNumbering = attribute.ListNumbering;
+    else if (attribute.O === 'Table') {
+      if (attribute.Scope)
+        attrs.scope = attribute.Scope;
+      if (attribute.Headers)
+        attrs.headers = attribute.Headers;
+      if (attribute.RowSpan)
+        attrs.rowSpan = attribute.RowSpan;
+      if (attribute.ColSpan)
+        attrs.colSpan = attribute.ColSpan;
+    }
+    else if ('TextPosition' in attribute)
+      attrs.textPosition = attribute.TextPosition;
+  }
+  if (element.lang)
+    attrs.lang = element.lang;
+  if (element.alt)
+    attrs.alt = element.alt;
+  if (element.expansion)
+    attrs.expansion = element.expansion;
+  if (element.id)
+    attrs.id = element.id;
+  return attrs;
+}
+/** How many elements of each type the tree carries, sorted by type. */
+function tagCountsOf(elements: StructElement[]): { tag: string; count: number; }[] {
+  const counts = new Map<string,number>();
+  for (const element of elements)
+    counts.set(element.type, (counts.get(element.type) ?? 0) + 1);
+  return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([tag, count]) => ({ tag, count }));
 }

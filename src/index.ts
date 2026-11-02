@@ -39,7 +39,7 @@ import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
-import { colourWith, imageNotesOf, paragraphMcidsOf, runsWith, textNotesOf } from './displayList/records.ts';
+import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
 import { PAGE_LABEL_PROPERTY } from './emit/pageLabels.ts';
@@ -64,7 +64,7 @@ import type { PreparedImage } from './images/imagePass.ts';
 import type { Report, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
 import type { PageStrip } from './adapters/strip.ts';
-import type { DisplayList, ImageSource, ImageUse, ListPlace, WrittenColour } from './displayList.ts';
+import type { DisplayList, ImageSource, ImageUse, ListPlace } from './displayList.ts';
 import type { ImageNote, WordNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
 import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
@@ -425,23 +425,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     const displayListMs = now() - listStart;
     // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
-    const emitted = await emitStructure(displayList, {
-      ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
-      container: report.container,
-      timing: report.timing,
-      smallItems: { ...(skipInk ? { skipInk } : {}) },
-      tables: { collapsedEdges: grid.edges, computedWidths: grid.computedWidths, gridLineSpreadPx: grid.gridLineSpreadPx },
-      vector: {
-        paintOrder: options.paintOrder,
-        rasterDpi: options.rasterDpi,
-        order: order.order,
-        deferred: [...boxes.deferred, ...grid.deferred, ...svg.deferred, ...decorations.deferred],
-        stackingContexts: order.contexts,
-        decorations: decorations.records,
-        ctmReadings: svg.readings,
-        figures: walk.svgs.map((s) => ({ path: s.domPath, tag: s.tag, alt: s.alt ?? '' }))
-      }
-    }).catch((error) => {
+    const emitted = await emitStructure(displayList).catch((error) => {
       if (error instanceof CasterError && error.listItem && error.element === undefined) {
         const origin = origins[error.listItem.page]?.[error.listItem.item];
         if (origin) error.element = origin.path;
@@ -450,14 +434,40 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     step('emit');
 
-    // 11 — report. The writer read the list and nothing else, so what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, and the page-label record. The writer's records name items (`ListPlace`), and the measurement is joined to them through the origins the builder handed back beside the list.
+    // 11 — report. The writer read the list and nothing else and returned its records, the choices it made; what the list and those records decide is `recordsOf`'s, and what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, the page-label record, and everything the collectors measured of the painting. The records name items (`ListPlace`), and the measurement is joined to them through the origins the builder handed back beside the list.
+    const written = emitted.records;
+    const derived = recordsOf(displayList, written);
     const originAt = (at: ListPlace) => origins[at.page][at.item];
-    const text = textNotesOf(displayList, emitted.mcids, emitted.pens);
-    const paragraphMcids = paragraphMcidsOf(text.runs, originAt);
-    if (emitted.report.color) emitted.report.color = colourWith(displayList, emitted.report.color as unknown as WrittenColour, originAt);
-    emitted.report.emission = {
-      ...(emitted.report.emission as ReportEmission),
-      runs: runsWith(text.runs, originAt),
+    const paragraphMcids = paragraphMcidsOf(derived.runs, originAt);
+    const composed = ({
+      elements: [],
+      emission: derived.emission as ReportEmission,
+      structure: derived.structure as ReportStructure,
+      container: report.container,
+      ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
+      timing: report.timing,
+      ...(derived.outline ? { outline: derived.outline } : {}),
+      ...(derived.links.length > 0 ? { links: derived.links } : {}),
+      ...(skipInk ? { skipInk } : {}),
+      ...(grid.computedWidths.length > 0 ? { computedBorderWidths: grid.computedWidths, gridLineSpreadPx: grid.gridLineSpreadPx } : {}),
+      ...(written.colour ? { color: colourWith(displayList, written.colour, originAt) } : {}),
+      paint: written.paint,
+      paintOrder: order.order,
+      deferred: [...boxes.deferred, ...grid.deferred, ...svg.deferred, ...decorations.deferred],
+      rasterDpi: options.rasterDpi,
+      vectorNotes: {
+        paintOrderMode: options.paintOrder,
+        stackingContexts: order.contexts,
+        decorations: decorations.records,
+        ctmReadings: svg.readings,
+        resources: written.vectorResources,
+        streamOrder: derived.streamOrder,
+        figures: walk.svgs.map((s) => ({ path: s.domPath, tag: s.tag, alt: s.alt ?? '' }))
+      }
+    } as unknown) as Partial<Report>;
+    composed.emission = {
+      ...(composed.emission as ReportEmission),
+      runs: runsWith(derived.runs, originAt),
       marginPt: pageGeometryFor(0).marginPt,
       pageWidthPt: pageGeometryFor(0).widthPt,
       pageHeightPt: pageGeometryFor(0).heightPt,
@@ -476,24 +486,24 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       probeBeforeOffLine: measurement.probeBeforeOffLineCount,
       containerScrollWidthPx: measurement.containerScrollWidthPx,
       paragraphs: measurement.paragraphs.map((p, index) => ({ block: p.block, path: p.path, text: p.text, mcids: paragraphMcids.get(index) ?? [] })),
-      words: joinWords(text.words, measurement, originAt)
+      words: joinWords(derived.words, measurement, originAt)
     };
-    emitted.report.page = { widthPt: pageGeometryFor(0).widthPt, heightPt: pageGeometryFor(0).heightPt };
-    emitted.report.pageBoxes = pageBoxRecords(measurement.pageCount, printMarks?.pages ?? []);
-    emitted.report.structure = { ...(emitted.report.structure as ReportStructure), headings: walk.headings };
+    composed.page = { widthPt: pageGeometryFor(0).widthPt, heightPt: pageGeometryFor(0).heightPt };
+    composed.pageBoxes = pageBoxRecords(measurement.pageCount, printMarks?.pages ?? []);
+    composed.structure = { ...(composed.structure as ReportStructure), headings: walk.headings };
     const tableRecords = tableSidecar(walk.tables, grid.edges);
-    Object.assign(emitted.report, {
-      ...(tableRecords.length > 0 ? { tables: tableRecords, idTree: emitted.idTree } : {}),
+    Object.assign(composed, {
+      ...(tableRecords.length > 0 ? { tables: tableRecords, idTree: derived.idTree } : {}),
       ...(pageLabels.length > 0 ? { pageLabels: pageLabelRuns(pageLabels).records } : {}),
-      ...(emitted.imageUses.length > 0 ? { images: imageRecords(emitted.imageUses, measurement, displayList, prepared), xobjects: emitted.xobjects } : {}),
-      ...photoRuleOf(emitted.imageUses, displayList),
+      ...(written.images.length > 0 ? { images: imageRecords(written.images, derived.images, measurement, displayList, prepared), xobjects: written.xobjects } : {}),
+      ...photoRuleOf(written.images, displayList),
       ...(walk.langs.length > 0 ? { langs: walk.langs } : {})
     });
-    Object.assign(report, emitted.report);
+    Object.assign(report, composed);
     report.options = ((options as unknown) as Record<string, unknown>);
     report.bytes = emitted.bytes.length;
     report.warnings.push(...unreadableFamilies(table).map((f) => `the family ${JSON.stringify(f)} is declared but its bytes could not be read; nothing resolved to it in this document, so the export continued`));
-    return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams, displayList, displayListMs };
+    return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams ?? [], displayList, displayListMs };
   } catch (error) {
     recordProblem(report, error);
     throw error;
@@ -513,9 +523,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
  * @remarks
  * The join is the image's walk index, which the item names as `source` and the measurement's `index` carries.
  */
-function imageRecords(uses: ImageUse[], measurement: MeasureResult, list: DisplayList, prepared: Map<string, PreparedImage>): ReportImage[] {
+function imageRecords(uses: ImageUse[], notes: ImageNote[], measurement: MeasureResult, list: DisplayList, prepared: Map<string, PreparedImage>): ReportImage[] {
   const placed = new Map(measurement.images.map((image) => [image.index, image]));
-  const notes = imageNotesOf(list, uses);
   return uses.map((use, at) => {
     const source = list.resources.images[use.source];
     const pass = prepared.get(source.src);

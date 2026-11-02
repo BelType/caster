@@ -23,9 +23,9 @@ import type { ShadingSpec } from './vectors/vector.ts';
 import type { ArtifactDescriptor } from './walk/structure.ts';
 import type { MarkShape } from './coordinates/printMarks.ts';
 import type { BoxPt } from './coordinates/pageGeometry.ts';
-import type { FontProfile } from './fonts/fontEmbed.ts';
+import type { CidFontStats, FontProfile } from './fonts/fontEmbed.ts';
 import type { BlackTextPolicy } from './colour/colorResources.ts';
-import type { ReportColor, ReportColorElement, ReportWorklistEntry } from './report.ts';
+import type { ReportColor, ReportColorElement, ReportPaint, ReportWorklistEntry } from './report.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
@@ -577,6 +577,50 @@ export type ArtifactStart = {
   path?: string;
   /** What the group's first unit was, for the report. */
   kind?: 'paint' | 'image' | 'text';
+};
+
+/**
+ * What a writer returns for a list: the file, and the records of what it chose.
+ *
+ * @remarks
+ * THE WRITER'S RECORDS (stage 4 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). `emitStructure(list)` returns this and nothing else, and a foreign writer returns the same shape: plain data, no pdf-lib value, every record that belongs to an item keyed by its page and its index in that page's `items`. What the report says of the file beyond these records is derivable from the list and them, and `recordsOf` makes it (`displayList/records.js`); what it says of the measurement and the walk, `print()` joins by the item through the origins the builder hands back beside the list.
+ */
+export type WriterResult = {
+  bytes: Uint8Array;
+  records: WriterRecords;
+  /** Each page's content stream as text, a diagnostic for a checker; a writer that has none leaves it out. */
+  pageStreams?: string[];
+};
+
+/**
+ * The records a writer returns: each one a choice the writer made, or the arithmetic of one.
+ *
+ * @remarks
+ * Every member is chosen, except where its own documentation says partly. The derivable records the report reads (the structure tree as written, the annotations and links, the artifacts, each page's MCID owners, the tag counts, the `/IDTree`, the outline, the runs and words, the stream order, what each image's source was) are `recordsOf`'s, and a writer does not return them.
+ */
+export type WriterRecords = {
+  /** Chosen: the MCIDs. Per page, the item index of the content start each MCID opens, indexed by MCID. This writer numbers a page's content starts 0, 1, 2 … in item order. */
+  mcids: number[][];
+  /** Chosen: the pen arithmetic. One entry per text item, in the order written. */
+  pens: WriterPen[];
+  /** Chosen: how many kerning adjustments the pen arithmetic wrote into the `TJ` arrays. */
+  kernAdjustments: number;
+  /** Chosen: how many `/ActualText` spans the content streams carry (an ambiguous glyph's, a colour cluster's). */
+  actualTextSpans: number;
+  /** Chosen: what each font instance became, one per instance in the order of `resources.fonts` (the subset tag, the glyphs kept, the program's sizes, the `/W` entries, the ToUnicode counts). */
+  faces: CidFontStats[];
+  /** Chosen: one entry per image item, in painting order. */
+  images: ImageUse[];
+  /** Chosen: how many distinct image XObjects the file holds, raster fallbacks and colour clusters included, by the writer's dedupe rule. */
+  xobjects: number;
+  /** Partly chosen: one row per vector node painted, in painting order. The geometry, the label and the reasons are the item's own `origin`; the resource names (`xobject`, `extGState`, `form`, a shading's) are the writer's. */
+  paint: ReportPaint[];
+  /** Chosen: how many of each vector resource the writer made. */
+  vectorResources: { shadings: number, patterns: number, extGStates: number, forms: number };
+  /** Partly chosen, and present only when the list has a colour story (`writing.colour`). */
+  colour?: WrittenColour;
+  /** Chosen: one entry per colour-cluster raster item, its `source` a key into `resources.emoji`. Dormant: no print reaches a colour cluster, and `print()` composes no report of them. */
+  emoji: ImageUse[];
 };
 
 /** An item of the list, by its page and its index in that page's `items`: the key every writer record that belongs to an item carries. */

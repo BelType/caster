@@ -37,10 +37,10 @@ export type OutlineHeading = {
 };
 
 /** A heading placed in the outline tree. */
-export type OutlineNode = {
-  heading: OutlineHeading;
+export type OutlineNode<H extends { level: number } = OutlineHeading> = {
+  heading: H;
   depth: number;
-  kids: OutlineNode[];
+  kids: OutlineNode<H>[];
   /** The outline item's own object, allocated before any item is written so `/Prev`, `/Next`, `/First` and `/Last` can name it. */
   ref?: PDFRef;
 };
@@ -51,12 +51,12 @@ export type OutlineNode = {
  * @remarks
  * A stack of the open ancestors: a heading whose level is above the top of the stack is that heading's child, and anything else pops until it is not.
  */
-function treeOf(headings: readonly OutlineHeading[]): OutlineNode[] {
-  const roots: OutlineNode[] = [];
-  const open: OutlineNode[] = [];
+function treeOf<H extends { level: number }>(headings: readonly H[]): OutlineNode<H>[] {
+  const roots: OutlineNode<H>[] = [];
+  const open: OutlineNode<H>[] = [];
   for (const heading of headings) {
     while (open.length > 0 && heading.level <= open[open.length - 1].heading.level) open.pop();
-    const node: OutlineNode = { heading, depth: open.length, kids: [] };
+    const node: OutlineNode<H> = { heading, depth: open.length, kids: [] };
     if (open.length === 0) roots.push(node);
     else open[open.length - 1].kids.push(node);
     open.push(node);
@@ -65,30 +65,38 @@ function treeOf(headings: readonly OutlineHeading[]): OutlineNode[] {
 }
 
 /** Every descendant of a node, which is what an open `/Count` counts. */
-function descendants(node: OutlineNode): number {
+function descendants(node: OutlineNode<{ level: number }>): number {
   return node.kids.reduce((total, kid) => total + 1 + descendants(kid), 0);
 }
 
-/** The written outline and the report's record of it. */
-export type OutlineResult = {
-  /** The `/Outlines` dictionary, to be set on the catalog. */
-  ref: PDFRef;
-  items: ReportOutlineItem[];
-};
+/**
+ * The report's record of the outline: one item per heading, in the order the outline lists them, with its depth and its open `/Count`.
+ *
+ * @remarks
+ * A function of the headings alone, so it is made from the display list (`displayList/records.js`) rather than by the writer.
+ */
+export function outlineItems(headings: readonly Omit<OutlineHeading, 'ref'>[]): ReportOutlineItem[] {
+  const items: ReportOutlineItem[] = [];
+  const visit = (node: OutlineNode<Omit<OutlineHeading, 'ref'>>) => {
+    items.push({ path: node.heading.path, title: node.heading.title, level: node.heading.level, depth: node.depth, page: node.heading.page, topPt: node.heading.topPt, count: descendants(node) });
+    node.kids.forEach(visit);
+  };
+  treeOf(headings).forEach(visit);
+  return items;
+}
 
 /**
- * Write the outline and hand back both the object and the record of it.
+ * Write the outline and hand back the object to set on the catalog.
  *
  * @remarks
  * Every item is written open — a positive `/Count` — because a document whose bookmarks all arrive collapsed is a panel a reader has to expand before it tells them anything. The root `/Count` is therefore the whole tree, which is what 12.3.3 asks of an outline whose items are all open.
  *
  * @returns Null for a document with no headings, which writes no `/Outlines` at all.
  */
-export function buildOutline(context: PDFContext, headings: readonly OutlineHeading[]): OutlineResult|null {
+export function buildOutline(context: PDFContext, headings: readonly OutlineHeading[]): PDFRef|null {
   const { PDFHexString, PDFName, PDFString } = capability('pdf');
   if (headings.length === 0) return null;
   const roots = treeOf(headings);
-  const items: ReportOutlineItem[] = [];
 
   const allocate = (node: OutlineNode) => {
     node.ref = context.nextRef();
@@ -100,15 +108,6 @@ export function buildOutline(context: PDFContext, headings: readonly OutlineHead
 
   const fill = (node: OutlineNode, parentRef: PDFRef, previous: OutlineNode|null, next: OutlineNode|null) => {
     const count = descendants(node);
-    items.push({
-      path: node.heading.path,
-      title: node.heading.title,
-      level: node.heading.level,
-      depth: node.depth,
-      page: node.heading.page,
-      topPt: node.heading.topPt,
-      count,
-    });
     context.assign(
       (node.ref as PDFRef),
       context.obj({
@@ -142,5 +141,5 @@ export function buildOutline(context: PDFContext, headings: readonly OutlineHead
     }),
   );
 
-  return { ref: outlinesRef, items };
+  return outlinesRef;
 }

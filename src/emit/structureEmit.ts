@@ -3,11 +3,11 @@
  *
  * Ported from `harness/src/export/structureEmit.ts` (E5, E7, E8, E9, E10, E11, E12A–F). Guide: `docs/guide/structure-tree.md`, and every capability document under it.
  *
- * THE WRITER (stages 2 and 4 of `.claude/plans/the-display-list/`). `emitStructure` reads a {@link DisplayList} and nothing else: the deciding half (what goes on which page, in which order, under which marked content, and the structure tree resolved: which elements survive, every `/K` in reading order, where a destination lands) lives in `displayList/build.js` and `displayList/structure.js`, the writer numbering each page's content starts as MCIDs and writing what it is given, the bytes it needs are in `resources.blobs`, and every length arrives in the page's points. It reads no page geometry, no measurement and no walk. The file is byte-identical to the one the same document had before the move (`npm run identity`). What the report keeps of the measurement and the walk is added by `print()`.
+ * THE WRITER (stages 2 and 4 of `.claude/plans/the-display-list/`). `emitStructure` reads a {@link DisplayList} and nothing else: the deciding half (what goes on which page, in which order, under which marked content, and the structure tree resolved: which elements survive, every `/K` in reading order, where a destination lands) lives in `displayList/build.js` and `displayList/structure.js`, the writer numbering each page's content starts as MCIDs and writing what it is given, the bytes it needs are in `resources.blobs`, and every length arrives in the page's points. It reads no page geometry, no measurement and no walk, and is handed nothing beside the list: `emitStructure(list)` returns the file and the writer's records (`WriterResult`, `displayList.js`), never a report. What the report derives from the list and the records is `recordsOf`'s (`displayList/records.js`), and what it keeps of the measurement and the walk is joined by `print()` (stage 4 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). The file is byte-identical to the one the same document had before the move (`npm run identity`).
  *
- * WHAT THE PORT CHANGED (PLAN.md P2, P6, D7). pdf-lib is a capability handle. `import selfSource from './structureEmit.ts?raw'` is deleted with the statistic it fed: the report's `builderLines` counted this module's own lines between two region markers, for an exit note's table, and a printer has no reader for it. `sidecarVersion`, `fixture`, `chromiumPrinted` and `chromiumError` go with the report's fixture-only fields; what is left is a partial `Report` the composition in `src/index.js` folds into the one it hands back.
+ * WHAT THE PORT CHANGED (PLAN.md P2, P6, D7). pdf-lib is a capability handle. `import selfSource from './structureEmit.ts?raw'` is deleted with the statistic it fed: the report's `builderLines` counted this module's own lines between two region markers, for an exit note's table, and a printer has no reader for it. `sidecarVersion`, `fixture`, `chromiumPrinted` and `chromiumError` go with the report's fixture-only fields.
  *
- * This module is where the port's spine met its painting, and it meets it through the names `structureEmit.ts` already declared — `ColorEmitter`, `ShadingBuilder`, `TransparencyBuilder`, `ResourceScope`, `vectorOperators`, `createImageContext`/`embedImage`/`useOnPage`, `collectTableBorders`, `pageMarksOf`/`circleSegments`/`MARK_STROKE_PT`, `buildOutline`, `pageLabelRuns`, `clusterKindOf`/`codePointsOf`. The port was split between two agents by the module graph (PLAN.md D10), neither editing the other's files, and keeping every exported name is what let the two halves land without a meeting.
+ * This module is where the port's spine met its painting, and it meets it through the names `structureEmit.ts` already declared — `ColorEmitter`, `ShadingBuilder`, `TransparencyBuilder`, `ResourceScope`, `vectorOperators`, `createImageContext`/`embedImage`/`useOnPage`, `collectTableBorders`, `pageMarksOf`/`circleSegments`/`MARK_STROKE_PT`, `buildOutline`, `pageLabelRuns`. The port was split between two agents by the module graph (PLAN.md D10), neither editing the other's files, and keeping every exported name is what let the two halves land without a meeting.
  *
  * The harness's own header follows.
  *
@@ -32,7 +32,6 @@ import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
 import { mul } from '../coordinates/matrix.ts';
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
-import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
 import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba } from '../images/samples.ts';
@@ -41,7 +40,6 @@ import { buildOutline } from './outline.ts';
 
 /** What wrote the file, for the Info dictionary and the XMP packet alike. Named once here rather than at the two call sites, so the two can never disagree — a reader is entitled to consult either. */
 const PRODUCER = 'BelType Caster';
-import { clusterKindOf, codePointsOf } from '../fonts/clusters.ts';
 
 const pdf = () => capability('pdf');
 
@@ -49,99 +47,22 @@ import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
 import type { EmbeddedImage, EmbedSource } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, ImageSource, ImageUse, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, ArtifactStart, WriterPen } from '../displayList.ts';
+import type { DisplayList, ImageSource, ImageUse, StructAttribute, StructElement, FontInstance, ImageItem, LinkItem, LinkTarget, PlacedVector, RectItem, TextItem, ArtifactStart, WriterPen, WriterRecords, WriterResult } from '../displayList.ts';
 
-import type { Report, ReportContainer, ReportTiming, ReportPageBox, ReportFace as ReportEmissionFace, ReportEmission, ReportStructure, ReportParagraph as ReportEmissionParagraph, ReportImage, ReportStructureNode, ReportStructureArtifact, ReportStructureAnnot, ReportPaint, ReportEmojiCluster, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportColor, ReportOutlineItem, ReportPageLabel, ReportPrintMarks, ReportTable, ReportDecoderComparison, ReportPhotoRule, ReportSkipInk, ReportConversion, ReportDeferred, ReportStackingContext, ReportDecoration, ReportCtmReading, ReportCollapsedEdge, ReportComputedBorderWidth, ReportEmoji, ReportLink, ReportVectorNotes, ReportCtmNode } from '../report.ts';
+import type { ReportPaint } from '../report.ts';
 
 export type ArtifactDescriptor = ArtifactStart['artifact'];
 
-/** The members of the report's `emission` that the measurement holds or joins, which `print()` adds. */
-export type MeasuredEmissionKeys = 'runs' | 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
-
-/**
- * The half of the emitter options that belongs to E9 (`vector-painting.md`): the painting-order contract, the raster pixels the browser drew, and everything the report records about painting.
- *
- * @remarks
- * Absent, nothing changes at all — no vector unit exists, the order stays DOM order, and the file is byte for byte what E3 (`text-emission.md`) through E8 (`colour.md`) wrote.
- */
-export type VectorEmitOptions = {
-  /** `dom` is every fixture before E9 (`vector-painting.md`): units are emitted in DOM order, which is also reading order. `css` is CSS 2.1 Appendix E, which is the order a browser paints in and the only order that is right when anything overlaps. The structure tree is DOM order under both, and that is now true rather than merely written down: a group's place in its parent's `/K` is a key built from the DOM rank of the item it came from, never from the counter that numbers the groups as they are emitted. Under `dom` the two are the same number and nothing moved; under `css` they are not, and a float — the addendum's `.sidebar` is one — painted at Appendix E's step 4 used to precede in-flow text at step 5 in the tree as well as on the page. */
-  paintOrder: 'dom'|'css';
-  rasterDpi: number;
-  /** The element paths in CSS painting order, as the walker emitted them. */
-  order: string[];
-  deferred: ReportDeferred[];
-  stackingContexts: ReportStackingContext[];
-  decorations: ReportDecoration[];
-  ctmReadings: ReportCtmReading[];
-  figures: { path: string; tag: string; alt: string }[];
-};
-
-/** Everything `emitStructure` is told beyond the list; every member is optional because each is an experiment's addition, and each is absent in every fixture before it. */
-export type EmitStructureOptions = {
-  /** The PNG-decoder comparison the browser measured, for the report. */
-  decoderComparison?: ReportDecoderComparison;
-  /** E9 (`vector-painting.md`): vector painting. Absent, no vector is emitted and the order is DOM order. */
-  vector?: VectorEmitOptions;
-  /** E10 (`coordinates-and-pages.md`): what the container frame recovered, for the report. */
-  container?: ReportContainer;
-  /** E10 (`coordinates-and-pages.md`): the measurement phase's cost, for the report. */
-  timing?: ReportTiming;
-  /** E11 (`tables.md`): what the collapsed-border resolver found. The tables themselves come from the walker, so a document with a table gets a `tables` block whether or not it asked for one; this is only the half of the record the painter owns. */
-  tables?: { collapsedEdges: ReportCollapsedEdge[], computedWidths: ReportComputedBorderWidth[], gridLineSpreadPx: number };
-  /** The `@page` background each page paints, already resolved. Second member of the category `printMarks` opened: a thing in a page's stream that belongs to no element, because it comes from the page box. It is written first rather than last, since a background is behind everything by definition, and as the same `/Artifact <</Type /Page>>` — a page's own ground is decoration, and a reader that walked it would be reading furniture. Absent, no page gains a byte. */
-  pageBackgrounds?: { page: number, rgb: [number, number, number] }[];
-  /** E12F (`structure-tree.md`): the document-level entries a reader expects and PDF/UA never asks for. Absent, the catalog carries neither, which is every fixture before E12. */
-  smallItems?: SmallItemsOptions;
-  /** E12A (`images.md`): the half of the emoji record the caller owns — the route and its provenance. */
-  emoji?: Omit<ReportEmoji, 'clusters'|'xobjects'>;
-  /** E12E (`colour.md`): what the RGB→CMYK tier converted. */
-  conversion?: ReportConversion;
-};
-/** The document-level entries of `structure-tree.md` (E12F): the skip-ink record. The outline and the page labels are the list's. */
-export type SmallItemsOptions = {
-  /** The skip-ink measurement, which only the browser side can take. */
-  skipInk?: ReportSkipInk;
-};
-/** The file, its streams, its part of the report, and the font programs it embedded. */
-export type EmitStructureResult = {
-  bytes: Uint8Array;
-  /** One content stream's text per page. */
-  pageStreams: string[];
-  /** The composition in `src/index.js` folds this into the one report `print()` hands back (PLAN.md D7), adding what only the measurement and the walk know. */
-  report: Partial<Report>;
-  /** One entry per embedded instance, in first-use order. */
-  fontStats: ReportEmissionFace[];
-  /** The bytes actually embedded, by instance key, for the instance check. */
-  fontPrograms: Map<string, Uint8Array>;
-  /** Per page, the item index of the content start each MCID opens, by MCID. */
-  mcids: number[][];
-  /** Per text item, in the order written, the pen adjustment before each segment. */
-  pens: WriterPen[];
-  /** Every image the pages painted, in painting order: the composition joins each to the measurement's placement for the report's `images`. */
-  imageUses: ImageUse[];
-  /** How many distinct image XObjects the file holds. */
-  xobjects: number;
-  /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
-  idTree: string[];
-};
 /** The marked-content sequence a page is inside: the element that owns it, and the MCID the writer gave it. */
 export type Group = {
   element: number;
   page: number;
   mcid: number;
 };
-/** The written tree, and what the outline, the links, the report and the `/IDTree` need to know about it. */
+/** The written tree, as the outline needs it. */
 export type BuildResult = {
   /** Each element's object, by its index in `structure.elements`. */
   refs: PDFRef[];
-  annots: ReportStructureAnnot[];
-  /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
-  ids: string[];
-  /** E12F (`structure-tree.md`): every link and which of the two actions it became. */
-  links: ReportLink[];
-  /** The tree in the report's shape. */
-  expectedTree: ReportStructureNode;
 };
 
 /**
@@ -160,11 +81,14 @@ export const PDF_2_NAMESPACE = 'http://iso.org/pdf2/ssn';
 /** Annotation flag bit 3, Print. Required of every annotation by PDF/UA. */
 const ANNOTATION_PRINT_FLAG = 4;
 /**
- * The whole file: every page's content items, the structure tree over them, and every document-level object the options ask for.
+ * The whole file, from the list and nothing else: every page's content items, the structure tree over them, and every document-level object the list asks for; and the records of what the writer chose.
+ *
+ * @remarks
+ * The records (`WriterRecords`, `displayList.js`) are what a writer returns beside the file: the MCIDs it numbered, its pen adjustments and counters, what each font and image became, the vector rows and resource counts, the colour record. Everything else the report says of the file is a function of the list and these records, made by `recordsOf` (`displayList/records.js`), and what it says of the measurement and the walk is `print()`'s to join.
  *
  * @throws {CasterError} A used instance or an image with no bytes, images with no `imageAssets`, an image no decoder tier could carry (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; a structure tree that is not one, or an element index no element has (see `checkTree`); two elements with one `/ID`; and every refusal of the modules it composes.
  */
-export async function emitStructure(list: DisplayList, options: EmitStructureOptions = {}): Promise<EmitStructureResult> {
+export async function emitStructure(list: DisplayList): Promise<WriterResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
     if (list.version !== 5)
@@ -174,7 +98,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
     const toUnicode = buildToUnicode(listSegments(list));
     const fonts = new Map<any, any>();
-    const fontPrograms = new Map<any, any>();
     const fontByKey = fontsByKey(list);
     for (const instance of list.resources.fonts) {
         const instanceKey = instance.key;
@@ -191,7 +114,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             profile,
             ...(perInstance ? { toUnicodeText: perInstance.text, cidToText: perInstance.cidToText } : {}),
             ...(perInstance ? { ambiguousCids: perInstance.ambiguous.map((a) => a.cid) } : {}),
-            onProgram: (programBytes) => fontPrograms.set(instanceKey, programBytes),
         }));
     }
     const { pages, names } = setupPages(pdfDoc, fonts, list.pages);
@@ -256,7 +178,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     }
     const shadings = new ShadingBuilder(context);
     const transparency = new TransparencyBuilder(context);
-    const sidecarPaints: ReportPaint[] = [];
+    const paint: ReportPaint[] = [];
     const vectorContext = {
         context,
         shadings,
@@ -264,16 +186,13 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         images: imageContext,
         rasters: rasterImages,
         resources: list.resources,
-        records: sidecarPaints,
+        records: paint,
     };
     const pageScopes: ResourceScope[] = Array.from({ length: list.info.pageCount }, () => new ResourceScope());
-    const streamOrder: string[] = [];
     const pens: WriterPen[] = [];
-    const sidecarArtifacts: ReportStructureArtifact[] = [];
     const imageUses: ImageUse[] = [];
+    const emojiUses: ImageUse[] = [];
     const linkItems: { item: LinkItem; page: number; }[] = [];
-    const sidecarEmoji = [];
-    const mcidOwnersByPage: string[][] = [];
     const pageStreams = [];
     // The MCID of each content start, by page and by the start's index in the page's items: the writer's own numbering, 0, 1, 2 … in item order on each page.
     const mcidAt: Map<number,number>[] = [];
@@ -281,7 +200,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     let actualTextSpans = 0;
     for (const [page, { items }] of list.pages.entries()) {
         const operators: PDFOperator[] = [];
-        const mcidOwners = [];
         const pageMcids = new Map<number,number>();
         mcidAt.push(pageMcids);
         // The marked-content sequence the item being written sits in: `artifact` for one that owns no structure element, `group` for one that does.
@@ -305,22 +223,12 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     artifact = true;
                     group = null;
                     operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginMarkedContentSequence, [pdf().PDFName.of('Artifact'), artifactProperties(start.artifact)]));
-                    if (start.path !== undefined) {
-                        sidecarArtifacts.push({
-                            path: start.path,
-                            type: start.artifact.type,
-                            ...(start.artifact.subtype ? { subtype: (start.artifact.subtype as 'Header' | 'Footer' | 'PageNum') } : {}),
-                            page,
-                            kind: (start.kind as 'paint' | 'image' | 'text'),
-                        });
-                    }
                 }
                 else {
                     const element = elementOf(elements, start.element, `the marked content at item ${at} of page ${page + 1}`);
                     artifact = false;
                     group = { element: start.element, page, mcid: pageMcids.size };
                     pageMcids.set(at, group.mcid);
-                    mcidOwners[group.mcid] = element.path;
                     // pdf-lib's PDFOperatorArg union has no PDFDict member, so the inline property list is written as the literal it serialises to anyway.
                     operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginMarkedContentSequence, [pdf().PDFName.of(element.type), `<</MCID ${group.mcid}>>`]));
                 }
@@ -361,7 +269,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             }
             if (item.kind === 'raster' && item.table === 'emoji') {
                 const cluster = list.resources.emoji[item.source];
-                const origin = (item.emojiOrigin as EmojiOrigin);
                 const embedded = emojiImages.get(item.source);
                 if (!embedded)
                     throw new CasterError(`caster: no raster for the colour cluster ${JSON.stringify(cluster.text)}`);
@@ -375,25 +282,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                 const chained = lineWrap(item.chain);
                 operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginMarkedContentSequence, [pdf().PDFName.of('Span'), `<</ActualText <FEFF${utf16beHexOf((item.actualText as string))}> >>`]), pdf().PDFOperator.of(pdf().PDFOperatorNames.PushGraphicsState), ...chained.open, pdf().PDFOperator.of(pdf().PDFOperatorNames.ConcatTransformationMatrix, (item.transform as Matrix).map((n) => pdf().PDFNumber.of(n))), pdf().PDFOperator.of(pdf().PDFOperatorNames.DrawObject, [name]), ...chained.close, pdf().PDFOperator.of(pdf().PDFOperatorNames.PopGraphicsState), pdf().PDFOperator.of(pdf().PDFOperatorNames.EndMarkedContent));
                 actualTextSpans += 1;
-                sidecarEmoji.push({
-                    owner: item.owner,
-                    text: cluster.text,
-                    codePoints: codePointsOf(cluster.text),
-                    kind: clusterKindOf(cluster.text),
-                    page,
-                    face: origin.face,
-                    rectLeftPt: origin.rectLeftPt,
-                    rectWidthPt: origin.rectWidthPt,
-                    placedRectPt: origin.rectPt,
-                    xDeviationPt: round3(origin.rectPt[0] - origin.rectLeftPt),
-                    ascentPx: origin.ascentPx,
-                    descentPx: origin.descentPx,
-                    xobjectName: name.asString().slice(1),
-                    xobjectHash: embedded.hash,
-                    hasSMask: embedded.info.hasSMask,
-                    rasterPx: [embedded.info.width, embedded.info.height],
-                    dpi: options.emoji?.rasterDpi ?? 0,
-                });
+                emojiUses.push({ page, item: at, source: item.source, name: name.asString().slice(1), hash: embedded.hash, info: embedded.info });
                 continue;
             }
             if (item.kind === 'text') {
@@ -435,16 +324,13 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                 openLine = null;
             }
             operators.push(...vectorOperators(vector, vectorContext, pageScopes[page], artifact));
-            streamOrder.push(`${vector.origin.domPath}#${vector.origin.label}`);
         }
-        mcidOwnersByPage.push(mcidOwners);
         pageScopes[page].applyToPage(context, pages[page]);
         pages[page].pushOperators(...operators);
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);
     }
     const built = buildStructure(context, pages, list, mcidAt, linkItems.sort((a, b) => a.item.order - b.item.order));
     // --- E12F (`structure-tree.md`): the two catalog entries a reader expects and no rule demands ---
-    let outlineItems;
     if (list.outline.length > 0) {
         const headings = [];
         for (const heading of list.outline) {
@@ -452,10 +338,8 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             headings.push({ path: element.path, ref: built.refs[heading.element], title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt });
         }
         const outline = buildOutline(context, headings);
-        if (outline) {
-            pdfDoc.catalog.set(pdf().PDFName.of('Outlines'), outline.ref);
-            outlineItems = outline.items;
-        }
+        if (outline)
+            pdfDoc.catalog.set(pdf().PDFName.of('Outlines'), outline);
     }
     if (list.pageLabels.length > 0) {
         const nums: (number|PDFDict)[] = [];
@@ -471,13 +355,9 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         }
         pdfDoc.catalog.set(pdf().PDFName.of('PageLabels'), context.register(context.obj({ Nums: nums })));
     }
-    const faces: ReportEmissionFace[] = [];
-    for (const instance of list.resources.fonts) {
-        const stats = fonts.get(instance.key).finish();
-        faces.push({ ...stats, url: instance.url });
-    }
+    const faces: CidFontStats[] = list.resources.fonts.map((instance) => fonts.get(instance.key).finish());
     // The colour resources go on last: a resource name is allocated the first time an element asks for it, so the complete set is only known once every page has been emitted.
-    const colorSidecar = colour ? await colour.finish(pages, pdfDoc.catalog) : undefined;
+    const colourRecord = colour ? await colour.finish(pages, pdfDoc.catalog) : undefined;
     const info = {
         language: list.info.lang,
         title: list.info.title,
@@ -491,68 +371,20 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     setInfo(pdfDoc, info);
     addXmpMetadata(pdfDoc, info);
     const bytes = await serialize(pdfDoc);
-    // What the measurement alone knows (the trailing letter-spacing samples, the baseline probes, the paragraphs' text) and the walk alone knows (the headings, the tables, the languages) is the composition's to add: the writer reads the list and nothing else.
-    const emission: Omit<ReportEmission,MeasuredEmissionKeys> = {
-        pageCount: list.info.pageCount,
-        baselineMethod: 'measureText',
-        columnWidthPx: COLUMN_WIDTH_PX,
+    const records: WriterRecords = {
+        mcids: mcidAt.map((pageMcids) => [...pageMcids.keys()]),
+        pens,
         kernAdjustments,
         actualTextSpans,
         faces,
+        images: imageUses,
+        xobjects: imageContext.byHash.size,
+        paint,
+        vectorResources: { shadings: shadings.count, patterns: shadings.patternCount, extGStates: transparency.stateCount, forms: transparency.formCount },
+        ...(colourRecord ? { colour: colourRecord } : {}),
+        emoji: emojiUses,
     };
-    const structure: Omit<ReportStructure,'headings'> = {
-        namespace: PDF_2_NAMESPACE,
-        lang: list.info.lang,
-        expectedTree: built.expectedTree,
-        annots: built.annots,
-        artifacts: sidecarArtifacts,
-        pages: mcidOwnersByPage.map((mcidOwners) => ({ mcidOwners })),
-        tagCounts: tagCountsOf(elements),
-    };
-    // D7: the report's version and fixture are gone; this is a partial report `src/index.js` folds into the one it hands back.
-    const report = (({
-        elements: [],
-        emission,
-        structure,
-        ...(options.container ? { container: options.container } : {}),
-        ...(options.pageBackgrounds?.length ? { pageBackgrounds: options.pageBackgrounds } : {}),
-        ...(options.timing ? { timing: options.timing } : {}),
-        ...(outlineItems ? { outline: outlineItems } : {}),
-        ...(built.links.length > 0 ? { links: built.links } : {}),
-        ...(options.smallItems?.skipInk ? { skipInk: options.smallItems.skipInk } : {}),
-        ...(options.emoji
-            ? { emoji: { ...options.emoji, clusters: sidecarEmoji, xobjects: new Set(sidecarEmoji.map((c) => c.xobjectHash)).size } }
-            : {}),
-        ...(options.conversion ? { conversion: options.conversion } : {}),
-        ...(options.tables && options.tables.computedWidths.length > 0
-            ? { computedBorderWidths: options.tables.computedWidths, gridLineSpreadPx: options.tables.gridLineSpreadPx }
-            : {}),
-        ...(options.decoderComparison ? { decoderComparison: options.decoderComparison } : {}),
-        ...(colorSidecar ? { color: colorSidecar } : {}),
-        ...(options.vector
-            ? {
-                paint: sidecarPaints,
-                paintOrder: options.vector.order,
-                deferred: options.vector.deferred,
-                rasterDpi: options.vector.rasterDpi,
-                vectorNotes: {
-                    paintOrderMode: options.vector.paintOrder,
-                    stackingContexts: options.vector.stackingContexts,
-                    decorations: options.vector.decorations,
-                    ctmReadings: options.vector.ctmReadings,
-                    resources: {
-                        shadings: shadings.count,
-                        patterns: shadings.patternCount,
-                        extGStates: transparency.stateCount,
-                        forms: transparency.formCount,
-                    },
-                    streamOrder,
-                    figures: options.vector.figures,
-                },
-            }
-            : {}),
-    } as unknown) as Partial<Report>);
-    return { bytes, pageStreams, report, fontStats: faces, fontPrograms, mcids: mcidAt.map((pageMcids) => [...pageMcids.keys()]), pens, imageUses, xobjects: imageContext.byHash.size, idTree: built.ids };
+    return { bytes, records, pageStreams };
 }
 /**
  * One image: the clip, the matrix, the `Do`.
@@ -610,6 +442,13 @@ function uriOf(link: LinkItem): string {
     if (link.target.uri === undefined)
         throw new CasterError(`caster: the link of order ${link.order} has neither a destination in the file nor a URI; the builder resolves one for every link without a destination`);
     return link.target.uri;
+}
+/** A link's `/QuadPoints`, eight numbers per line rectangle, upper-left first, and its `/Rect`, their union. */
+export function linkGeometry(link: LinkItem): { rectPt: [number, number, number, number]; quads: number[] } {
+    const quads = link.rects.flatMap(([x0, top, x1, bottom]) => [x0, top, x1, top, x0, bottom, x1, bottom]);
+    const xs = quads.filter((_, i) => i % 2 === 0);
+    const ys = quads.filter((_, i) => i % 2 === 1);
+    return { rectPt: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], quads };
 }
 /**
  * An instance's advance for a glyph, read from the list's widths and from nowhere else.
@@ -769,17 +608,12 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     });
     const parent = checkTree(list, mcidAt, linkOwners);
     const namespaceRef = context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
-    const annots: ReportStructureAnnot[] = [];
-    const links: ReportLink[] = [];
     const annotRefs: PDFRef[] = [];
     const pendingDestinations: { dict: PDFDict; dest: NonNullable<LinkTarget['dest']>; }[] = [];
     for (const { item: annot, page: annotPage } of linkItems) {
         const structParent = pageCount + annot.order;
         const page = pages[annotPage];
-        const quads = annot.rects.flatMap(([x0, top, x1, bottom]) => [x0, top, x1, top, x0, bottom, x1, bottom]);
-        const xs = quads.filter((_, i) => i % 2 === 0);
-        const ys = quads.filter((_, i) => i % 2 === 1);
-        const rectPt: [number,number,number,number] = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+        const { rectPt, quads } = linkGeometry(annot);
         // E12F (`structure-tree.md`): a link inside the file is a destination, not an action. `/Dest` takes the reader to a place in this document with its own history and back button; a `/URI` naming a fragment would send it out to a resolver that has no idea what document it is already in. External addresses and `mailto:` stay `/URI`, which is what they are.
         // No /Alt on the Link element: 8.9.4.2 t1 makes an /Alt that differs from the annotation's /Contents a failure, and there is nothing an /Alt could say here that the link text does not already say.
         const annotDict = context.obj({
@@ -800,27 +634,9 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         annotRefs.push(annotRef);
         if (annot.target.dest)
             pendingDestinations.push({ dict: annotDict, dest: annot.target.dest });
-        const ownerPath = elements[annot.element].path;
-        links.push({
-            ownerPath,
-            href: annot.target.href,
-            kind: annot.target.kind,
-            action: annot.target.dest ? 'Dest' : 'URI',
-            page: annotPage,
-            ...(annot.target.targetId ? { targetId: annot.target.targetId } : {}),
-            ...(annot.target.dest
-                ? {
-                    destPage: annot.target.dest.page,
-                    destLeftPt: annot.target.dest.x,
-                    destTopPt: annot.target.dest.y,
-                    destStructPath: annot.target.dest.struct,
-                }
-                : {}),
-        });
         page.node.addAnnot(annotRef);
         // 8.9.3.3 t1: a page carrying an annotation has to declare a tab order. /S is "use the structure order", which is the only honest answer for a file whose reading order is the structure tree.
         page.node.set(pdf().PDFName.of('Tabs'), pdf().PDFName.of('S'));
-        annots.push({ structParent, page: annotPage, ownerPath, href: annot.target.href, contents: annot.contents, rectPt, quads });
     }
     const refs = elements.map(() => context.nextRef());
     const rootRef = context.nextRef();
@@ -903,61 +719,9 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         elementOf(elements, dest.element, `the destination at ${dest.struct}`);
         dict.set(pdf().PDFName.of('Dest'), context.obj([refs[dest.element], pdf().PDFName.of('XYZ'), dest.x, dest.y, null]));
     }
-    /** The tree in the report's shape, which is the shape the node checker reads back: content in the order it was written, kids in reading order. */
-    const expected = (index: number): ReportStructureNode => {
-        const element = elements[index];
-        const contents = contentsOf(element).sort((a, b) => a.page - b.page || a.item - b.item);
-        const onePage = contents.length > 0 && contents.every((c) => c.page === contents[0].page);
-        const link = element.children.find((c): c is { link: number } => typeof c === 'object' && 'link' in c);
-        return {
-            tag: element.type,
-            path: element.path,
-            ...(onePage ? { pg: contents[0].page } : {}),
-            mcids: contents.map((c) => ({ page: c.page, mcid: mcidAt[c.page].get(c.item) as number })),
-            attrs: reportAttrs(element),
-            ...(link ? { objr: { page: linkItems[link.link].page, structParent: pageCount + link.link } } : {}),
-            kids: element.children.filter((c): c is number => typeof c === 'number').map(expected),
-        };
-    };
-    return { refs, annots, ids: sortedIds.map((entry) => entry.id), links, expectedTree: expected(0) };
+    return { refs };
 }
 /** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string. The keys keep the list's order. */
 function attributeObject(attribute: StructAttribute): Record<string, string|number|number[]|PDFString[]> {
     return Object.fromEntries(Object.entries(attribute).map(([key, value]) => [key, key === 'Headers' ? (value as string[]).map((id) => pdf().PDFString.of(id)) : (value as string|number|number[])]));
-}
-/** What the report's tree records of an element's attributes, in the walk's names. */
-function reportAttrs(element: StructElement): ReportStructureNode['attrs'] {
-    const attrs: ReportStructureNode['attrs'] = {};
-    for (const attribute of element.attributes ?? []) {
-        if (attribute.O === 'List')
-            attrs.listNumbering = attribute.ListNumbering;
-        else if (attribute.O === 'Table') {
-            if (attribute.Scope)
-                attrs.scope = attribute.Scope;
-            if (attribute.Headers)
-                attrs.headers = attribute.Headers;
-            if (attribute.RowSpan)
-                attrs.rowSpan = attribute.RowSpan;
-            if (attribute.ColSpan)
-                attrs.colSpan = attribute.ColSpan;
-        }
-        else if ('TextPosition' in attribute)
-            attrs.textPosition = attribute.TextPosition;
-    }
-    if (element.lang)
-        attrs.lang = element.lang;
-    if (element.alt)
-        attrs.alt = element.alt;
-    if (element.expansion)
-        attrs.expansion = element.expansion;
-    if (element.id)
-        attrs.id = element.id;
-    return attrs;
-}
-/** How many elements of each type the tree carries, sorted by type. */
-function tagCountsOf(elements: StructElement[]): { tag: string; count: number; }[] {
-    const counts = new Map<string,number>();
-    for (const element of elements)
-        counts.set(element.type, (counts.get(element.type) ?? 0) + 1);
-    return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([tag, count]) => ({ tag, count }));
 }
