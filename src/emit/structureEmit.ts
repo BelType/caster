@@ -43,7 +43,7 @@ import { buildOutline } from './outline.ts';
 
 /** What wrote the file, for the Info dictionary and the XMP packet alike. Named once here rather than at the two call sites, so the two can never disagree — a reader is entitled to consult either. */
 const PRODUCER = 'BelType Caster';
-import { clusterKindOf, codePointsOf } from '../measure/emoji.ts';
+import { clusterKindOf, codePointsOf } from '../fonts/clusters.ts';
 
 const pdf = () => capability('pdf');
 

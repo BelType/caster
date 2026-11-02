@@ -78,7 +78,7 @@ export type RunColorOperators = {
 };
 
 import { glyphString } from '../fonts/cidFont.ts';
-import { clusterGroups } from '../fonts/words.ts';
+import { clusterGroups } from '../fonts/clusters.ts';
 import { round3 } from '../coordinates/units.ts';
 /**
  * The largest gap, in thousandths of an em, between the shaped advance and the /W entry that is rounding rather than a kern.
