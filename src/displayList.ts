@@ -79,6 +79,21 @@ export type FontInstance = {
   coords: Record<string, number>;
   /** The face's units per em, which a text item's `glyphs.advances` are in. Absent on an instance no text is set in. */
   upem?: number;
+  /** The instance's own advance of every glyph its text items show and of every space glyph they name: the authority for the font's widths. */
+  widths: FontWidths;
+};
+
+/**
+ * An instance's widths, as a struct of arrays sorted by glyph id, one entry per glyph.
+ *
+ * @remarks
+ * Asked by the builder, which calls HarfBuzz's `glyphAdvance` for the instance's URL at `shaperVariations(coords)`: the font the words were shaped with, at the coordinates the browser painted, unkerned. A text item's `glyphs.advances` cannot stand in for these, because they are the shaper's positions with kerning applied, and the writer's kern adjustment is exactly the difference between the two. The writer's `/W` is these numbers and nothing else, it refuses a glyph that is not here, and the program any writer embeds must carry an `hmtx` equal to them to the unit (*the widths are HarfBuzz's, the shaper's own*, DESIGN.md S99, amended 2026-11-02). Version 3.
+ */
+export type FontWidths = {
+  /** Glyph ids, ascending. */
+  gids: number[];
+  /** The advance of the glyph at the same index, in the face's font units. */
+  units: number[];
 };
 
 export type ImageSource = {

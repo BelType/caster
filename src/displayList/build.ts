@@ -17,12 +17,14 @@ import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';
 import { rgbaOf } from '../images/canvasDecode.ts';
 import { spaceGlyph } from '../measure/textMeasure.ts';
+import { glyphAdvance } from '../fonts/hbShaper.ts';
+import { shaperVariations } from '../fonts/axisMap.ts';
 import { pageGeometryFor, xToPt, yToPt } from '../coordinates/pageGeometry.ts';
 import { pageLabelRuns } from '../emit/pageLabels.ts';
 import { scopeNameOf } from '../walk/tableHeaders.ts';
 import { PX_TO_PT, round3 } from '../coordinates/units.ts';
 
-import type { DisplayList, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
+import type { DisplayList, FontWidths, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
 import type { MeasuredLine, MeasuredPaint, MeasuredImage, MeasuredEmoji, MeasuredRun, MeasureResult } from '../measure/textMeasure.ts';
 import type { MeasuredVector, PaintSpec, RasterSpec, VectorNode } from '../vectors/vector.ts';
 import type { DecodedSamples } from '../images/canvasDecode.ts';
@@ -299,6 +301,17 @@ export function sha256Bytes(bytes: Uint8Array): Uint8Array {
     const outView = new DataView(out.buffer);
     h.forEach((word, n) => outView.setUint32(n * 4, word));
     return out;
+}
+
+/**
+ * An instance's widths, asked of HarfBuzz with the font the words were shaped with, at the instance's coordinates: the call the writer used to make.
+ *
+ * @param gids - The glyphs to ask for; none for an instance no text is set in.
+ */
+function widthsOf(url: string, coords: Record<string,number>, gids: Set<number> = new Set()): FontWidths {
+    const variations = shaperVariations(coords);
+    const sorted = [...gids].sort((a, b) => a - b);
+    return { gids: sorted, units: sorted.map((gid) => glyphAdvance(url, gid, variations)) };
 }
 
 /** One link annotation as an item: its rectangles and its destination in page points, by the expressions the writer used. */
@@ -732,6 +745,19 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         if (!upemOf.has(segment.instanceKey))
             upemOf.set(segment.instanceKey, segment.upem);
     }
+    // Every glyph each instance's text items show, and every space glyph they name: the glyphs the writer asks a width for.
+    const shown: Map<string,Set<number>> = new Map<any, any>();
+    for (const page of pages) {
+        for (const item of page.items) {
+            if (item.kind !== 'text')
+                continue;
+            const set = shown.get(item.font) ?? new Set<number>();
+            for (const gid of item.glyphs.ids)
+                set.add(gid);
+            set.add(item.space);
+            shown.set(item.font, set);
+        }
+    }
     for (const instance of measurement.usedInstances) {
         const bytes = inputs.fonts.bytesByUrl.get(instance.url);
         if (!bytes)
@@ -745,6 +771,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             sourceFormat: inputs.fonts.sourceFormatOf(instance.url) ?? (outlineTableOf(bytes) === 'glyf' ? 'ttf' : 'otf'),
             coords: copy(instance.coords, `font ${instance.instanceKey}`),
             ...(upem !== undefined ? { upem } : {}),
+            widths: widthsOf(instance.url, instance.coords, shown.get(instance.instanceKey)),
         };
     }
     for (const [key, request] of walk.images.entries()) {

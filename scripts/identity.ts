@@ -6,7 +6,7 @@
  *
  * **The door is the CLI's.** Each document is served from disk on the CLI's made-up origin, cut by Cicero with the CLI's own `cutInPage` and its own Cicero (both read from the CLI checkout at `BELTYPE_CLI`, the sibling `../cli` by default, never declared as a dependency), and printed by this checkout's `dist/` in the page, which hands back the display list and the report beside the bytes. A document marked `cli` is also printed by `beltype print` itself, and its file must equal the door's, which is what makes the door the CLI's and not a second one.
  *
- * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, the report with what varies by run removed (`<name>.report.json`), and what the writer was handed outside the list (`<name>.writer.json`: the document's base URI, the resolved flags, the walk's needs, and HarfBuzz's advance for every glyph the text items show, which is the stub replay installs). `check` compares the report snapshot as well as the bytes wherever one was recorded.
+ * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, the report with what varies by run removed (`<name>.report.json`), and what the writer was handed outside the list (`<name>.writer.json`: the document's base URI, the resolved flags and the walk's needs). `check` compares the report snapshot as well as the bytes wherever one was recorded.
  *
  * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, hands the list to `emitStructure` with the stubs it still needs, and compares the bytes with the recorded file. What differs or throws is the gap the round closes; nothing here fixes it.
  *
@@ -21,7 +21,6 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { registerHooks } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, type BrowserContext } from 'playwright-core';
 import { contentType } from '@beltype/common/mime';
@@ -118,7 +117,7 @@ function firstDifference(a: unknown, b: unknown, at = ''): string | null {
 /** What the page hands back: the file, the list without its blobs, the blobs, the report, and what the writer was handed outside the list. */
 type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; writer: Writer; ms: number };
 /** What the writer is handed today beside the list, recorded so replay can hand it over again. */
-type Writer = { baseUri: string; options: Record<string, unknown>; needs: Record<string, unknown>; widths: Record<string, Record<string, number>> };
+type Writer = { baseUri: string; options: Record<string, unknown>; needs: Record<string, unknown> };
 
 /** The CLI's modules, from its checkout: its in-page cut and the Cicero it serves. */
 async function cliParts() {
@@ -134,16 +133,11 @@ async function cliParts() {
 
 /**
  * Caster prints the presented pages and hands back everything this script records. Runs in the page, so it closes over nothing.
- *
- * @remarks
- * The widths are asked of the same HarfBuzz module the print used (one URL, one module instance), with the call the writer makes, for every glyph a text item shows, each instance's space glyph, and glyph 0.
  */
 async function printInPage(options: Record<string, unknown>) {
   try {
     const load = (url: string) => import(url);
     const caster = await load('/_beltype/caster/src/index.js');
-    const hb = await load('/_beltype/caster/src/fonts/hbShaper.js');
-    const axis = await load('/_beltype/caster/src/fonts/axisMap.js');
     const started = performance.now();
     const printed = await caster.print({ document }, options);
     const ms = performance.now() - started;
@@ -155,26 +149,8 @@ async function printInPage(options: Record<string, unknown>) {
     const list = printed.displayList;
     const blobs: Record<string, string> = {};
     for (const [hash, bytes] of Object.entries(list.resources.blobs as Record<string, Uint8Array>)) blobs[hash] = base64(bytes);
-    const gids = new Map<string, Set<number>>();
-    for (const page of list.pages) {
-      for (const item of page.items) {
-        if (item.kind !== 'text') continue;
-        const set = gids.get(item.font) ?? new Set([0]);
-        for (const gid of item.glyphs.ids) set.add(gid);
-        if (typeof item.space === 'number') set.add(item.space);
-        gids.set(item.font, set);
-      }
-    }
-    const widths: Record<string, Record<string, number>> = {};
-    for (const [key, set] of gids) {
-      const instance = list.resources.fonts[key];
-      const variations = axis.shaperVariations(instance.coords);
-      const table: Record<string, number> = {};
-      for (const gid of [...set].sort((a, b) => a - b)) table[gid] = hb.glyphAdvance(instance.url, gid, variations);
-      widths[`${instance.url}|${JSON.stringify(variations ?? null)}`] = table;
-    }
     const bare = JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } });
-    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), writer: { baseUri: document.baseURI, options: printed.report.options, needs: printed.report.needs, widths }, ms };
+    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), writer: { baseUri: document.baseURI, options: printed.report.options, needs: printed.report.needs }, ms };
   } catch (error) {
     return { refused: String((error as Error | undefined)?.stack ?? error) };
   }
@@ -324,41 +300,15 @@ async function check(dir: string) {
   return failures ? 1 : 0;
 }
 
-/**
- * The HarfBuzz stub, installed by a module hook in place of `src/fonts/hbShaper.ts`: everything the real module exports, and `glyphAdvance` answered from the widths the page recorded.
- *
- * @remarks
- * The real module cannot load in node: its bundle stubs the node builtins on purpose (`scripts/vendor-stubs/node-absent.js`). A glyph the recording does not hold throws, naming it, because a stub that guessed would hide the measurement.
- */
-function installShaperStub() {
-  const real = new URL('../src/fonts/hbShaper.ts', import.meta.url).href;
-  const errors = new URL('../src/errors.ts', import.meta.url).href;
-  registerHooks({
-    load(url, context, next) {
-      if (url !== real) return next(url, context);
-      const source = `export * from ${JSON.stringify(`${real}?real`)};
-import { CasterError } from ${JSON.stringify(errors)};
-export function glyphAdvance(key, gid, variations) {
-  const table = globalThis.__replayWidths?.[key + '|' + JSON.stringify(variations ?? null)];
-  globalThis.__replayCalls = (globalThis.__replayCalls ?? 0) + 1;
-  if (!table || !(gid in table)) throw new CasterError('replay: no recorded HarfBuzz advance for glyph ' + gid + ' of ' + key);
-  return table[gid];
-}`;
-      return { format: 'module', source, shortCircuit: true };
-    }
-  });
-}
-
 /** One row of the gap table. */
 type Gap = { name: string; stubs: string[]; result: string; ms: number };
 
 /**
  * Replay every saved list in node and compare bytes.
  *
- * @param without - Stubs to leave out, to measure what each one stands in for: `harfbuzz` (the real shaper module, which cannot load here), `toUnicode`, `fontProfile`, `photoRule`, `baseUri`, `colour`, `dates` (the files compared as printed, with the replay's own dates).
+ * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`, `fontProfile`, `photoRule`, `baseUri`, `colour`, `dates` (the files compared as printed, with the replay's own dates).
  */
 async function replay(dir: string, without: Set<string>) {
-  if (!without.has('harfbuzz')) installShaperStub();
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
@@ -368,7 +318,6 @@ async function replay(dir: string, without: Set<string>) {
   const { colourOn } = await import('../src/options.ts');
   const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
   await load(['pdf', 'fontkit', 'hbSubset', 'fastPng', 'profiles']);
-  if (without.has('harfbuzz')) await load(['harfbuzz']).catch((error) => console.log(`the harfbuzz capability does not load in node: ${String(error?.message ?? error).split('\n')[0]}`));
   await loadSubsetter();
   const icc = (name: string) => new Uint8Array(fs.readFileSync(path.join(PACKAGE, 'profiles', name)));
   const gaps: Gap[] = [];
@@ -376,7 +325,7 @@ async function replay(dir: string, without: Set<string>) {
     const listFile = path.join(dir, `${entry.name}.json`);
     if (!fs.existsSync(listFile)) { gaps.push({ name: entry.name, stubs: [], result: 'no saved list (record with --list-out)', ms: 0 }); continue; }
     const started = performance.now();
-    const stubs = ['harfbuzz', 'originOf', 'toUnicode', 'fontProfile', 'photoRule', 'baseUri', 'dates'].filter((s) => !without.has(s));
+    const stubs = ['originOf', 'toUnicode', 'fontProfile', 'photoRule', 'baseUri', 'dates'].filter((s) => !without.has(s));
     let result: string;
     try {
       const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
@@ -387,8 +336,6 @@ async function replay(dir: string, without: Set<string>) {
         if (sha256(bytes) !== hash) throw new CasterError(`replay: the blob ${hash} is not what its name says`);
         list.resources.blobs[hash] = bytes;
       }
-      (globalThis as any).__replayWidths = writer.widths;
-      (globalThis as any).__replayCalls = 0;
       const originOf = (page: number, index: number) => ({ run: index, paragraph: 0, path: `replay:${page}:${index}`, color: '', rectPt: [0, 0, 0, 0] as [number, number, number, number] });
       const options = writer.options as any;
       const colour = colourOn(writer.needs, options);
@@ -403,7 +350,7 @@ async function replay(dir: string, without: Set<string>) {
       });
       const now = without.has('dates') ? Buffer.from(emitted.bytes) : zeroDates(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
-      result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}, ${(globalThis as any).__replayCalls} advances asked`;
+      result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}`;
     } catch (error) {
       result = `THROWS: ${String((error as Error)?.message ?? error).split('\n')[0]}`;
     }
@@ -424,7 +371,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without harfbuzz,toUnicode,fontProfile,photoRule,baseUri,colour,dates]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode,fontProfile,photoRule,baseUri,colour,dates]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));

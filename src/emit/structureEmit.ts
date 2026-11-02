@@ -27,9 +27,7 @@ import { ColorEmitter } from '../colour/colorResources.ts';
 import { ShadingBuilder } from '../vectors/shading.ts';
 import { TransparencyBuilder } from '../vectors/transparency.ts';
 import { ResourceScope, vectorOperators } from '../vectors/vectorEmit.ts';
-import { shaperVariations } from '../fonts/axisMap.ts';
 import { embedFace, WHOLE_FONT_PROFILE } from '../fonts/fontEmbed.ts';
-import { glyphAdvance } from '../fonts/hbShaper.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
 import { mul } from '../images/imagePlace.ts';
@@ -53,7 +51,7 @@ import type { ToUnicodeResult } from '../fonts/toUnicode.ts';
 import type { EmbeddedImage } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
+import type { DisplayList, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
 import type { WordRecord } from './textEmit.ts';
 
 /** One image the writer painted: which one, and what it became in the file. */
@@ -250,7 +248,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             bytes,
             sourceFormat: instance.sourceFormat,
             coords: instance.coords,
-            advanceOf: (gid) => glyphAdvance(instance.url, gid, shaperVariations(instance.coords)),
+            advanceOf: widthsOf(instanceKey, instance),
             profile,
             ...(perInstance ? { toUnicodeText: perInstance.text, cidToText: perInstance.cidToText } : {}),
             ...(perInstance ? { ambiguousCids: perInstance.ambiguous.map((a) => a.cid) } : {}),
@@ -699,6 +697,20 @@ function imageOperators(image: ImageItem, name: PDFName, formSize: [number,numbe
     const cm = formSize ? mul([1 / formSize[0], 0, 0, 1 / formSize[1], 0, 0], image.transform) : image.transform;
     operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.ConcatTransformationMatrix, cm.map((n) => pdf().PDFNumber.of(n))), pdf().PDFOperator.of(pdf().PDFOperatorNames.DrawObject, [name]), pdf().PDFOperator.of(pdf().PDFOperatorNames.PopGraphicsState));
     return operators;
+}
+/**
+ * An instance's advance for a glyph, read from the list's widths and from nowhere else.
+ *
+ * @throws {CasterError} A glyph the list holds no width for, naming the instance and the glyph.
+ */
+function widthsOf(instanceKey: string, instance: FontInstance): (gid: number) => number {
+    const byGid = new Map(instance.widths.gids.map((gid, at) => [gid, instance.widths.units[at]]));
+    return (gid) => {
+        const units = byGid.get(gid);
+        if (units === undefined)
+            throw new CasterError(`caster: the display list holds no width for glyph ${gid} of ${instanceKey}; the builder writes one for every glyph a text item shows and every space glyph it names`);
+        return units;
+    };
 }
 /**
  * The bytes a blob key names.
