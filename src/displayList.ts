@@ -8,6 +8,8 @@
  *
  * VERSION 2 (*the display list, version 2*, `.claude/plans/the-display-list/plan-v2.md`). Every length the writer needs is in page points, converted by the builder with the expressions the writer used, so a number is computed once by the code that computed it and only its place moved; a glyph's advance stays in font units, because the writer divides by the face's `upem` itself. Fonts, images, facsimiles and pixels are bytes in `resources.blobs` keyed by their SHA-256, and no item reaches outside the list: the writer reads no page geometry, no measurement and no walk. Item and field names are the schema's (`plan.md`), and krilla 0.8's `Surface` where the schema is silent; what only the report reads is in an `origin`, or beside the list, and the writer ignores it. One thing is still the walk's own, marked `display list v1:` where it stands: the structure tree.
  *
+ * VERSION 3 (stage 1 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). The list carries what the writer used to be handed beside it, so a writer given the list and nothing else writes the same bytes (*the same list prints the same bytes*, DESIGN.md S102, a draft): each font instance's widths (`FontInstance.widths`, HarfBuzz's, asked by the builder, the authority every writer's embedded `hmtx` must equal), the creation date (`info.created`), how the list is to be written (`writing`: the font profile, the photo rule, the colour story with its ICC profiles as blobs), each outgoing link's resolved `uri`, and `resources.fonts` as an array whose order is data. The writer builds the ToUnicode map from the list's clusters, and refuses a list of any other version. What a foreign reader must keep that JSON hides: offsets into `text` and `glyphs.clusters` are UTF-16 code units, and the order of `resources.fonts` is the order of `F0`, `F1`, ….
+ *
  * @packageDocumentation
  */
 
@@ -22,7 +24,7 @@ import type { BlackTextPolicy } from './colour/colorResources.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 2;
+  version: 3;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;

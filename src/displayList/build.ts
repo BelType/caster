@@ -849,7 +849,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         ...(colour ? { colour: { profiles: { cmyk: await blobOf(colour.profileBytes), srgb: await blobOf(colour.srgbBytes) }, condition: colour.condition, info: colour.info, blackText: colour.blackText } } : {}),
     };
     const list: DisplayList = {
-        version: 2,
+        version: 3,
         info: {
             lang: walk.lang,
             title: inputs.title,

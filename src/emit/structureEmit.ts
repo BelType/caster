@@ -201,8 +201,8 @@ const ANNOTATION_PRINT_FLAG = 4;
 export async function emitStructure(list: DisplayList, options: EmitStructureOptions): Promise<EmitStructureResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
-    if (list.version !== 2)
-        throw new CasterError(`caster: the writer reads a display list of version 2, and this one is version ${String(list.version)}`);
+    if (list.version !== 3)
+        throw new CasterError(`caster: the writer reads a display list of version 3, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
     // How the list asks to be written: the font profile, the photo rule and the colour story are the list's, and no option reaches a byte.
     const profile = list.writing.fontProfile;
     // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
