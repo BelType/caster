@@ -8,7 +8,7 @@
  *
  * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, and the report with what varies by run removed (`<name>.report.json`). Nothing the writer reads is recorded beside the list: the list is all it is handed. `check` compares the report snapshot as well as the bytes wherever one was recorded.
  *
- * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, hands the list to `emitStructure` with the stubs it still needs, and compares the bytes with the recorded file. What differs or throws is the gap the round closes; nothing here fixes it.
+ * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, holds it to `validateList`, hands it to `emitStructure` with nothing beside it, and compares the bytes with the recorded file. What differs or throws is a writer that is no longer a function of the list; nothing here fixes it.
  *
  * Kept out of `npm test`: it prints eight documents in Chromium.
  *
@@ -327,6 +327,7 @@ async function replay(dir: string, without: Set<string>) {
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
+  const { validateList } = await import('../src/displayList/validate.ts');
   const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
   await load(['pdf', 'fontkit', 'hbSubset', 'fastPng']);
   await loadSubsetter();
@@ -345,11 +346,14 @@ async function replay(dir: string, without: Set<string>) {
         if (sha256(bytes) !== hash) throw new CasterError(`replay: the blob ${hash} is not what its name says`);
         list.resources.blobs[hash] = bytes;
       }
+      const checked = performance.now();
+      validateList(list);
+      const validMs = performance.now() - checked;
       const colour = list.writing.colour !== undefined;
       const emitted = await emitStructure(list);
       const now = Buffer.from(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
-      result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}`;
+      result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}, valid in ${validMs.toFixed(2)} ms`;
     } catch (error) {
       result = `THROWS: ${String((error as Error)?.message ?? error).split('\n')[0]}`;
     }

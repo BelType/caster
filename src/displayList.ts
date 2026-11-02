@@ -1,7 +1,7 @@
 /**
  * `displayList.js` — a Caster page as plain data, in the shape of Typst's frame: what the measurement and the walk decided, in the order the writer paints it.
  *
- * Caster's own. The schema and the reasons for it are in `.claude/plans/the-display-list/plan.md`; `.claude/plans/the-display-list/executors.md` is the plan this module is built under. Types only, as `adapters/strip.js` is, because the list is a fact about a document and not about a module; `displayList/build.js` makes one.
+ * Caster's own. The schema and the reasons for it are in `.claude/plans/the-display-list/plan.md`; `.claude/plans/the-display-list/executors.md` is the plan this module is built under. Types, as `adapters/strip.js` is, because the list is a fact about a document and not about a module; `displayList/build.js` makes one. The two functions a reader of a list needs are re-exported beside them, so the package's `./display-list` face is this module: `validateList` (`displayList/validate.js`) and `recordsOf` (`displayList/records.js`).
  *
  * @remarks
  * The list holds plain values and nothing a structured clone or `JSON.stringify` cannot carry: no DOM object, no pdf-lib object, no `Map`, no `Set`. Items are in painting order; reading order lives only in the structure tree, whose children are in it. A `tag` start and its end sit in the same item list, so a marked-content sequence never straddles a graphics-state save (*an interval is a marked-content sequence*, DESIGN.md S71).
@@ -20,6 +20,8 @@
  */
 
 export type * from './displayList/contract.ts';
+export { validateList } from './displayList/validate.ts';
+export { recordsOf } from './displayList/records.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {

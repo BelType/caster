@@ -21,6 +21,7 @@ const ALLOWED = new Set([
   'capabilities.ts', 'errors.ts', 'options.ts',
   'colour/colorResources.ts',
   'coordinates/matrix.ts', 'coordinates/printMarks.ts', 'coordinates/units.ts',
+  'displayList/validate.ts',
   'emit/document.ts', 'emit/outline.ts', 'emit/pdf20-writer.ts', 'emit/structureEmit.ts', 'emit/textEmit.ts',
   'fonts/axisMap.ts', 'fonts/cidFont.ts', 'fonts/clusters.ts', 'fonts/fontEmbed.ts', 'fonts/fontProgram.ts', 'fonts/hbSubset.ts', 'fonts/toUnicode.ts',
   'images/facsimile.ts', 'images/imageEmbed.ts', 'images/jpeg.ts', 'images/png.ts', 'images/samples.ts',

@@ -20,6 +20,10 @@
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
     },
+    "./display-list": {
+      "types": "./dist/src/displayList.d.ts",
+      "import": "./dist/src/displayList.js"
+    },
     "./internal/*": {
       "types": "./dist/src/*.d.ts",
       "import": "./dist/src/*.js"

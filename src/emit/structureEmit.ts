@@ -37,6 +37,7 @@ import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba } from '../images/samples.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
 import { buildOutline } from './outline.ts';
+import { ATTRIBUTE_KEYS, validateList } from '../displayList/validate.ts';
 
 /** What wrote the file, for the Info dictionary and the XMP packet alike. Named once here rather than at the two call sites, so the two can never disagree — a reader is entitled to consult either. */
 const PRODUCER = 'BelType Caster';
@@ -86,13 +87,13 @@ const ANNOTATION_PRINT_FLAG = 4;
  * @remarks
  * The records (`WriterRecords`, `displayList.js`) are what a writer returns beside the file: the MCIDs it numbered, its pen adjustments and counters, what each font and image became, the vector rows and resource counts, the colour record. Everything else the report says of the file is a function of the list and these records, made by `recordsOf` (`displayList/records.js`), and what it says of the measurement and the walk is `print()`'s to join.
  *
- * @throws {CasterError} A used instance or an image with no bytes, images with no `imageAssets`, an image no decoder tier could carry (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; a structure tree that is not one, or an element index no element has (see `checkTree`); two elements with one `/ID`; and every refusal of the modules it composes.
+ * @throws {CasterError} Every refusal of `validateList` (`displayList/validate.js`), first: a list of another version, a blob, font, width, image or element the list names and does not hold, marked content not closed, a tree that is not one, link orders with a gap; then what only writing finds: an image no filter reads (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; two elements with one `/ID`; and every refusal of the modules it composes.
  */
 export async function emitStructure(list: DisplayList): Promise<WriterResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
-    if (list.version !== 5)
-        throw new CasterError(`caster: the writer reads a display list of version 5, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
+    // A list the writer could not write is refused before a byte is written, each refusal a sentence (`displayList/validate.js`).
+    validateList(list);
     // How the list asks to be written: the font profile and the colour story are the list's, and no option reaches a byte.
     const profile = list.writing.fontProfile;
     // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
@@ -526,67 +527,6 @@ function elementOf(elements: StructElement[], index: number, what: string): Stru
     return element;
 }
 /**
- * Hold the list's tree to the shape the writer writes from: a tree rooted at element 0, every child index in range and listed once, every content child a content start that names the element back, every link child a link owned by it.
- *
- * @returns Each element's parent, by index; the root's is -1.
- * @throws {CasterError} The first thing in the tree that is not so, named.
- */
-function checkTree(list: DisplayList, mcidAt: Map<number,number>[], linkOwners: Map<number,number>): number[] {
-    const elements = list.structure.elements;
-    if (elements.length === 0)
-        throw new CasterError('caster: the display list\'s structure tree has no elements; element 0 is the root');
-    const parent: number[] = elements.map(() => -2);
-    parent[0] = -1;
-    const claimed = new Set<string>();
-    elements.forEach((element, index) => {
-        for (const child of element.children) {
-            const where = `structure element ${index} (${element.path})`;
-            if (typeof child === 'number') {
-                if (!Number.isInteger(child) || child <= 0 || child >= elements.length)
-                    throw new CasterError(`caster: ${where} lists child ${String(child)}, which is not an element below the root`);
-                if (parent[child] !== -2)
-                    throw new CasterError(`caster: ${where} lists element ${child}, which ${parent[child] === index ? 'it already lists' : `element ${parent[child]} lists too`}; an element has one parent`);
-                parent[child] = index;
-            }
-            else if ('link' in child) {
-                if (linkOwners.get(child.link) !== index)
-                    throw new CasterError(`caster: ${where} lists the link of order ${String(child.link)}, which ${linkOwners.has(child.link) ? `element ${linkOwners.get(child.link)} owns` : 'no link item has'}`);
-            }
-            else {
-                const page = list.pages[child.page];
-                const item = page?.items[child.item];
-                if (!item || item.kind !== 'tag' || !('start' in item) || !('element' in item.start))
-                    throw new CasterError(`caster: ${where} lists item ${String(child.item)} of page ${String(child.page)}, which is not a content start`, { listItem: { page: child.page, item: child.item } });
-                if (item.start.element !== index)
-                    throw new CasterError(`caster: ${where} lists item ${child.item} of page ${child.page + 1}, which opens content for element ${item.start.element}`, { listItem: { page: child.page, item: child.item } });
-                const key = `${child.page}:${child.item}`;
-                if (claimed.has(key))
-                    throw new CasterError(`caster: ${where} lists item ${child.item} of page ${child.page + 1} twice`, { listItem: { page: child.page, item: child.item } });
-                claimed.add(key);
-            }
-        }
-    });
-    const orphan = parent.indexOf(-2);
-    if (orphan >= 0)
-        throw new CasterError(`caster: structure element ${orphan} (${elements[orphan].path}) is no element's child, so the tree does not reach it`);
-    // One parent each and the root nobody's child: an element the root does not reach sits on a cycle.
-    elements.forEach((_, index) => {
-        const seen = new Set<number>();
-        for (let at = index; at !== -1; at = parent[at]) {
-            if (seen.has(at))
-                throw new CasterError(`caster: structure element ${index} (${elements[index].path}) is its own ancestor; the tree has a cycle`);
-            seen.add(at);
-        }
-    });
-    mcidAt.forEach((mcids, page) => {
-        for (const item of mcids.keys()) {
-            if (!claimed.has(`${page}:${item}`))
-                throw new CasterError(`caster: the content start at item ${item} of page ${page + 1} is in no element's children`, { listItem: { page, item } });
-        }
-    });
-    return parent;
-}
-/**
  * Write the structure tree, the ParentTree, the link annotations and the catalog entries that point at them.
  *
  * @remarks
@@ -594,19 +534,14 @@ function checkTree(list: DisplayList, mcidAt: Map<number,number>[], linkOwners: 
  *
  * @param mcidAt - Each page's MCIDs, by the index of the content start in its items.
  * @param linkItems - The list's link items with the page each sits on, in `order`.
- * @throws {CasterError} A tree that is not one (see `checkTree`); a link whose `order` is not its place; a link with neither a destination nor a URI; two elements with one `/ID`; a trailer with no Root.
+ * @throws {CasterError} Two elements with one `/ID`; a trailer with no Root. The tree's own shape and the links' orders are `validateList`'s, checked before the writer starts.
  */
 function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList, mcidAt: Map<number,number>[], linkItems: { item: LinkItem; page: number; }[]): BuildResult {
     const elements = list.structure.elements;
     const pageCount = list.pages.length;
-    const linkOwners = new Map<number,number>();
-    linkItems.forEach(({ item }, index) => {
-        if (item.order !== index)
-            throw new CasterError(`caster: the link at place ${index} among the document's links has order ${item.order}; the orders run 0, 1, 2 …, and the /StructParent numbering follows them`);
-        elementOf(elements, item.element, `the link of order ${item.order}`);
-        linkOwners.set(item.order, item.element);
-    });
-    const parent = checkTree(list, mcidAt, linkOwners);
+    // The tree is one, `validateList` has seen to it: each element's parent is the element that lists it, and the root's is -1.
+    const parent = elements.map(() => -1);
+    elements.forEach((element, index) => element.children.forEach((child) => { if (typeof child === 'number') parent[child] = index; }));
     const namespaceRef = context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
     const annotRefs: PDFRef[] = [];
     const pendingDestinations: { dict: PDFDict; dest: NonNullable<LinkTarget['dest']>; }[] = [];
@@ -721,9 +656,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     }
     return { refs };
 }
-/** The order an attribute object's keys are written in, `/O` first: the order of the schema's `StructAttribute`, so the dictionary does not depend on the order a JSON reader kept the keys in. */
-const ATTRIBUTE_KEYS = ['O', 'ListNumbering', 'BBox', 'Scope', 'Headers', 'RowSpan', 'ColSpan', 'TextPosition'] as const;
-/** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string, and the keys in `ATTRIBUTE_KEYS` order whatever order the list holds them in. */
+/** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string, and the keys in `ATTRIBUTE_KEYS` order (`/O` first, then `StructAttribute`'s), whatever order the list holds them in, so the dictionary does not depend on the order a JSON reader kept. */
 function attributeObject(attribute: StructAttribute): Record<string, string|number|number[]|PDFString[]> {
     const entries = attribute as Record<string, string|number|number[]|string[]|undefined>;
     return Object.fromEntries(ATTRIBUTE_KEYS.filter((key) => entries[key] !== undefined).map((key) => [key, key === 'Headers' ? (entries[key] as string[]).map((id) => pdf().PDFString.of(id)) : (entries[key] as string|number|number[])]));
