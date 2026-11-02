@@ -43,9 +43,9 @@ const SUPPRESS_ID = 'caster-generated-style';
  * Properties never copied off a pseudo-element onto the span that replaces it.
  *
  * @remarks
- * `content` is what we are removing, and the four that would take the span out of the flow the pseudo was in.
+ * `content` is what we are removing, and the counter operations were performed by the walk, not left for the span to repeat. `float`, `position` and the offsets are copied: a pseudo hung by `float: left` or `position: absolute` takes no room in its line, and a span that lost the property that hung it became a block of its own above the clause text (the delibera, 2026-11-02). A pseudo that was in the flow carries `static`, `none` and `auto` for them, which is what the span would have had anyway.
  */
-const NOT_COPIED = new Set(['content', 'position', 'top', 'right', 'bottom', 'left', 'float', 'counter-reset', 'counter-increment', 'counter-set']);
+const NOT_COPIED = new Set(['content', 'counter-reset', 'counter-increment', 'counter-set']);
 
 /** One counter in scope during the walk, and the depth of the element that created it. */
 export type Scope = { name: string, value: number, ownerDepth: number };
