@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The page roads: a page-label run, a three-level outline, a wrapped link</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    :root { --pdf-page-label: lower-roman start 3 "A-"; }
+    @page { size: 100mm 80mm; margin: 10mm; }
+    h1, h2 { break-before: page; }
+    h1:first-of-type { break-before: auto; }
+    .narrow { width: 40mm; }
+  </style>
+</head>
+<body>
+  <h1 id="one">One</h1>
+  <p class="narrow">A link <a href="#three">whose words run past the end of this narrow line and onto the next</a>, so it has two rectangles.</p>
+  <h2 id="one-one">One, first</h2>
+  <h3 id="one-one-a">One, first, a</h3>
+  <p>The third level of the outline.</p>
+  <h2 id="one-two">One, second</h2>
+  <p>A second branch at the second level.</p>
+  <h1 id="two">Two</h1>
+  <h2 id="three">Two, first</h2>
+  <p>The last page, where the wrapped link lands.</p>
+</body>
+</html>

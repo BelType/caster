@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The vector roads: a marker, a blend mode, isolation, a soft mask, a rule</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    .stage { isolation: isolate; position: relative; height: 14mm; background: #fd0; }
+    .blend { position: absolute; left: 6mm; top: 3mm; width: 30mm; height: 8mm; background: #09c; border: 0.5mm solid #036; mix-blend-mode: multiply; }
+    svg { display: block; width: 60mm; height: 24mm; }
+    hr { border: 0; border-top: 0.6mm solid #c03; margin: 3mm 0; }
+  </style>
+</head>
+<body>
+  <h1>Vector roads</h1>
+  <div class="stage"><div class="blend"></div></div>
+  <hr>
+  <svg viewBox="0 0 120 48" role="img" aria-label="A line with arrowheads, and a square under a soft mask">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#c03"/></marker>
+      <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+      <mask id="soft" maskUnits="userSpaceOnUse" x="70" y="4" width="44" height="40"><rect x="70" y="4" width="44" height="40" fill="url(#fade)"/></mask>
+    </defs>
+    <path d="M6 40 L30 10 L54 40" fill="none" stroke="#036" stroke-width="2" marker-start="url(#arrow)" marker-mid="url(#arrow)" marker-end="url(#arrow)"/>
+    <g mask="url(#soft)"><rect x="70" y="4" width="44" height="40" fill="#09c"/></g>
+  </svg>
+</body>
+</html>

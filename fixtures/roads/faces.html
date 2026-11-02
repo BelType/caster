@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>A static TrueType face and a static CFF face</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    @font-face { font-family: 'Crimson Text'; src: url(../specimen/fonts/CrimsonText-Regular.ttf) format('truetype'); font-weight: 400; font-style: normal; }
+    @font-face { font-family: 'Source Sans Pro'; src: url(fonts/SourceSansPro-Regular.otf) format('opentype'); font-weight: 400; font-style: normal; }
+    .ttf { font-family: 'Crimson Text'; font-size: 12pt; }
+    .cff { font-family: 'Source Sans Pro'; font-size: 11pt; }
+  </style>
+</head>
+<body>
+  <h1>Two static faces</h1>
+  <p class="ttf">Crimson Text Regular, a static TrueType face whose outlines are glyf: a quick brown fox, fifty-one figures, “quotes” and 1234567890.</p>
+  <p class="cff">Source Sans Pro Regular, a static CFF face: a quick brown fox, office affairs, “quotes” and 1234567890.</p>
+</body>
+</html>
