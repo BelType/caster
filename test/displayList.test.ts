@@ -103,12 +103,25 @@ test('the fonts array order is the resource order: the writer embeds and names F
   }
 });
 
+test('a link\'s URI is percent-encoded once: a space, a %20, a non-ASCII path and a query each arrive in one encoding', () => {
+  const base = 'https://example.org/book/';
+  assert.equal(absoluteUri('https://example.org/a path', base), 'https://example.org/a%20path', 'a space is %20, not %2520');
+  assert.equal(absoluteUri('https://example.org/a%20path', base), 'https://example.org/a%20path', 'a %20 the author wrote stays %20');
+  assert.equal(absoluteUri('chapter two.html#x', base), 'https://example.org/book/chapter%20two.html#x', 'a relative href, resolved and encoded once');
+  assert.equal(absoluteUri('https://example.org/café/über', base), 'https://example.org/caf%C3%A9/%C3%BCber', 'a non-ASCII path is its UTF-8, encoded once');
+  assert.equal(absoluteUri('https://example.org/s?q=a b&x=é#frag ment', base), 'https://example.org/s?q=a%20b&x=%C3%A9#frag%20ment', 'a query and a fragment, encoded once, their reserved characters kept');
+  assert.equal(absoluteUri('https://example.org/a%2541', base), 'https://example.org/a%2541', 'an encoded percent sign stays one encoding deep');
+  assert.equal(absoluteUri('https://example.org/100%', base), 'https://example.org/100%25', 'a bare percent sign is encoded');
+  assert.equal(absoluteUri('https://example.org/p|q^r', base), 'https://example.org/p%7Cq%5Er', 'what the parser leaves raw and RFC 3986 refuses is encoded');
+  for (const link of listOf('roads').pages.flatMap((page) => page.items.filter((item): item is LinkItem => item.kind === 'link')))
+    if (link.target.uri !== undefined) assert.ok(!/%25[0-9A-Fa-f]{2}/u.test(link.target.uri), `roads: ${link.target.uri} is encoded once`);
+});
+
 test('a link that leaves the file carries its URI resolved: a relative href is absolute in the list', () => {
   const links = listOf('roads').pages.flatMap((page) => page.items.filter((item): item is LinkItem => item.kind === 'link'));
   const relative = links.find((link) => link.target.href === '../cast/index.html')!;
   assert.equal(relative.target.uri, 'https://print.invalid/cast/index.html');
   assert.ok(links.every((link) => (link.target.dest === undefined) === (link.target.uri !== undefined)), 'every link has a destination or a URI, never both');
-  assert.equal(absoluteUri('chapter two.html#x', 'https://example.org/book/'), 'https://example.org/book/chapter%2520two.html#x', 'the parser\'s own percent-encoding is encoded again, as the writer always wrote it');
   assert.equal(absoluteUri('http://[not a host', 'https://example.org/'), 'http://[not a host', 'an href the parser refuses is kept as written');
 });
 
@@ -206,7 +219,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
     }
     assert.equal(seen.links.length, 1);
     assert.equal(seen.links[0].href, 'sub/other page.html', 'the href stays as written, for the report');
-    assert.equal(seen.links[0].uri, `http://127.0.0.1:${port}/sub/other%2520page.html`, 'the URI is absolute, resolved against the document');
+    assert.equal(seen.links[0].uri, `http://127.0.0.1:${port}/sub/other%20page.html`, 'the URI is absolute, resolved against the document');
     assert.equal(seen.created, '2026-11-02T10:20:30.456Z', 'the host\'s date is the list\'s');
     assert.ok(seen.file.includes('/CreationDate (D:20261102102030Z)'), 'and the file\'s');
   } finally {

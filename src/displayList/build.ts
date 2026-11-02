@@ -324,13 +324,13 @@ function widthsOf(url: string, coords: Record<string,number>, gids: Set<number> 
  * An `href` as an absolute, ASCII, percent-encoded URI — what §12.6.4.8's `/URI` entry is.
  *
  * @remarks
- * `encodeURI` rather than `encodeURIComponent`: the reserved characters that structure a URL have to survive. A value the URL parser cannot resolve is left as the author wrote it, because a link the printer cannot understand is still a link the author meant.
+ * The URL parser resolves the `href` and percent-encodes what it must (a space, a non-ASCII letter in the path, the query or the fragment), and `encodeURI` then encodes what the parser leaves raw and RFC 3986 does not allow (`|`, `^`, a bare `%`). A triplet already percent-encoded, by the parser or by the author, is not encoded again, so every character arrives in one encoding: `a path` and `a%20path` both become `a%20path` (until 2026-11-02 the `%` of the parser's `%20` was encoded a second time, `a%2520path`; see CHANGELOG 0.1.5). `encodeURI` rather than `encodeURIComponent`, because the reserved characters that structure a URL have to survive. A value the URL parser cannot resolve is left as the author wrote it, because a link the printer cannot understand is still a link the author meant.
  *
  * @param base - The document's own URL; absent, a relative `href` is left as written.
  */
 export function absoluteUri(href: string, base?: string): string {
     try {
-        return encodeURI(new URL(href, base).href);
+        return encodeURI(new URL(href, base).href).replace(/%25([0-9A-Fa-f]{2})/gu, '%$1');
     } catch {
         return href;
     }

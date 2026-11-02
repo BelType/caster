@@ -462,7 +462,7 @@ export type LinkTarget = {
   targetId?: string;
   /** Internal links only: where the target is in points, and which structure element it is. */
   dest?: { page: number, x: number, y: number, struct: string };
-  /** Every link without a `dest`: the `/URI` its action carries, an absolute, ASCII, percent-encoded URI. The builder resolves `href` against the document's base URL and encodes it with `encodeURI`; an `href` the URL parser refuses is kept as written. `href` stays as the author wrote it, for the report. Version 3. */
+  /** Every link without a `dest`: the `/URI` its action carries, an absolute, ASCII, percent-encoded URI. The builder resolves `href` against the document's base URL and percent-encodes each character once (`absoluteUri`); an `href` the URL parser refuses is kept as written. `href` stays as the author wrote it, for the report. Version 3. */
   uri?: string;
 };
 

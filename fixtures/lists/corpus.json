@@ -1,5 +1,5 @@
 {
- "caster": "3861558",
+ "caster": "0e24619",
  "documents": [
   {
    "name": "paper",
@@ -46,13 +46,13 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "157103d113476d287449db132b6e757a077818d5eec45880d4720aa5b99b6be3",
-   "bytes": 175764,
+   "sha256": "64d52d575bb7c68a0c084c1267e2f43078b6ae675261427662a206dc93bcb007",
+   "bytes": 175762,
    "options": {
     "blackText": "100k"
    },
    "list": {
-    "bytes": 33876,
+    "bytes": 33874,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "49b68686afe1136817d04232b95c955b878104b31128f7c3cba1b0c09e326f85",
