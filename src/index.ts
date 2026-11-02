@@ -39,7 +39,7 @@ import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
-import { imageRecord } from './images/imageEmbed.ts';
+import { imageNotesOf } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
 import { PAGE_LABEL_PROPERTY } from './emit/pageLabels.ts';
@@ -63,10 +63,10 @@ import type { CasterOptions } from './options.ts';
 import type { PreparedImage } from './images/imagePass.ts';
 import type { Report, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { WordRecord } from './emit/textEmit.ts';
-import type { ImageUse } from './emit/structureEmit.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
 import type { PageStrip } from './adapters/strip.ts';
-import type { DisplayList } from './displayList.ts';
+import type { DisplayList, ImageSource, ImageUse } from './displayList.ts';
+import type { ImageNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
 import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
 import type { FaceRequest } from './fonts/fontResolve.ts';
@@ -512,11 +512,59 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
  */
 function imageRecords(uses: ImageUse[], measurement: MeasureResult, list: DisplayList, prepared: Map<string, PreparedImage>): ReportImage[] {
   const placed = new Map(measurement.images.map((image) => [image.index, image]));
-  return uses.map((use) => {
+  const notes = imageNotesOf(list, uses);
+  return uses.map((use, at) => {
     const source = list.resources.images[use.source];
     const pass = prepared.get(source.src);
-    return imageRecord((placed.get(use.source) as MeasuredImage), source, use.embedded, use.name, pass && { decodeMs: pass.decodeMs, encodeMs: pass.encodeMs });
+    return imageRecord((placed.get(use.source) as MeasuredImage), source, use, notes[at], pass && { decodeMs: pass.decodeMs, encodeMs: pass.encodeMs });
   });
+}
+
+/**
+ * Everything about one painted image, in the shape the node checker reads back: what the file became (the writer's `use`) and what its source was (the `note` of `recordsOf`) beside where the measurement put it (`image`).
+ *
+ * @param timing - What the image pass spent decoding and re-encoding the file, which the writer did not.
+ */
+function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath'|'tag'|'alt'>, use: ImageUse, note: ImageNote, timing?: { decodeMs: number, encodeMs: number }): ReportImage {
+  const info = use.info;
+  const placement = image.placement;
+  return {
+    src: walk.src,
+    domPath: walk.domPath,
+    format: note.format,
+    path: info.path,
+    filter: info.filter,
+    bpc: info.bitsPerComponent,
+    colorSpace: info.colorSpace,
+    hasSMask: info.hasSMask,
+    ...(info.decode ? { decode: info.decode } : {}),
+    intrinsic: [info.width, info.height],
+    displayedIntrinsic: placement.displayedIntrinsic,
+    paintedRectPt: placement.paintedRectPt,
+    ...(placement.clipRectPt ? { clipRectPt: placement.clipRectPt } : {}),
+    ...(placement.clipReason ? { clipReason: placement.clipReason } : {}),
+    cm: placement.cm,
+    xobjectHash: use.hash,
+    xobjectName: use.name,
+    page: image.page,
+    tag: walk.tag,
+    ...(walk.alt ? { alt: walk.alt } : {}),
+    effectiveDpi: placement.effectiveDpi,
+    bytesIn: note.bytesIn,
+    bytesOut: info.bytesOut,
+    decodeMs: Math.round((timing?.decodeMs ?? info.decodeMs) * 100) / 100,
+    encodeMs: Math.round((timing?.encodeMs ?? info.encodeMs) * 100) / 100,
+    ...(placement.exifOrientation !== 1 ? { exifOrientation: placement.exifOrientation } : {}),
+    ...(placement.imageOrientation ? { imageOrientation: placement.imageOrientation } : {}),
+    ...(placement.declaredExifOrientation !== undefined ? { declaredExifOrientation: placement.declaredExifOrientation } : {}),
+    icc: info.icc,
+    gammaOnly: info.gammaOnly,
+    interpolate: info.interpolate,
+    objectFit: placement.objectFit,
+    objectPosition: placement.objectPosition,
+    transform: placement.transform,
+    reason: note.reason,
+  };
 }
 
 /** The report's `photoRule` record, from the evidence on every painted image the rule was consulted for, in the order of their keys. */

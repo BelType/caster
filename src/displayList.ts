@@ -578,4 +578,47 @@ export type ArtifactStart = {
   kind?: 'paint' | 'image' | 'text';
 };
 
+/**
+ * One image item the writer painted, and the XObject it painted it with: a record the writer returns, keyed by the item.
+ *
+ * @remarks
+ * Every member but the key is the writer's choice: the resource name, the dedupe hash (two items share an XObject when their hashes agree) and everything in `info`. What the report says of the source itself (its format, its length, why the road was taken) is derivable from the list and the writer's road, and `recordsOf` makes it (`displayList/records.js`).
+ */
+export type ImageUse = {
+  page: number;
+  /** The image item's index in `pages[page].items`. */
+  item: number;
+  /** Key into `resources.images`. */
+  source: number;
+  /** The XObject's resource name on its page, without the slash. */
+  name: string;
+  /** The writer's dedupe key for the XObject. */
+  hash: string;
+  info: WrittenImageInfo;
+};
+
+/** What one image XObject became in the file: the writer's road and what it wrote. */
+export type WrittenImageInfo = {
+  /** How the samples got into the file: the file's own bytes under a filter that reads them, samples decoded and deflated, the photo rule's JPEG, or a facsimile's Form XObject. */
+  path: 'passthrough' | 'decode-flate' | 'decode-jpeg' | 'form';
+  filter: string;
+  bitsPerComponent: number;
+  /** `DeviceRGB`, `DeviceGray`, `DeviceCMYK`, `Indexed`, `ICCBased`. */
+  colorSpace: string;
+  hasSMask: boolean;
+  /** The `/Decode` array, when one is written. */
+  decode?: number[];
+  width: number;
+  height: number;
+  interpolate: boolean;
+  /** Stream bytes out, the `/SMask` included. */
+  bytesOut: number;
+  /** What the writer spent decoding, a timing the report rounds. */
+  decodeMs: number;
+  encodeMs: number;
+  icc: 'embedded' | 'none';
+  /** A `gAMA` with no `iCCP` and no `sRGB`: recorded, deliberately not acted on. */
+  gammaOnly: boolean;
+};
+
 export {};

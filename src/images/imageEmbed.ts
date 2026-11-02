@@ -9,7 +9,7 @@
  *
  * Image XObjects: the original bytes wherever PDF has a filter for them.
  *
- * The whole of this module is one decision made per image, and the decision is always the same shape: *is there a PDF filter that already reads this file?* When there is, the file's own bytes become the stream and nothing is decoded, nothing is re-compressed and nothing is lost. When there is not, the samples are decoded once and written as raw samples under Flate: by fast-png here, for a PNG whose alpha, interlacing or palette transparency the filter cannot describe, and by the browser in the image pass before the display list (`images/imagePass.js`) for a file no filter reads, which reaches this module as samples. The opaque-photo rule and its JPEG re-encode run in the same pass, so a JPEG it chose reaches this module as a JPEG, and its evidence rides along for the report; this module calls no decoder of the browser's and no canvas (stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
+ * The whole of this module is one decision made per image, and the decision is always the same shape: *is there a PDF filter that already reads this file?* When there is, the file's own bytes become the stream and nothing is decoded, nothing is re-compressed and nothing is lost. When there is not, the samples are decoded once and written as raw samples under Flate: by fast-png here, for a PNG whose alpha, interlacing or palette transparency the filter cannot describe, and by the browser in the image pass before the display list (`images/imagePass.js`) for a file no filter reads, which reaches this module as samples. The opaque-photo rule and its JPEG re-encode run in the same pass, so a JPEG it chose reaches this module as a JPEG, and its evidence stays in the list, where the report reads it (`displayList/records.js`); this module calls no decoder of the browser's and no canvas (stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
  *
  * Two of those filters are worth stating because they are easy to miss. `/DCTDecode` reads a JPEG's entropy-coded data verbatim, including a progressive one, so every JPEG a browser can display is a JPEG a PDF can carry — the component count is the colour space, the APP14 marker is the CMYK inversion, and the APP2 profile is the `/ICCBased` stream. `/FlateDecode` with `/Predictor 15` *is* the PNG filter set, and a PNG's concatenated `IDAT` is already a zlib stream, so a non-interlaced PNG with no alpha needs no decoder either — including a 16-bit one, which no canvas could have given back.
  *
@@ -25,41 +25,7 @@ import { CasterError } from '../errors.ts';
 import type { DecodedSamples } from './samples.ts';
 import type { JpegInfo } from './jpeg.ts';
 import type { PngInfo } from './png.ts';
-import type { PhotoEvidence } from '../displayList.ts';
-import type { MeasuredImage } from '../measure/textMeasure.ts';
-import type { WalkImage } from '../walk/structure.ts';
-import type { ReportImage } from '../report.ts';
-
-/** How the samples got into the file. */
-export type EmbedPath = 'passthrough' | 'decode-flate' | 'decode-jpeg' | 'form';
-
-/** Everything the report and the checkers want to know about one embedded image. */
-export type EmbeddedImageInfo = {
-  /** The source format, as the gateway sniffed it. */
-  format: string;
-  path: EmbedPath;
-  filter: string;
-  bitsPerComponent: number;
-  /** `/DeviceRGB`, `/DeviceGray`, `/DeviceCMYK`, `/Indexed`, `/ICCBased`. */
-  colorSpace: string;
-  hasSMask: boolean;
-  /** The `/Decode` array, when one is written. */
-  decode?: number[];
-  width: number;
-  height: number;
-  interpolate: boolean;
-  /** Source bytes in. */
-  bytesIn: number;
-  /** Stream bytes out, the `/SMask` included. */
-  bytesOut: number;
-  decodeMs: number;
-  encodeMs: number;
-  icc: 'embedded' | 'none';
-  /** A `gAMA` with no `iCCP` and no `sRGB`: recorded, deliberately not acted on. */
-  gammaOnly: boolean;
-  /** Why this path was taken, in one phrase. */
-  reason: string;
-};
+import type { WrittenImageInfo } from '../displayList.ts';
 
 /**
  * One XObject in the file, and the record of how it got there.
@@ -70,7 +36,7 @@ export type EmbeddedImageInfo = {
 export type EmbeddedImage = {
   ref: PDFRef;
   hash: string;
-  info: EmbeddedImageInfo;
+  info: WrittenImageInfo;
   /** The resource name this XObject gets on every page that paints it. */
   name: PDFName;
 };
@@ -94,15 +60,15 @@ export function createImageContext(pdf: PDFContext): ImageContext {
 }
 
 /**
- * What the caller hands over: a file, decoded samples, or the JPEG the opaque-photo rule chose for them, with the rule's evidence wherever it was consulted.
+ * What the caller hands over: a file, decoded samples, or the JPEG the opaque-photo rule chose for them.
  *
  * @remarks
- * `format` and `bytesIn` name the source as the report does where the stream is not the file: the file's MIME type and length, `canvas` and the RGB length for a raster fallback.
+ * Each member is one the dedupe key or a byte reads: `label` names samples in the key, `format` names the JPEG's source in it (the file's MIME type, or `canvas` for a raster fallback), and `gammaOnly` is recorded for a JPEG whose source PNG the list no longer holds. What the report says of a source beyond that (its format, its length, why the road was taken) is `recordsOf`'s (`displayList/records.js`).
  */
 export type EmbedSource =
-  | { kind: 'bytes', bytes: Uint8Array, mimeType: string, interpolate: boolean, photo?: PhotoEvidence, refusal?: string }
-  | { kind: 'samples', samples: DecodedSamples, interpolate: boolean, label: string, format: string, bytesIn: number, photo?: PhotoEvidence }
-  | { kind: 'jpeg', jpeg: Uint8Array, interpolate: boolean, format: string, bytesIn: number, gammaOnly: boolean, photo?: PhotoEvidence };
+  | { kind: 'bytes', bytes: Uint8Array, mimeType: string, interpolate: boolean }
+  | { kind: 'samples', samples: DecodedSamples, interpolate: boolean, label: string }
+  | { kind: 'jpeg', jpeg: Uint8Array, interpolate: boolean, format: string, gammaOnly: boolean };
 
 const hex = (bytes: Uint8Array): string => {
   let out = '';
@@ -296,18 +262,16 @@ async function fromFile(context: ImageContext, source: Extract<EmbedSource, { ki
     if (info.unsupportedFrame) throw new CasterError(`imageEmbed: a JPEG frame marker 0x${info.sofMarker.toString(16)} PDF cannot carry`);
     // `/DCTDecode` is defined over 8-bit samples. A 12-bit JPEG (an extended sequential SOF1, which the frame check above accepts) fell past the 8-bit branch into the arithmetic fallback and was passed through declaring `/BitsPerComponent 8`, which is a file that says one thing and holds another. Refuse by name; a 12-bit source is re-saved at 8 bits or carried as a raster.
     if (info.precision !== 8) throw new CasterError(`imageEmbed: a JPEG at ${info.precision} bits per sample cannot be carried by /DCTDecode, which is defined over 8-bit samples; re-save it at 8 bits`);
-    const built = await jpegPassthrough(context.pdf, bytes, info, interpolate);
-    // An arithmetic-coded JPEG reaches here as a file because the image pass asked the browser for its pixels and was refused (`images/imagePass.js` says why both realms refuse): its entropy-coded data goes to `/DCTDecode` unread, and the record says so.
-    if (info.arithmetic) built.info.reason = `arithmetic coding, and no browser decoder: ${source.refusal ?? 'none was asked'}; the entropy-coded data goes to /DCTDecode unread`;
-    return built;
+    // An arithmetic-coded JPEG reaches here as a file because the image pass asked the browser for its pixels and was refused (`images/imagePass.js` says why both realms refuse): its entropy-coded data goes to `/DCTDecode` unread, and the report says so.
+    return jpegPassthrough(context.pdf, bytes, info, interpolate);
   }
-  if (mimeType === 'image/png') return fromPng(context, bytes, interpolate, source.photo);
+  if (mimeType === 'image/png') return fromPng(context, bytes, interpolate);
   throw new CasterError(`imageEmbed: no PDF filter reads ${mimeType}, and the display list holds the file and not its pixels; the image pass decodes such a file before the list`);
 }
 
 export type Built = {
   ref: PDFRef;
-  info: EmbeddedImageInfo;
+  info: WrittenImageInfo;
 };
 
 async function jpegPassthrough(pdf: PDFContext, bytes: Uint8Array, info: JpegInfo, interpolate: boolean): Promise<Built> {
@@ -332,7 +296,6 @@ async function jpegPassthrough(pdf: PDFContext, bytes: Uint8Array, info: JpegInf
   return {
     ref,
     info: {
-      format: 'image/jpeg',
       path: 'passthrough',
       filter: 'DCTDecode',
       bitsPerComponent: 8,
@@ -342,18 +305,16 @@ async function jpegPassthrough(pdf: PDFContext, bytes: Uint8Array, info: JpegInf
       width: info.width,
       height: info.height,
       interpolate,
-      bytesIn: bytes.length,
       bytesOut: bytes.length,
       decodeMs: 0,
       encodeMs: 0,
       icc: info.iccProfile ? 'embedded' : 'none',
       gammaOnly: false,
-      reason: `SOF 0x${info.sofMarker.toString(16)}, ${info.components} components${info.adobe ? ', APP14 Adobe' : ''}`,
     },
   };
 }
 
-async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: boolean, photo: PhotoEvidence | undefined): Promise<Built> {
+async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: boolean): Promise<Built> {
   const pdf = context.pdf;
   const info = parsePng(bytes);
   const gammaOnly = info.gama !== null && info.iccpDeflated === null && info.srgbIntent === null;
@@ -379,7 +340,6 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
     return {
       ref,
       info: {
-        format: 'image/png',
         path: 'passthrough',
         filter: 'FlateDecode',
         bitsPerComponent: info.bitDepth,
@@ -388,14 +348,11 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
         width: info.width,
         height: info.height,
         interpolate,
-        bytesIn: bytes.length,
         bytesOut: info.idat.length,
         decodeMs: 0,
         encodeMs: 0,
         icc: space.icc ? 'embedded' : 'none',
         gammaOnly,
-        // The image pass gave the photo rule a look at an opaque RGB PNG over the threshold, and the rule declined, or the PNG would have reached here as its JPEG.
-        reason: photo ? `IDAT passthrough with /Predictor 15; the photo rule declined: ${photo.reason}` : 'IDAT passthrough with /Predictor 15',
       },
     };
   }
@@ -466,15 +423,9 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
       Length: compressed.length,
     }),
   );
-  const why = info.hasAlphaChannel
-    ? 'an alpha channel PDF has to carry as a separate /SMask'
-    : info.interlace !== 0
-      ? 'Adam7 interlacing, which /Predictor 15 does not describe'
-      : 'a palette with tRNS, whose alpha is a per-pixel lookup';
   return {
     ref,
     info: {
-      format: 'image/png',
       path: 'decode-flate',
       filter: 'FlateDecode',
       bitsPerComponent,
@@ -483,20 +434,18 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
       width: info.width,
       height: info.height,
       interpolate,
-      bytesIn: bytes.length,
       bytesOut: compressed.length + (mask?.bytes ?? 0),
       decodeMs,
       encodeMs: 0,
       icc: space.icc ? 'embedded' : 'none',
       gammaOnly,
-      reason: `decoded because of ${why}`,
     },
   };
 }
 
 /** The JPEG the opaque-photo rule chose in the image pass, under `/DCTDecode`. */
 function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' }>): Built {
-  const { jpeg, interpolate, format } = source;
+  const { jpeg, interpolate } = source;
   const frame = parseJpeg(jpeg);
   const ref = pdf.register(
     pdf.stream(jpeg, {
@@ -511,11 +460,9 @@ function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' 
       Length: jpeg.length,
     }),
   );
-  const chose = `the photo rule chose JPEG at quality ${source.photo?.chosenQuality ?? null}`;
   return {
     ref,
     info: {
-      format,
       path: 'decode-jpeg',
       filter: 'DCTDecode',
       bitsPerComponent: 8,
@@ -524,13 +471,11 @@ function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' 
       width: frame.width,
       height: frame.height,
       interpolate,
-      bytesIn: source.bytesIn,
       bytesOut: jpeg.length,
       decodeMs: 0,
       encodeMs: 0,
       icc: 'none',
       gammaOnly: source.gammaOnly,
-      reason: format === 'image/png' ? chose : `no PDF filter reads ${format}; ${chose}`,
     },
   };
 }
@@ -538,7 +483,7 @@ function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' 
 /** Decoded RGB(+alpha) samples, into a stream and its `/SMask`. */
 async function fromSamples(context: ImageContext, source: Extract<EmbedSource, { kind: 'samples' }>): Promise<Built> {
   const pdf = context.pdf;
-  const { samples, interpolate, format, photo } = source;
+  const { samples, interpolate } = source;
   const compressed = deflate(pdf, samples.rgb);
   const mask = samples.alpha ? await smaskRef(pdf, samples.width, samples.height, 8, samples.alpha) : null;
   const ref = pdf.register(
@@ -558,7 +503,6 @@ async function fromSamples(context: ImageContext, source: Extract<EmbedSource, {
   return {
     ref,
     info: {
-      format,
       path: 'decode-flate',
       filter: 'FlateDecode',
       bitsPerComponent: 8,
@@ -567,64 +511,11 @@ async function fromSamples(context: ImageContext, source: Extract<EmbedSource, {
       width: samples.width,
       height: samples.height,
       interpolate,
-      bytesIn: source.bytesIn,
       bytesOut: compressed.length + (mask?.bytes ?? 0),
       decodeMs: samples.decodeMs,
       encodeMs: 0,
       icc: 'none',
       gammaOnly: false,
-      reason: photo ? `no PDF filter reads ${format}; the photo rule declined: ${photo.reason}` : `no PDF filter reads ${format}`,
     },
-  };
-}
-
-/**
- * Everything about one painted image, in the shape the node checker reads back: what the file became (`embedded`) beside where the measurement put it (`image`).
- *
- * @remarks
- * Moved from the writer: it reads the placement, which is the measurement's and not the display list's, so `print()` makes it from the writer's `imageUses`.
- *
- * @param name - The XObject's resource name, without the slash.
- * @param timing - What the image pass spent decoding and re-encoding the file, which the writer did not.
- */
-export function imageRecord(image: MeasuredImage, walk: Pick<WalkImage,'src'|'domPath'|'tag'|'alt'>, embedded: EmbeddedImage, name: string, timing?: { decodeMs: number, encodeMs: number }): ReportImage {
-  const info = embedded.info;
-  const placement = image.placement;
-  return {
-    src: walk.src,
-    domPath: walk.domPath,
-    format: info.format,
-    path: info.path,
-    filter: info.filter,
-    bpc: info.bitsPerComponent,
-    colorSpace: info.colorSpace,
-    hasSMask: info.hasSMask,
-    ...(info.decode ? { decode: info.decode } : {}),
-    intrinsic: [info.width, info.height],
-    displayedIntrinsic: placement.displayedIntrinsic,
-    paintedRectPt: placement.paintedRectPt,
-    ...(placement.clipRectPt ? { clipRectPt: placement.clipRectPt } : {}),
-    ...(placement.clipReason ? { clipReason: placement.clipReason } : {}),
-    cm: placement.cm,
-    xobjectHash: embedded.hash,
-    xobjectName: name,
-    page: image.page,
-    tag: walk.tag,
-    ...(walk.alt ? { alt: walk.alt } : {}),
-    effectiveDpi: placement.effectiveDpi,
-    bytesIn: info.bytesIn,
-    bytesOut: info.bytesOut,
-    decodeMs: Math.round((timing?.decodeMs ?? info.decodeMs) * 100) / 100,
-    encodeMs: Math.round((timing?.encodeMs ?? info.encodeMs) * 100) / 100,
-    ...(placement.exifOrientation !== 1 ? { exifOrientation: placement.exifOrientation } : {}),
-    ...(placement.imageOrientation ? { imageOrientation: placement.imageOrientation } : {}),
-    ...(placement.declaredExifOrientation !== undefined ? { declaredExifOrientation: placement.declaredExifOrientation } : {}),
-    icc: info.icc,
-    gammaOnly: info.gammaOnly,
-    interpolate: info.interpolate,
-    objectFit: placement.objectFit,
-    objectPosition: placement.objectPosition,
-    transform: placement.transform,
-    reason: info.reason,
   };
 }

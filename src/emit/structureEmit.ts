@@ -49,17 +49,9 @@ import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
 import type { EmbeddedImage, EmbedSource } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, ImageSource, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
+import type { DisplayList, ImageSource, ImageUse, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
 import type { WordRecord } from './textEmit.ts';
 
-/** One image the writer painted: which one, and what it became in the file. */
-export type ImageUse = {
-  /** Key into `resources.images`. */
-  source: number;
-  embedded: EmbeddedImage;
-  /** The XObject's resource name on its page, without the slash. */
-  name: string;
-};
 import type { Report, ReportContainer, ReportTiming, ReportPageBox, ReportFace as ReportEmissionFace, ReportEmission, ReportStructure, ReportParagraph as ReportEmissionParagraph, ReportImage, ReportStructureNode, ReportStructureArtifact, ReportStructureAnnot, ReportPaint, ReportEmojiCluster, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportColor, ReportOutlineItem, ReportPageLabel, ReportPrintMarks, ReportTable, ReportDecoderComparison, ReportPhotoRule, ReportSkipInk, ReportConversion, ReportDeferred, ReportStackingContext, ReportDecoration, ReportCtmReading, ReportCollapsedEdge, ReportComputedBorderWidth, ReportEmoji, ReportLink, ReportVectorNotes, ReportCtmNode } from '../report.ts';
 
 export type ArtifactDescriptor = ArtifactStart['artifact'];
@@ -254,8 +246,8 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             continue;
         const samples = samplesFromRgba(blobOf(list, spec.blob), (spec.width as number), (spec.height as number));
         rasterImages.set(Number(key), await embedImage(imageContext, spec.jpeg
-            ? { kind: 'jpeg', jpeg: blobOf(list, spec.jpeg), interpolate: true, format: 'canvas', bytesIn: samples.rgb.length, gammaOnly: false, ...(spec.photo ? { photo: spec.photo } : {}) }
-            : { kind: 'samples', samples, interpolate: true, label: `${spec.feature}@${spec.dpi}dpi`, format: 'canvas', bytesIn: samples.rgb.length, ...(spec.photo ? { photo: spec.photo } : {}) }));
+            ? { kind: 'jpeg', jpeg: blobOf(list, spec.jpeg), interpolate: true, format: 'canvas', gammaOnly: false }
+            : { kind: 'samples', samples, interpolate: true, label: `${spec.feature}@${spec.dpi}dpi` }));
     }
     // E12A (`images.md`): one XObject per colour cluster, through the writer of E7 like every other image, so the `/SMask` and the dedupe are the ones E7 decided. Two occurrences of the same emoji at the same size are the same pixels and therefore the same object, which is the dedupe doing its job rather than a rule of E12's own. Untested: the `emoji` option is dormant in `print()`.
     const emojiImages: Map<number,EmbeddedImage> = new Map<any, any>();
@@ -263,7 +255,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         if (cluster.blob === undefined)
             continue;
         const samples = samplesFromRgba(blobOf(list, cluster.blob), (cluster.width as number), (cluster.height as number));
-        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `emoji:${cluster.text}@${cluster.sizePx}px`, format: 'canvas', bytesIn: samples.rgb.length }));
+        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `emoji:${cluster.text}@${cluster.sizePx}px` }));
     }
     const shadings = new ShadingBuilder(context);
     const transparency = new TransparencyBuilder(context);
@@ -369,7 +361,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                 const embedded = (embeddedImages[item.source] as EmbeddedImage);
                 const name = useOnPage(imageContext, embedded, pages[page], page);
                 operators.push(...imageOperators(item, name, embedded.info.path === 'form' ? [embedded.info.width, embedded.info.height] : null));
-                imageUses.push({ source: item.source, embedded, name: name.asString().slice(1) });
+                imageUses.push({ page, item: at, source: item.source, name: name.asString().slice(1), hash: embedded.hash, info: embedded.info });
                 continue;
             }
             if (item.kind === 'raster' && item.table === 'emoji') {
@@ -615,18 +607,16 @@ function imageOperators(image: ImageItem, name: PDFName, formSize: [number,numbe
  * @throws {CasterError} A source that names no blob the list holds.
  */
 function embedSourceOf(list: DisplayList, source: ImageSource, interpolate: boolean): EmbedSource {
-    const photo = source.photo ? { photo: source.photo } : {};
-    const bytesIn = source.original?.bytes ?? 0;
     const format = source.original?.format ?? source.mime ?? '';
     if (source.jpeg !== undefined)
-        return { kind: 'jpeg', jpeg: blobOf(list, source.jpeg), interpolate, format, bytesIn, gammaOnly: source.original?.gammaOnly === true, ...photo };
+        return { kind: 'jpeg', jpeg: blobOf(list, source.jpeg), interpolate, format, gammaOnly: source.original?.gammaOnly === true };
     if (source.samples !== undefined) {
         const { blob, width, height, colorSpace, bitsPerComponent } = source.samples;
         if (colorSpace !== 'DeviceRGB' || bitsPerComponent !== 8)
             throw new CasterError(`caster: the samples of ${source.domPath} are ${String(colorSpace)} at ${String(bitsPerComponent)} bits, and the writer reads 8-bit DeviceRGB samples only`);
-        return { kind: 'samples', samples: samplesFromRgba(blobOf(list, blob), width, height), interpolate, label: format, format, bytesIn, ...photo };
+        return { kind: 'samples', samples: samplesFromRgba(blobOf(list, blob), width, height), interpolate, label: format };
     }
-    return { kind: 'bytes', bytes: blobOf(list, source.blob as string), mimeType: source.mime as string, interpolate, ...photo, ...(source.refusal !== undefined ? { refusal: source.refusal } : {}) };
+    return { kind: 'bytes', bytes: blobOf(list, source.blob as string), mimeType: source.mime as string, interpolate };
 }
 /**
  * The `/URI` of a link that leaves the file, as the list resolved it.
