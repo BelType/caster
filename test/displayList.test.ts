@@ -66,23 +66,16 @@ test('the same list prints the same bytes: every committed list the writer can w
   assert.ok(replayed.length >= 6, 'the six documents that take no browser decoder');
   for (const { name } of replayed) {
     const list = listOf(name);
-    assert.equal(list.version, 3, `${name}: a version 3 list`);
+    assert.equal(list.version, 4, `${name}: a version 4 list`);
     const emitted = await emitStructure(list, { originOf });
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
 });
 
-/** The list's tree resolved beside the writer's own: what the builder decides from the walk's tree and the pages' tags and links. */
-function resolvedOf(list: any) {
-  const contents: { page: number; item: number; owner: string; seq: number }[] = [];
-  const links: { order: number; owner: string; dest?: string }[] = [];
-  const linkAt: { page: number; item: LinkItem }[] = [];
-  list.pages.forEach((page: any, p: number) => page.items.forEach((item: any, i: number) => {
-    if (item.kind === 'tag' && item.start && 'struct' in item.start) contents.push({ page: p, item: i, owner: item.start.struct, seq: item.start.seq });
-    if (item.kind === 'link') { links.push({ order: item.order, owner: item.struct, ...(item.target.dest ? { dest: item.target.dest.struct } : {}) }); linkAt.push({ page: p, item }); }
-  }));
-  const resolved = resolveStructure(list.structure, contents, links, list.figureBoxes, list.outline.map((h: any) => h.path));
-  return { elements: resolved.structure.elements, links: linkAt.map(({ page, item }, i) => ({ page, order: item.order, element: resolved.linkElement[i], dest: resolved.destElement[i] })) };
+/** The list's tree, and each link with the element that owns it and the element its destination names. */
+function treeOf(list: DisplayList) {
+  const links = list.pages.flatMap((page, p) => page.items.filter((item): item is LinkItem => item.kind === 'link').map((item) => ({ page: p, order: item.order, element: item.element, dest: item.target.dest?.element })));
+  return { elements: list.structure.elements, links };
 }
 
 /**
@@ -155,11 +148,11 @@ function assertTreeIsWritten(name: string, list: DisplayList, tree: { elements: 
   return tree.elements.length;
 }
 
-test('the resolved tree is the tree the writer writes: every element, every /K in order, every attribute, every destination', async () => {
+test('the list\'s tree is the tree the writer writes: every element, every /K in order, every attribute, every destination', async () => {
   let compared = 0;
   for (const { name } of corpus.filter((e) => !DECODED_IN_THE_WRITER.has(e.name))) {
     const list = listOf(name);
-    compared += assertTreeIsWritten(name, list, resolvedOf(list), (await emitStructure(list, { originOf })).bytes);
+    compared += assertTreeIsWritten(name, list, treeOf(list), (await emitStructure(list, { originOf })).bytes);
   }
   assert.ok(compared > 150, `${compared} elements compared`);
 });
@@ -225,6 +218,28 @@ test('the resolver writes the attribute objects /A carries, in order, and leaves
   assert.deepEqual(byPath['D/TD0'].attributes, [{ O: 'Table', Headers: ['h1'], RowSpan: 3 }]);
   assert.equal(byPath['D/TD1'].attributes, undefined, 'a cell with nothing to say has no /A');
   assert.deepEqual(byPath['D/Span0'], { type: 'Span', path: 'D/Span0', expansion: 'Portable Document Format', attributes: [{ O: 'Layout', TextPosition: 'Sup' }], children: [{ page: 0, item: 4 }] }, 'an empty /Alt is left out');
+});
+
+test('the writer refuses a tree that is not one, with a sentence', async () => {
+  /** A copy of cast's list with its tree changed by `change`. */
+  const broken = (change: (list: DisplayList) => void) => { const list = listOf('cast'); change(list); return list; };
+  const refused = async (list: DisplayList, pattern: RegExp) => assert.rejects(emitStructure(list, { originOf }), (error: unknown) => error instanceof CasterError && pattern.test(error.message));
+  const parentOfOne = (list: DisplayList) => list.structure.elements.findIndex((e) => e.children.includes(1));
+  await refused(broken((list) => { list.structure.elements[0].children.push(list.structure.elements.length); }), /lists child \d+, which is not an element below the root/);
+  await refused(broken((list) => { list.structure.elements[0].children.push(1); }), /lists element 1, which/);
+  await refused(broken((list) => { const p = parentOfOne(list); list.structure.elements[p].children = list.structure.elements[p].children.filter((c) => c !== 1); }), /element 1 .* is no element's child/);
+  await refused(broken((list) => {
+    // Element 1 moves under its own last descendant: every element keeps one parent, and the tree has a cycle.
+    const p = parentOfOne(list);
+    list.structure.elements[p].children = list.structure.elements[p].children.filter((c) => c !== 1);
+    let leaf = 1;
+    for (let kids = list.structure.elements[leaf].children.filter((c): c is number => typeof c === 'number'); kids.length > 0; kids = list.structure.elements[leaf].children.filter((c): c is number => typeof c === 'number')) leaf = kids[kids.length - 1];
+    list.structure.elements[leaf].children.push(1);
+  }), /is its own ancestor; the tree has a cycle/);
+  await refused(broken((list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object'))!; const at = e.children.findIndex((c) => typeof c === 'object'); e.children[at] = { page: 0, item: list.pages[0].items.findIndex((i) => i.kind === 'text') }; }), /which is not a content start/);
+  await refused(broken((list) => { const owners = list.structure.elements.filter((x) => x.children.some((c) => typeof c === 'object' && 'page' in c)); const [a, b] = owners; const at = b.children.findIndex((c) => typeof c === 'object'); a.children.push(b.children[at]); b.children.splice(at, 1); }), /which opens content for element/);
+  await refused(broken((list) => { const tag = list.pages[0].items.find((i) => i.kind === 'tag' && 'start' in i && 'element' in i.start)!; (tag as any).start.element = 999; }), /names structure element 999/);
+  await refused(broken((list) => { list.outline[0].element = -3; }), /the bookmark .* names structure element -3/);
 });
 
 test('the widths cover every glyph a text item shows and every space glyph it names, and the writer refuses one that is missing', async () => {
@@ -366,7 +381,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
     });
-    assert.equal(seen.version, 3);
+    assert.equal(seen.version, 4);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
     for (const { font, gids } of seen.used) {

@@ -4,11 +4,13 @@
  * Caster's own. The schema and the reasons for it are in `.claude/plans/the-display-list/plan.md`; `.claude/plans/the-display-list/executors.md` is the plan this module is built under. Types only, as `adapters/strip.js` is, because the list is a fact about a document and not about a module; `displayList/build.js` makes one.
  *
  * @remarks
- * The list holds plain values and nothing a structured clone or `JSON.stringify` cannot carry: no DOM object, no pdf-lib object, no `Map`, no `Set`. Items are in painting order; reading order lives only in the structure tree and in each content tag's `seq`. A `tag` start and its end sit in the same item list, so a marked-content sequence never straddles a graphics-state save (*an interval is a marked-content sequence*, DESIGN.md S71).
+ * The list holds plain values and nothing a structured clone or `JSON.stringify` cannot carry: no DOM object, no pdf-lib object, no `Map`, no `Set`. Items are in painting order; reading order lives only in the structure tree, whose children are in it. A `tag` start and its end sit in the same item list, so a marked-content sequence never straddles a graphics-state save (*an interval is a marked-content sequence*, DESIGN.md S71).
  *
- * VERSION 2 (*the display list, version 2*, `.claude/plans/the-display-list/plan-v2.md`). Every length the writer needs is in page points, converted by the builder with the expressions the writer used, so a number is computed once by the code that computed it and only its place moved; a glyph's advance stays in font units, because the writer divides by the face's `upem` itself. Fonts, images, facsimiles and pixels are bytes in `resources.blobs` keyed by their SHA-256, and no item reaches outside the list: the writer reads no page geometry, no measurement and no walk. Item and field names are the schema's (`plan.md`), and krilla 0.8's `Surface` where the schema is silent; what only the report reads is in an `origin`, or beside the list, and the writer ignores it. One thing is still the walk's own, marked `display list v1:` where it stands: the structure tree.
+ * VERSION 2 (*the display list, version 2*, `.claude/plans/the-display-list/plan-v2.md`). Every length the writer needs is in page points, converted by the builder with the expressions the writer used, so a number is computed once by the code that computed it and only its place moved; a glyph's advance stays in font units, because the writer divides by the face's `upem` itself. Fonts, images, facsimiles and pixels are bytes in `resources.blobs` keyed by their SHA-256, and no item reaches outside the list: the writer reads no page geometry, no measurement and no walk. Item and field names are the schema's (`plan.md`), and krilla 0.8's `Surface` where the schema is silent; what only the report reads is in an `origin`, or beside the list, and the writer ignores it. The structure tree was still the walk's own until version 4.
  *
  * VERSION 3 (stage 1 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). The list carries what the writer used to be handed beside it, so a writer given the list and nothing else writes the same bytes (*the same list prints the same bytes*, DESIGN.md S102, a draft): each font instance's widths (`FontInstance.widths`, HarfBuzz's, asked by the builder, the authority every writer's embedded `hmtx` must equal), the creation date (`info.created`), how the list is to be written (`writing`: the font profile, the photo rule, the colour story with its ICC profiles as blobs), each outgoing link's resolved `uri`, and `resources.fonts` as an array whose order is data. The writer builds the ToUnicode map from the list's clusters, and refuses a list of any other version. What a foreign reader must keep that JSON hides: offsets into `text` and `glyphs.clusters` are UTF-16 code units, and the order of `resources.fonts` is the order of `F0`, `F1`, ….
+ *
+ * VERSION 4 (stage 2 of the same plan). The structure tree is the builder's, resolved (`structure`, a {@link Structure}): its elements by index, pruned, in allocation order, each `/K` already in reading order, every attribute object written out, so a writer inherits no rule of the walk's and only numbers each page's content starts as MCIDs. A content `tag` names its element by index; so do a link (the `/OBJR` owner), an internal link's destination (already the element with a page) and a bookmark. `figureBoxes` folded into the Figure's Layout attribute, and a content start's `mcid` and `seq` are gone: the writer numbers the first, and the second decided an order the children now hold. Links' `order` runs 0, 1, 2 … over the document.
  *
  * @packageDocumentation
  */
@@ -16,7 +18,7 @@
 import type { Matrix } from './images/imagePlace.ts';
 import type { Path } from './vectors/pathData.ts';
 import type { ShadingSpec } from './vectors/vector.ts';
-import type { StructureNode, ArtifactDescriptor } from './walk/structure.ts';
+import type { ArtifactDescriptor } from './walk/structure.ts';
 import type { MarkShape } from './coordinates/printMarks.ts';
 import type { BoxPt } from './coordinates/pageGeometry.ts';
 import type { FontProfile } from './fonts/fontEmbed.ts';
@@ -24,14 +26,12 @@ import type { BlackTextPolicy } from './colour/colorResources.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 3;
+  version: 4;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;
-  /** The root of the structure tree, in reading order. // display list v1: the walk's own tree; a `StructElement` of its own waits for a second writer to need it, and `walk/structure.js` is the walk's own business (see results.md, version 2 stage 4). */
-  structure: StructureNode;
-  /** Each Figure's Layout `/BBox` in page points `[x y w h]`, by structure path. */
-  figureBoxes: Record<string, [number, number, number, number]>;
+  /** The structure tree, resolved. Version 4. */
+  structure: Structure;
   /** The headings a bookmark points at, in order; empty where the document asked for no outline. */
   outline: OutlineEntry[];
   /** The runs of `/PageLabels`; empty where no page declared one. */
@@ -168,8 +168,8 @@ export type EmojiSource = {
 };
 
 export type OutlineEntry = {
-  /** The heading's structure path. */
-  path: string;
+  /** The heading's element, by its index in `structure.elements`. Version 4. */
+  element: number;
   title: string;
   level: number;
   page: number;
@@ -442,9 +442,9 @@ export type MarksItem = {
 /** One link annotation on one page, and the `Link` element whose `/OBJR` points at it. Not painted: the writer collects the page's link items after its content. */
 export type LinkItem = {
   kind: 'link';
-  /** The path of the `Link` element that owns the annotation. */
-  struct: string;
-  /** The annotation's place among all the document's links, in the walk's order: the `/StructParent` numbering follows it. */
+  /** The `Link` element that owns the annotation, by its index in `structure.elements`; its `children` end with this link's `/OBJR`. Version 4. */
+  element: number;
+  /** The annotation's place among all the document's links, in the walk's order, 0, 1, 2 … over the document: its `/StructParent` is the page count plus this. */
   order: number;
   /** `[left, top, right, bottom]` in page points, y up (so `top` is the larger). */
   rects: [number, number, number, number][];
@@ -460,8 +460,8 @@ export type LinkTarget = {
   kind: 'internal' | 'external' | 'mailto';
   /** Internal links only: the id the fragment named. */
   targetId?: string;
-  /** Internal links only: where the target is in points, and which structure element it is. */
-  dest?: { page: number, x: number, y: number, struct: string };
+  /** Internal links only: where the target is in points, and the element the `/Dest` names, by its index in `structure.elements`: the first element at or under the one the fragment named, in reading order, with content of its own, which the builder resolved (version 4). `struct` is the path of the element the fragment named, which only the report reads. */
+  dest?: { page: number, x: number, y: number, element: number, struct: string };
   /** Every link without a `dest`: the `/URI` its action carries, an absolute, ASCII, percent-encoded URI. The builder resolves `href` against the document's base URL and percent-encodes each character once (`absoluteUri`); an `href` the URL parser refuses is kept as written. `href` stays as the author wrote it, for the report. Version 3. */
   uri?: string;
 };
@@ -514,12 +514,8 @@ export type StructChild = number | { page: number, item: number } | { link: numb
 export type TagItem = { kind: 'tag', start: ContentStart } | { kind: 'tag', start: ArtifactStart } | { kind: 'tag', end: true };
 
 export type ContentStart = {
-  /** The structure element's path; its tag is the node's. */
-  struct: string;
-  /** Runs 0, 1, 2 … on one page. */
-  mcid: number;
-  /** The group's place in reading order across the document: page-major, then the DOM rank of the item it came from. The only ordering key the structure tree has. */
-  seq: number;
+  /** The structure element that owns the sequence, by its index in `structure.elements`, whose `children` name this item; the sequence is tagged with the element's `type`. Its MCID is the writer's: the content starts of a page are numbered 0, 1, 2 … in item order. Version 4. */
+  element: number;
 };
 
 export type ArtifactStart = {

@@ -3,7 +3,7 @@
  *
  * Ported from `harness/src/export/structureEmit.ts` (E5, E7, E8, E9, E10, E11, E12A–F). Guide: `docs/guide/structure-tree.md`, and every capability document under it.
  *
- * THE WRITER (stages 2 and 4 of `.claude/plans/the-display-list/`). `emitStructure` reads a {@link DisplayList} and nothing else: the deciding half (what goes on which page, in which order, under which marked content, with which MCID) lives in `displayList/build.js`, the bytes it needs are in `resources.blobs`, and every length arrives in the page's points. It reads no page geometry, no measurement and no walk. The file is byte-identical to the one the same document had before the move (`npm run identity`). What the report keeps of the measurement and the walk is added by `print()`.
+ * THE WRITER (stages 2 and 4 of `.claude/plans/the-display-list/`). `emitStructure` reads a {@link DisplayList} and nothing else: the deciding half (what goes on which page, in which order, under which marked content, and the structure tree resolved: which elements survive, every `/K` in reading order, where a destination lands) lives in `displayList/build.js` and `displayList/structure.js`, the writer numbering each page's content starts as MCIDs and writing what it is given, the bytes it needs are in `resources.blobs`, and every length arrives in the page's points. It reads no page geometry, no measurement and no walk. The file is byte-identical to the one the same document had before the move (`npm run identity`). What the report keeps of the measurement and the walk is added by `print()`.
  *
  * WHAT THE PORT CHANGED (PLAN.md P2, P6, D7). pdf-lib is a capability handle. `import selfSource from './structureEmit.ts?raw'` is deleted with the statistic it fed: the report's `builderLines` counted this module's own lines between two region markers, for an exit note's table, and a printer has no reader for it. `sidecarVersion`, `fixture`, `chromiumPrinted` and `chromiumError` go with the report's fixture-only fields; what is left is a partial `Report` the composition in `src/index.js` folds into the one it hands back.
  *
@@ -34,7 +34,6 @@ import { mul } from '../coordinates/matrix.ts';
 import { PHOTO_PIXEL_THRESHOLD, PHOTO_PSNR_TARGET, PHOTO_RUN_THRESHOLD, PHOTO_UNIQUE_RATIO_THRESHOLD } from '../images/photoRule.ts';
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
-import { keepWhenEmpty } from '../walk/structure.ts';
 import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
 import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba } from '../images/samples.ts';
@@ -51,7 +50,7 @@ import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
 import type { EmbeddedImage } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
+import type { DisplayList, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
 import type { WordRecord } from './textEmit.ts';
 
 /** One image the writer painted: which one, and what it became in the file. */
@@ -63,9 +62,6 @@ export type ImageUse = {
   name: string;
 };
 import type { Report, ReportContainer, ReportTiming, ReportPageBox, ReportFace as ReportEmissionFace, ReportEmission, ReportStructure, ReportParagraph as ReportEmissionParagraph, ReportImage, ReportStructureNode, ReportStructureArtifact, ReportStructureAnnot, ReportPaint, ReportEmojiCluster, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportColor, ReportOutlineItem, ReportPageLabel, ReportPrintMarks, ReportTable, ReportDecoderComparison, ReportPhotoRule, ReportSkipInk, ReportConversion, ReportDeferred, ReportStackingContext, ReportDecoration, ReportCtmReading, ReportCollapsedEdge, ReportComputedBorderWidth, ReportEmoji, ReportLink, ReportVectorNotes, ReportCtmNode } from '../report.ts';
-
-/** The records the list holds, named for what the writer reads of them; each is a type the list owns (`displayList.js`). What this module still imports from the walk and the measurement is three pure functions of a tag or a string (`keepWhenEmpty`, `clusterKindOf`, `codePointsOf`) and one cell type, and no record either produced. */
-export type StructureNode = DisplayList['structure'];
 
 export type ArtifactDescriptor = ArtifactStart['artifact'];
 
@@ -90,9 +86,6 @@ export type VectorEmitOptions = {
   ctmReadings: ReportCtmReading[];
   figures: { path: string; tag: string; alt: string }[];
 };
-
-/** One attribute object's entries, before they become a `/A` dictionary. */
-export type AttributeDict = Record<string, string|number|PDFString|number[]|PDFString[]>;
 
 /** Everything `emitStructure` is told beyond the list; every member is optional because each is an experiment's addition, and each is absent in every fixture before it. */
 export type EmitStructureOptions = {
@@ -144,38 +137,23 @@ export type EmitStructureResult = {
   /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
   idTree: string[];
 };
-/** One content item that owns a structure element: consecutive units on one page with one owner, written as one `BDC … EMC`. An artifact group carries no MCID and appears nowhere in the tree, so the list's tag starts that open one are not groups. */
+/** The marked-content sequence a page is inside: the element that owns it, and the MCID the writer gave it. */
 export type Group = {
-  owner: string;
+  element: number;
   page: number;
-  /** The group's place in reading order across the whole document: page-major, then the DOM rank of the item the group came from, then the group's own position within that item. It is the only ordering key the structure tree has — `/K` is sorted on it and a destination's page is the page of the lowest one — and it is deliberately not the emission counter, because under `paintOrder: 'css'` the emission order is the painting order and a float's ink is emitted before in-flow text it follows in the document. */
-  seq: number;
   mcid: number;
 };
-/** One structure element as the builder holds it: its node, its kept kids, and the content it owns. */
-export type Built = {
-  node: StructureNode;
-  kids: Built[];
-  mcids: { page: number; mcid: number; seq: number }[];
-  /** The link annotation a `Link` element points at. */
-  objr?: { page: number; structParent: number; annot: PDFRef; seq: number };
-  /** Allocated before any dictionary is filled. */
-  ref?: PDFRef;
-};
-/** The allocated tree, and what the outline, the links and the `/IDTree` need to know about it. */
+/** The written tree, and what the outline, the links, the report and the `/IDTree` need to know about it. */
 export type BuildResult = {
-  root: Built;
+  /** Each element's object, by its index in `structure.elements`. */
+  refs: PDFRef[];
   annots: ReportStructureAnnot[];
   /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
   ids: string[];
   /** E12F (`structure-tree.md`): every link and which of the two actions it became. */
   links: ReportLink[];
-  /** E12F (`structure-tree.md`): the structure element every kept path became. A destination inside the file has to name a structure element (PDF/UA-2 8.8 t1), so the outline needs the ref of the heading it points at and the link needs the ref of the section it points at; both are known only once the tree has been allocated, and this is how they reach the caller. */
-  refByPath: Map<string, PDFRef>;
-  /** E12F (`structure-tree.md`): for an element with content on exactly one page, that page. A structure destination resolves its page through the element's `/Pg`, and a grouping element that owns no content of its own has none — so the emitter walks down to the first descendant that does, and this is the map it walks with. */
-  pageByPath: Map<string, number>;
-  /** E12F (`structure-tree.md`): the tree as paths, so the walk down to a page-bearing descendant is possible. */
-  kidPathsByPath: Map<string, string[]>;
+  /** The tree in the report's shape. */
+  expectedTree: ReportStructureNode;
 };
 
 /**
@@ -196,13 +174,13 @@ const ANNOTATION_PRINT_FLAG = 4;
 /**
  * The whole file: every page's content items, the structure tree over them, and every document-level object the options ask for.
  *
- * @throws {CasterError} A used instance or an image with no bytes, images with no `imageAssets`, an image no decoder tier could carry (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; a structure path no element has; print marks without colour options; a bookmark to a heading that was pruned; a link or destination with no structure element; two elements with one `/ID`; and every refusal of the modules it composes.
+ * @throws {CasterError} A used instance or an image with no bytes, images with no `imageAssets`, an image no decoder tier could carry (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; a structure tree that is not one, or an element index no element has (see `checkTree`); two elements with one `/ID`; and every refusal of the modules it composes.
  */
 export async function emitStructure(list: DisplayList, options: EmitStructureOptions): Promise<EmitStructureResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
-    if (list.version !== 3)
-        throw new CasterError(`caster: the writer reads a display list of version 3, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
+    if (list.version !== 4)
+        throw new CasterError(`caster: the writer reads a display list of version 4, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
     // How the list asks to be written: the font profile, the photo rule and the colour story are the list's, and no option reaches a byte.
     const profile = list.writing.fontProfile;
     // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
@@ -229,8 +207,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         }));
     }
     const { pages, names } = setupPages(pdfDoc, fonts, list.pages);
-    // Every structure node by its path, read once: the list's tree is not changed by the writer, and `buildStructure` prunes its own copy of it.
-    const nodes = nodesByPath(list.structure);
+    const elements = list.structure.elements;
     const colourWriting = list.writing.colour;
     const colour = colourWriting
         ? new ColorEmitter(context, { profileBytes: blobOf(list, colourWriting.profiles.cmyk), srgbBytes: blobOf(list, colourWriting.profiles.srgb), condition: colourWriting.condition, info: colourWriting.info, blackText: colourWriting.blackText })
@@ -316,19 +293,15 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     const sidecarEmoji = [];
     const mcidOwnersByPage: string[][] = [];
     const pageStreams = [];
-    const groups = [];
+    // The MCID of each content start, by page and by the start's index in the page's items: the writer's own numbering, 0, 1, 2 … in item order on each page.
+    const mcidAt: Map<number,number>[] = [];
     let kernAdjustments = 0;
     let actualTextSpans = 0;
-    const structureAt = new Map<any, any>();
-    const indexStructure = (node: StructureNode) => {
-        if (!structureAt.has(node.path))
-            structureAt.set(node.path, node);
-        node.kids.forEach(indexStructure);
-    };
-    indexStructure(list.structure);
     for (const [page, { items }] of list.pages.entries()) {
         const operators: PDFOperator[] = [];
         const mcidOwners = [];
+        const pageMcids = new Map<number,number>();
+        mcidAt.push(pageMcids);
         // The marked-content sequence the item being written sits in: `artifact` for one that owns no structure element, `group` for one that does.
         let artifact = false;
         let group: Group|null = null;
@@ -361,13 +334,13 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     }
                 }
                 else {
-                    const node = nodeByPath(nodes, start.struct);
+                    const element = elementOf(elements, start.element, `the marked content at item ${at} of page ${page + 1}`);
                     artifact = false;
-                    group = { owner: start.struct, page, seq: start.seq, mcid: start.mcid };
-                    mcidOwners[start.mcid] = start.struct;
+                    group = { element: start.element, page, mcid: pageMcids.size };
+                    pageMcids.set(at, group.mcid);
+                    mcidOwners[group.mcid] = element.path;
                     // pdf-lib's PDFOperatorArg union has no PDFDict member, so the inline property list is written as the literal it serialises to anyway.
-                    operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginMarkedContentSequence, [pdf().PDFName.of(node.tag), `<</MCID ${start.mcid}>>`]));
-                    groups.push(group);
+                    operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginMarkedContentSequence, [pdf().PDFName.of(element.type), `<</MCID ${group.mcid}>>`]));
                 }
                 continue;
             }
@@ -498,17 +471,14 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         pages[page].pushOperators(...operators);
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);
     }
-    const bboxByPath = new Map(Object.entries(list.figureBoxes));
-    const built = buildStructure(context, pages, list, groups, mcidOwnersByPage.length, bboxByPath, linkItems.sort((a, b) => a.item.order - b.item.order));
+    const built = buildStructure(context, pages, list, mcidAt, linkItems.sort((a, b) => a.item.order - b.item.order));
     // --- E12F (`structure-tree.md`): the two catalog entries a reader expects and no rule demands ---
     let outlineItems;
     if (list.outline.length > 0) {
         const headings = [];
         for (const heading of list.outline) {
-            const ref = built.refByPath.get(heading.path);
-            if (!ref)
-                throw new CasterError(`caster: the heading at ${heading.path} was pruned, so no bookmark can name it`);
-            headings.push({ path: heading.path, ref, title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt });
+            const element = elementOf(elements, heading.element, `the bookmark ${JSON.stringify(heading.title)}`);
+            headings.push({ path: element.path, ref: built.refs[heading.element], title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt });
         }
         const outline = buildOutline(context, headings);
         if (outline) {
@@ -563,11 +533,11 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     const structure: Omit<ReportStructure,'headings'> = {
         namespace: PDF_2_NAMESPACE,
         lang: list.info.lang,
-        expectedTree: expectedTreeOf(built.root),
+        expectedTree: built.expectedTree,
         annots: built.annots,
         artifacts: sidecarArtifacts,
         pages: mcidOwnersByPage.map((mcidOwners) => ({ mcidOwners })),
-        tagCounts: tagCountsOf(built.root),
+        tagCounts: tagCountsOf(elements),
     };
     const photoRule = photoRuleRecord((embeddedImages.filter((embedded) => embedded !== null) as EmbeddedImage[]));
     // D7: the report's version and fixture are gone; this is a partial report `src/index.js` folds into the one it hands back.
@@ -617,35 +587,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     return { bytes, pageStreams, report, fontStats: faces, fontPrograms, paragraphMcids, wordRecords: sidecarWords, imageUses, xobjects: imageContext.byHash.size, idTree: built.ids };
 }
 /**
- * The Table attributes of one cell.
- *
- * @remarks
- * `/Scope` on a `TH`, `/Headers` on any cell whose header set is not empty, and `/RowSpan`/`/ColSpan` only where they are above 1 — a span of one is the default and writing it would be noise a reader has to skip. `/Headers` is written even where `/Scope` alone would satisfy a checker, because a `/Scope` tells a reader which axis a header claims and a `/Headers` tells it which cells; the group scopes have no PDF name at all and only `/Headers` carries their extent.
- *
- * @returns Null for a node that is not a cell, or a cell with nothing to say.
- */
-function tableAttributes(node: StructureNode): AttributeDict|null {
-    if (node.tag !== 'TH' && node.tag !== 'TD')
-        return null;
-    const { scope, headers, rowSpan, colSpan } = node.attrs;
-    const dict: AttributeDict = {};
-    if (scope)
-        dict.Scope = scope;
-    if (headers && headers.length > 0)
-        dict.Headers = headers.map((id) => pdf().PDFString.of(id));
-    if (rowSpan && rowSpan > 1)
-        dict.RowSpan = rowSpan;
-    if (colSpan && colSpan > 1)
-        dict.ColSpan = colSpan;
-    if (Object.keys(dict).length === 0)
-        return null;
-    return { O: 'Table', ...dict };
-}
-/** A PDF rectangle, `[llx lly urx ury]`, from the report's `[x y w h]`. */
-function rectangleOf([x, y, w, h]: [number,number,number,number]): [number,number,number,number] {
-    return [round3(x), round3(y), round3(x + w), round3(y + h)];
-}
-/**
  * One image: the clip, the matrix, the `Do`.
  *
  * @remarks
@@ -682,7 +623,7 @@ function imageOperators(image: ImageItem, name: PDFName, formSize: [number,numbe
  */
 function uriOf(link: LinkItem): string {
     if (link.target.uri === undefined)
-        throw new CasterError(`caster: the link at ${link.struct} has neither a destination in the file nor a URI; the builder resolves one for every link without a destination`);
+        throw new CasterError(`caster: the link of order ${link.order} has neither a destination in the file nor a URI; the builder resolves one for every link without a destination`);
     return link.target.uri;
 }
 /**
@@ -781,65 +722,106 @@ function rectOperators(item: RectItem, colour: ColorEmitter|null): PDFOperator[]
     ];
 }
 /**
- * The structure node at `path`.
+ * The element at `index`.
  *
- * @param nodes - From `nodesByPath`.
- * @throws {CasterError} No node has that path.
+ * @param what - What names it, for the refusal.
+ * @throws {CasterError} No element has that index.
  */
-function nodeByPath(nodes: Map<string,StructureNode>, path: string): StructureNode {
-    const found = nodes.get(path);
-    if (!found)
-        throw new CasterError(`caster: no structure element at ${path}`);
-    return found;
+function elementOf(elements: StructElement[], index: number, what: string): StructElement {
+    const element = Number.isInteger(index) ? elements[index] : undefined;
+    if (!element)
+        throw new CasterError(`caster: ${what} names structure element ${String(index)}, and the list's tree has ${elements.length}`);
+    return element;
 }
 /**
- * Every node under `tree` by its path, depth first, the first one kept where two share a path.
+ * Hold the list's tree to the shape the writer writes from: a tree rooted at element 0, every child index in range and listed once, every content child a content start that names the element back, every link child a link owned by it.
  *
- * @remarks
- * Measured 2026-10-29 on the manual (304 pages): a depth-first search per lookup, once per content group and once per vector, was 1.2 s of the writer.
+ * @returns Each element's parent, by index; the root's is -1.
+ * @throws {CasterError} The first thing in the tree that is not so, named.
  */
-function nodesByPath(tree: StructureNode): Map<string,StructureNode> {
-    const nodes: Map<string,StructureNode> = new Map<any, any>();
-    const visit = (node: StructureNode) => {
-        if (!nodes.has(node.path))
-            nodes.set(node.path, node);
-        for (const kid of node.kids)
-            visit(kid);
-    };
-    visit(tree);
-    return nodes;
+function checkTree(list: DisplayList, mcidAt: Map<number,number>[], linkOwners: Map<number,number>): number[] {
+    const elements = list.structure.elements;
+    if (elements.length === 0)
+        throw new CasterError('caster: the display list\'s structure tree has no elements; element 0 is the root');
+    const parent: number[] = elements.map(() => -2);
+    parent[0] = -1;
+    const claimed = new Set<string>();
+    elements.forEach((element, index) => {
+        for (const child of element.children) {
+            const where = `structure element ${index} (${element.path})`;
+            if (typeof child === 'number') {
+                if (!Number.isInteger(child) || child <= 0 || child >= elements.length)
+                    throw new CasterError(`caster: ${where} lists child ${String(child)}, which is not an element below the root`);
+                if (parent[child] !== -2)
+                    throw new CasterError(`caster: ${where} lists element ${child}, which ${parent[child] === index ? 'it already lists' : `element ${parent[child]} lists too`}; an element has one parent`);
+                parent[child] = index;
+            }
+            else if ('link' in child) {
+                if (linkOwners.get(child.link) !== index)
+                    throw new CasterError(`caster: ${where} lists the link of order ${String(child.link)}, which ${linkOwners.has(child.link) ? `element ${linkOwners.get(child.link)} owns` : 'no link item has'}`);
+            }
+            else {
+                const page = list.pages[child.page];
+                const item = page?.items[child.item];
+                if (!item || item.kind !== 'tag' || !('start' in item) || !('element' in item.start))
+                    throw new CasterError(`caster: ${where} lists item ${String(child.item)} of page ${String(child.page)}, which is not a content start`, { listItem: { page: child.page, item: child.item } });
+                if (item.start.element !== index)
+                    throw new CasterError(`caster: ${where} lists item ${child.item} of page ${child.page + 1}, which opens content for element ${item.start.element}`, { listItem: { page: child.page, item: child.item } });
+                const key = `${child.page}:${child.item}`;
+                if (claimed.has(key))
+                    throw new CasterError(`caster: ${where} lists item ${child.item} of page ${child.page + 1} twice`, { listItem: { page: child.page, item: child.item } });
+                claimed.add(key);
+            }
+        }
+    });
+    const orphan = parent.indexOf(-2);
+    if (orphan >= 0)
+        throw new CasterError(`caster: structure element ${orphan} (${elements[orphan].path}) is no element's child, so the tree does not reach it`);
+    // One parent each and the root nobody's child: an element the root does not reach sits on a cycle.
+    elements.forEach((_, index) => {
+        const seen = new Set<number>();
+        for (let at = index; at !== -1; at = parent[at]) {
+            if (seen.has(at))
+                throw new CasterError(`caster: structure element ${index} (${elements[index].path}) is its own ancestor; the tree has a cycle`);
+            seen.add(at);
+        }
+    });
+    mcidAt.forEach((mcids, page) => {
+        for (const item of mcids.keys()) {
+            if (!claimed.has(`${page}:${item}`))
+                throw new CasterError(`caster: the content start at item ${item} of page ${page + 1} is in no element's children`, { listItem: { page, item } });
+        }
+    });
+    return parent;
 }
 /**
- * Build the structure tree, the ParentTree, the link annotations and the catalog entries that point at them.
+ * Write the structure tree, the ParentTree, the link annotations and the catalog entries that point at them.
  *
  * @remarks
- * Refs are allocated before any dictionary is filled, because the tree is doubly linked: an element names its parent and its parent lists its kids. Empty elements are pruned first — an element with no content items, no annotation and no surviving kids is a DOM node the engine painted nothing for, and PDF/UA-2 has no use for it.
+ * The tree is the list's, resolved by the builder (`displayList/structure.js`): the writer prunes, orders and looks up nothing. Refs are allocated in the array's order before any dictionary is filled, because the tree is doubly linked: an element names its parent and its parent lists its kids. What the writer derives, it derives from the children: `/P`; `/Pg` with bare MCIDs where all of an element's content is on one page, `/MCR` dictionaries otherwise; the ParentTree, one array per page indexed by MCID, then one entry per link an element ends with; the `/IDTree`.
  *
- * @param bboxByPath - Each Figure's Layout `/BBox`, by structure path.
- * @param linkItems - The list's link items with the page each sits on, in the walk's order.
- * @throws {CasterError} A link with no structure element; a link with neither a destination nor a URI; two elements with one `/ID`; a trailer with no Root; a destination with no content under it.
+ * @param mcidAt - Each page's MCIDs, by the index of the content start in its items.
+ * @param linkItems - The list's link items with the page each sits on, in `order`.
+ * @throws {CasterError} A tree that is not one (see `checkTree`); a link whose `order` is not its place; a link with neither a destination nor a URI; two elements with one `/ID`; a trailer with no Root.
  */
-function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList, groups: Group[], pageCount: number, bboxByPath: Map<string,[number,number,number,number]>, linkItems: { item: LinkItem; page: number; }[]): BuildResult {
-    const built = new Map<any, any>();
-    /** The builder's mirror of one node and everything under it, registered by path. */
-    const attach = (node: StructureNode): Built => {
-        const entry: Built = { node, kids: node.kids.map(attach), mcids: [] };
-        built.set(node.path, entry);
-        return entry;
-    };
-    const root = attach(list.structure);
-    for (const group of groups) {
-        built.get(group.owner).mcids.push({ page: group.page, mcid: group.mcid, seq: group.seq });
-    }
+function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList, mcidAt: Map<number,number>[], linkItems: { item: LinkItem; page: number; }[]): BuildResult {
+    const elements = list.structure.elements;
+    const pageCount = list.pages.length;
+    const linkOwners = new Map<number,number>();
+    linkItems.forEach(({ item }, index) => {
+        if (item.order !== index)
+            throw new CasterError(`caster: the link at place ${index} among the document's links has order ${item.order}; the orders run 0, 1, 2 …, and the /StructParent numbering follows them`);
+        elementOf(elements, item.element, `the link of order ${item.order}`);
+        linkOwners.set(item.order, item.element);
+    });
+    const parent = checkTree(list, mcidAt, linkOwners);
     const namespaceRef = context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
     const annots: ReportStructureAnnot[] = [];
     const links: ReportLink[] = [];
+    const annotRefs: PDFRef[] = [];
     const pendingDestinations: { dict: PDFDict; dest: NonNullable<LinkTarget['dest']>; }[] = [];
-    linkItems.forEach(({ item: annot, page: annotPage }, index) => {
-        const owner = built.get(annot.struct);
-        if (!owner)
-            throw new CasterError(`caster: the link at ${annot.struct} has no structure element`);
-        const structParent = pageCount + index;
+    for (const { item: annot, page: annotPage } of linkItems) {
+        const structParent = pageCount + annot.order;
         const page = pages[annotPage];
         const quads = annot.rects.flatMap(([x0, top, x1, bottom]) => [x0, top, x1, top, x0, bottom, x1, bottom]);
         const xs = quads.filter((_, i) => i % 2 === 0);
@@ -862,10 +844,12 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
             P: page.ref,
         });
         const annotRef = context.register(annotDict);
+        annotRefs.push(annotRef);
         if (annot.target.dest)
             pendingDestinations.push({ dict: annotDict, dest: annot.target.dest });
+        const ownerPath = elements[annot.element].path;
         links.push({
-            ownerPath: annot.struct,
+            ownerPath,
             href: annot.target.href,
             kind: annot.target.kind,
             action: annot.target.dest ? 'Dest' : 'URI',
@@ -883,100 +867,58 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         page.node.addAnnot(annotRef);
         // 8.9.3.3 t1: a page carrying an annotation has to declare a tab order. /S is "use the structure order", which is the only honest answer for a file whose reading order is the structure tree.
         page.node.set(pdf().PDFName.of('Tabs'), pdf().PDFName.of('S'));
-        owner.objr = { page: annotPage, structParent, annot: annotRef, seq: Number.MAX_SAFE_INTEGER };
-        annots.push({ structParent, page: annotPage, ownerPath: annot.struct, href: annot.target.href, contents: annot.contents, rectPt, quads });
-    });
-    /** Drop every kid that owns nothing; whether this entry itself survives. */
-    const prune = (entry: Built): boolean => {
-        entry.kids = entry.kids.filter(prune);
-        // E11 (`tables.md`): an empty `TD` is the one element that earns its place by existing. The rest of the rule is that of E5 (`structure-tree.md`) — an element the engine painted nothing for is a hole in the reading order, not an element.
-        if (keepWhenEmpty(entry.node.tag))
-            return true;
-        return entry.mcids.length > 0 || entry.objr !== undefined || entry.kids.length > 0;
-    };
-    prune(root);
-    /** Give an entry and every kid under it a ref, before any dictionary is filled. */
-    const allocate = (entry: Built) => {
-        entry.ref = context.nextRef();
-        for (const kid of entry.kids)
-            allocate(kid);
-    };
-    allocate(root);
+        annots.push({ structParent, page: annotPage, ownerPath, href: annot.target.href, contents: annot.contents, rectPt, quads });
+    }
+    const refs = elements.map(() => context.nextRef());
     const rootRef = context.nextRef();
     const parentsByPage: PDFRef[][] = Array.from({ length: pageCount }, () => []);
     const parentsByAnnot: PDFRef[] = [];
-    /** Every element that carries an `/ID`, in the order the tree was filled. */
+    /** Every element that carries an `/ID`, in the array's order. */
     const idRefs: { id: string; ref: PDFRef; }[] = [];
-    /** Write one element's dictionary, its `/K` in reading order, and then its kids'. */
-    const fill = ( entry: Built,  parentRef: PDFRef) => {
-        const ref = (entry.ref as PDFRef);
-        for (const { page, mcid } of entry.mcids)
-            parentsByPage[page][mcid] = ref;
-        if (entry.objr)
-            parentsByAnnot[entry.objr.structParent - pageCount] = ref;
+    const contentsOf = (element: StructElement) => element.children.filter((c): c is { page: number, item: number } => typeof c === 'object' && 'page' in c);
+    elements.forEach((element, index) => {
+        const ref = refs[index];
+        const contents = contentsOf(element);
+        const mcidOf = (c: { page: number, item: number }) => mcidAt[c.page].get(c.item) as number;
+        for (const c of contents)
+            parentsByPage[c.page][mcidOf(c)] = ref;
         // A single page behind every content item lets /K carry bare integers and the element carry /Pg; content on two pages has to name its page per item through /MCR dictionaries, and then /Pg would be a lie.
-        const onePage = entry.mcids.length > 0 && entry.mcids.every(( m: { page: number; }) => m.page === entry.mcids[0].page);
-        // Kids are ordered by the earliest content anywhere under them, which is content order and therefore reading order. E11 (`tables.md`) introduced the one kind of element that has no content anywhere under it — an empty `TD`, which exists to make a row rectangular — and such an element has no place in content order at all, so it takes the place of the last sibling that had one and keeps the position it was declared in. Every element of every fixture before E11 owns content, so nothing there moves by a byte.
-        const kidSeqs = entry.kids.map(seqOf);
-        let previous = Number.MIN_SAFE_INTEGER;
-        for (let i = 0; i < kidSeqs.length; i++) {
-            if (kidSeqs[i] === Number.MAX_SAFE_INTEGER)
-                kidSeqs[i] = previous;
-            else
-                previous = kidSeqs[i];
-        }
-        const kidOrder = entry.kids
-            .map(( kid: Built,  index: number) => ({ kid, seq: kidSeqs[index], index }))
-            .sort(( a: { seq: number; index: number; },  b: { seq: number; index: number; }) => a.seq - b.seq || a.index - b.index);
-        entry.kids = kidOrder.map(( k: { kid: Built; }) => k.kid);
-        const ordered: { seq: number; value: number|PDFRef|PDFDict; }[] = [
-            ...entry.mcids.map(( m: { page: number; mcid: number; seq: number; }) => ({
-                seq: m.seq,
-                value: onePage ? m.mcid : context.obj({ Type: 'MCR', Pg: pages[m.page].ref, MCID: m.mcid }),
-            })),
-            ...kidOrder.map(( { kid, seq }: { kid: Built; seq: number; }) => ({ seq, value: (kid.ref as PDFRef) })),
-            ...(entry.objr ? [{ seq: entry.objr.seq, value: context.obj({ Type: 'OBJR', Pg: pages[entry.objr.page].ref, Obj: entry.objr.annot }) }] : []),
-        ].sort((a, b) => a.seq - b.seq);
-        // Attributes are a list rather than a field per owner: E5 (`structure-tree.md`) had exactly one case (`/ListNumbering`) and could spread it inline, E7 (`images.md`) added the Layout `/BBox` beside it, and E11 (`tables.md`) adds a Table dictionary that a `TD` can carry at the same time as neither. `/A` is written as the dictionary itself when there is one — which is byte for byte what E5 through E10 (`coordinates-and-pages.md`) wrote — and as an array when there is more than one.
-        const attributes: AttributeDict[] = [];
-        if (entry.node.attrs.listNumbering)
-            attributes.push({ O: 'List', ListNumbering: entry.node.attrs.listNumbering });
-        // The Layout /BBox is a PDF rectangle — [llx lly urx ury] — not the [x y w h] the report records, because 14.8.5.4.3 says a rectangle and a reader that met four numbers meaning something else would place the figure somewhere the page has no ink.
-        if (bboxByPath.has(entry.node.path))
-            attributes.push({ O: 'Layout', BBox: rectangleOf((bboxByPath.get(entry.node.path) as [number, number, number, number])) });
-        const table = tableAttributes(entry.node);
-        if (table)
-            attributes.push(table);
-        // E12F (`structure-tree.md`): `<sub>` and `<sup>`. The 2.0 Layout attribute is the one thing in the standard that means what CSS means by them; the `Sub` *element* is a sub-division of a block and would say something else entirely.
-        if (entry.node.attrs.textPosition)
-            attributes.push({ O: 'Layout', TextPosition: entry.node.attrs.textPosition });
-        if (entry.node.attrs.id)
-            idRefs.push({ id: entry.node.attrs.id, ref });
+        const onePage = contents.length > 0 && contents.every((c) => c.page === contents[0].page);
+        const kids = element.children.map((child) => {
+            if (typeof child === 'number')
+                return refs[child];
+            if ('link' in child) {
+                parentsByAnnot[child.link] = ref;
+                return context.obj({ Type: 'OBJR', Pg: pages[linkItems[child.link].page].ref, Obj: annotRefs[child.link] });
+            }
+            return onePage ? mcidOf(child) : context.obj({ Type: 'MCR', Pg: pages[child.page].ref, MCID: mcidOf(child) });
+        });
+        const attributes = (element.attributes ?? []).map(attributeObject);
+        if (element.id)
+            idRefs.push({ id: element.id, ref });
         context.assign(ref, context.obj({
             Type: 'StructElem',
-            S: entry.node.tag,
+            S: element.type,
             NS: namespaceRef,
-            P: parentRef,
-            ...(onePage ? { Pg: pages[entry.mcids[0].page].ref } : {}),
-            ...(entry.node.attrs.lang ? { Lang: pdf().PDFString.of(entry.node.attrs.lang) } : {}),
-            ...(entry.node.attrs.alt ? { Alt: textString(entry.node.attrs.alt) } : {}),
+            P: parent[index] === -1 ? rootRef : refs[parent[index]],
+            ...(onePage ? { Pg: pages[contents[0].page].ref } : {}),
+            ...(element.lang ? { Lang: pdf().PDFString.of(element.lang) } : {}),
+            ...(element.alt ? { Alt: textString(element.alt) } : {}),
             // E12F (`structure-tree.md`): `/E` is the expansion of an abbreviation, and 32000-2 still has it as a structure-element entry — probed against veraPDF rather than assumed.
-            ...(entry.node.attrs.expansion ? { E: textString(entry.node.attrs.expansion) } : {}),
+            ...(element.expansion ? { E: textString(element.expansion) } : {}),
             // 14.7.5.2: an element's /ID is a byte string, and it is what /Headers and the /IDTree name it by.
-            ...(entry.node.attrs.id ? { ID: pdf().PDFString.of(entry.node.attrs.id) } : {}),
+            ...(element.id ? { ID: pdf().PDFString.of(element.id) } : {}),
+            // `/A` is the dictionary itself when there is one, which is byte for byte what E5 through E10 (`coordinates-and-pages.md`) wrote, and an array when there is more than one.
             ...(attributes.length === 1 ? { A: attributes[0] } : {}),
             ...(attributes.length > 1 ? { A: attributes } : {}),
-            K: ordered.map((k) => k.value),
+            K: kids,
         }));
-        for (const kid of entry.kids)
-            fill(kid, ref);
-    };
-    fill(root, rootRef);
+    });
     // One flat number tree: page keys first, then one key per annotation. A page entry is an array indexed by MCID; an annotation entry is the element itself. Nothing here needs /Kids until a document has thousands of pages.
     const nums: (number|PDFRef[]|PDFRef)[] = [];
-    parentsByPage.forEach((refs, page) => {
+    parentsByPage.forEach((pageRefs, page) => {
         pages[page].node.set(pdf().PDFName.of('StructParents'), pdf().PDFNumber.of(page));
-        nums.push(page, refs);
+        nums.push(page, pageRefs);
     });
     parentsByAnnot.forEach((ref, index) => nums.push(pageCount + index, ref));
     const parentTreeRef = context.register(context.obj({ Nums: nums }));
@@ -991,7 +933,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         : null;
     context.assign(rootRef, context.obj({
         Type: 'StructTreeRoot',
-        K: [root.ref],
+        K: [refs[0]],
         Namespaces: [namespaceRef],
         ParentTree: parentTreeRef,
         ParentTreeNextKey: pageCount + parentsByAnnot.length,
@@ -1003,77 +945,66 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         throw new CasterError('caster: the trailer has no Root');
     catalog.set(pdf().PDFName.of('StructTreeRoot'), rootRef);
     catalog.set(pdf().PDFName.of('MarkInfo'), context.obj({ Marked: true }));
-    // --- E12F (`structure-tree.md`): the structure destinations, now that every element has a ref ---
-    const refByPath = new Map<any, any>();
-    const pageByPath = new Map<any, any>();
-    const kidPathsByPath = new Map<any, any>();
-    /** Record every kept element's ref, its kids and the page it begins on. */
-    const collect = (entry: Built) => {
-        refByPath.set(entry.node.path, entry.ref);
-        kidPathsByPath.set(entry.node.path, entry.kids.map((kid) => kid.node.path));
-        // The page a destination lands on is the page the element begins on, and an element whose content items straddle a cut begins on the first of them. Recording a page only for the elements that sit wholly on one page made a straddling heading unreachable — `pageBearing` walked past it into its kids and, finding none, refused with "no content anywhere under it", which named neither the cause nor the truth.
-        if (entry.mcids.length > 0) {
-            let first = entry.mcids[0];
-            for (const mcid of entry.mcids) if (mcid.seq < first.seq) first = mcid;
-            pageByPath.set(entry.node.path, first.page);
-        }
-        for (const kid of entry.kids)
-            collect(kid);
-    };
-    collect(root);
-    /**
-     * The element a destination should actually name.
-     *
-     * @remarks
-     * A structure destination resolves its page through the element's own `/Pg`, and a grouping element — a `Sect` around a heading and three paragraphs — has none, because its content is its descendants'. The first descendant in reading order that does carry a page is what a reader would land on anyway, so that is the element the destination names.
-     */
-    const pageBearing = (path: string): string|null => {
-        if (pageByPath.has(path))
-            return path;
-        for (const kid of kidPathsByPath.get(path) ?? []) {
-            const found = pageBearing(kid);
-            if (found)
-                return found;
-        }
-        return null;
-    };
+    // E12F (`structure-tree.md`): the structure destinations, now that every element has a ref. The element is the builder's: the first at or under the one the fragment named with content of its own, whose `/Pg` gives the destination its page.
     for (const { dict, dest } of pendingDestinations) {
-        const path = pageBearing(dest.struct);
-        if (!path) {
-            throw new CasterError(`caster: the destination at ${dest.struct} has no content anywhere under it, so no structure destination can name a page`);
-        }
-        dict.set(pdf().PDFName.of('Dest'), context.obj([refByPath.get(path), pdf().PDFName.of('XYZ'), dest.x, dest.y, null]));
+        elementOf(elements, dest.element, `the destination at ${dest.struct}`);
+        dict.set(pdf().PDFName.of('Dest'), context.obj([refs[dest.element], pdf().PDFName.of('XYZ'), dest.x, dest.y, null]));
     }
-    return { root, annots, ids: sortedIds.map((entry) => entry.id), links, refByPath, pageByPath, kidPathsByPath };
-}
-/** The earliest content anywhere under an element; its place in its parent's /K. */
-function seqOf(entry: Built): number {
-    const own = entry.mcids.map((m) => m.seq);
-    const kids = entry.kids.map(seqOf);
-    return Math.min(...own, ...kids, Number.MAX_SAFE_INTEGER);
-}
-// #endregion builder
-/** The tree in the report's shape, which is the shape the node checker reads back. */
-function expectedTreeOf(entry: Built): ReportStructureNode {
-    const onePage = entry.mcids.length > 0 && entry.mcids.every((m) => m.page === entry.mcids[0].page);
-    return {
-        tag: entry.node.tag,
-        path: entry.node.path,
-        ...(onePage ? { pg: entry.mcids[0].page } : {}),
-        mcids: entry.mcids.map((m) => ({ page: m.page, mcid: m.mcid })),
-        attrs: entry.node.attrs,
-        ...(entry.objr ? { objr: { page: entry.objr.page, structParent: entry.objr.structParent } } : {}),
-        kids: entry.kids.map(expectedTreeOf),
+    /** The tree in the report's shape, which is the shape the node checker reads back: content in the order it was written, kids in reading order. */
+    const expected = (index: number): ReportStructureNode => {
+        const element = elements[index];
+        const contents = contentsOf(element).sort((a, b) => a.page - b.page || a.item - b.item);
+        const onePage = contents.length > 0 && contents.every((c) => c.page === contents[0].page);
+        const link = element.children.find((c): c is { link: number } => typeof c === 'object' && 'link' in c);
+        return {
+            tag: element.type,
+            path: element.path,
+            ...(onePage ? { pg: contents[0].page } : {}),
+            mcids: contents.map((c) => ({ page: c.page, mcid: mcidAt[c.page].get(c.item) as number })),
+            attrs: reportAttrs(element),
+            ...(link ? { objr: { page: linkItems[link.link].page, structParent: pageCount + link.link } } : {}),
+            kids: element.children.filter((c): c is number => typeof c === 'number').map(expected),
+        };
     };
+    return { refs, annots, ids: sortedIds.map((entry) => entry.id), links, expectedTree: expected(0) };
 }
-/** How many elements of each tag the kept tree carries, sorted by tag. */
-function tagCountsOf(root: Built): { tag: string; count: number; }[] {
-    const counts = new Map<any, any>();
-    const visit = (entry: Built) => {
-        counts.set(entry.node.tag, (counts.get(entry.node.tag) ?? 0) + 1);
-        for (const kid of entry.kids)
-            visit(kid);
-    };
-    visit(root);
+/** One attribute object as pdf-lib writes it: every string a name, but a `Headers` entry, which is a byte string. The keys keep the list's order. */
+function attributeObject(attribute: StructAttribute): Record<string, string|number|number[]|PDFString[]> {
+    return Object.fromEntries(Object.entries(attribute).map(([key, value]) => [key, key === 'Headers' ? (value as string[]).map((id) => pdf().PDFString.of(id)) : (value as string|number|number[])]));
+}
+/** What the report's tree records of an element's attributes, in the walk's names. */
+function reportAttrs(element: StructElement): ReportStructureNode['attrs'] {
+    const attrs: ReportStructureNode['attrs'] = {};
+    for (const attribute of element.attributes ?? []) {
+        if (attribute.O === 'List')
+            attrs.listNumbering = attribute.ListNumbering;
+        else if (attribute.O === 'Table') {
+            if (attribute.Scope)
+                attrs.scope = attribute.Scope;
+            if (attribute.Headers)
+                attrs.headers = attribute.Headers;
+            if (attribute.RowSpan)
+                attrs.rowSpan = attribute.RowSpan;
+            if (attribute.ColSpan)
+                attrs.colSpan = attribute.ColSpan;
+        }
+        else if ('TextPosition' in attribute)
+            attrs.textPosition = attribute.TextPosition;
+    }
+    if (element.lang)
+        attrs.lang = element.lang;
+    if (element.alt)
+        attrs.alt = element.alt;
+    if (element.expansion)
+        attrs.expansion = element.expansion;
+    if (element.id)
+        attrs.id = element.id;
+    return attrs;
+}
+/** How many elements of each type the tree carries, sorted by type. */
+function tagCountsOf(elements: StructElement[]): { tag: string; count: number; }[] {
+    const counts = new Map<string,number>();
+    for (const element of elements)
+        counts.set(element.type, (counts.get(element.type) ?? 0) + 1);
     return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([tag, count]) => ({ tag, count }));
 }

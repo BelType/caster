@@ -13,6 +13,7 @@ import { CasterError } from '../errors.ts';
 import { bboxOf } from '../vectors/cssBoxes.ts';
 import { apply } from '../coordinates/matrix.ts';
 import { ownsContent } from '../walk/structure.ts';
+import { resolveStructure } from './structure.ts';
 import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';
 import { rgbaOf } from '../images/samples.ts';
@@ -24,13 +25,14 @@ import { pageLabelRuns } from '../emit/pageLabels.ts';
 import { scopeNameOf } from '../walk/tableHeaders.ts';
 import { PX_TO_PT, round3 } from '../coordinates/units.ts';
 
-import type { ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
+import type { ContentStart, ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
 import type { MeasuredLine, MeasuredPaint, MeasuredImage, MeasuredEmoji, MeasuredRun, MeasureResult } from '../measure/textMeasure.ts';
 import type { MeasuredVector, PaintSpec, RasterSpec, VectorNode } from '../vectors/vector.ts';
 import type { DecodedSamples } from '../images/canvasDecode.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { WalkResult, WalkTable, StructureNode, WalkAnnot } from '../walk/structure.ts';
 import type { BoxPt } from '../coordinates/pageGeometry.ts';
+import type { ContentRef, LinkRef } from './structure.ts';
 import type { ReportTable, ReportCollapsedEdge } from '../report.ts';
 import type { TableCell } from '../walk/tableModel.ts';
 import type { PageMarks } from '../coordinates/printMarks.ts';
@@ -337,21 +339,22 @@ export function absoluteUri(href: string, base?: string): string {
 }
 
 /**
- * One link annotation as an item: its rectangles and its destination in page points, by the expressions the writer used, and for a link that leaves the file the URI its action carries.
+ * One link annotation as an item: its rectangles and its destination in page points, by the expressions the writer used, and for a link that leaves the file the URI its action carries. Its elements are filled in by `buildDisplayList` once the tree is resolved.
  *
  * @param baseUri - The document's own URL, which a relative `href` resolves against.
  */
 function linkItem(annot: WalkAnnot, order: number, baseUri?: string): LinkItem {
     return {
         kind: 'link',
-        struct: annot.ownerPath,
+        // The element and the destination's element are the resolver's, filled in once the tree is resolved.
+        element: -1,
         order,
         rects: annot.rects.map((r) => [xToPt(r.xPx, r.page), yToPt(r.yPx, r.page), xToPt(r.xPx + r.wPx, r.page), yToPt(r.yPx + r.hPx, r.page)]),
         target: {
             href: annot.href,
             kind: annot.kind,
             ...(annot.targetId ? { targetId: annot.targetId } : {}),
-            ...(annot.dest ? { dest: { page: annot.dest.page, x: xToPt(annot.dest.xPx, annot.dest.page), y: yToPt(annot.dest.yPx, annot.dest.page), struct: annot.dest.structPath } } : { uri: absoluteUri(annot.href, baseUri) }),
+            ...(annot.dest ? { dest: { page: annot.dest.page, x: xToPt(annot.dest.xPx, annot.dest.page), y: yToPt(annot.dest.yPx, annot.dest.page), element: -1, struct: annot.dest.structPath } } : { uri: absoluteUri(annot.href, baseUri) }),
         },
         contents: annot.contents,
     };
@@ -481,7 +484,7 @@ function pageSpaceBbox(node: MeasuredVector['node']): [number,number,number,numb
  * Build the display list of a measured, walked document.
  *
  * @returns The list, and beside it what only the report reads of each text item, by page and by the item's index in its page.
- * @throws {CasterError} A font or an image with no bytes; content owned by a tag that may not own it; a structure path no node has; a colour cluster with no raster; a heading that painted no text; page-label declarations that do not match the page count; a value the list cannot carry.
+ * @throws {CasterError} A font or an image with no bytes; content owned by a tag that may not own it; a structure path no node has; a colour cluster with no raster; a heading that painted no text; page-label declarations that do not match the page count; a value the list cannot carry; and the structure resolver's refusals (a link with no element, a destination with no content under it, a bookmark to a pruned heading; `displayList/structure.js`).
  */
 export async function buildDisplayList(measurement: MeasureResult, walk: WalkResult, inputs: BuildInputs): Promise<{ list: DisplayList; origins: TextOrigin[][]; }> {
     const rasterKey: Map<RasterSpec,number> = new Map((inputs.rasterSpecs ?? []).map((spec, index) => [spec, index]));
@@ -542,6 +545,11 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
     });
 
     const pages: Page[] = [];
+    // The content starts and the links, as the structure resolver reads them, beside the items it fills in.
+    const contentRefs: ContentRef[] = [];
+    const contentStarts: ContentStart[] = [];
+    const linkRefs: LinkRef[] = [];
+    const linkItems: LinkItem[] = [];
     // What only the report reads of each text item, by page and by the item's place in its page's list: not in the list.
     const origins: TextOrigin[][] = Array.from({ length: measurement.pageCount }, () => []);
     const paintedImages: Set<number> = new Set<any>();
@@ -613,7 +621,6 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             const geometry = pageGeometryFor(page);
             items.push({ kind: 'tag', start: { artifact: { type: 'Page' } } }, { kind: 'shape', owner: '', rect: [0, 0, round3(geometry.widthPt), round3(geometry.heightPt)], fill: { rgb: (background.rgb.map((c) => Math.round((c / 255) * 1000) / 1000) as [number, number, number]) } }, { kind: 'tag', end: true });
         }
-        let mcid = 0;
         for (const group of pageGroups) {
             const artifact = artifactByPath.get(group.owner);
             if (artifact) {
@@ -630,8 +637,10 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
                 const node = nodeByPath(group.owner);
                 if (!ownsContent(node.tag))
                     throw new CasterError(`caster: ${node.tag} at ${node.path} may not own content`);
-                items.push({ kind: 'tag', start: { struct: group.owner, mcid, seq: group.seq } });
-                mcid += 1;
+                const start: ContentStart = { element: -1 };
+                contentRefs.push({ page, item: items.length, owner: group.owner, seq: group.seq });
+                contentStarts.push(start);
+                items.push({ kind: 'tag', start });
             }
             for (const unit of group.units) {
                 if (unit.kind === 'paint') {
@@ -693,8 +702,12 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             media = pageMarks.mediaAfter;
         }
         // The page's link annotations, after everything it paints: they are not painted, and the writer collects them for the structure tree.
-        for (const [annot, order] of linksByPage.get(page) ?? [])
-            items.push(linkItem(annot, order, inputs.baseUri));
+        for (const [annot, order] of linksByPage.get(page) ?? []) {
+            const link = linkItem(annot, order, inputs.baseUri);
+            linkRefs.push({ order, owner: annot.ownerPath, ...(annot.dest ? { dest: annot.dest.structPath } : {}) });
+            linkItems.push(link);
+            items.push(link);
+        }
         pages.push({
             size: [geometry.widthPt, geometry.heightPt],
             boxes: { media, ...(geometry.trimPt ? { trim: geometry.trimPt } : {}), ...(geometry.bleedPt ? { bleed: geometry.bleedPt } : {}) },
@@ -702,7 +715,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         });
     }
 
-    // A Figure's Layout /BBox is the rectangle its image was painted into, and the only thing that knows it is the measurement, so it travels to the writer rather than being recomputed there.
+    // A Figure's Layout /BBox is the rectangle its image was painted into, and the only thing that knows it is the measurement, so the builder reads it here and the resolver writes it into the Figure's Layout attribute object.
     const figureBoxes: Record<string,[number,number,number,number]> = {};
     for (const image of measurement.images) {
         if (walk.images[image.index].tag === 'Figure')
@@ -741,15 +754,29 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             return null;
         return { page: first.page, topPt: yToPt(Math.min(...tops), first.page) };
     };
-    const outline: OutlineEntry[] = [];
+    const headings: { path: string, entry: Omit<OutlineEntry, 'element'> }[] = [];
     if (inputs.outline) {
         for (const heading of walk.outline) {
             const where = headingTopPt(heading.path);
             if (!where)
                 throw new CasterError(`caster: the heading at ${heading.path} painted no text, so no bookmark can point at it`);
-            outline.push({ path: heading.path, title: heading.title, level: heading.level, page: where.page, topPt: where.topPt });
+            headings.push({ path: heading.path, entry: { title: heading.title, level: heading.level, page: where.page, topPt: where.topPt } });
         }
     }
+    // A link's `order` is its place among the links the pages hold, 0, 1, 2 …: the walk's order, with an annotation on no page leaving no gap, as the writer always numbered `/StructParent`.
+    [...linkItems.keys()].sort((a, b) => linkItems[a].order - linkItems[b].order).forEach((at, rank) => {
+        linkItems[at].order = rank;
+        linkRefs[at].order = rank;
+    });
+    // The tree, pruned, ordered and resolved (`displayList/structure.js`): the writer writes it and decides nothing.
+    const resolved = resolveStructure(walk.tree, contentRefs, linkRefs, figureBoxes, headings.map((h) => h.path));
+    contentStarts.forEach((start, i) => { start.element = resolved.contentElement[i]; });
+    linkItems.forEach((link, i) => {
+        link.element = resolved.linkElement[i];
+        if (link.target.dest)
+            link.target.dest.element = resolved.destElement[i] as number;
+    });
+    const outline: OutlineEntry[] = headings.map((h, i) => ({ element: resolved.headingElement[i], ...h.entry }));
     let pageLabels: DisplayList['pageLabels'] = [];
     if (inputs.pageLabels && inputs.pageLabels.length > 0) {
         if (inputs.pageLabels.length !== measurement.pageCount) {
@@ -849,7 +876,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         ...(colour ? { colour: { profiles: { cmyk: await blobOf(colour.profileBytes), srgb: await blobOf(colour.srgbBytes) }, condition: colour.condition, info: colour.info, blackText: colour.blackText } } : {}),
     };
     const list: DisplayList = {
-        version: 3,
+        version: 4,
         info: {
             lang: walk.lang,
             title: inputs.title,
@@ -860,8 +887,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         },
         writing: listWriting,
         resources,
-        structure: copy(walk.tree, 'the structure tree'),
-        figureBoxes,
+        structure: resolved.structure,
         outline,
         pageLabels,
         pages,
