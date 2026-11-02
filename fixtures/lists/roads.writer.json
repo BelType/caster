@@ -1,1 +1,1 @@
-{"baseUri":"https://print.invalid/roads/index.html","options":{"shaper":"harfbuzz","subset":"hb","cffContainer":"bare","widthDecimals":3,"pngDecoder":"fast-png","photoRule":true,"rasterDpi":300,"paintOrder":"css","styledBorders":false,"blackText":"100k","convertRgb":"none","skipInk":true,"colour":"auto","unknownElements":"infer"},"needs":{"forcedPngDecode":false,"woff2Only":true,"colourHints":true,"hasTables":true,"hasSvg":false,"hasEmoji":false,"faces":1}}
+{"baseUri":"https://print.invalid/roads/index.html"}

@@ -24,7 +24,7 @@ import { pageLabelRuns } from '../emit/pageLabels.ts';
 import { scopeNameOf } from '../walk/tableHeaders.ts';
 import { PX_TO_PT, round3 } from '../coordinates/units.ts';
 
-import type { DisplayList, FontWidths, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
+import type { ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
 import type { MeasuredLine, MeasuredPaint, MeasuredImage, MeasuredEmoji, MeasuredRun, MeasureResult } from '../measure/textMeasure.ts';
 import type { MeasuredVector, PaintSpec, RasterSpec, VectorNode } from '../vectors/vector.ts';
 import type { DecodedSamples } from '../images/canvasDecode.ts';
@@ -40,6 +40,8 @@ export type BuildInputs = {
   title: string;
   /** The list's `info.created`, an ISO 8601 instant in UTC. */
   created: string;
+  /** The list's `writing`, with the colour story's profiles as bytes, which the builder hashes into `blobs`. */
+  writing: Omit<Writing, 'colour'> & { colour?: Omit<ColourWriting, 'profiles'> & { profileBytes: Uint8Array, srgbBytes: Uint8Array } };
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
   paintOrder?: 'dom' | 'css';
   /** The `@page` ground each page paints, already resolved. */
@@ -818,6 +820,11 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         };
     }
 
+    const { colour, ...writing } = inputs.writing;
+    const listWriting: Writing = {
+        ...writing,
+        ...(colour ? { colour: { profiles: { cmyk: await blobOf(colour.profileBytes), srgb: await blobOf(colour.srgbBytes) }, condition: colour.condition, info: colour.info, blackText: colour.blackText } } : {}),
+    };
     const list: DisplayList = {
         version: 2,
         info: {
@@ -828,6 +835,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             pageCount: measurement.pageCount,
             created: inputs.created,
         },
+        writing: listWriting,
         resources,
         structure: copy(walk.tree, 'the structure tree'),
         figureBoxes,

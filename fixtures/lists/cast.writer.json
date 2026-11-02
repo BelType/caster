@@ -1,1 +1,1 @@
-{"baseUri":"https://print.invalid/index.html","options":{"shaper":"harfbuzz","subset":"hb","cffContainer":"bare","widthDecimals":3,"pngDecoder":"fast-png","photoRule":true,"rasterDpi":300,"paintOrder":"css","styledBorders":false,"blackText":"none","convertRgb":"none","skipInk":true,"colour":"auto","unknownElements":"infer"},"needs":{"forcedPngDecode":true,"woff2Only":true,"colourHints":false,"hasTables":false,"hasSvg":false,"hasEmoji":false,"faces":2}}
+{"baseUri":"https://print.invalid/index.html"}

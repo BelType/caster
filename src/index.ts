@@ -393,6 +393,12 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const { list: displayList, origins } = await buildDisplayList(measurement, walk, {
       title: options.title ?? doc.title ?? 'Untitled',
       created: input.created ?? new Date().toISOString(),
+      writing: {
+        // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
+        fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
+        photoRule: options.photoRule,
+        ...(colourOn(needs, options) ? { colour: colourOptions(options) } : {})
+      },
       paintOrder: options.paintOrder,
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
@@ -412,18 +418,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     const displayListMs = now() - listStart;
     const emitted = await emitStructure(displayList, {
-      photoRule: options.photoRule,
       originOf: (page, index) => origins[page][index],
       baseUri: doc.baseURI,
-      // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
-      fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
       toUnicode: buildToUnicode(listSegments(displayList, (page, index) => origins[page][index])),
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       container: report.container,
       timing: report.timing,
       smallItems: { ...(skipInk ? { skipInk } : {}) },
       tables: { collapsedEdges: grid.edges, computedWidths: grid.computedWidths, gridLineSpreadPx: grid.gridLineSpreadPx },
-      ...(colourOn(needs, options) ? { color: colourOptions(options) } : {}),
       vector: {
         paintOrder: options.paintOrder,
         rasterDpi: options.rasterDpi,
@@ -666,10 +668,10 @@ function intrinsicsOf(request: { element: HTMLElement; }, bytesBySrc: Map<string
 }
 
 /**
- * D8: the objects of `colour.md` (E8), when the document has a colour story.
+ * D8: the objects of `colour.md` (E8), when the document has a colour story, as the display list's `writing.colour` is built from them.
  *
  * @remarks
- * The two ICC profiles come from the `profiles` capability the registry loaded.
+ * The two ICC profiles come from the `profiles` capability the registry loaded; the builder hashes them into the list's blobs. No `convertRgb` travels: every value but `'none'` is refused before the walk.
  *
  * @throws {CapabilityError} The `profiles` capability was not loaded.
  */
@@ -680,8 +682,7 @@ function colourOptions( options: CasterOptions) {
     srgbBytes: files['srgb.icc'],
     condition: 'Artifex CMYK SWOP Profile',
     info: 'Ghostscript default CMYK profile, standing in for a press characterisation',
-    blackText: options.blackText,
-    ...(options.convertRgb !== 'none' ? { convertRgb: options.convertRgb } : {})
+    blackText: options.blackText
   };
 }
 

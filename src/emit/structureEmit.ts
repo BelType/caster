@@ -27,7 +27,7 @@ import { ColorEmitter } from '../colour/colorResources.ts';
 import { ShadingBuilder } from '../vectors/shading.ts';
 import { TransparencyBuilder } from '../vectors/transparency.ts';
 import { ResourceScope, vectorOperators } from '../vectors/vectorEmit.ts';
-import { embedFace, WHOLE_FONT_PROFILE } from '../fonts/fontEmbed.ts';
+import { embedFace } from '../fonts/fontEmbed.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
 import { mul } from '../images/imagePlace.ts';
@@ -46,7 +46,7 @@ import { clusterKindOf, codePointsOf } from '../measure/emoji.ts';
 
 const pdf = () => capability('pdf');
 
-import type { CidFont, FontProfile, CidFontStats } from '../fonts/fontEmbed.ts';
+import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
 import type { ToUnicodeResult } from '../fonts/toUnicode.ts';
 import type { EmbeddedImage } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
@@ -73,14 +73,6 @@ export type ArtifactDescriptor = ArtifactStart['artifact'];
 export type MeasuredEmissionKeys = 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
 
 /**
- * The colour options, as `emitStructure` is handed them.
- *
- * @remarks
- * `any`, and not `colour/colorResources.js`'s `ColorOptions` (the harness declared it in `colorHints.ts`): `src/index.js` builds this object with `convertRgb` as the flag's string, where `ColorOptions.convertRgb` is a `{ mode, cmykOf }` transform. The string never arrives — `index.js` refuses every `convertRgb` other than `'none'` before it builds the options — so the mismatch is unreachable, and naming the type here would fail the check in a file this one does not own.
- */
-export type ColorOptions = any;
-
-/**
  * The half of the emitter options that belongs to E9 (`vector-painting.md`): the painting-order contract, the raster pixels the browser drew, and everything the report records about painting.
  *
  * @remarks
@@ -104,20 +96,14 @@ export type AttributeDict = Record<string, string|number|PDFString|number[]|PDFS
 
 /** Everything `emitStructure` is told beyond the list; every member is optional because each is an experiment's addition, and each is absent in every fixture before it. */
 export type EmitStructureOptions = {
-  /** How the fonts are written. The default is that of E5 (`structure-tree.md`): the whole file, integer widths, no axes — which is what keeps E5's content streams byte-identical to the ones E3 (`text-emission.md`) wrote. */
-  fontProfile?: FontProfile;
   /** The document-wide ToUnicode map with its ambiguity rule. Without it each glyph's destination is the first text it was used for, which is the rule of E3 (`text-emission.md`) and is right for a document where no CID is ambiguous. */
   toUnicode?: ToUnicodeResult;
   /** The PNG-decoder comparison the browser measured, for the report. */
   decoderComparison?: ReportDecoderComparison;
-  /** The colour story of E8 (`colour.md`): the profiles, the output condition and the black-text policy. Absent, every colour is `rg` from the computed style, no page carries a `/ColorSpace` and the catalog carries no `/OutputIntents`, which is the file of E3 (`text-emission.md`), E4 (`font-embedding.md`) and E5 (`structure-tree.md`) byte for byte. */
-  color?: ColorOptions;
   /** E9 (`vector-painting.md`): vector painting. Absent, no vector is emitted and the order is DOM order. */
   vector?: VectorEmitOptions;
   /** What only the report reads of the text item at `index` in page `page`'s list: its run, paragraph, block path, computed colour, hint and ink box. `print()` holds it; the list does not. */
   originOf: (page: number, index: number) => TextOrigin;
-  /** Whether the opaque-photo rule may re-encode a raster as JPEG: the `photoRule` flag. */
-  photoRule?: boolean;
   /** E10 (`coordinates-and-pages.md`): what the container frame recovered, for the report. */
   container?: ReportContainer;
   /** E10 (`coordinates-and-pages.md`): the measurement phase's cost, for the report. */
@@ -235,7 +221,10 @@ const ANNOTATION_PRINT_FLAG = 4;
 export async function emitStructure(list: DisplayList, options: EmitStructureOptions): Promise<EmitStructureResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
-    const profile = options.fontProfile ?? WHOLE_FONT_PROFILE;
+    if (list.version !== 2)
+        throw new CasterError(`caster: the writer reads a display list of version 2, and this one is version ${String(list.version)}`);
+    // How the list asks to be written: the font profile, the photo rule and the colour story are the list's, and no option reaches a byte.
+    const profile = list.writing.fontProfile;
     const fonts = new Map<any, any>();
     const fontPrograms = new Map<any, any>();
     for (const [instanceKey, instance] of Object.entries(list.resources.fonts)) {
@@ -258,9 +247,12 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     const { pages, names } = setupPages(pdfDoc, fonts, list.pages);
     // Every structure node by its path, read once: the list's tree is not changed by the writer, and `buildStructure` prunes its own copy of it.
     const nodes = nodesByPath(list.structure);
-    const colour = options.color ? new ColorEmitter(context, options.color) : null;
+    const colourWriting = list.writing.colour;
+    const colour = colourWriting
+        ? new ColorEmitter(context, { profileBytes: blobOf(list, colourWriting.profiles.cmyk), srgbBytes: blobOf(list, colourWriting.profiles.srgb), condition: colourWriting.condition, info: colourWriting.info, blackText: colourWriting.blackText })
+        : null;
     // Every image is embedded before a page is written, because a page's /Resources /XObject has to name the streams the page's content refers to, and dedupe means one stream can be named by three pages. The list names each image by the walk's own index, and an item says which one it paints — by the index rather than by position since *the raster half of a continuation's drawing* (S42), because the measurement drops a picture that fell inside a straddling block's clipped tail. A resource no item paints is exactly that picture: nothing on any page refers to its stream, so nothing is embedded for it and its slot stays empty, which is what keeps `embeddedImages[image.index]` an answer.
-    const imageContext = createImageContext(context, { photoRule: options.photoRule });
+    const imageContext = createImageContext(context, { photoRule: list.writing.photoRule });
     const embeddedImages: (EmbeddedImage|null)[] = [];
     // What each painted image is interpolated by: the item says, and the last item to paint an image decides, as the last measurement did.
     const interpolateOf: Map<number,boolean> = new Map<any, any>();

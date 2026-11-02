@@ -17,11 +17,14 @@ import type { ShadingSpec } from './vectors/vector.ts';
 import type { StructureNode, ArtifactDescriptor } from './walk/structure.ts';
 import type { MarkShape } from './coordinates/printMarks.ts';
 import type { BoxPt } from './coordinates/pageGeometry.ts';
+import type { FontProfile } from './fonts/fontEmbed.ts';
+import type { BlackTextPolicy } from './colour/colorResources.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
   version: 2;
   info: DocumentInfo;
+  writing: Writing;
   resources: Resources;
   /** The root of the structure tree, in reading order. // display list v1: the walk's own tree; a `StructElement` of its own waits for a second writer to need it, and `walk/structure.js` is the walk's own business (see results.md, version 2 stage 4). */
   structure: StructureNode;
@@ -45,9 +48,33 @@ export type DocumentInfo = {
   created: string;
 };
 
+/**
+ * How the writer writes what the rest of the list holds: the choices `print()` made from the flags. They change bytes and are not facts about the document, so they are kept apart from `info`. Version 3.
+ */
+export type Writing = {
+  /** How every font is written: subset or whole, the decimals of `/W`, the CFF container, `/DW` from the most common width. From `SUBSET_FONT_PROFILE` with the `widthDecimals` and `cffContainer` flags. */
+  fontProfile: FontProfile;
+  /** Whether the opaque-photo rule may re-encode a raster as JPEG. The `photoRule` flag. */
+  photoRule: boolean;
+  /** The colour story, written when `print()` decided the document has one (`colourOn`: the `colour` flag, and with `auto` a colour hint or print marks the walk's survey found, or `blackText`). Absent, every colour is `rg` from the computed style, no page carries a `/ColorSpace`, the catalog carries no `/OutputIntents`, and a page with print marks is refused. The decision is the walk's, made on computed style; the list records it and nothing re-derives it. */
+  colour?: ColourWriting;
+};
+
+/** The colour story's objects, as the writer is to write them. */
+export type ColourWriting = {
+  /** The two ICC profiles, each a key into `blobs`: the CMYK output profile of the output intent, and the sRGB profile `/DefaultRGB` points at. From the `profiles` capability, `default_cmyk.icc` and `srgb.icc`. */
+  profiles: { cmyk: string, srgb: string };
+  /** The output intent's `/OutputConditionIdentifier`. */
+  condition: string;
+  /** The output intent's `/Info`, a description of the condition for a person. */
+  info: string;
+  /** The `blackText` flag: `100k` writes black text as `0 0 0 1 k`. */
+  blackText: BlackTextPolicy;
+};
+
 /** What the items name by key, and the bytes behind them. */
 export type Resources = {
-  /** Bytes keyed by their SHA-256, in hex: font programs as the writer reads them, image files as fetched, the RGBA samples of a raster fallback or a colour cluster, a facsimile's PDF. The one place the list holds a typed array. */
+  /** Bytes keyed by their SHA-256, in hex: font programs as the writer reads them, image files as fetched, the RGBA samples of a raster fallback or a colour cluster, a facsimile's PDF, the colour story's ICC profiles. The one place the list holds a typed array. */
   blobs: Record<string, Uint8Array>;
   /** Keyed by `instanceKey`. */
   fonts: Record<string, FontInstance>;
