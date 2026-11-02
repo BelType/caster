@@ -17,11 +17,12 @@
  */
 import { capability } from '../capabilities.ts';
 import { CasterError } from '../errors.ts';
+import { clipOperators } from '../vectors/vectorEmit.ts';
 
 const pdf = () => capability('pdf');
 
 import type { CidFont } from '../fonts/fontEmbed.ts';
-import type { DisplayList, FontInstance, Page, TextItem } from '../displayList.ts';
+import type { ClipPath, DisplayList, FontInstance, Page, TextItem } from '../displayList.ts';
 import type { Matrix } from '../images/imagePlace.ts';
 
 /** The document's pages, and each face's resource name on each. */
@@ -73,14 +74,16 @@ export { round3 };
  * One line per chain, because the wrapper cannot straddle a text object: a `q`/`Q` pair may not cross a `BT`/`ET`, which is what makes the line rather than the run the unit a transform is carried on. With no chain both halves are empty and the stream is exactly what it was before E10 (`coordinates-and-pages.md`).
  *
  * @param chain - The `cm` the builder made of the line's chain, already in the page's points.
+ * @param clips - The line's clips, applied after the `cm` inside the same `q`/`Q`; a line that hides its overflow is wrapped when it has no chain too.
  */
-export function lineWrap(chain: Matrix|undefined) {
-    if (!chain)
+export function lineWrap(chain: Matrix|undefined, clips: ClipPath[] = []) {
+    if (!chain && clips.length === 0)
         return { open: [], close: [] };
     return {
         open: [
             pdf().PDFOperator.of(pdf().PDFOperatorNames.PushGraphicsState),
-            pdf().PDFOperator.of(pdf().PDFOperatorNames.ConcatTransformationMatrix, chain.map((n) => pdf().PDFNumber.of(n))),
+            ...(chain ? [pdf().PDFOperator.of(pdf().PDFOperatorNames.ConcatTransformationMatrix, chain.map((n) => pdf().PDFNumber.of(n)))] : []),
+            ...clips.flatMap(clipOperators),
         ],
         close: [pdf().PDFOperator.of(pdf().PDFOperatorNames.PopGraphicsState)],
     };

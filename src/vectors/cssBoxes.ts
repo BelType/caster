@@ -911,15 +911,24 @@ function ownClip(element: Element, style: CSSStyleDeclaration, border: Box, radi
 }
 
 /**
+ * Every clip the element's own box and its ancestors impose on the text it holds, outermost first: {@link ancestorClips} for text, which starts at the element that owns the text node rather than above it.
+ *
+ * @param chainCm - The `cm` of the element's in-page chain, or `null`; the clips are expressed inside it, as a vector node's are.
+ */
+export function textClips(parent: Element, container: HTMLElement, containerRect: DOMRect, page: number, chains: ChainContext, chainCm: Matrix|null): ClipSpec[] {
+  return ancestorClips(parent, container, containerRect, page, domPathOf(parent, container), chains, chainCm, true);
+}
+
+/**
  * Every clip an ancestor imposes on the element, outermost first.
  *
  * @remarks
  * `overflow: hidden` clips to the padding box, rounded when the ancestor has radii, which is the rule CSS Overflow 3 states and is what makes a child inside a rounded card stop at the curve rather than at the corner.
  */
-function ancestorClips(element: Element, container: HTMLElement, containerRect: DOMRect, page: number, domPath: string, chains: ChainContext, chainCm: Matrix|null): ClipSpec[] {
+function ancestorClips(element: Element, container: HTMLElement, containerRect: DOMRect, page: number, domPath: string, chains: ChainContext, chainCm: Matrix|null, inclusive = false): ClipSpec[] {
   const clips: ClipSpec[] = [];
   const intoElementSpace = chainCm ? invert(chainCm) : IDENTITY;
-  for (let node = element.parentElement; node && node !== container.parentElement; node = node.parentElement) {
+  for (let node: HTMLElement|null = inclusive ? element as HTMLElement : element.parentElement; node && node !== container.parentElement; node = node.parentElement) {
     const style = getComputedStyle(node);
     const rect = node.getBoundingClientRect();
     const placement = placeBox(rect, containerRect, page);
@@ -937,7 +946,8 @@ function ancestorClips(element: Element, container: HTMLElement, containerRect: 
         reason: `clip-path on ${domPathOf(node, container)}, inherited by ${domPath}`,
       });
     }
-    if (style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflowY === 'hidden') {
+    // `overflow` does not apply to a non-replaced inline box, whatever its computed value says.
+    if ((style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflowY === 'hidden') && style.display !== 'inline') {
       const inner = insetBox(box, radii, widths[0], widths[1], widths[2], widths[3]);
       clips.unshift({
         path: transformPath(roundedRectPath(inner.box, inner.radii), toPage),

@@ -5,6 +5,7 @@
 The round *specimen findings*: faults the `delibera` and `trattato` specimens surfaced.
 
 - **A letter-spaced word that Blink hyphenates no longer refuses the print.** The trailing-spacing vote counted the hyphen as a letter-spaced glyph, but Blink adds no letter-spacing to the hyphen it draws, so the hyphenated segment voted `-1` against the unanimous `0` and `decideTrailing` threw "letter-spaced segments disagree on trailing spacing" (the trattato's small capitals under `lang="it"`). The sample's glyph count now leaves the hyphen out; the unanimity rule is unchanged. `test/hyphenationLetterSpacing.test.ts` is the red case (`tempera­` 8 glyphs, ratio 7.019).
+- **Text in an element that hides its overflow is clipped to its padding box.** Boxes and vectors were (`ancestorClips`), text was not: the trattato's contents leader, a long run in an `overflow: hidden` flex item, ran to the page edge in print only. A segment now carries the clips of its own element and its ancestors, measured by `textClips` (`vectors/cssBoxes.ts`, the same function with the walk starting at the element that holds the text), a line splits where its clips change, and the text item's new `clips` wrap the text object in the same `q`/`Q` as its `cm` (`lineWrap`). `overflow` is no longer taken from a non-replaced inline box, to which it does not apply. Not clipped: a colour cluster (emoji) and SVG `<text>`, whose own vector clips apply. `test/clipText.test.ts` is the red case, pixels beyond the box rendered with mupdf.
 
 ## 0.1.5 — unreleased (branch `round/close-the-list`)
 

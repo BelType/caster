@@ -260,6 +260,8 @@ export type TextItem = {
   baseline: number;
   /** The `cm` the line's text object is wrapped in, in page points. From `toPdfMatrix(line.chain, pageGeometryFor(page))`. */
   transform?: Matrix;
+  /** The clips the line's text object is painted under: the padding box of every ancestor that hides its overflow, and any `clip-path`, outermost first, in the space inside `transform`. Each is applied in turn inside the same graphics-state save as the `cm`, so the list is an intersection. Absent when nothing clips the line. */
+  clips?: ClipPath[];
   /** The run's characters: the segments' texts, a space between two where DOM whitespace separated them, and a space first where `leadingSpace`. */
   text: string;
   /** The run owes the reader a space glyph before its first word: DOM whitespace stood across the boundary with the run before it, and this is not the first run of its line. */

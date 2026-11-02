@@ -144,7 +144,7 @@ function pathOperators(path: Path): PDFOperator[] {
 }
 
 /** A clip: the path, then `W n` or `W* n`. */
-function clipOperators(clip: ClipPath): PDFOperator[] {
+export function clipOperators(clip: ClipPath): PDFOperator[] {
   const { PDFOperator, PDFOperatorNames: Ops } = capability('pdf');
   return [...pathOperators(clip.path), PDFOperator.of(clip.rule === 'evenodd' ? Ops.ClipEvenOdd : Ops.ClipNonZero), PDFOperator.of(Ops.EndPath)];
 }
