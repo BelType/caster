@@ -353,11 +353,6 @@ export function colorKey(color: ResolvedColor|undefined): string {
   return `${color.kind}:${name}:${color.alternate.join(',')}:${color.tint}`;
 }
 
-/** The colourant name a resolved spot writes into its `/Separation` array. */
-export function colorantName(color: SpotHint|PredefinedHint): string {
-  return color.kind === 'spot' ? color.name : color.kind === 'all' ? 'All' : 'None';
-}
-
 /**
  * The colour and the overprint one element declares, read off the computed style.
  *

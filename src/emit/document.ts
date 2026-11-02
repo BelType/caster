@@ -16,6 +16,7 @@
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
+import { CasterError } from '../errors.ts';
 import { PDF20Writer } from './pdf20-writer.ts';
 
 const pdf = () => capability('pdf');
@@ -29,6 +30,8 @@ export type DocumentInfo = {
   creator: string;
   /** Whether the XMP claims PDF/UA-2 (*the printer guesses, says so, and withdraws the claim*, S90). `'tagged'` writes no `pdfuaid` block: the file is tagged, and a tag the printer guessed is not a claim it makes. */
   conformance: 'pdfua2'|'tagged';
+  /** The display list's `info.created`, an ISO 8601 instant in UTC. */
+  created: string;
 };
 
 /**
@@ -43,12 +46,34 @@ export async function createDocument(): Promise<PDFDocument> {
     pdfDoc.context.header = pdf().PDFHeader.forVersion(2, 0);
     return pdfDoc;
 }
-/** Write the catalog `/Lang` and the Info dictionary's title, producer and creator. */
+/**
+ * Write the catalog `/Lang` and the Info dictionary's title, producer, creator and both dates.
+ *
+ * @remarks
+ * pdf-lib stamps `/CreationDate` and `/ModDate` with its own clock when the document is created; both are set again here from `info.created`, in the slots pdf-lib's dictionary already holds, so the dictionary's key order is the one it always was and only the two values are the list's.
+ *
+ * @throws {CasterError} `info.created` is not an ISO 8601 instant in UTC.
+ */
 export function setInfo(pdfDoc: PDFDocument, info: DocumentInfo) {
     pdfDoc.setLanguage(info.language);
     pdfDoc.setTitle(info.title, { showInWindowTitleBar: true });
     pdfDoc.setProducer(info.producer);
     pdfDoc.setCreator(info.creator);
+    const date = pdf().PDFString.of(pdfDate(info.created));
+    const infoDict = pdfDoc.context.lookup(pdfDoc.context.trailerInfo.Info, pdf().PDFDict);
+    infoDict.set(pdf().PDFName.of('ModDate'), date);
+    infoDict.set(pdf().PDFName.of('CreationDate'), date);
+}
+/**
+ * An ISO 8601 instant in UTC as a PDF date string (ISO 32000-2 §7.9.4) at whole seconds, `D:YYYYMMDDHHmmssZ`: the form pdf-lib's own `PDFString.fromDate` writes, made from the text alone, with no clock and no `Date`.
+ *
+ * @throws {CasterError} A value that is not `YYYY-MM-DDTHH:mm:ss`, optional fractional seconds, `Z`.
+ */
+export function pdfDate(iso: string): string {
+    const found = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?Z$/u.exec(iso);
+    if (!found)
+        throw new CasterError(`caster: the display list's info.created is ${JSON.stringify(iso)}, which is not an ISO 8601 instant in UTC (YYYY-MM-DDTHH:mm:ssZ)`);
+    return `D:${found.slice(1).join('')}Z`;
 }
 /** Escape `&`, `<` and `>` for XML text content. */
 const escapeXml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

@@ -17,7 +17,8 @@
  */
 import { COLUMN_WIDTH_PX, PX_TO_PT } from '../coordinates/units.ts';
 import { activeFrame, quantisePx, toLocal, toLocalOn } from '../coordinates/frame.ts';
-import { IDENTITY, mul, PIXELS_TO_PAGE } from '../images/imagePlace.ts';
+import { IDENTITY, mul } from '../coordinates/matrix.ts';
+import { PIXELS_TO_PAGE } from '../images/imagePlace.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { CasterError } from '../errors.ts';
 
@@ -25,6 +26,8 @@ import type { Matrix } from '../images/imagePlace.ts';
 import type { Cmyk } from '../colour/colorHints.ts';
 import type { DecodedSamples } from '../images/canvasDecode.ts';
 import type { Box, Path } from './pathData.ts';
+import type { ShadingSpec } from '../displayList.ts';
+export type { GradientStop, ShadingSpec } from '../displayList.ts';
 
 export type FillRule = 'nonzero' | 'evenodd';
 
@@ -40,40 +43,6 @@ export type StrokeStyle = {
   dashPhasePt: number;
   /** `vector-effect: non-scaling-stroke`; the points are pre-transformed instead. */
   nonScaling: boolean;
-};
-
-/** One stop of a gradient, with the alpha kept beside the colour rather than folded in. */
-export type GradientStop = {
-  offset: number;
-  rgb: [number, number, number];
-  /** Present when the hint of `colour.md` (E8) declared the stop in CMYK. */
-  cmyk?: Cmyk;
-  alpha: number;
-};
-
-/** A shading, in the terms the PDF dictionary uses. */
-export type ShadingSpec = {
-  /** 2 for axial, 3 for radial; nothing else is built. */
-  type: 2 | 3;
-  /** `/Coords`, in the space `matrix` maps onto the page. */
-  coords: number[];
-  extend: [boolean, boolean];
-  stops: GradientStop[];
-  colorSpace: 'DeviceRGB' | 'DeviceCMYK';
-  /** The `cm` concatenated before `sh`, or folded into a pattern's `/Matrix`. */
-  matrix: Matrix;
-  /** The same coordinates mapped onto the page, for a human reading the report. */
-  coordsPt: number[];
-  /** `pad`, or the spread the stops were unrolled for. */
-  spread: 'pad' | 'reflect' | 'repeat';
-  /** How many periods the unrolling covers; 1 when the spread is `pad`. */
-  periods: number;
-  /** True when any stop is not fully opaque, which is what asks for a soft mask. */
-  hasAlpha: boolean;
-  /** What the gradient was written as, for the record. */
-  source: string;
-  /** Set when PDF has no shading that draws what the engine drew, with the reason. The caller rasterises instead of emitting the shading. */
-  degenerate?: string;
 };
 
 /** What a fill or a stroke paints with: nothing, a flat DeviceRGB or DeviceCMYK colour, or a shading. */

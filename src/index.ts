@@ -32,7 +32,6 @@ import { defaultIntrinsics, domPathOf, holdDomPaths, measureText, releaseDomPath
 import { assertConserved, assertGeneratedConserved } from './measure/conservation.ts';
 import { assertTiled } from './measure/tiling.ts';
 import { deriveIntervals } from './adapters/intervals.ts';
-import { buildToUnicode } from './fonts/toUnicode.ts';
 import { instanceCoords } from './fonts/axisMap.ts';
 import { loadFont as loadHbFont } from './fonts/hbShaper.ts';
 import { registerBytes as registerVarBytes } from './fonts/varShaper.ts';
@@ -40,8 +39,7 @@ import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
-import { listSegments } from './emit/textEmit.ts';
-import { imageRecord } from './images/imageEmbed.ts';
+import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
 import { PAGE_LABEL_PROPERTY } from './emit/pageLabels.ts';
@@ -56,16 +54,18 @@ import { registerHintProperties, elementColor } from './colour/colorHints.ts';
 import { parsePng } from './images/png.ts';
 import { parseJpeg } from './images/jpeg.ts';
 import { rasterizeSvg } from './images/canvasDecode.ts';
+import { photoOf, prepareImages } from './images/imagePass.ts';
+import { photoRuleRecord } from './images/photoRule.ts';
 import { inlineSvgImages } from './images/svgInline.ts';
 import { loadFacsimiles } from './images/facsimile.ts';
 
 import type { CasterOptions } from './options.ts';
-import type { Report, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
-import type { WordRecord } from './emit/textEmit.ts';
-import type { ImageUse } from './emit/structureEmit.ts';
+import type { PreparedImage } from './images/imagePass.ts';
+import type { Report, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
 import type { PageStrip } from './adapters/strip.ts';
-import type { DisplayList } from './displayList.ts';
+import type { DisplayList, ImageSource, ImageUse, ListPlace } from './displayList.ts';
+import type { ImageNote, WordNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
 import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
 import type { FaceRequest } from './fonts/fontResolve.ts';
@@ -79,6 +79,8 @@ export type PrintInput = {
   document: Document;
   /** *`print()` takes a strip from its host* (S62): the pages, where the host knows them better than the two built-in adapters could — anything that is not Cicero's `<beltype-root>` or Paged.js's `.pagedjs_pages`. Absent, the document is read for the root one of those engines wrote. */
   strip?: PageStrip;
+  /** The moment the file says it was made, an ISO 8601 instant in UTC as `Date.prototype.toISOString` writes it; it becomes the display list's `info.created`. Absent, the wall clock when the list is built. A host that needs the same bytes from the same document twice (the identity gate) sets it. */
+  created?: string;
   /** The gateway's asset manifest. Same-origin needs none. */
   manifest?: ReadonlyMap<string, string>;
   /** Progress, per capability, as it lands. */
@@ -387,9 +389,22 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     for (const spec of [...boxes.rasters, ...svg.rasters]) {
       rasterSamples.set(spec, await rasterizeSvg(spec.svg, spec.rectPt[2], spec.rectPt[3], spec.dpi));
     }
+    step('rasters');
+    // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
+    const prepared = await prepareImages(measurement.images.map((image) => walk.images[image.index]), (src) => imageBytes.get(src), options.photoRule);
+    const rasterPhotos = new Map<any, any>();
+    for (const [spec, samples] of rasterSamples) rasterPhotos.set(spec, await photoOf(samples, options.photoRule));
+    step('images');
     const listStart = now();
     const { list: displayList, origins } = await buildDisplayList(measurement, walk, {
       title: options.title ?? doc.title ?? 'Untitled',
+      created: input.created ?? new Date().toISOString(),
+      baseUri: doc.baseURI,
+      writing: {
+        // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
+        fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
+        ...(colourOn(needs, options) ? { colour: colourOptions(options) } : {})
+      },
       paintOrder: options.paintOrder,
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
@@ -397,46 +412,62 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       pageLabels,
       rasterSpecs: [...rasterSamples.keys()],
       rasterSamples,
+      rasterPhotos,
       fonts: {
         bytesByUrl: table.bytesByUrl,
         familyOf: (instanceKey) => table.descriptors.find((d) => instanceKey.startsWith(d.id))?.family ?? '',
         sourceFormatOf: (url) => table.sourceFormatByUrl.get(url) ?? 'ttf'
       },
       images: {
-        bytesOf: (src) => imageBytes.get(src),
+        preparedOf: (src) => prepared.get(src),
         facsimileOf: (src) => facsimiles.get(src)
       }
     });
     const displayListMs = now() - listStart;
-    const emitted = await emitStructure(displayList, {
-      photoRule: options.photoRule,
-      originOf: (page, index) => origins[page][index],
-      baseUri: doc.baseURI,
-      // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
-      fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
-      toUnicode: buildToUnicode(listSegments(displayList, (page, index) => origins[page][index])),
-      ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
-      container: report.container,
-      timing: report.timing,
-      smallItems: { ...(skipInk ? { skipInk } : {}) },
-      tables: { collapsedEdges: grid.edges, computedWidths: grid.computedWidths, gridLineSpreadPx: grid.gridLineSpreadPx },
-      ...(colourOn(needs, options) ? { color: colourOptions(options) } : {}),
-      vector: {
-        paintOrder: options.paintOrder,
-        rasterDpi: options.rasterDpi,
-        order: order.order,
-        deferred: [...boxes.deferred, ...grid.deferred, ...svg.deferred, ...decorations.deferred],
-        stackingContexts: order.contexts,
-        decorations: decorations.records,
-        ctmReadings: svg.readings,
-        figures: walk.svgs.map((s) => ({ path: s.domPath, tag: s.tag, alt: s.alt ?? '' }))
+    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
+    const emitted = await emitStructure(displayList).catch((error) => {
+      if (error instanceof CasterError && error.listItem && error.element === undefined) {
+        const origin = origins[error.listItem.page]?.[error.listItem.item];
+        if (origin) error.element = origin.path;
       }
+      throw error;
     });
     step('emit');
 
-    // 11 — report. The writer read the list and nothing else, so what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, and the page-label record.
-    emitted.report.emission = {
-      ...(emitted.report.emission as ReportEmission),
+    // 11 — report. The writer read the list and nothing else and returned its records, the choices it made; what the list and those records decide is `recordsOf`'s, and what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, the page-label record, and everything the collectors measured of the painting. The records name items (`ListPlace`), and the measurement is joined to them through the origins the builder handed back beside the list.
+    const written = emitted.records;
+    const derived = recordsOf(displayList, written);
+    const originAt = (at: ListPlace) => origins[at.page][at.item];
+    const paragraphMcids = paragraphMcidsOf(derived.runs, originAt);
+    const composed = ({
+      elements: [],
+      emission: derived.emission as ReportEmission,
+      structure: derived.structure as ReportStructure,
+      container: report.container,
+      ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
+      timing: report.timing,
+      ...(derived.outline ? { outline: derived.outline } : {}),
+      ...(derived.links.length > 0 ? { links: derived.links } : {}),
+      ...(skipInk ? { skipInk } : {}),
+      ...(grid.computedWidths.length > 0 ? { computedBorderWidths: grid.computedWidths, gridLineSpreadPx: grid.gridLineSpreadPx } : {}),
+      ...(written.colour ? { color: colourWith(displayList, written.colour, originAt) } : {}),
+      paint: written.paint,
+      paintOrder: order.order,
+      deferred: [...boxes.deferred, ...grid.deferred, ...svg.deferred, ...decorations.deferred],
+      rasterDpi: options.rasterDpi,
+      vectorNotes: {
+        paintOrderMode: options.paintOrder,
+        stackingContexts: order.contexts,
+        decorations: decorations.records,
+        ctmReadings: svg.readings,
+        resources: written.vectorResources,
+        streamOrder: derived.streamOrder,
+        figures: walk.svgs.map((s) => ({ path: s.domPath, tag: s.tag, alt: s.alt ?? '' }))
+      }
+    } as unknown) as Partial<Report>;
+    composed.emission = {
+      ...(composed.emission as ReportEmission),
+      runs: runsWith(derived.runs, originAt),
       marginPt: pageGeometryFor(0).marginPt,
       pageWidthPt: pageGeometryFor(0).widthPt,
       pageHeightPt: pageGeometryFor(0).heightPt,
@@ -454,24 +485,25 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       probeOffLine: measurement.probeOffLineCount,
       probeBeforeOffLine: measurement.probeBeforeOffLineCount,
       containerScrollWidthPx: measurement.containerScrollWidthPx,
-      paragraphs: measurement.paragraphs.map((p, index) => ({ block: p.block, path: p.path, text: p.text, mcids: emitted.paragraphMcids.get(index) ?? [] })),
-      words: joinWords(emitted.wordRecords, measurement)
+      paragraphs: measurement.paragraphs.map((p, index) => ({ block: p.block, path: p.path, text: p.text, mcids: paragraphMcids.get(index) ?? [] })),
+      words: joinWords(derived.words, measurement, originAt)
     };
-    emitted.report.page = { widthPt: pageGeometryFor(0).widthPt, heightPt: pageGeometryFor(0).heightPt };
-    emitted.report.pageBoxes = pageBoxRecords(measurement.pageCount, printMarks?.pages ?? []);
-    emitted.report.structure = { ...(emitted.report.structure as ReportStructure), headings: walk.headings };
+    composed.page = { widthPt: pageGeometryFor(0).widthPt, heightPt: pageGeometryFor(0).heightPt };
+    composed.pageBoxes = pageBoxRecords(measurement.pageCount, printMarks?.pages ?? []);
+    composed.structure = { ...(composed.structure as ReportStructure), headings: walk.headings };
     const tableRecords = tableSidecar(walk.tables, grid.edges);
-    Object.assign(emitted.report, {
-      ...(tableRecords.length > 0 ? { tables: tableRecords, idTree: emitted.idTree } : {}),
+    Object.assign(composed, {
+      ...(tableRecords.length > 0 ? { tables: tableRecords, idTree: derived.idTree } : {}),
       ...(pageLabels.length > 0 ? { pageLabels: pageLabelRuns(pageLabels).records } : {}),
-      ...(emitted.imageUses.length > 0 ? { images: imageRecords(emitted.imageUses, measurement, displayList), xobjects: emitted.xobjects } : {}),
+      ...(written.images.length > 0 ? { images: imageRecords(written.images, derived.images, measurement, displayList, prepared), xobjects: written.xobjects } : {}),
+      ...photoRuleOf(written.images, displayList),
       ...(walk.langs.length > 0 ? { langs: walk.langs } : {})
     });
-    Object.assign(report, emitted.report);
+    Object.assign(report, composed);
     report.options = ((options as unknown) as Record<string, unknown>);
     report.bytes = emitted.bytes.length;
     report.warnings.push(...unreadableFamilies(table).map((f) => `the family ${JSON.stringify(f)} is declared but its bytes could not be read; nothing resolved to it in this document, so the export continued`));
-    return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams, displayList, displayListMs };
+    return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams ?? [], displayList, displayListMs };
   } catch (error) {
     recordProblem(report, error);
     throw error;
@@ -491,9 +523,67 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
  * @remarks
  * The join is the image's walk index, which the item names as `source` and the measurement's `index` carries.
  */
-function imageRecords(uses: ImageUse[], measurement: MeasureResult, list: DisplayList): ReportImage[] {
+function imageRecords(uses: ImageUse[], notes: ImageNote[], measurement: MeasureResult, list: DisplayList, prepared: Map<string, PreparedImage>): ReportImage[] {
   const placed = new Map(measurement.images.map((image) => [image.index, image]));
-  return uses.map((use) => imageRecord((placed.get(use.source) as MeasuredImage), list.resources.images[use.source], use.embedded, use.name));
+  return uses.map((use, at) => {
+    const source = list.resources.images[use.source];
+    const pass = prepared.get(source.src);
+    return imageRecord((placed.get(use.source) as MeasuredImage), source, use, notes[at], pass && { decodeMs: pass.decodeMs, encodeMs: pass.encodeMs });
+  });
+}
+
+/**
+ * Everything about one painted image, in the shape the node checker reads back: what the file became (the writer's `use`) and what its source was (the `note` of `recordsOf`) beside where the measurement put it (`image`).
+ *
+ * @param timing - What the image pass spent decoding and re-encoding the file, which the writer did not.
+ */
+function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath'|'tag'|'alt'>, use: ImageUse, note: ImageNote, timing?: { decodeMs: number, encodeMs: number }): ReportImage {
+  const info = use.info;
+  const placement = image.placement;
+  return {
+    src: walk.src,
+    domPath: walk.domPath,
+    format: note.format,
+    path: info.path,
+    filter: info.filter,
+    bpc: info.bitsPerComponent,
+    colorSpace: info.colorSpace,
+    hasSMask: info.hasSMask,
+    ...(info.decode ? { decode: info.decode } : {}),
+    intrinsic: [info.width, info.height],
+    displayedIntrinsic: placement.displayedIntrinsic,
+    paintedRectPt: placement.paintedRectPt,
+    ...(placement.clipRectPt ? { clipRectPt: placement.clipRectPt } : {}),
+    ...(placement.clipReason ? { clipReason: placement.clipReason } : {}),
+    cm: placement.cm,
+    xobjectHash: use.hash,
+    xobjectName: use.name,
+    page: image.page,
+    tag: walk.tag,
+    ...(walk.alt ? { alt: walk.alt } : {}),
+    effectiveDpi: placement.effectiveDpi,
+    bytesIn: note.bytesIn,
+    bytesOut: info.bytesOut,
+    decodeMs: Math.round((timing?.decodeMs ?? info.decodeMs) * 100) / 100,
+    encodeMs: Math.round((timing?.encodeMs ?? info.encodeMs) * 100) / 100,
+    ...(placement.exifOrientation !== 1 ? { exifOrientation: placement.exifOrientation } : {}),
+    ...(placement.imageOrientation ? { imageOrientation: placement.imageOrientation } : {}),
+    ...(placement.declaredExifOrientation !== undefined ? { declaredExifOrientation: placement.declaredExifOrientation } : {}),
+    icc: info.icc,
+    gammaOnly: info.gammaOnly,
+    interpolate: info.interpolate,
+    objectFit: placement.objectFit,
+    objectPosition: placement.objectPosition,
+    transform: placement.transform,
+    reason: note.reason,
+  };
+}
+
+/** The report's `photoRule` record, from the evidence on every painted image the rule was consulted for, in the order of their keys. */
+function photoRuleOf(uses: ImageUse[], list: DisplayList): { photoRule?: ReportPhotoRule } {
+  const keys = [...new Set(uses.map((use) => use.source))].sort((a, b) => a - b);
+  const record = photoRuleRecord(keys.map((key) => list.resources.images[key].photo).filter((photo) => photo !== undefined));
+  return record ? { photoRule: record } : {};
 }
 
 /**
@@ -522,21 +612,22 @@ function pageBoxRecords(pageCount: number, marks: PageMarks[]): ReportPageBox[] 
 }
 
 /**
- * The report's `words`: what the writer knew of each word (where it aimed the pen, the space it wrote, the adjustment) joined to the measurement's segment for the rest.
+ * The report's `words`: what the list and the writer say of each word (where the pen was aimed, the space written, the adjustment) joined to the measurement's segment for the rest.
  *
  * @remarks
- * The join is the run's index and the segment's place in the run, which the text item carries as `origin.run` and the order of `segments`. The measurement's pixels become points here by the expressions the writer used, so the record is the one the writer used to write.
+ * The join is the run's index and the segment's place in the run: the text item's origin carries the first (`origin.run`), and the order of `segments` is the second. The measurement's pixels become points here by the expressions the writer used, so the record is the one the writer used to write.
  */
-function joinWords(records: WordRecord[], measurement: MeasureResult): ReportWord[] {
+function joinWords(records: WordNote[], measurement: MeasureResult, originAt: (at: ListPlace) => { run: number }): ReportWord[] {
   const runs: Map<number,MeasuredRun> = new Map<any, any>();
   for (const line of measurement.lines) for (const run of line.runs) runs.set(run.index, run);
   return records.map((record) => {
-    const segment = (runs.get(record.runIndex) as MeasuredRun).segments[record.ordinal];
+    const runIndex = originAt(record).run;
+    const segment = (runs.get(runIndex) as MeasuredRun).segments[record.ordinal];
     const { page } = record;
     return {
       page,
       mcid: record.mcid,
-      runIndex: record.runIndex,
+      runIndex,
       block: segment.block,
       text: segment.text,
       xPt: record.xPt,
@@ -663,10 +754,10 @@ function intrinsicsOf(request: { element: HTMLElement; }, bytesBySrc: Map<string
 }
 
 /**
- * D8: the objects of `colour.md` (E8), when the document has a colour story.
+ * D8: the objects of `colour.md` (E8), when the document has a colour story, as the display list's `writing.colour` is built from them.
  *
  * @remarks
- * The two ICC profiles come from the `profiles` capability the registry loaded.
+ * The two ICC profiles come from the `profiles` capability the registry loaded; the builder hashes them into the list's blobs. No `convertRgb` travels: every value but `'none'` is refused before the walk.
  *
  * @throws {CapabilityError} The `profiles` capability was not loaded.
  */
@@ -677,8 +768,7 @@ function colourOptions( options: CasterOptions) {
     srgbBytes: files['srgb.icc'],
     condition: 'Artifex CMYK SWOP Profile',
     info: 'Ghostscript default CMYK profile, standing in for a press characterisation',
-    blackText: options.blackText,
-    ...(options.convertRgb !== 'none' ? { convertRgb: options.convertRgb } : {})
+    blackText: options.blackText
   };
 }
 

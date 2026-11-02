@@ -98,7 +98,7 @@ export type StructureNode = {
   tag: string;
   /** Stable path through the tree, e.g. `Document/Sect[0]/P[2]/Em[0]`. */
   path: string;
-  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, expansion?: string, textPosition?: 'Sub'|'Sup', actualText?: string };
+  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, expansion?: string, textPosition?: 'Sub'|'Sup' };
   kids: StructureNode[];
 };
 /** Something painted outside the tree, and the artifact type it is written as. */

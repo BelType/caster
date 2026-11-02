@@ -17,7 +17,7 @@
  *
  * @packageDocumentation
  */
-import { apply, mul, IDENTITY } from '../images/imagePlace.ts';
+import { apply, mul, IDENTITY } from '../coordinates/matrix.ts';
 import { RASTER_DPI, bboxOf, periodsFor, unrollGradient } from './cssBoxes.ts';
 import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';

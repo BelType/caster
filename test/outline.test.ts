@@ -9,7 +9,7 @@ import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { capability, load } from '../src/capabilities.ts';
-import { buildOutline } from '../src/emit/outline.ts';
+import { buildOutline, outlineItems } from '../src/emit/outline.ts';
 
 before(async () => { await load(['pdf']); });
 
@@ -68,7 +68,7 @@ test('the nesting is the heading levels: a second h1 closes the first', () => {
     { title: 'Two', level: 1 },
   ]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
-  assert.deepEqual(outline.items.map((i) => [i.title, i.depth, i.count]), [
+  assert.deepEqual(outlineItems(headings).map((i) => [i.title, i.depth, i.count]), [
     ['One', 0, 3],
     ['One.a', 1, 1],
     ['One.a.i', 2, 0],
@@ -85,7 +85,7 @@ test('a level skipped on the way down is one level of the outline, not two', () 
     { title: 'Next chapter', level: 1 },
   ]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
-  assert.deepEqual(outline.items.map((i) => [i.title, i.level, i.depth]), [
+  assert.deepEqual(outlineItems(headings).map((i) => [i.title, i.level, i.depth]), [
     ['Chapter', 1, 0],
     ['Deep', 3, 1],
     ['Deeper', 4, 2],
@@ -102,11 +102,11 @@ test('the root counts the whole tree, and every item is written open', () => {
   ]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
   // `lookup(ref)` answers `PDFObject | undefined` now that `capability('pdf')` is typed; the narrowing overload `lookup(ref, PDFDict)` is a runtime token, so the read-back goes through `any`, as `itemsByTitle` above already does.
-  const root = (context.lookup(outline.ref) as any);
+  const root = (context.lookup(outline) as any);
   assert.equal(root.get(PDFName.of('Type')).asString(), '/Outlines');
   assert.equal(root.get(PDFName.of('Count')).asNumber(), 3);
 
-  const items = itemsByTitle(context, outline.ref);
+  const items = itemsByTitle(context, outline);
   // A positive `/Count` is an open item; a leaf writes none at all.
   assert.equal(items.get('One').dict.get(PDFName.of('Count')).asNumber(), 1);
   assert.equal(items.get('One.a').dict.get(PDFName.of('Count')), undefined);
@@ -122,9 +122,9 @@ test('the siblings are threaded and the parent is named on every item', () => {
     { title: 'Two', level: 1 },
   ]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
-  const items = itemsByTitle(context, outline.ref);
+  const items = itemsByTitle(context, outline);
   // Read back through `any`, for the reason the first test gives.
-  const root = (context.lookup(outline.ref) as any);
+  const root = (context.lookup(outline) as any);
 
   assert.equal(String(root.get(PDFName.of('First'))), String(items.get('One').ref));
   assert.equal(String(root.get(PDFName.of('Last'))), String(items.get('Two').ref));
@@ -140,14 +140,14 @@ test('the siblings are threaded and the parent is named on every item', () => {
   assert.equal(String(items.get('One').dict.get(PDFName.of('First'))), String(items.get('One.a').ref));
   assert.equal(String(items.get('One').dict.get(PDFName.of('Last'))), String(items.get('One.b').ref));
   // A root's parent is the `/Outlines` dictionary itself.
-  assert.equal(String(items.get('One').dict.get(PDFName.of('Parent'))), String(outline.ref));
+  assert.equal(String(items.get('One').dict.get(PDFName.of('Parent'))), String(outline));
 });
 
 test('a destination names the structure element, keeps the reader’s left and zoom, and asks only for y', () => {
   const { PDFName } = capability('pdf');
   const { context, headings } = scene([{ title: 'Only', level: 1, page: 2, topPt: 731.25 }]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
-  const dest = itemsByTitle(context, outline.ref).get('Only').dict.get(PDFName.of('Dest'));
+  const dest = itemsByTitle(context, outline).get('Only').dict.get(PDFName.of('Dest'));
   assert.equal(dest.size(), 5);
   // PDF/UA-2 8.8 t1: a structure destination, which is the heading's own element and not its page.
   assert.equal(String(dest.get(0)), String(headings[0].ref));
@@ -156,8 +156,8 @@ test('a destination names the structure element, keeps the reader’s left and z
   assert.equal(dest.get(3).asNumber(), 731.25);
   assert.equal(String(dest.get(4)), 'null');
   // The page rides the record for the report, and the file resolves it through the element's own `/Pg`.
-  assert.equal(outline.items[0].page, 2);
-  assert.equal(outline.items[0].topPt, 731.25);
+  assert.equal(outlineItems(headings)[0].page, 2);
+  assert.equal(outlineItems(headings)[0].topPt, 731.25);
 });
 
 test('a title pdf-lib cannot write as a literal is written as hex', () => {
@@ -169,7 +169,7 @@ test('a title pdf-lib cannot write as a literal is written as hex', () => {
   ]);
   const outline = (buildOutline(context, headings) as NonNullable<ReturnType<typeof buildOutline>>);
   // Read back through `any`, for the reason the first test gives — the root and every item below it.
-  const root = (context.lookup(outline.ref) as any);
+  const root = (context.lookup(outline) as any);
   const written: string[] = [];
   let ref = root.get(PDFName.of('First'));
   while (ref) {

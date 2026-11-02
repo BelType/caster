@@ -1,0 +1,6 @@
+/* The corpus's shared sheet for the documents that take a road the paper specimen does not (scripts/identity.ts). The three images were made once, from ../cast/logo.png and from nothing: `cwebp -q 80 ../cast/logo.png -o logo.webp`; `magick ../cast/logo.png ppm:- | cjpeg -arithmetic -quality 85 > logo-arithmetic.jpg` (libjpeg-turbo 3.2.1); `magick -seed 7 -size 510x500 plasma:fractal -blur 0x2 -depth 8 PNG24:photo.png` (ImageMagick 7, 255 000 pixels, 197 327 distinct colours). */
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+@page { size: 120mm 120mm; margin: 12mm; }
+html { font-family: 'Source Sans 3', sans-serif; font-size: 10pt; line-height: 1.4; }
+body { margin: 0; }
+img { display: block; width: 40mm; height: auto; }

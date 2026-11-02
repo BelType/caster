@@ -23,6 +23,8 @@ export type CasterErrorContext = {
   flag?: string;
   /** The tag name an {@link UnknownElementError} is about, lower-cased. */
   tag?: string;
+  /** Where in the display list a writer's refusal is about: the page, and the index of the item in that page's list. The writer reads no DOM, so it names this; `print()` adds the `element` from what it holds of the walk. */
+  listItem?: { page: number, item: number };
 };
 
 /** The base of the family: a `BelTypeError` that carries {@link CasterErrorContext} as its own members. */
@@ -32,6 +34,7 @@ export class CasterError extends BelTypeError {
   declare capability: string | undefined;
   declare flag: string | undefined;
   declare tag: string | undefined;
+  declare listItem: { page: number, item: number } | undefined;
   constructor(message: string, context: CasterErrorContext = {}) {
     super(message);
     this.name = 'CasterError';
@@ -40,6 +43,7 @@ export class CasterError extends BelTypeError {
     if (context.capability !== undefined) this.capability = context.capability;
     if (context.flag !== undefined) this.flag = context.flag;
     if (context.tag !== undefined) this.tag = context.tag;
+    if (context.listItem !== undefined) this.listItem = context.listItem;
   }
 }
 

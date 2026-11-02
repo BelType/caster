@@ -42,7 +42,7 @@ import { bboxOf, boundaryPieces, borderSidePath, insetBox, parseBoxShadow, pathT
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
 import { blendName, emptyNodeCommon, parseCssColor } from '../src/vectors/vector.ts';
-import { IDENTITY, apply, mul } from '../src/images/imagePlace.ts';
+import { IDENTITY, apply, mul } from '../src/coordinates/matrix.ts';
 import type { MarkerAttributes } from '../src/vectors/svgMarkers.ts';
 
 /**

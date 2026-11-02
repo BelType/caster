@@ -194,7 +194,6 @@ export async function embedFacsimiles(context: ImageContext, pdfDoc: PDFDocument
         hash: entry.hash,
         name: PDFName.of(`Fc${context.byHash.size}`),
         info: {
-          format: 'application/pdf',
           path: 'form',
           filter: 'FlateDecode',
           bitsPerComponent: 0,
@@ -203,13 +202,11 @@ export async function embedFacsimiles(context: ImageContext, pdfDoc: PDFDocument
           width: loaded.widthPt,
           height: loaded.heightPt,
           interpolate: false,
-          bytesIn: loaded.bytes.length,
           bytesOut: 0,
           decodeMs: (performance.now() - started) / group.length,
           encodeMs: 0,
           icc: 'none',
           gammaOnly: false,
-          reason: `page ${loaded.pageIndex + 1} of ${loaded.url}, embedded as a Form XObject: vectors, text and fonts stay what they were`,
         },
       };
       context.byHash.set(entry.hash, result);

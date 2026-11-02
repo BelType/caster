@@ -18,7 +18,7 @@
 import { styledBorderNodes } from './borderStyles.ts';
 import { parseCmykGradientHint, readHint } from '../colour/colorHints.ts';
 import { invert, toPdfMatrix } from '../coordinates/ctm.ts';
-import { apply, mul } from '../images/imagePlace.ts';
+import { apply, mul } from '../coordinates/matrix.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { clampRadii, cssShapePath, pathBounds, roundedRectPath, transformPath } from './pathData.ts';

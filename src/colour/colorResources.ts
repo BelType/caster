@@ -18,20 +18,22 @@
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
-import { colorantName } from './colorHints.ts';
-import { segmentTexts } from '../emit/textEmit.ts';
 import { CasterError } from '../errors.ts';
 
 import type { Cmyk, OverprintMode, PredefinedHint, ResolvedColor, SpotHint } from './colorHints.ts';
-import type { Fill, PaintOrigin, RectItem, TextItem, TextOrigin } from '../displayList.ts';
+import type { Fill, ListPlace, PaintOrigin, RectItem, TextItem, WrittenColour, WrittenRunColour, WrittenRunWorklistEntry } from '../displayList.ts';
 import type { RunColorOperators } from '../emit/textEmit.ts';
-import type { ReportColor, ReportColorElement, ReportColorExtGState, ReportColorSpace, ColorTarget, ReportHintRegistration, ReportOutputIntent, ReportWorklistEntry } from '../report.ts';
+import type { ReportColorElement, ReportColorExtGState, ReportColorSpace, ColorTarget, ReportHintRegistration, ReportOutputIntent, ReportWorklistEntry } from '../report.ts';
+import type { BlackTextPolicy } from '../displayList.ts';
+export type { BlackTextPolicy } from '../displayList.ts';
+
+/** The colourant name a resolved spot writes into its `/Separation` array. Here and not in `colour/colorHints.js`, which reads computed style, so the writer reaches no DOM to name an ink (moved in stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). */
+export function colorantName(color: SpotHint|PredefinedHint): string {
+  return color.kind === 'spot' ? color.name : color.kind === 'all' ? 'All' : 'None';
+}
 
 /** One colour operand, written to four decimals: a tint of 0.6 is 0.6, not 0.6000000001. */
 const num = (n: number): PDFNumber => capability('pdf').PDFNumber.of(Math.round(n * 10000) / 10000);
-
-/** What the black-text option does with an unhinted `rgb(0 0 0)` text fill. */
-export type BlackTextPolicy = 'none' | '100k';
 
 /** The colour half of a run's options: the profiles, the condition, and the two policies. */
 export type ColorOptions = {
@@ -391,8 +393,8 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 export class ColorEmitter {
   declare resources: ColorResources;
   declare options: ColorOptions;
-  declare elements: ReportColorElement[];
-  declare worklist: Map<string, ReportWorklistEntry>;
+  declare elements: (ReportColorElement|WrittenRunColour)[];
+  declare worklist: Map<string, ReportWorklistEntry|WrittenRunWorklistEntry>;
   declare blackTextRuns: number;
   declare converted: number;
   /**
@@ -425,24 +427,21 @@ export class ColorEmitter {
    * @remarks
    * Three outcomes, in the order they are decided. A parseable hint is the declared ink and wins over everything the browser computed. No hint plus a text fill the browser computed as pure black is the black-text policy's case, and under `blackText: '100k'` it becomes `0 0 0 1 k` — one plate rather than the four a RIP would otherwise lay down for `0 0 0 rg`. Anything else stays `rg` and goes on the work list.
    *
-   * @param origin - What the report records of the run, which the list does not hold.
+   * The row it records is keyed by the item (`at`) and leaves out what the measurement knows, which `print()` adds: the paragraph's path where the item has no owner, the hint as declared, the ink box, and the run's text.
+   *
+   * @param at - The item's place in the list.
    */
-  runOperators(item: TextItem, origin: TextOrigin, page: number): RunColorOperators {
+  runOperators(item: TextItem, at: ListPlace): RunColorOperators {
     const { PDFOperator, PDFOperatorNames: Ops } = capability('pdf');
     const overprint = item.fill.overprint ? this.resources.overprintOperators(item.fill.overprint) : null;
-    const text = segmentTexts(item).join(' ');
     const hinted = item.fill.ink ? colorOf(item.fill.ink) : undefined;
-    const record = (resolved: ReportColorElement['resolved'], operator: string, extra: Partial<ReportColorElement> = {}) => {
+    const record = (resolved: ReportColorElement['resolved'], operator: string, extra: Pick<ReportColorElement, 'resource' | 'blackTextPolicy' | 'converted'> = {}) => {
       this.elements.push({
-        path: item.owner || origin.path,
+        at,
         target: 'fill',
-        ...(origin.hint ? { hint: origin.hint } : {}),
         resolved,
         ...(item.fill.overprint ? { overprint: item.fill.overprint } : {}),
         operator,
-        text,
-        rectPt: origin.rectPt,
-        page,
         ...extra,
       });
     };
@@ -478,7 +477,7 @@ export class ColorEmitter {
     }
 
     record({ kind: 'rgb', values: rgb }, 'rg');
-    this.note(item.owner || origin.path, 'fill', rgb, origin.color);
+    this.noteEntry('fill', rgb, { at, target: 'fill', rgb, uses: 1 });
     return wrap([PDFOperator.of(Ops.NonStrokingColorRgb, rgb.map(num))]);
   }
 
@@ -542,22 +541,27 @@ export class ColorEmitter {
 
   /** One entry per distinct RGB colour: the list the conversion tier converts. */
   note(path: string, target: ColorTarget, rgb: [number,number,number], css: string) {
+    this.noteEntry(target, rgb, { path, target, rgb, css, uses: 1 });
+  }
+
+  /** The work list's entry for one colour: the first painter's, counted once per use. */
+  noteEntry(target: ColorTarget, rgb: [number,number,number], first: ReportWorklistEntry|WrittenRunWorklistEntry) {
     const key = `${target}|${rgb.join(',')}`;
     const hit = this.worklist.get(key);
     if (hit) {
       hit.uses += 1;
       return;
     }
-    this.worklist.set(key, { path, target, rgb, css, uses: 1 });
+    this.worklist.set(key, first);
   }
 
   /**
-   * Put the resources on the pages, the intent on the catalog, and hand back everything the report records.
+   * Put the resources on the pages, the intent on the catalog, and hand back the writer's colour record, whose text-run rows `print()` completes.
    *
    * @remarks
    * It runs after emission on purpose: a resource name is allocated the first time an element asks for it, and the page that asks first may be the last page in the file.
    */
-  async finish(pages: PDFPage[], catalog: PDFDict): Promise<ReportColor> {
+  async finish(pages: PDFPage[], catalog: PDFDict): Promise<WrittenColour> {
     for (const page of pages) this.resources.ensurePageResources(page);
     const outputIntent = this.resources.addOutputIntent(catalog);
     outputIntent.profileSha256 = await sha256Hex(this.options.profileBytes);

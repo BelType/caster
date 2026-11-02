@@ -8,7 +8,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { clusterKindOf, clustersOf, codePointsOf, isColorCluster, splitForRaster } from '../src/measure/emoji.ts';
+import { clustersOf, isColorCluster, splitForRaster } from '../src/measure/emoji.ts';
+import { clusterKindOf, codePointsOf } from '../src/fonts/clusters.ts';
 
 test('the colour set is RGI emoji, and ordinary text is not in it', () => {
   assert.equal(isColorCluster('😀'), true);

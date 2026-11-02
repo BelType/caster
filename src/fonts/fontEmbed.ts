@@ -29,19 +29,11 @@ const pdf = () => capability('pdf');
 
 import type { Coords } from './axisMap.ts';
 import type { OutlineTable, ProgramStats } from './fontProgram.ts';
-/** Which outline table the embedded program carries. `glyf` goes to `CIDFontType2` with `FontFile2`; every flavour of CFF goes to `CIDFontType0` with `FontFile3`; `cff2` is an error, because PDF 2.0 accepts no variable font and a CFF2 that survived pinning renders as nothing. */
-export type OutlineType = 'glyf'|'cff'|'cff-cid'|'cff2';
+import type { FontProfile } from '../displayList.ts';
+import type { OutlineType, CidFontStats } from '../displayList/contract.ts';
+export type { EmbedTiming, OutlineType, CidFontStats } from '../displayList/contract.ts';
+export type { FontProfile } from '../displayList.ts';
 
-export type FontProfile = {
-  /** Whether to embed only the glyphs the document shows. */
-  subset: boolean;
-  /** Decimals in the /W array. The emitter's pen follows the written value. */
-  widthDecimals: number;
-  /** Whether CFF goes in bare as /CIDFontType0C or wrapped as /OpenType. */
-  cffContainer: 'bare'|'opentype';
-  /** Whether /DW is the most common width rather than the 1000 default. */
-  dwFromMode: boolean;
-};
 export type FontEmbedSpec = {
   /** The instance key: one embedded program per `(face, coordinates)` pair. */
   id: string;
@@ -82,68 +74,6 @@ export type CidFont = {
   use: (gid: number, text: string) => void;
   /** Cut the subset, write every dictionary, and report. */
   finish: () => CidFontStats;
-};
-export type CidFontStats = {
-  id: string;
-  postScriptName: string;
-  /** Glyphs the content stream actually shows. */
-  usedGlyphs: number;
-  /** Bytes of the embedded font program, uncompressed. */
-  fontFileBytes: number;
-  /** Glyphs whose ToUnicode destination is more than one character. */
-  multiCharToUnicode: number;
-  /** Glyphs a second, different text was recorded for under the first-seen rule. */
-  toUnicodeConflicts: number;
-  faceId: string;
-  family: string;
-  sourceFormat: 'ttf'|'otf'|'woff'|'woff2';
-  outlineType: OutlineType;
-  /** Units per em of the embedded program; what `/W` is scaled from. */
-  upem: number;
-  coords: Coords;
-  /** The glyph ids shown, ascending. They are the CIDs. */
-  glyphsUsed: number[];
-  /** Bytes of the source face as the exporter received it. */
-  sourceBytes: number;
-  /** Bytes of the embedded program before Flate. Equals `fontFileBytes`. */
-  subsetBytes: number;
-  /** Bytes of the stream in the file, i.e. after Flate. */
-  subsetFlateBytes: number;
-  /** `maxp.numGlyphs` (or the CharStrings count) of the embedded program. */
-  numGlyphs: number;
-  /** Glyph ids in the embedded program that still carry an outline. */
-  nonEmptyGlyphs: number;
-  /** The six-letter /BaseFont prefix; empty when the whole file is embedded. */
-  subsetTag: string;
-  cffContainer: 'bare'|'opentype';
-  /** Which cluster strings each shown CID stood for, most frequent first. */
-  cidToText: Record<number, string[]>;
-  ambiguousCids: number[];
-  /** Table tags of the embedded program, in directory order. */
-  tables: string[];
-  /** Whether the embedded program's `hmtx` is the instance's. False for a CFF2 face pinned by HarfBuzz 14.4.0, whose `hmtx` stays at the default master. Always true for a static face, which has only one set of advances. */
-  hmtxInstanced: boolean;
-  /** Glyphs whose `/W` had to come from the reference instance rather than `hmtx`. */
-  staleAdvances: number;
-  /** Whether a CID-keyed CFF's charset maps every kept glyph id to itself. */
-  charsetIdentity: boolean|null;
-  /** Whether CFF_IDENTITY_CHARSET had to be asked for to make that true. */
-  charsetRetried: boolean;
-  /** OS/2 fsType as the face declares it; policy, not enforced here. */
-  fsType: string;
-  path: 'B';
-  /** What this instance cost the emit stage, by step (*the fonts stage, measured*, DESIGN.md S87). */
-  ms: EmbedTiming;
-};
-export type EmbedTiming = {
-  /** Pinning a variable face with `hb_subset`; `0` for a static face. */
-  instance: number;
-  /** fontkit over the instance, and over the source again for the reference advances when pinned. */
-  parse: number;
-  /** `hb_subset` to the glyphs shown, the identity-charset retry included. */
-  subset: number;
-  /** The program's checks, its dictionaries, and Flate over the program and the `ToUnicode` CMap. */
-  write: number;
 };
 
 import { coordsKey } from './axisMap.ts';

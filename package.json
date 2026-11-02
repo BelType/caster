@@ -20,6 +20,10 @@
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
     },
+    "./display-list": {
+      "types": "./dist/src/displayList.d.ts",
+      "import": "./dist/src/displayList.js"
+    },
     "./internal/*": {
       "types": "./dist/src/*.d.ts",
       "import": "./dist/src/*.js"
@@ -31,13 +35,15 @@
     "check": "tsc -p tsconfig.test.json",
     "test": "node --test 'test/*.test.ts'",
     "bundle-vendor": "node scripts/bundle-vendor.js",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run build",
+    "identity": "node scripts/identity.ts"
   },
   "dependencies": {
     "@beltype/common": "0.1.1"
   },
   "devDependencies": {
     "@beltype/cicero": "0.1.4",
+    "@beltype/specimens": "0.1.0",
     "@types/node": "^22.20.4",
     "esbuild": "0.28.2",
     "fast-png": "8.0.0",

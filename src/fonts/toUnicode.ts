@@ -40,7 +40,7 @@ export type ToUnicodeResult = {
  * @remarks
  * The count is of *occurrences*, not of distinct contexts, because the reason to prefer one string is that more of the document extracts correctly without a span.
  *
- * @throws {CasterError} A segment that painted `.notdef`, or a cluster whose first glyph stands for no characters — either is a glyph a reader cannot extract; the error names the block.
+ * @throws {CasterError} A segment that painted `.notdef`, or a cluster whose first glyph stands for no characters — either is a glyph a reader cannot extract; the error names the segment's item in the display list (`listItem`), and `print()` names the block.
  */
 export function buildToUnicode(segments: readonly TextSegment[]): ToUnicodeResult {
     const counts: Map<string,Map<number,Map<string,number>>> = new Map<any, any>();
@@ -50,11 +50,11 @@ export function buildToUnicode(segments: readonly TextSegment[]): ToUnicodeResul
         segment.gids.forEach(( gid: number,  index: number) => {
             const text = textForGlyph(segment, index);
             if (gid === 0) {
-                throw new CasterError(`caster: ${segment.instanceKey} painted .notdef in ${JSON.stringify(segment.text)} — no face covers that cluster, and a glyph a reader cannot map is a document a reader cannot extract`, { element: segment.blockPath });
+                throw new CasterError(`caster: ${segment.instanceKey} painted .notdef in ${JSON.stringify(segment.text)} — no face covers that cluster, and a glyph a reader cannot map is a document a reader cannot extract`, segment.place ? { listItem: segment.place } : {});
             }
             // An empty string is legal for a glyph that is not the first of its cluster — a combining mark, the second half of an Indic syllable — and means "this glyph adds no characters of its own"; the cluster's whole text rides on its first glyph. What is not legal is a cluster whose first glyph has no text, which is a glyph standing for nothing at all.
             if (text === '' && isClusterStart(segment, index)) {
-                throw new CasterError(`caster: glyph ${gid} of ${segment.instanceKey} begins a cluster that maps to no characters in ${JSON.stringify(segment.text)}`, { element: segment.blockPath });
+                throw new CasterError(`caster: glyph ${gid} of ${segment.instanceKey} begins a cluster that maps to no characters in ${JSON.stringify(segment.text)}`, segment.place ? { listItem: segment.place } : {});
             }
             if (text === '') return;
             const perCid = perInstance.get(gid) ?? (new Map<any, any>() as Map<string, number>);

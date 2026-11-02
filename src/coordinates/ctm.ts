@@ -21,7 +21,7 @@
  *
  * @packageDocumentation
  */
-import { IDENTITY, apply, mul } from '../images/imagePlace.ts';
+import { IDENTITY, apply, mul } from './matrix.ts';
 import { PX_TO_PT } from './units.ts';
 import { pageRectOf } from '../measure/textMeasure.ts';
 import { PerspectiveError, CasterError } from '../errors.ts';

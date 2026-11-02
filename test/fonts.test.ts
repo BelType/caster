@@ -210,7 +210,7 @@ test('a WOFF decodes back to the SFNT it was built from, table for table', async
 /** A measured segment stub carrying only what the map reads off it. */
 let segmentIndex = 0;
 const segment = (instanceKey: string, text: string, gids: number[], clusters: number[]) =>
-  ({ index: segmentIndex++, instanceKey, text, gids, clusters, blockPath: 'Document/P[0]' } as any);
+  ({ index: segmentIndex++, instanceKey, text, gids, clusters, place: { page: 0, item: 3 } } as any);
 
 test('the ToUnicode map takes the majority string for an ambiguous CID, and wraps the minority in /ActualText', () => {
   // One CID used for two different strings: the ligature glyph stands for "fi" nine times and for "ﬁ" once. The CMap says what most of the document extracts as, and the odd occurrence carries a span.
@@ -232,8 +232,8 @@ test('a glyph that maps to nothing refuses, and a later member of a cluster mapp
   const built = buildToUnicode([mark]);
   assert.equal((built.byInstance.get('crimson') as any).text.get(5), 'á');
   assert.ok(!(built.byInstance.get('crimson') as any).text.has(6), 'the second glyph of the cluster contributes no entry');
-  // `.notdef` is a glyph a reader cannot map at all, and it names the block it was painted in.
-  assert.throws(() => buildToUnicode([segment('crimson', 'x', [0], [0])]), CasterError);
+  // `.notdef` is a glyph a reader cannot map at all, and it names the item of the display list it was painted in, which `print()` turns into the block.
+  assert.throws(() => buildToUnicode([segment('crimson', 'x', [0], [0])]), (error: unknown) => error instanceof CasterError && (error as CasterError).listItem?.page === 0 && (error as CasterError).listItem?.item === 3);
 });
 
 // --- the text item's columns (`displayList/build.js`, `emit/textEmit.js`) ---------
@@ -253,7 +253,7 @@ test('a text item gives its segments back: what the shaper clustered, the writer
   assert.equal(text, ' áb áb ffice' + 'אבג', 'a space first, a space between two words DOM whitespace separated, none between two it did not');
   assert.equal(glyphs.clusters.length, glyphs.ids.length, 'a cluster value to a glyph');
   const item: any = { text, glyphs, segments: columns, font: 'f' };
-  const views = segmentViews(item, 1024, 'Document/P[0]');
+  const views = segmentViews(item, 1024, { page: 0, item: 0 });
   assert.deepEqual(views.map((v) => [v.text, v.clusters, v.gids, v.advanceUnits, v.spaceBefore]), segments.map((v) => [v.text, v.clusters, v.gids, v.advanceUnits, v.spaceBefore]));
   for (const [i, view] of views.entries()) {
     segments[i].gids.forEach(( _: number,  j: number) => {

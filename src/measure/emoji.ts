@@ -183,23 +183,3 @@ export function rasterizeCluster(cluster: string, font: string, widthPx: number,
   const image = context.getImageData(0, 0, width, height);
   return { image, dpi, scale, ms: performance.now() - started };
 }
-
-/** The code points of a cluster, as the `U+XXXX` names the record carries. */
-export function codePointsOf(cluster: string): string[] {
-  return [...cluster].map((character) => `U+${(character.codePointAt(0) as number).toString(16).toUpperCase().padStart(4, '0')}`);
-}
-
-/**
- * What kind of emoji a cluster is, for the record.
- *
- * @remarks
- * Named off the code points rather than off a lookup: a pair of regional indicators is a flag, a zero-width joiner makes a sequence, a modifier in U+1F3FB–U+1F3FF is a skin tone, and anything else is one emoji.
- */
-export function clusterKindOf(cluster: string): string {
-  const points = [...cluster].map((character) => (character.codePointAt(0) as number));
-  if (points.length === 2 && points.every((point) => point >= 0x1f1e6 && point <= 0x1f1ff)) return 'flag (regional indicators)';
-  if (points.includes(0x200d)) return 'ZWJ sequence';
-  if (points.some((point) => point >= 0x1f3fb && point <= 0x1f3ff)) return 'skin-tone modifier sequence';
-  if (points.includes(0xfe0f)) return 'emoji presentation selector';
-  return 'single emoji';
-}

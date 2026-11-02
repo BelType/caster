@@ -25,7 +25,7 @@
  *
  * @packageDocumentation
  */
-import { IDENTITY, mul } from '../images/imagePlace.ts';
+import { IDENTITY, mul } from '../coordinates/matrix.ts';
 
 import type { Matrix, PathSegment } from '../images/imagePlace.ts';
 import type { Path, Point } from './pathData.ts';
