@@ -2,9 +2,9 @@
  * The display list is all the writer is handed: the same list prints the same bytes, in node, with no page.
  *
  * @remarks
- * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
+ * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. Since stage 4 the writer returns its records and no report, and `recordsOf` over those records gives every member of each committed report snapshot that the list and the writer decide, from the writer's own return and from the same records through JSON, as a foreign writer would hand them back. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
  *
- * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stage 1)
+ * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stages 1 and 4)
  * @packageDocumentation
  */
 
@@ -20,6 +20,7 @@ import { contentType } from '@beltype/common/mime';
 import { capability, load } from '../src/capabilities.ts';
 import { loadSubsetter } from '../src/fonts/hbSubset.ts';
 import { emitStructure } from '../src/emit/structureEmit.ts';
+import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from '../src/displayList/records.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
 import { resolveStructure } from '../src/displayList/structure.ts';
 import { CasterError } from '../src/errors.ts';
@@ -29,7 +30,7 @@ import { photoVerdict } from '../src/images/photoRule.ts';
 import { decodePng } from '../src/images/png.ts';
 import { launchBrowser } from './launch.ts';
 
-import type { DisplayList, LinkItem, StructElement, TextItem } from '../src/displayList.ts';
+import type { DisplayList, LinkItem, StructElement, TextItem, WriterRecords } from '../src/displayList.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const LISTS = path.join(PACKAGE, 'fixtures', 'lists');
@@ -68,6 +69,81 @@ test('the same list prints the same bytes: every committed list gives the commit
     const emitted = await emitStructure(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
+});
+
+/** A value as the identity harness snapshots a report: every timing gone (`scripts/identity.ts`, `snapshot`). */
+const snapshotOf = (value: unknown): any => JSON.parse(JSON.stringify(value, (key, v) => (key === 'timing' || key === 'ms' || key === 'fontTiming' || /Ms$/u.test(key) ? undefined : v)));
+
+/** The members of a report snapshot the list and the writer's records decide, as `recordsOf` and the writer give them; the measurement's members are left out on both sides. */
+function recordMembers(list: DisplayList, written: WriterRecords, report?: any) {
+  const derived = recordsOf(list, written);
+  // A dummy origin for the joins: what it answers is the measurement's, and is left out of the comparison.
+  const dummy = () => ({ run: -1, paragraph: 0, path: '?', color: '?', rectPt: [0, 0, 0, 0] as [number, number, number, number] });
+  const colour = written.colour ? colourWith(list, written.colour, dummy) : undefined;
+  const own = (rows: any[], from?: any[]) => rows.map((row, at) => {
+    const { hint, rectPt, ...rest } = row;
+    return rest.path === '?' ? { ...rest, path: from?.[at]?.path } : rest;
+  });
+  const fromReport = report && {
+    emission: Object.fromEntries(['pageCount', 'baselineMethod', 'columnWidthPx', 'kernAdjustments', 'actualTextSpans', 'faces'].map((k) => [k, report.emission[k]])),
+    runs: report.emission.runs.map(({ index, color, ...rest }: any) => rest),
+    words: report.emission.words.map(({ page, mcid, xPt, spaceEmitted, emittedAdj }: any) => ({ page, mcid, xPt, spaceEmitted, emittedAdj })),
+    structure: (({ headings, ...rest }) => rest)(report.structure),
+    outline: report.outline, links: report.links, idTree: report.idTree, paint: report.paint, vectorResources: report.vectorNotes.resources, streamOrder: report.vectorNotes.streamOrder, xobjects: report.xobjects,
+    images: report.images?.map((i: any) => ({ format: i.format, path: i.path, filter: i.filter, bpc: i.bpc, colorSpace: i.colorSpace, hasSMask: i.hasSMask, intrinsic: i.intrinsic, xobjectHash: i.xobjectHash, xobjectName: i.xobjectName, bytesIn: i.bytesIn, bytesOut: i.bytesOut, icc: i.icc, gammaOnly: i.gammaOnly, interpolate: i.interpolate, reason: i.reason })),
+    colour: report.color?.elements && { ...report.color, elements: own(report.color.elements), worklist: report.color.worklist.map(({ css, ...rest }: any) => rest) },
+  };
+  const fromRecords = {
+    emission: derived.emission,
+    runs: derived.runs.map(({ item, ...rest }) => rest),
+    words: derived.words.map(({ page, mcid, xPt, spaceEmitted, emittedAdj }) => ({ page, mcid, xPt, spaceEmitted, emittedAdj })),
+    structure: derived.structure,
+    outline: derived.outline, links: derived.links.length > 0 ? derived.links : undefined, idTree: report?.idTree === undefined ? undefined : derived.idTree, paint: written.paint, vectorResources: written.vectorResources, streamOrder: derived.streamOrder, xobjects: written.images.length > 0 ? written.xobjects : undefined,
+    images: written.images.length > 0 ? written.images.map((use, at) => ({ format: derived.images[at].format, path: use.info.path, filter: use.info.filter, bpc: use.info.bitsPerComponent, colorSpace: use.info.colorSpace, hasSMask: use.info.hasSMask, intrinsic: [use.info.width, use.info.height], xobjectHash: use.hash, xobjectName: use.name, bytesIn: derived.images[at].bytesIn, bytesOut: use.info.bytesOut, icc: use.info.icc, gammaOnly: use.info.gammaOnly, interpolate: use.info.interpolate, reason: derived.images[at].reason })) : undefined,
+    colour: colour && { ...colour, elements: own(colour.elements, report?.color?.elements), worklist: colour.worklist.map(({ css, path, ...rest }: any, at: number) => ({ path: path === '?' ? report?.color?.worklist[at]?.path : path, ...rest })) },
+    // The joins print() makes, with nothing but the list, the records and an origin per item.
+    joined: { runs: runsWith(derived.runs, dummy).length, paragraphs: paragraphMcidsOf(derived.runs, dummy).size },
+  };
+  return { fromRecords: snapshotOf(fromRecords), fromReport: fromReport && snapshotOf(fromReport) };
+}
+
+test('the records are enough for the report: recordsOf over the writer\'s records, in node, gives every member of each committed report snapshot that the list and the writer decide', async () => {
+  let rows = 0;
+  for (const { name } of corpus) {
+    const list = listOf(name);
+    const { records } = await emitStructure(list);
+    const report = JSON.parse(fs.readFileSync(path.join(LISTS, `${name}.report.json`), 'utf8'));
+    const { fromRecords, fromReport } = recordMembers(list, records, report);
+    const { joined, ...compared } = fromRecords;
+    for (const key of Object.keys(compared)) {
+      // The work list's path and css and a colour row's path are the measurement's where the item has no owner: compared through the snapshot itself, which is what `own` does.
+      assert.deepEqual(compared[key], fromReport[key], `${name}: the report's ${key} is the records'`);
+    }
+    assert.equal(joined.runs, report.emission.runs.length, `${name}: one run per text item`);
+    rows += report.emission.words.length + report.structure.annots.length + (report.paint?.length ?? 0);
+  }
+  assert.ok(rows > 1000, `the comparison reached the corpus (${rows} rows)`);
+});
+
+test('a foreign writer\'s return is plain data and enough: the records through JSON, with nothing else, give recordsOf and print()\'s joins the same answers', async () => {
+  for (const { name } of corpus) {
+    const list = listOf(name);
+    const { records } = await emitStructure(list);
+    // What a writer in another language hands back: the declared members and nothing more, through JSON.
+    const keys: (keyof WriterRecords)[] = ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans', 'faces', 'images', 'xobjects', 'paint', 'vectorResources', 'colour', 'emoji'];
+    assert.deepEqual(Object.keys(records).sort(), keys.filter((k) => records[k] !== undefined).sort(), `${name}: the writer returns the declared records and nothing else`);
+    const foreign: WriterRecords = JSON.parse(JSON.stringify(Object.fromEntries(keys.filter((k) => records[k] !== undefined).map((k) => [k, records[k]]))));
+    assert.deepEqual(recordMembers(list, foreign).fromRecords, recordMembers(list, records).fromRecords, `${name}: the same report members from the JSON records`);
+  }
+  // A hand-made return for a list with one text item: the writer's choices made up, and the joins complete.
+  const list = listOf('arithmetic');
+  const { records } = await emitStructure(list);
+  const made: WriterRecords = { ...records, mcids: records.mcids.map((items) => [...items].reverse()), pens: records.pens.map((pen) => ({ ...pen, adjustments: pen.adjustments.map((a, at) => (at === 0 ? null : 7)) })) };
+  const derived = recordsOf(list, made);
+  assert.ok(derived.words.every((word) => word.emittedAdj === null || word.emittedAdj === 7), 'the words carry the made-up pen');
+  const firstPage = derived.structure.pages[0].mcidOwners;
+  assert.deepEqual(firstPage, [...recordsOf(list, records).structure.pages[0].mcidOwners].reverse(), 'the MCID owners follow the made-up numbering');
+  await assert.rejects(async () => recordsOf(list, { ...records, pens: [] }), (error: unknown) => error instanceof CasterError && /no pen for the text item/.test(error.message), 'a text item with no pen is refused');
 });
 
 /** The list's tree, and each link with the element that owns it and the element its destination names. */
