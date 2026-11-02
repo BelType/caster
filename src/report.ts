@@ -259,7 +259,7 @@ export type ReportStructureNode = {
   path: string;
   pg?: number;
   mcids: ReportStructureMcid[];
-  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, actualText?: string, expansion?: string, textPosition?: string };
+  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, expansion?: string, textPosition?: string };
   /** The annotation reference a Link element ends with. */
   objr?: { page: number, structParent: number };
   kids: ReportStructureNode[];
