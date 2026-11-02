@@ -895,6 +895,8 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
     const origins: { node: Text; start: number; end: number; rect: DOMRect; segment: number; }[] = [];
     /** E10 (`coordinates-and-pages.md`): each segment's untransformed rect height, for the inverse comparison. */
     const neutralHeightPx: number[] = [];
+    /** The segments that end in a hyphen Blink drew: its hyphen is the last glyph and carries no letter-spacing, so it is no part of the trailing-spacing vote. */
+    const hyphenated = new Set<number>();
     {
         for (const p of blocks) {
             const named = describe(p);
@@ -999,6 +1001,8 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                         // R5's clip comes before the pushes, and that order is load-bearing: `origins` and `segments` are read back in lockstep by the baseline-probe pass below, so a piece dropped after its origin was recorded would shift every probe by one from there on.
                         if (clipped(page, topPx, local ? local.hPx : piece.rect.height, parent)) return;
                         origins.push({ node: item.node, start: piece.start, end: piece.end, rect: piece.rect, segment: segments.length });
+                        if (hyphen)
+                            hyphenated.add(segments.length);
                         neutralHeightPx.push(local?.hPx ?? piece.rect.height);
                         let shaped = shapeWord(match.face.url, word + hyphen, sizePx, features, undefined, shaperVariations(coords));
                         if (hyphen === '\u2010' && shaped.gids[shaped.gids.length - 1] === 0)
@@ -1166,7 +1170,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
         .map((s) => ({
         block: s.block,
         text: s.text,
-        glyphs: s.gids.length,
+        glyphs: s.gids.length - (hyphenated.has(s.index) ? 1 : 0),
         letterSpacingPx: s.letterSpacingPx,
         ratio: (s.rectWidthPx - s.advanceWidthPx) / s.letterSpacingPx,
     }));

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 — unreleased (branch `round/specimen-findings`)
+
+The round *specimen findings*: faults the `delibera` and `trattato` specimens surfaced.
+
+- **A letter-spaced word that Blink hyphenates no longer refuses the print.** The trailing-spacing vote counted the hyphen as a letter-spaced glyph, but Blink adds no letter-spacing to the hyphen it draws, so the hyphenated segment voted `-1` against the unanimous `0` and `decideTrailing` threw "letter-spaced segments disagree on trailing spacing" (the trattato's small capitals under `lang="it"`). The sample's glyph count now leaves the hyphen out; the unanimity rule is unchanged. `test/hyphenationLetterSpacing.test.ts` is the red case (`tempera­` 8 glyphs, ratio 7.019).
+
 ## 0.1.5 — unreleased (branch `round/close-the-list`)
 
 The round *close the display list*: a writer given the list and nothing else prints the same bytes, in the page and in node (DESIGN.md S102, *the same list prints the same bytes*).
