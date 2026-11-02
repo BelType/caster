@@ -765,7 +765,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         blobs[key] ??= bytes;
         return key;
     };
-    const resources: Resources = { blobs, fonts: {}, images: {}, forms, rasters: {}, emoji: {} };
+    const resources: Resources = { blobs, fonts: [], images: {}, forms, rasters: {}, emoji: {} };
     const upemOf: Map<string,number> = new Map<any, any>();
     for (const segment of measurement.segments) {
         if (!upemOf.has(segment.instanceKey))
@@ -789,7 +789,8 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         if (!bytes)
             throw new CasterError(`caster: no bytes registered for ${instance.url}`);
         const upem = upemOf.get(instance.instanceKey);
-        resources.fonts[instance.instanceKey] = {
+        resources.fonts.push({
+            key: instance.instanceKey,
             blob: await blobOf(bytes),
             url: instance.url,
             faceId: instance.faceId,
@@ -798,7 +799,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             coords: copy(instance.coords, `font ${instance.instanceKey}`),
             ...(upem !== undefined ? { upem } : {}),
             widths: widthsOf(instance.url, instance.coords, shown.get(instance.instanceKey)),
-        };
+        });
     }
     for (const [key, request] of walk.images.entries()) {
         const source: ImageSource = {

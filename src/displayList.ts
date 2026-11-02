@@ -76,8 +76,8 @@ export type ColourWriting = {
 export type Resources = {
   /** Bytes keyed by their SHA-256, in hex: font programs as the writer reads them, image files as fetched, the RGBA samples of a raster fallback or a colour cluster, a facsimile's PDF, the colour story's ICC profiles. The one place the list holds a typed array. */
   blobs: Record<string, Uint8Array>;
-  /** Keyed by `instanceKey`. */
-  fonts: Record<string, FontInstance>;
+  /** Every font instance the text is set in, each carrying its key. The order is data: the writer embeds the instances in this order and names them `F0`, `F1`, … on every page, so a reader keeps the array as it is and never re-sorts it. */
+  fonts: FontInstance[];
   /** Keyed by the walk's image index. */
   images: Record<string, ImageSource>;
   /** Keyed by the form's name: content written once and drawn wherever a `form` item names it. */
@@ -96,6 +96,8 @@ export type FormDefinition = {
 };
 
 export type FontInstance = {
+  /** The instance key (the measurement's `instanceKey`: the face and the coordinates it is pinned at), which a text item's `font` names. Unique in `fonts`. */
+  key: string;
   /** Key into `blobs`: the font program, unwrapped to an SFNT. */
   blob: string;
   /** Where the page loaded it from; the report names the face by it. */
@@ -196,7 +198,7 @@ export type TextItem = {
   owner: string;
   /** Consecutive items with one `lineIndex` share a text object. */
   lineIndex: number;
-  /** Key into `resources.fonts`. From `run.instanceKey`. */
+  /** The `key` of an instance in `resources.fonts`. From `run.instanceKey`. */
   font: string;
   /** Points. From `run.sizePx * PX_TO_PT`. */
   size: number;

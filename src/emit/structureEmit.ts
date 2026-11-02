@@ -35,7 +35,7 @@ import { PHOTO_PIXEL_THRESHOLD, PHOTO_PSNR_TARGET, PHOTO_RUN_THRESHOLD, PHOTO_UN
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { keepWhenEmpty } from '../walk/structure.ts';
-import { emitRun, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
+import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
 import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba } from '../images/canvasDecode.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
@@ -209,7 +209,9 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     const toUnicode = buildToUnicode(listSegments(list));
     const fonts = new Map<any, any>();
     const fontPrograms = new Map<any, any>();
-    for (const [instanceKey, instance] of Object.entries(list.resources.fonts)) {
+    const fontByKey = fontsByKey(list);
+    for (const instance of list.resources.fonts) {
+        const instanceKey = instance.key;
         const bytes = blobOf(list, instance.blob);
         const perInstance = toUnicode.byInstance.get(instanceKey);
         fonts.set(instanceKey, embedFace(context, {
@@ -447,7 +449,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     openLine = item;
                     openLineIndex = item.lineIndex;
                 }
-                const face = list.resources.fonts[item.font];
+                const face = fontOf(fontByKey, item);
                 const origin = options.originOf(page, at);
                 emitRun(operators, item, {
                     origin,
@@ -529,8 +531,8 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         pdfDoc.catalog.set(pdf().PDFName.of('PageLabels'), context.register(context.obj({ Nums: nums })));
     }
     const faces: ReportEmissionFace[] = [];
-    for (const [instanceKey, instance] of Object.entries(list.resources.fonts)) {
-        const stats = fonts.get(instanceKey).finish();
+    for (const instance of list.resources.fonts) {
+        const stats = fonts.get(instance.key).finish();
         faces.push({ ...stats, url: instance.url });
     }
     // The colour resources go on last: a resource name is allocated the first time an element asks for it, so the complete set is only known once every page has been emitted.

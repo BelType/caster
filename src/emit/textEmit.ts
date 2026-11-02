@@ -16,12 +16,13 @@
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
+import { CasterError } from '../errors.ts';
 
 const pdf = () => capability('pdf');
 
 import type { Report, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportParagraph as ReportEmissionParagraph, ReportFace as ReportEmissionFace, ReportEmission } from '../report.ts';
 import type { CidFont } from '../fonts/fontEmbed.ts';
-import type { DisplayList, Page, TextItem, TextOrigin } from '../displayList.ts';
+import type { DisplayList, FontInstance, Page, TextItem, TextOrigin } from '../displayList.ts';
 import type { Matrix } from '../images/imagePlace.ts';
 
 /** The document's pages, and each face's resource name on each. */
@@ -181,7 +182,7 @@ const segmentViewCache = new WeakMap<any, any>();
  * @remarks
  * The item holds the run as one string and its glyphs as flat arrays; a segment is cut back out of them by `segments.start` and `firstGlyph`, and its clusters moved back onto its own text, which is what `textForGlyph` and the map read.
  *
- * @param upem - The font's units per em (`resources.fonts[item.font].upem`).
+ * @param upem - The font's units per em (the `upem` of the instance `item.font` names).
  * @param place - Where the item sits in the display list, which a refusal of the ToUnicode map names; the first call decides, and the views are kept.
  */
 export function segmentViews(item: TextItem, upem: number, place?: { page: number, item: number }): TextSegment[] {
@@ -208,13 +209,41 @@ export function segmentViews(item: TextItem, upem: number, place?: { page: numbe
     return views;
 }
 
+/**
+ * The list's font instances by their key, in the list's order.
+ *
+ * @throws {CasterError} Two instances with one key.
+ */
+export function fontsByKey(list: DisplayList): Map<string,FontInstance> {
+    const byKey = new Map<string,FontInstance>();
+    for (const instance of list.resources.fonts) {
+        if (byKey.has(instance.key))
+            throw new CasterError(`caster: the display list holds two font instances under the key ${instance.key}`);
+        byKey.set(instance.key, instance);
+    }
+    return byKey;
+}
+
+/**
+ * The instance a text item names.
+ *
+ * @throws {CasterError} A key the list holds no instance for.
+ */
+export function fontOf(fonts: Map<string,FontInstance>, item: TextItem): FontInstance {
+    const instance = fonts.get(item.font);
+    if (!instance)
+        throw new CasterError(`caster: a text item names the font ${item.font}, and the display list holds no instance under that key`);
+    return instance;
+}
+
 /** Every segment the list sets, in painting order, as the writer reads them: what the ToUnicode map is built over, each view knowing its item's place. */
 export function listSegments(list: DisplayList): TextSegment[] {
+    const fonts = fontsByKey(list);
     const segments: TextSegment[] = [];
     for (const [at, page] of list.pages.entries()) {
         for (const [index, item] of page.items.entries()) {
             if (item.kind === 'text')
-                segments.push(...segmentViews(item, (list.resources.fonts[item.font].upem as number), { page: at, item: index }));
+                segments.push(...segmentViews(item, (fontOf(fonts, item).upem as number), { page: at, item: index }));
         }
     }
     return segments;
