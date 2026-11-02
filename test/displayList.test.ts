@@ -23,6 +23,9 @@ import { emitStructure } from '../src/emit/structureEmit.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
 import { resolveStructure } from '../src/displayList/structure.ts';
 import { CasterError } from '../src/errors.ts';
+import { prepareImage } from '../src/images/imagePass.ts';
+import { photoVerdict } from '../src/images/photoRule.ts';
+import { decodePng } from '../src/images/png.ts';
 import { launchBrowser } from './launch.ts';
 
 import type { DisplayList, LinkItem, StructElement, TextItem } from '../src/displayList.ts';
@@ -32,6 +35,7 @@ const LISTS = path.join(PACKAGE, 'fixtures', 'lists');
 const DIST = path.join(PACKAGE, 'dist');
 const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/errors')));
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
+const ROADS = path.join(PACKAGE, 'fixtures', 'roads');
 
 type Entry = { name: string; list: { blobs: string[] } };
 const corpus: Entry[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents;
@@ -307,6 +311,77 @@ test('the writer refuses a list of another version', async () => {
   await assert.rejects(emitStructure(list, { originOf }), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
 });
 
+// --- the image roads, as the image pass left them ---------------------------------------------
+
+/** A mupdf buffer's bytes. */
+const bytesOf = (buffer: mupdf.Buffer) => Buffer.from(buffer.asUint8Array());
+
+/** Every image XObject the file's first page names, by its resource name. */
+function imagesOf(bytes: Uint8Array): Map<string, mupdf.PDFObject> {
+  const doc = mupdf.Document.openDocument(Buffer.from(bytes), 'application/pdf') as mupdf.PDFDocument;
+  const out = new Map<string, mupdf.PDFObject>();
+  doc.loadPage(0).getObject().get('Resources').get('XObject').forEach((obj, key) => { if (obj.get('Subtype').asName() === 'Image') out.set(String(key), obj); });
+  return out;
+}
+
+test('an arithmetic-coded JPEG is handed through: the pass is refused a decode in node as in the page, and the writer gives the file to /DCTDecode unread', async () => {
+  const file = { bytes: new Uint8Array(fs.readFileSync(path.join(ROADS, 'logo-arithmetic.jpg'))), mimeType: 'image/jpeg' };
+  const prepared = await prepareImage(file, true);
+  assert.equal(prepared.samples, undefined, 'no pixels: node has no createImageBitmap');
+  assert.match(String(prepared.refusal), /could not decode image\/jpeg/u, 'the refusal travels with the file');
+  const list = listOf('arithmetic');
+  const source = list.resources.images[0];
+  assert.ok(source.blob && source.mime === 'image/jpeg' && source.samples === undefined, 'the list holds the file');
+  assert.match(String(source.refusal), /could not decode image\/jpeg/u, 'and the page\'s refusal');
+  const emitted = await emitStructure(list, { originOf });
+  const [image] = imagesOf(emitted.bytes).values();
+  assert.equal(image.get('Filter').asName(), 'DCTDecode');
+  assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(file.bytes)), 'the stream is the file, byte for byte');
+});
+
+test('a WebP reaches the list as the browser\'s pixels, and the writer writes them as they are, RGB under /FlateDecode and the alpha as an /SMask', async () => {
+  const list = listOf('webp');
+  const source = list.resources.images[0];
+  assert.equal(source.blob, undefined, 'the list does not hold the WebP');
+  assert.deepEqual(source.original, { format: 'image/webp', bytes: fs.statSync(path.join(ROADS, 'logo.webp')).size });
+  const samples = source.samples!;
+  assert.deepEqual({ colorSpace: samples.colorSpace, bitsPerComponent: samples.bitsPerComponent }, { colorSpace: 'DeviceRGB', bitsPerComponent: 8 });
+  const rgba = list.resources.blobs[samples.blob];
+  assert.equal(rgba.length, samples.width * samples.height * 4, 'RGBA, four bytes a pixel');
+  const [image] = imagesOf((await emitStructure(list, { originOf })).bytes).values();
+  assert.deepEqual([image.get('Width').asNumber(), image.get('Height').asNumber(), image.get('ColorSpace').asName(), image.get('BitsPerComponent').asNumber(), image.get('Filter').asName()], [samples.width, samples.height, 'DeviceRGB', 8, 'FlateDecode']);
+  const rgb = rgba.filter((_, i) => i % 4 !== 3);
+  assert.ok(bytesOf(image.readStream()).equals(Buffer.from(rgb)), 'the stream inflates to the list\'s RGB');
+  const alpha = rgba.filter((_, i) => i % 4 === 3);
+  const opaque = alpha.every((a) => a === 255);
+  assert.equal(image.get('SMask').isNull(), opaque, 'an /SMask exactly where a pixel is not opaque');
+  if (!opaque) assert.ok(bytesOf(image.get('SMask').readStream()).equals(Buffer.from(alpha)), 'and it inflates to the alpha');
+  assert.equal(source.photo?.chosenQuality, null, 'the rule was consulted and declined');
+});
+
+test('the photo rule\'s choice and quality are the pass\'s: the list holds its JPEG and evidence, the file carries that JPEG, and the flag off keeps the PNG', async () => {
+  const list = listOf('photo');
+  const source = list.resources.images[0];
+  const photo = source.photo!;
+  assert.equal(photo.chosenQuality, 0.85, 'the cheapest quality that clears the target');
+  assert.deepEqual(photo.candidates.map((c) => c.quality), [0.85, 0.9, 0.95], 'every quality tried');
+  assert.ok(photo.candidates[0].psnrDb >= 40, `${photo.candidates[0].psnrDb} dB at 0.85`);
+  assert.equal(list.resources.blobs[source.jpeg!].length, photo.candidates[0].bytes, 'the JPEG is the chosen candidate');
+  assert.equal(source.blob, undefined, 'the list does not hold the PNG');
+  assert.equal(source.original?.format, 'image/png');
+  const [image] = imagesOf((await emitStructure(list, { originOf })).bytes).values();
+  assert.equal(image.get('Filter').asName(), 'DCTDecode');
+  assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(list.resources.blobs[source.jpeg!])), 'the file carries the pass\'s JPEG');
+  // The gates and the sampled look are arithmetic over the PNG's own samples, so node reaches the same verdict the page did.
+  const png = new Uint8Array(fs.readFileSync(path.join(ROADS, 'photo.png')));
+  const decoded = decodePng(png);
+  const verdict = photoVerdict({ width: decoded.width, height: decoded.height, rgb: decoded.data as Uint8Array, hasAlpha: false });
+  assert.deepEqual({ isPhoto: verdict.isPhoto, uniqueRatio: verdict.uniqueRatio, longestRun: verdict.longestRun, pixels: verdict.pixels }, { isPhoto: photo.isPhoto, uniqueRatio: photo.uniqueRatio, longestRun: photo.longestRun, pixels: photo.pixels });
+  const off = await prepareImage({ bytes: png, mimeType: 'image/png' }, false);
+  assert.equal(off.jpeg, undefined, 'the flag off, no re-encode');
+  assert.equal(off.photo?.reason, 'the photoRule flag is off', 'and the record says the rule was never asked');
+});
+
 // --- in the page ------------------------------------------------------------
 
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -318,11 +393,15 @@ body { margin: 0; }
 p { margin: 0; } b { font-weight: 650; }
 </style></head><body><div class="s"><p>Light <b>heavier</b> words, and <a href="sub/other page.html">a relative link</a>.</p></div></body></html>`;
 
+/** One WebP painted twice. */
+const TWICE = PAGE.replace(/<div class="s">.*<\/div>/u, '<div class="s"><p>One file, <img src="/roads/logo.webp" alt="once"> and <img src="/roads/logo.webp" alt="twice">.</p></div>');
+
 function serve(): Promise<http.Server> {
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE);
-    const [root, rel] = url.pathname.startsWith('/common/') ? [COMMON, url.pathname.slice(8)] : url.pathname.startsWith('/fonts/') ? [FONTS, url.pathname.slice(7)] : [DIST, url.pathname.slice(1)];
+    if (url.pathname === '/twice') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(TWICE);
+    const [root, rel] = url.pathname.startsWith('/common/') ? [COMMON, url.pathname.slice(8)] : url.pathname.startsWith('/fonts/') ? [FONTS, url.pathname.slice(7)] : url.pathname.startsWith('/roads/') ? [ROADS, url.pathname.slice(7)] : [DIST, url.pathname.slice(1)];
     const file = path.join(root, rel);
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return void response.writeHead(404).end();
     response.writeHead(200, { 'Content-Type': contentType(file) }).end(fs.readFileSync(file));
@@ -389,6 +468,56 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
     assert.equal(seen.links[0].uri, `http://127.0.0.1:${port}/sub/other%20page.html`, 'the URI is absolute, resolved against the document');
     assert.equal(seen.created, '2026-11-02T10:20:30.456Z', 'the host\'s date is the list\'s');
     assert.ok(seen.file.includes('/CreationDate (D:20261102102030Z)'), 'and the file\'s');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
+
+test('in the page: one WebP painted twice is decoded once, names one blob of pixels, and is one image object in the file', async () => {
+  const server = await serve();
+  const port = (server.address() as { port: number }).port;
+  const browser = await launchBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/twice`);
+    await page.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map((image) => image.decode())); });
+    const seen: { decodes: number; sources: { samples?: string; blob?: string }[]; painted: number; file: string } = await page.evaluate(async () => {
+      const load = (p: string) => import(p);
+      const caster = await load('/src/index.js');
+      // Count the browser's decodes of a WebP: the image pass is the only caller.
+      let decodes = 0;
+      const decode = window.createImageBitmap.bind(window);
+      (window as any).createImageBitmap = (source: Blob, ...rest: any[]) => { if (source instanceof Blob && source.type === 'image/webp') decodes++; return (decode as any)(source, ...rest); };
+      caster.prepare(document);
+      const strip = document.querySelector('.s') as HTMLElement;
+      const box = strip.getBoundingClientRect();
+      const pt = (px: number) => Math.round(((px * 72) / 96) * 1000) / 1000;
+      const printed = await caster.print({
+        document,
+        created: '2026-11-02T10:20:30.456Z',
+        strip: {
+          strip, probeRoot: strip, pageElements: [strip],
+          pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(box.width), heightPt: pt(box.height) }, declaredPx: { widthPx: box.width, heightPx: box.height }, contentArea: strip, continuations: [] }],
+          pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
+        },
+      });
+      const list = printed.displayList;
+      let binary = '';
+      for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
+      return {
+        decodes,
+        sources: Object.values(list.resources.images).map((source: any) => ({ samples: source.samples?.blob, blob: source.blob })),
+        painted: list.pages.flatMap((p: any) => p.items).filter((item: any) => item.kind === 'image').length,
+        file: btoa(binary),
+      };
+    });
+    assert.equal(seen.decodes, 1, 'the WebP is decoded once');
+    assert.equal(seen.painted, 2, 'and painted twice');
+    assert.equal(seen.sources.length, 2, 'two image sources, one per element');
+    assert.ok(seen.sources.every((source) => source.samples !== undefined && source.blob === undefined), 'each holds pixels, not the file');
+    assert.equal(new Set(seen.sources.map((source) => source.samples)).size, 1, 'one blob of pixels between them');
+    assert.equal(imagesOf(Buffer.from(seen.file, 'base64')).size, 1, 'one image object in the file');
   } finally {
     await browser.close();
     server.close();
