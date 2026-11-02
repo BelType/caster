@@ -390,6 +390,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     for (const spec of [...boxes.rasters, ...svg.rasters]) {
       rasterSamples.set(spec, await rasterizeSvg(spec.svg, spec.rectPt[2], spec.rectPt[3], spec.dpi));
     }
+    step('rasters');
     // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
     const prepared = await prepareImages(measurement.images.map((image) => walk.images[image.index]), (src) => imageBytes.get(src), options.photoRule);
     const rasterPhotos = new Map<any, any>();
