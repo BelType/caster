@@ -3,7 +3,7 @@
  *
  * The grammar is the part a document can get wrong, so every accepted and every refused form of `docs/guide/colour.md` §"The value grammar" is here, and the refusals are checked on their message rather than merely on their throwing: a hint that does not parse is an export error naming the element, the property and the value, and *never* a silent fall back to RGB, because a colour the author demanded and the exporter quietly dropped is the one failure a print job cannot recover from.
  *
- * What is not here is what needs a DOM or a `PDFContext`: `registerHintProperties`, `readHint`, `elementColor`, `hintPaints`, and the whole of `colorResources.js` — the Separation allocator, the escaper, the black-text policy and the output intent. Those wait on Agent A's `emit/textEmit.js` and `measure/textMeasure.js`, which `colorResources.js` and `hintPaints.js` import; see `DESIGN.md` §Painting.
+ * What is not here is what needs a DOM or a `PDFContext`: `registerHintProperties`, `readHint`, `elementColor`, `hintPaints`, and the whole of `colorResources.js` but `colorantName`, a pure function of a hint that moved there from `colorHints.js` — the Separation allocator, the escaper, the black-text policy and the output intent. Those wait on Agent A's `emit/textEmit.js` and `measure/textMeasure.js`, which `colorResources.js` and `hintPaints.js` import; see `DESIGN.md` §Painting.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,11 +13,11 @@ import {
   HINT_PROPERTIES,
   HintParseError,
   colorKey,
-  colorantName,
   parseCmykGradientHint,
   parseColorHint,
   parseOverprint,
 } from '../src/colour/colorHints.ts';
+import { colorantName } from '../src/colour/colorResources.ts';
 import {
   BLACK_POINT_COMPENSATION,
   INTENT,

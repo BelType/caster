@@ -18,7 +18,6 @@
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
-import { colorantName } from './colorHints.ts';
 import { segmentTexts } from '../emit/textEmit.ts';
 import { CasterError } from '../errors.ts';
 
@@ -26,6 +25,11 @@ import type { Cmyk, OverprintMode, PredefinedHint, ResolvedColor, SpotHint } fro
 import type { Fill, PaintOrigin, RectItem, TextItem, TextOrigin } from '../displayList.ts';
 import type { RunColorOperators } from '../emit/textEmit.ts';
 import type { ReportColor, ReportColorElement, ReportColorExtGState, ReportColorSpace, ColorTarget, ReportHintRegistration, ReportOutputIntent, ReportWorklistEntry } from '../report.ts';
+
+/** The colourant name a resolved spot writes into its `/Separation` array. Here and not in `colour/colorHints.js`, which reads computed style, so the writer reaches no DOM to name an ink (moved in stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). */
+export function colorantName(color: SpotHint|PredefinedHint): string {
+  return color.kind === 'spot' ? color.name : color.kind === 'all' ? 'All' : 'None';
+}
 
 /** One colour operand, written to four decimals: a tint of 0.6 is 0.6, not 0.6000000001. */
 const num = (n: number): PDFNumber => capability('pdf').PDFNumber.of(Math.round(n * 10000) / 10000);
