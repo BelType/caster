@@ -40,6 +40,8 @@ export type BuildInputs = {
   title: string;
   /** The list's `info.created`, an ISO 8601 instant in UTC. */
   created: string;
+  /** The document's own URL, which a relative link `href` resolves against into the link's `target.uri`. Absent, a relative `href` is kept as written. */
+  baseUri?: string;
   /** The list's `writing`, with the colour story's profiles as bytes, which the builder hashes into `blobs`. */
   writing: Omit<Writing, 'colour'> & { colour?: Omit<ColourWriting, 'profiles'> & { profileBytes: Uint8Array, srgbBytes: Uint8Array } };
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
@@ -318,8 +320,28 @@ function widthsOf(url: string, coords: Record<string,number>, gids: Set<number> 
     return { gids: sorted, units: sorted.map((gid) => glyphAdvance(url, gid, variations)) };
 }
 
-/** One link annotation as an item: its rectangles and its destination in page points, by the expressions the writer used. */
-function linkItem(annot: WalkAnnot, order: number): LinkItem {
+/**
+ * An `href` as an absolute, ASCII, percent-encoded URI — what §12.6.4.8's `/URI` entry is.
+ *
+ * @remarks
+ * `encodeURI` rather than `encodeURIComponent`: the reserved characters that structure a URL have to survive. A value the URL parser cannot resolve is left as the author wrote it, because a link the printer cannot understand is still a link the author meant.
+ *
+ * @param base - The document's own URL; absent, a relative `href` is left as written.
+ */
+export function absoluteUri(href: string, base?: string): string {
+    try {
+        return encodeURI(new URL(href, base).href);
+    } catch {
+        return href;
+    }
+}
+
+/**
+ * One link annotation as an item: its rectangles and its destination in page points, by the expressions the writer used, and for a link that leaves the file the URI its action carries.
+ *
+ * @param baseUri - The document's own URL, which a relative `href` resolves against.
+ */
+function linkItem(annot: WalkAnnot, order: number, baseUri?: string): LinkItem {
     return {
         kind: 'link',
         struct: annot.ownerPath,
@@ -329,7 +351,7 @@ function linkItem(annot: WalkAnnot, order: number): LinkItem {
             href: annot.href,
             kind: annot.kind,
             ...(annot.targetId ? { targetId: annot.targetId } : {}),
-            ...(annot.dest ? { dest: { page: annot.dest.page, x: xToPt(annot.dest.xPx, annot.dest.page), y: yToPt(annot.dest.yPx, annot.dest.page), struct: annot.dest.structPath } } : {}),
+            ...(annot.dest ? { dest: { page: annot.dest.page, x: xToPt(annot.dest.xPx, annot.dest.page), y: yToPt(annot.dest.yPx, annot.dest.page), struct: annot.dest.structPath } } : { uri: absoluteUri(annot.href, baseUri) }),
         },
         contents: annot.contents,
     };
@@ -672,7 +694,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         }
         // The page's link annotations, after everything it paints: they are not painted, and the writer collects them for the structure tree.
         for (const [annot, order] of linksByPage.get(page) ?? [])
-            items.push(linkItem(annot, order));
+            items.push(linkItem(annot, order, inputs.baseUri));
         pages.push({
             size: [geometry.widthPt, geometry.heightPt],
             boxes: { media, ...(geometry.trimPt ? { trim: geometry.trimPt } : {}), ...(geometry.bleedPt ? { bleed: geometry.bleedPt } : {}) },

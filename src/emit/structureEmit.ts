@@ -118,8 +118,6 @@ export type EmitStructureOptions = {
   emoji?: Omit<ReportEmoji, 'clusters'|'xobjects'>;
   /** E12E (`colour.md`): what the RGB→CMYK tier converted. */
   conversion?: ReportConversion;
-  /** The document's own URL, which a relative `href` in a link annotation resolves against. Absent, a relative href ships as written. */
-  baseUri?: string;
 };
 /** The document-level entries of `structure-tree.md` (E12F): the skip-ink record. The outline and the page labels are the list's. */
 export type SmallItemsOptions = {
@@ -193,22 +191,6 @@ export type BuildResult = {
 function textString(value: string): PDFString|PDFHexString {
     return /^[\x20-\x7e]*$/.test(value) && !/[()\\]/.test(value) ? pdf().PDFString.of(value) : pdf().PDFHexString.fromText(value);
 }
-/**
- * An `href` as an absolute, ASCII, percent-encoded URI — what §12.6.4.8's `/URI` entry is.
- *
- * @remarks
- * `encodeURI` rather than `encodeURIComponent`: the reserved characters that structure a URL have to survive. A value the URL parser cannot resolve is left as the author wrote it, because a link the printer cannot understand is still a link the author meant.
- *
- * @param base - The document's own URL; absent, a relative `href` is left as written.
- */
-function absoluteUri(href: string, base?: string): string {
-    try {
-        return encodeURI(new URL(href, base).href);
-    } catch {
-        return href;
-    }
-}
-
 /** The PDF 2.0 standard structure namespace; every element points at it. */
 export const PDF_2_NAMESPACE = 'http://iso.org/pdf2/ssn';
 /** Annotation flag bit 3, Print. Required of every annotation by PDF/UA. */
@@ -515,7 +497,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);
     }
     const bboxByPath = new Map(Object.entries(list.figureBoxes));
-    const built = buildStructure(context, pages, list, groups, mcidOwnersByPage.length, bboxByPath, linkItems.sort((a, b) => a.item.order - b.item.order), options.baseUri);
+    const built = buildStructure(context, pages, list, groups, mcidOwnersByPage.length, bboxByPath, linkItems.sort((a, b) => a.item.order - b.item.order));
     // --- E12F (`structure-tree.md`): the two catalog entries a reader expects and no rule demands ---
     let outlineItems;
     if (list.outline.length > 0) {
@@ -692,6 +674,16 @@ function imageOperators(image: ImageItem, name: PDFName, formSize: [number,numbe
     return operators;
 }
 /**
+ * The `/URI` of a link that leaves the file, as the list resolved it.
+ *
+ * @throws {CasterError} A link with no destination and no URI.
+ */
+function uriOf(link: LinkItem): string {
+    if (link.target.uri === undefined)
+        throw new CasterError(`caster: the link at ${link.struct} has neither a destination in the file nor a URI; the builder resolves one for every link without a destination`);
+    return link.target.uri;
+}
+/**
  * An instance's advance for a glyph, read from the list's widths and from nowhere else.
  *
  * @throws {CasterError} A glyph the list holds no width for, naming the instance and the glyph.
@@ -823,10 +815,9 @@ function nodesByPath(tree: StructureNode): Map<string,StructureNode> {
  *
  * @param bboxByPath - Each Figure's Layout `/BBox`, by structure path.
  * @param linkItems - The list's link items with the page each sits on, in the walk's order.
- * @param baseUri - The document's own URL, which a relative link `href` resolves against.
- * @throws {CasterError} A link with no structure element; two elements with one `/ID`; a trailer with no Root; a destination with no content under it.
+ * @throws {CasterError} A link with no structure element; a link with neither a destination nor a URI; two elements with one `/ID`; a trailer with no Root; a destination with no content under it.
  */
-function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList, groups: Group[], pageCount: number, bboxByPath: Map<string,[number,number,number,number]>, linkItems: { item: LinkItem; page: number; }[], baseUri?: string): BuildResult {
+function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList, groups: Group[], pageCount: number, bboxByPath: Map<string,[number,number,number,number]>, linkItems: { item: LinkItem; page: number; }[]): BuildResult {
     const built = new Map<any, any>();
     /** The builder's mirror of one node and everything under it, registered by path. */
     const attach = (node: StructureNode): Built => {
@@ -861,7 +852,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
             QuadPoints: quads,
             // An internal link's `/Dest` is filled in after the tree is allocated: it names a structure element, and no element has a ref yet.
             // §12.6.4.8: the URI is an ASCII string, and it is the absolute one. `PDFString.of` escapes nothing, so a non-ASCII IRI arrived truncated at the first byte above 127, and a relative `href` shipped as the author wrote it, which resolves against nothing once the file leaves the server.
-            ...(annot.target.dest ? {} : { A: { S: 'URI', URI: textString(absoluteUri(annot.target.href, baseUri)) } }),
+            ...(annot.target.dest ? {} : { A: { S: 'URI', URI: textString(uriOf(annot)) } }),
             Contents: textString(annot.contents),
             F: ANNOTATION_PRINT_FLAG,
             Border: [0, 0, 0],

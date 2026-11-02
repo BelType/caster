@@ -6,7 +6,7 @@
  *
  * **The door is the CLI's.** Each document is served from disk on the CLI's made-up origin, cut by Cicero with the CLI's own `cutInPage` and its own Cicero (both read from the CLI checkout at `BELTYPE_CLI`, the sibling `../cli` by default, never declared as a dependency), and printed by this checkout's `dist/` in the page, which hands back the display list and the report beside the bytes. A document marked `cli` is also printed by `beltype print` itself, and its file must equal the door's, which is what makes the door the CLI's and not a second one.
  *
- * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, the report with what varies by run removed (`<name>.report.json`), and what the writer was handed outside the list (`<name>.writer.json`: the document's base URI). `check` compares the report snapshot as well as the bytes wherever one was recorded.
+ * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, and the report with what varies by run removed (`<name>.report.json`). Nothing the writer reads is recorded beside the list: the list is all it is handed. `check` compares the report snapshot as well as the bytes wherever one was recorded.
  *
  * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, hands the list to `emitStructure` with the stubs it still needs, and compares the bytes with the recorded file. What differs or throws is the gap the round closes; nothing here fixes it.
  *
@@ -129,10 +129,8 @@ function firstDifference(a: unknown, b: unknown, at = ''): string | null {
 
 // ---- the door --------------------------------------------------------------------------------------------------------
 
-/** What the page hands back: the file, the list without its blobs, the blobs, the report, and what the writer was handed outside the list. */
-type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; writer: Writer; ms: number };
-/** What the writer is handed today beside the list, recorded so replay can hand it over again. */
-type Writer = { baseUri: string };
+/** What the page hands back: the file, the list without its blobs, the blobs and the report. */
+type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; ms: number };
 
 /** The CLI's modules, from its checkout: its in-page cut and the Cicero it serves. */
 async function cliParts() {
@@ -165,7 +163,7 @@ async function printInPage({ options, created }: { options: Record<string, unkno
     const blobs: Record<string, string> = {};
     for (const [hash, bytes] of Object.entries(list.resources.blobs as Record<string, Uint8Array>)) blobs[hash] = base64(bytes);
     const bare = JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } });
-    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), writer: { baseUri: document.baseURI }, ms };
+    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), ms };
   } catch (error) {
     return { refused: String((error as Error | undefined)?.stack ?? error) };
   }
@@ -223,7 +221,7 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
         if ('refused' in answer) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
         if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
         const blobs = Object.fromEntries(Object.entries(answer.blobs).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
-        await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), writer: answer.writer, ms: Date.now() - started });
+        await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), ms: Date.now() - started });
       } finally {
         await context.close();
       }
@@ -267,7 +265,6 @@ async function record(dir: string, listOut: string | null) {
       }
       fs.writeFileSync(path.join(listOut, `${doc.name}.json`), `${printed.list}\n`);
       fs.writeFileSync(path.join(listOut, `${doc.name}.report.json`), `${JSON.stringify(snapshot(printed.report), null, 1)}\n`);
-      fs.writeFileSync(path.join(listOut, `${doc.name}.writer.json`), `${JSON.stringify(printed.writer)}\n`);
       entry.list = { bytes: Buffer.byteLength(printed.list), blobs: Object.keys(printed.blobs).sort() };
     }
     entries.push(entry);
@@ -321,7 +318,7 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
 /**
  * Replay every saved list in node and compare bytes.
  *
- * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`, `baseUri`.
+ * @param without - Stubs to leave out, to measure what each one stands in for: `toUnicode`.
  */
 async function replay(dir: string, without: Set<string>) {
   const { load } = await import('../src/capabilities.ts');
@@ -337,11 +334,10 @@ async function replay(dir: string, without: Set<string>) {
     const listFile = path.join(dir, `${entry.name}.json`);
     if (!fs.existsSync(listFile)) { gaps.push({ name: entry.name, stubs: [], result: 'no saved list (record with --list-out)', ms: 0 }); continue; }
     const started = performance.now();
-    const stubs = ['originOf', 'toUnicode', 'baseUri'].filter((s) => !without.has(s));
+    const stubs = ['originOf', 'toUnicode'].filter((s) => !without.has(s));
     let result: string;
     try {
       const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
-      const writer: Writer = JSON.parse(fs.readFileSync(path.join(dir, `${entry.name}.writer.json`), 'utf8'));
       list.resources.blobs = {};
       for (const hash of entry.list?.blobs ?? []) {
         const bytes = new Uint8Array(fs.readFileSync(path.join(dir, 'blobs', hash)));
@@ -352,7 +348,6 @@ async function replay(dir: string, without: Set<string>) {
       const colour = list.writing.colour !== undefined;
       const emitted = await emitStructure(list, {
         ...(without.has('toUnicode') ? {} : { toUnicode: buildToUnicode(listSegments(list, originOf)) }),
-        ...(without.has('baseUri') ? {} : { baseUri: writer.baseUri }),
         originOf
       });
       const now = Buffer.from(emitted.bytes);
@@ -378,7 +373,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode,baseUri]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without toUnicode]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));

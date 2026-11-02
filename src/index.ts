@@ -393,6 +393,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const { list: displayList, origins } = await buildDisplayList(measurement, walk, {
       title: options.title ?? doc.title ?? 'Untitled',
       created: input.created ?? new Date().toISOString(),
+      baseUri: doc.baseURI,
       writing: {
         // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
         fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
@@ -419,7 +420,6 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const displayListMs = now() - listStart;
     const emitted = await emitStructure(displayList, {
       originOf: (page, index) => origins[page][index],
-      baseUri: doc.baseURI,
       toUnicode: buildToUnicode(listSegments(displayList, (page, index) => origins[page][index])),
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       container: report.container,
