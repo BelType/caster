@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Roads the paper does not take</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    /* Print marks and a bleed: the media box grows and the marks are drawn in the /All separation. */
+    :root { --pdf-marks: crop cross; --pdf-bleed: 3mm; }
+    .rotated { display: inline-block; transform: rotate(-12deg); }
+    .fade { height: 12mm; background: linear-gradient(90deg, rgb(200 0 0 / 1), rgb(0 0 200 / 0)); }
+    .radial { height: 12mm; background: radial-gradient(circle, #fc0, #036); border-radius: 4mm; }
+    .spot { --pdf-color: spot('PANTONE 200 C', device-cmyk(0 1 0.65 0.15)); --pdf-overprint: fill; }
+    .cmyk { --pdf-background: device-cmyk(0.1 0 0 0); padding: 2mm; }
+    .shadow { margin: 4mm 0; padding: 3mm; box-shadow: 0 1mm 3mm rgba(0, 0, 0, 0.4); }
+    .narrow { width: 32mm; hyphens: auto; }
+    table { border-collapse: collapse; } td, th { border: 0.3mm solid #888; padding: 1mm; }
+  </style>
+</head>
+<body>
+  <h1 id="top">Roads</h1>
+  <p>A line with <span class="rotated">rotated words</span> inside it, and a link <a href="https://example.org/a path">out of the file</a>, one <a href="#last">to the last section</a>, and one <a href="../cast/index.html">relative to the document</a>.</p>
+  <div class="fade"></div>
+  <div class="radial"></div>
+  <p class="spot">A paragraph set in a spot ink that overprints.</p>
+  <p class="cmyk">A paragraph on a CMYK ground.</p>
+  <div class="shadow">A box whose blurred shadow has no PDF operator and is drawn as a raster.</div>
+  <p class="narrow" lang="en">Decomposition temperature colonisation incomprehensibility.</p>
+  <table><thead><tr><th scope="col">key</th><th scope="col">value</th></tr></thead><tbody><tr><td>one</td><td>1</td></tr><tr><td>two</td><td>2</td></tr></tbody></table>
+  <h2 id="last">The last section</h2>
+  <p>Text set at <sub>sub</sub> and <sup>super</sup> positions, <em>emphasis</em> and <strong>strong</strong>.</p>
+</body>
+</html>
