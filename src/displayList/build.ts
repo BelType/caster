@@ -15,7 +15,7 @@ import { apply } from '../coordinates/matrix.ts';
 import { ownsContent } from '../walk/structure.ts';
 import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';
-import { rgbaOf } from '../images/canvasDecode.ts';
+import { rgbaOf } from '../images/samples.ts';
 import { spaceGlyph } from '../measure/textMeasure.ts';
 import { glyphAdvance } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';

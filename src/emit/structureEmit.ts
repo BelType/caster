@@ -37,7 +37,7 @@ import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { keepWhenEmpty } from '../walk/structure.ts';
 import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
 import { buildToUnicode } from '../fonts/toUnicode.ts';
-import { samplesFromRgba } from '../images/canvasDecode.ts';
+import { samplesFromRgba } from '../images/samples.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
 import { buildOutline } from './outline.ts';
 
