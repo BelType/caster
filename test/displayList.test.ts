@@ -2,7 +2,7 @@
  * The display list is all the writer is handed: the same list prints the same bytes, in node, with no page.
  *
  * @remarks
- * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it but the report's `originOf`, answered by a dummy. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
+ * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it but the report's `originOf`, answered by a dummy: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stage 1)
  * @packageDocumentation
@@ -33,9 +33,6 @@ const DIST = path.join(PACKAGE, 'dist');
 const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/errors')));
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 
-/** The documents whose images take the browser's decoders inside the writer, which node does not have until stage 3 moves them before the list. */
-const DECODED_IN_THE_WRITER = new Set(['webp', 'photo']);
-
 type Entry = { name: string; list: { blobs: string[] } };
 const corpus: Entry[] = JSON.parse(fs.readFileSync(path.join(LISTS, 'corpus.json'), 'utf8')).documents;
 
@@ -61,12 +58,11 @@ before(async () => {
   await loadSubsetter();
 });
 
-test('the same list prints the same bytes: every committed list the writer can write in node gives the committed file', async () => {
-  const replayed = corpus.filter((e) => !DECODED_IN_THE_WRITER.has(e.name));
-  assert.ok(replayed.length >= 6, 'the six documents that take no browser decoder');
-  for (const { name } of replayed) {
+test('the same list prints the same bytes: every committed list gives the committed file, in node, the browser-decoded images and the photo rule\'s JPEG included', async () => {
+  assert.ok(corpus.length >= 8 && ['webp', 'photo', 'arithmetic'].every((name) => corpus.some((e) => e.name === name)), 'the whole corpus, the image roads among it');
+  for (const { name } of corpus) {
     const list = listOf(name);
-    assert.equal(list.version, 4, `${name}: a version 4 list`);
+    assert.equal(list.version, 5, `${name}: a version 5 list`);
     const emitted = await emitStructure(list, { originOf });
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
@@ -150,7 +146,7 @@ function assertTreeIsWritten(name: string, list: DisplayList, tree: { elements: 
 
 test('the list\'s tree is the tree the writer writes: every element, every /K in order, every attribute, every destination', async () => {
   let compared = 0;
-  for (const { name } of corpus.filter((e) => !DECODED_IN_THE_WRITER.has(e.name))) {
+  for (const { name } of corpus) {
     const list = listOf(name);
     compared += assertTreeIsWritten(name, list, treeOf(list), (await emitStructure(list, { originOf })).bytes);
   }
@@ -381,7 +377,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
     });
-    assert.equal(seen.version, 4);
+    assert.equal(seen.version, 5);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
     for (const { font, gids } of seen.used) {

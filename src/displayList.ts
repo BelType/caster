@@ -12,6 +12,8 @@
  *
  * VERSION 4 (stage 2 of the same plan). The structure tree is the builder's, resolved (`structure`, a {@link Structure}): its elements by index, pruned, in allocation order, each `/K` already in reading order, every attribute object written out, so a writer inherits no rule of the walk's and only numbers each page's content starts as MCIDs. A content `tag` names its element by index; so do a link (the `/OBJR` owner), an internal link's destination (already the element with a page) and a bookmark. `figureBoxes` folded into the Figure's Layout attribute, and a content start's `mcid` and `seq` are gone: the writer numbers the first, and the second decided an order the children now hold. Links' `order` runs 0, 1, 2 … over the document.
  *
+ * VERSION 5 (stage 3 of the same plan). An image source is what the writer embeds, never what it must still decode: the image pass of `print()` (`images/imagePass.js`) asks the browser for the pixels of a file no PDF filter reads (WebP, AVIF, GIF, an arithmetic-coded JPEG the browser decodes) and runs the opaque-photo rule with its re-encode, before the builder. So a source is a file passed through as is (`blob`, `mime`), decoded pixels (`samples`) or the photo rule's JPEG (`jpeg`), with the rule's evidence (`photo`) wherever it was consulted, and a raster fallback carries the same `photo` and `jpeg`. `writing.photoRule` is gone: the flag reaches the pass, and the list records what the pass decided.
+ *
  * @packageDocumentation
  */
 
@@ -26,7 +28,7 @@ import type { BlackTextPolicy } from './colour/colorResources.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 4;
+  version: 5;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;
@@ -56,8 +58,6 @@ export type DocumentInfo = {
 export type Writing = {
   /** How every font is written: subset or whole, the decimals of `/W`, the CFF container, `/DW` from the most common width. From `SUBSET_FONT_PROFILE` with the `widthDecimals` and `cffContainer` flags. */
   fontProfile: FontProfile;
-  /** Whether the opaque-photo rule may re-encode a raster as JPEG. The `photoRule` flag. */
-  photoRule: boolean;
   /** The colour story, written when `print()` decided the document has one (`colourOn`: the `colour` flag, and with `auto` a colour hint or print marks the walk's survey found, or `blackText`). Absent, every colour is `rg` from the computed style, no page carries a `/ColorSpace`, the catalog carries no `/OutputIntents`, and a page with print marks is refused. The decision is the walk's, made on computed style; the list records it and nothing re-derives it. */
   colour?: ColourWriting;
 };
@@ -135,11 +135,59 @@ export type ImageSource = {
   tag: 'Figure' | 'Artifact';
   domPath: string;
   alt?: string;
-  /** Key into `blobs`: the image file as fetched, or for a facsimile the PDF it is a page of. */
+  /** Key into `blobs`: the image file as fetched, passed through as is (a JPEG, a PNG), or for a facsimile the PDF it is a page of. Absent where the pass decoded or re-encoded the file, which the list then does not hold. */
   blob?: string;
   /** With a file `blob`. */
   mime?: string;
+  /** The pixels the image pass decoded, where no PDF filter reads the file (WebP, AVIF, GIF). Version 5. */
+  samples?: ImageSamples;
+  /** Key into `blobs`: the JPEG the opaque-photo rule re-encoded the pixels as, which the writer carries under `/DCTDecode`. Version 5. */
+  jpeg?: string;
+  /** What the source was, where the list holds the pass's pixels or JPEG and not the file: its format as the report names it (the MIME type, or `image/jpeg (arithmetic)` for an arithmetic-coded JPEG the browser decoded), its length, and a PNG's `gAMA`-only flag. Report only. Version 5. */
+  original?: { format: string, bytes: number, gammaOnly?: boolean };
+  /** The opaque-photo rule's evidence, wherever the pass consulted it, `the photoRule flag is off` included. Version 5. */
+  photo?: PhotoEvidence;
+  /** Why the pass handed the file through when it asked the browser for its pixels: the browser's refusal of an arithmetic-coded JPEG, for the report. Version 5. */
+  refusal?: string;
   facsimile?: { url: string, page: number };
+};
+
+/**
+ * Decoded pixels as the list carries them.
+ *
+ * @remarks
+ * The blob is RGBA, row-major from the top, eight bits a sample in the browser's sRGB, as a raster fallback's is: what `createImageBitmap` and `getImageData` gave back, unpremultiplied. The writer splits it into the RGB stream and, where any pixel is not opaque, the `/SMask`. Version 5.
+ */
+export type ImageSamples = {
+  /** Key into `blobs`: the pixels as RGBA. */
+  blob: string;
+  width: number;
+  height: number;
+  colorSpace: 'DeviceRGB';
+  bitsPerComponent: 8;
+};
+
+/** One quality the opaque-photo rule encoded and measured. */
+export type PhotoCandidate = {
+  quality: number;
+  bytes: number;
+  psnrDb: number;
+  /** What the browser's own encoder chose at this quality, read back off the frame. */
+  subsampling: string;
+};
+
+/**
+ * What the opaque-photo rule saw and chose, as the image pass recorded it (`docs/guide/images.md` §"The opaque-photo rule"): the four gates, the sampled look, every quality it tried, and the one it chose or null. Report only; the writer's bytes follow from whether a `jpeg` is there. Version 5.
+ */
+export type PhotoEvidence = {
+  isPhoto: boolean;
+  /** Why not, or `photographic` when it is. */
+  reason: string;
+  pixels: number;
+  uniqueRatio: number;
+  longestRun: number;
+  candidates: PhotoCandidate[];
+  chosenQuality: number | null;
 };
 
 /** A raster fallback, as the print drew it: what PDF had no operator for. */
@@ -154,6 +202,10 @@ export type RasterSource = {
   blob?: string;
   width?: number;
   height?: number;
+  /** The opaque-photo rule's evidence on the pixels, wherever the pass consulted it. Version 5. */
+  photo?: PhotoEvidence;
+  /** Key into `blobs`: the JPEG the rule re-encoded the pixels as, which the writer carries instead of the RGBA. Version 5. */
+  jpeg?: string;
 };
 
 /** A colour cluster, as the print drew it (dormant in `print()`: the `emoji` option is not composed, so no print reaches this). */

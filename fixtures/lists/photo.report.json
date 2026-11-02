@@ -1837,37 +1837,6 @@
    "count": 0
   }
  ],
- "photoRule": {
-  "pixelThreshold": 250000,
-  "uniqueRatioThreshold": 0.3,
-  "runThreshold": 64,
-  "psnrTargetDb": 40,
-  "candidates": [
-   {
-    "quality": 0.85,
-    "bytes": 22757,
-    "psnrDb": 43.59,
-    "subsampling": "4:2:0"
-   },
-   {
-    "quality": 0.9,
-    "bytes": 28642,
-    "psnrDb": 44.82,
-    "subsampling": "4:2:0"
-   },
-   {
-    "quality": 0.95,
-    "bytes": 42124,
-    "psnrDb": 46.54,
-    "subsampling": "4:2:0"
-   }
-  ],
-  "chosenQuality": 0.85,
-  "photoUniqueRatio": 0.955,
-  "photoLongestRun": 8,
-  "screenshotRejected": false,
-  "reason": "nothing above the pixel threshold was refused"
- },
  "paint": [],
  "paintOrder": [
   "#decoration",
@@ -1936,7 +1905,7 @@
     64.008,
     69.208
    ],
-   "xobjectHash": "e35d817233800fab992f53a025503fd16b602eef1501a6569ec40b4fd9ae3e42",
+   "xobjectHash": "69213d2c9887e0f884ccd39854a412823be1eaa4caa9a6e283783b0df30ff144",
    "xobjectName": "Im0",
    "page": 0,
    "tag": "Figure",
@@ -1954,6 +1923,37 @@
   }
  ],
  "xobjects": 1,
+ "photoRule": {
+  "pixelThreshold": 250000,
+  "uniqueRatioThreshold": 0.3,
+  "runThreshold": 64,
+  "psnrTargetDb": 40,
+  "candidates": [
+   {
+    "quality": 0.85,
+    "bytes": 22757,
+    "psnrDb": 43.59,
+    "subsampling": "4:2:0"
+   },
+   {
+    "quality": 0.9,
+    "bytes": 28642,
+    "psnrDb": 44.82,
+    "subsampling": "4:2:0"
+   },
+   {
+    "quality": 0.95,
+    "bytes": 42124,
+    "psnrDb": 46.54,
+    "subsampling": "4:2:0"
+   }
+  ],
+  "chosenQuality": 0.85,
+  "photoUniqueRatio": 0.955,
+  "photoLongestRun": 8,
+  "screenshotRejected": false,
+  "reason": "nothing above the pixel threshold was refused"
+ },
  "langs": [
   {
    "path": "catalog",

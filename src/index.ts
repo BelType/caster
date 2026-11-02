@@ -54,11 +54,14 @@ import { registerHintProperties, elementColor } from './colour/colorHints.ts';
 import { parsePng } from './images/png.ts';
 import { parseJpeg } from './images/jpeg.ts';
 import { rasterizeSvg } from './images/canvasDecode.ts';
+import { photoOf, prepareImages } from './images/imagePass.ts';
+import { photoRuleRecord } from './images/photoRule.ts';
 import { inlineSvgImages } from './images/svgInline.ts';
 import { loadFacsimiles } from './images/facsimile.ts';
 
 import type { CasterOptions } from './options.ts';
-import type { Report, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
+import type { PreparedImage } from './images/imagePass.ts';
+import type { Report, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { WordRecord } from './emit/textEmit.ts';
 import type { ImageUse } from './emit/structureEmit.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
@@ -387,6 +390,11 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     for (const spec of [...boxes.rasters, ...svg.rasters]) {
       rasterSamples.set(spec, await rasterizeSvg(spec.svg, spec.rectPt[2], spec.rectPt[3], spec.dpi));
     }
+    // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
+    const prepared = await prepareImages(measurement.images.map((image) => walk.images[image.index]), (src) => imageBytes.get(src), options.photoRule);
+    const rasterPhotos = new Map<any, any>();
+    for (const [spec, samples] of rasterSamples) rasterPhotos.set(spec, await photoOf(samples, options.photoRule));
+    step('images');
     const listStart = now();
     const { list: displayList, origins } = await buildDisplayList(measurement, walk, {
       title: options.title ?? doc.title ?? 'Untitled',
@@ -395,7 +403,6 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       writing: {
         // The flags reach the profile. `widthDecimals` and `cffContainer` were accepted, reported, and then overridden by the constant on the next line.
         fontProfile: { ...SUBSET_FONT_PROFILE, widthDecimals: options.widthDecimals, cffContainer: options.cffContainer },
-        photoRule: options.photoRule,
         ...(colourOn(needs, options) ? { colour: colourOptions(options) } : {})
       },
       paintOrder: options.paintOrder,
@@ -405,13 +412,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       pageLabels,
       rasterSpecs: [...rasterSamples.keys()],
       rasterSamples,
+      rasterPhotos,
       fonts: {
         bytesByUrl: table.bytesByUrl,
         familyOf: (instanceKey) => table.descriptors.find((d) => instanceKey.startsWith(d.id))?.family ?? '',
         sourceFormatOf: (url) => table.sourceFormatByUrl.get(url) ?? 'ttf'
       },
       images: {
-        bytesOf: (src) => imageBytes.get(src),
+        preparedOf: (src) => prepared.get(src),
         facsimileOf: (src) => facsimiles.get(src)
       }
     });
@@ -473,7 +481,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     Object.assign(emitted.report, {
       ...(tableRecords.length > 0 ? { tables: tableRecords, idTree: emitted.idTree } : {}),
       ...(pageLabels.length > 0 ? { pageLabels: pageLabelRuns(pageLabels).records } : {}),
-      ...(emitted.imageUses.length > 0 ? { images: imageRecords(emitted.imageUses, measurement, displayList), xobjects: emitted.xobjects } : {}),
+      ...(emitted.imageUses.length > 0 ? { images: imageRecords(emitted.imageUses, measurement, displayList, prepared), xobjects: emitted.xobjects } : {}),
+      ...photoRuleOf(emitted.imageUses, displayList),
       ...(walk.langs.length > 0 ? { langs: walk.langs } : {})
     });
     Object.assign(report, emitted.report);
@@ -500,9 +509,20 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
  * @remarks
  * The join is the image's walk index, which the item names as `source` and the measurement's `index` carries.
  */
-function imageRecords(uses: ImageUse[], measurement: MeasureResult, list: DisplayList): ReportImage[] {
+function imageRecords(uses: ImageUse[], measurement: MeasureResult, list: DisplayList, prepared: Map<string, PreparedImage>): ReportImage[] {
   const placed = new Map(measurement.images.map((image) => [image.index, image]));
-  return uses.map((use) => imageRecord((placed.get(use.source) as MeasuredImage), list.resources.images[use.source], use.embedded, use.name));
+  return uses.map((use) => {
+    const source = list.resources.images[use.source];
+    const pass = prepared.get(source.src);
+    return imageRecord((placed.get(use.source) as MeasuredImage), source, use.embedded, use.name, pass && { decodeMs: pass.decodeMs, encodeMs: pass.encodeMs });
+  });
+}
+
+/** The report's `photoRule` record, from the evidence on every painted image the rule was consulted for, in the order of their keys. */
+function photoRuleOf(uses: ImageUse[], list: DisplayList): { photoRule?: ReportPhotoRule } {
+  const keys = [...new Set(uses.map((use) => use.source))].sort((a, b) => a - b);
+  const record = photoRuleRecord(keys.map((key) => list.resources.images[key].photo).filter((photo) => photo !== undefined));
+  return record ? { photoRule: record } : {};
 }
 
 /**

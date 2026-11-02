@@ -25,11 +25,13 @@ import { pageLabelRuns } from '../emit/pageLabels.ts';
 import { scopeNameOf } from '../walk/tableHeaders.ts';
 import { PX_TO_PT, round3 } from '../coordinates/units.ts';
 
-import type { ContentStart, ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, RasterSource } from '../displayList.ts';
+import type { ContentStart, ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, PhotoEvidence, RasterSource } from '../displayList.ts';
 import type { MeasuredLine, MeasuredPaint, MeasuredImage, MeasuredEmoji, MeasuredRun, MeasureResult } from '../measure/textMeasure.ts';
 import type { MeasuredVector, PaintSpec, RasterSpec, VectorNode } from '../vectors/vector.ts';
-import type { DecodedSamples } from '../images/canvasDecode.ts';
+import type { DecodedSamples } from '../images/samples.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
+import type { PreparedImage } from '../images/imagePass.ts';
+import type { PhotoDecision } from '../images/photoRule.ts';
 import type { WalkResult, WalkTable, StructureNode, WalkAnnot } from '../walk/structure.ts';
 import type { BoxPt } from '../coordinates/pageGeometry.ts';
 import type { ContentRef, LinkRef } from './structure.ts';
@@ -62,6 +64,8 @@ export type BuildInputs = {
   emojiRasters?: ReadonlyMap<MeasuredEmoji, DecodedSamples>;
   /** The pixels each raster fallback was drawn at. */
   rasterSamples?: ReadonlyMap<RasterSpec, DecodedSamples>;
+  /** The photo rule's decision on each raster fallback's pixels, which the image pass made. */
+  rasterPhotos?: ReadonlyMap<RasterSpec, PhotoDecision>;
   fonts: BuildFonts;
   images: BuildImages;
 };
@@ -76,9 +80,9 @@ export type BuildFonts = {
   sourceFormatOf: (url: string) => 'ttf' | 'otf' | 'woff' | 'woff2' | undefined;
 };
 
-/** Where the image files and the facsimiles are. */
+/** Where the image files, as the image pass prepared them, and the facsimiles are. */
 export type BuildImages = {
-  bytesOf: (src: string) => { bytes: Uint8Array, mimeType: string } | undefined;
+  preparedOf: (src: string) => PreparedImage | undefined;
   facsimileOf: (src: string) => LoadedFacsimile | undefined;
 };
 
@@ -848,17 +852,36 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             source.blob = await blobOf(loaded.bytes);
             continue;
         }
-        const file = inputs.images.bytesOf(request.src);
-        if (!file)
+        const prepared = inputs.images.preparedOf(request.src);
+        if (!prepared)
             throw new CasterError(`caster: no bytes registered for ${request.src}`);
-        source.blob = await blobOf(file.bytes);
-        source.mime = file.mimeType;
+        // What the image pass made of the file: the photo rule's JPEG, the browser's pixels, or the file as it is.
+        if (prepared.jpeg)
+            source.jpeg = await blobOf(prepared.jpeg);
+        else if (prepared.samples)
+            source.samples = { blob: await blobOf(rgbaOf(prepared.samples)), width: prepared.samples.width, height: prepared.samples.height, colorSpace: 'DeviceRGB', bitsPerComponent: 8 };
+        else {
+            source.blob = await blobOf(prepared.file.bytes);
+            source.mime = prepared.file.mimeType;
+        }
+        if (prepared.jpeg || prepared.samples)
+            source.original = { format: prepared.format ?? prepared.file.mimeType, bytes: prepared.file.bytes.length, ...(prepared.gammaOnly ? { gammaOnly: true } : {}) };
+        if (prepared.photo)
+            source.photo = evidenceOf(prepared.photo);
+        if (prepared.refusal !== undefined)
+            source.refusal = prepared.refusal;
     }
     for (const [spec, key] of rasterKey) {
         const raster: RasterSource = { feature: spec.feature, reason: spec.reason, rectPt: spec.rectPt, dpi: spec.dpi, cm: spec.cm };
         const samples = inputs.rasterSamples?.get(spec);
         if (samples)
             Object.assign(raster, { blob: await blobOf(rgbaOf(samples)), width: samples.width, height: samples.height });
+        const photo = inputs.rasterPhotos?.get(spec);
+        if (photo) {
+            raster.photo = evidenceOf(photo);
+            if (photo.jpeg)
+                raster.jpeg = await blobOf(photo.jpeg);
+        }
         resources.rasters[key] = raster;
     }
     for (const cluster of measurement.emoji) {
@@ -876,7 +899,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         ...(colour ? { colour: { profiles: { cmyk: await blobOf(colour.profileBytes), srgb: await blobOf(colour.srgbBytes) }, condition: colour.condition, info: colour.info, blackText: colour.blackText } } : {}),
     };
     const list: DisplayList = {
-        version: 4,
+        version: 5,
         info: {
             lang: walk.lang,
             title: inputs.title,
@@ -893,6 +916,11 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         pages,
     };
     return { list, origins };
+}
+
+/** The photo rule's decision as the list records it: everything but the JPEG, which is a blob, and the time it took, which the report takes from the pass. */
+function evidenceOf(photo: PhotoDecision): PhotoEvidence {
+    return { isPhoto: photo.isPhoto, reason: photo.reason, pixels: photo.pixels, uniqueRatio: photo.uniqueRatio, longestRun: photo.longestRun, candidates: photo.candidates.map((c) => ({ ...c })), chosenQuality: photo.chosenQuality };
 }
 
 /**

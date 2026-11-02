@@ -31,7 +31,6 @@ import { embedFace } from '../fonts/fontEmbed.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
 import { mul } from '../coordinates/matrix.ts';
-import { PHOTO_PIXEL_THRESHOLD, PHOTO_PSNR_TARGET, PHOTO_RUN_THRESHOLD, PHOTO_UNIQUE_RATIO_THRESHOLD } from '../images/photoRule.ts';
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
@@ -47,10 +46,10 @@ import { clusterKindOf, codePointsOf } from '../fonts/clusters.ts';
 const pdf = () => capability('pdf');
 
 import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
-import type { EmbeddedImage } from '../images/imageEmbed.ts';
+import type { EmbeddedImage, EmbedSource } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
+import type { DisplayList, ImageSource, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
 import type { WordRecord } from './textEmit.ts';
 
 /** One image the writer painted: which one, and what it became in the file. */
@@ -179,9 +178,9 @@ const ANNOTATION_PRINT_FLAG = 4;
 export async function emitStructure(list: DisplayList, options: EmitStructureOptions): Promise<EmitStructureResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
-    if (list.version !== 4)
-        throw new CasterError(`caster: the writer reads a display list of version 4, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
-    // How the list asks to be written: the font profile, the photo rule and the colour story are the list's, and no option reaches a byte.
+    if (list.version !== 5)
+        throw new CasterError(`caster: the writer reads a display list of version 5, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
+    // How the list asks to be written: the font profile and the colour story are the list's, and no option reaches a byte.
     const profile = list.writing.fontProfile;
     // The document-wide ToUnicode map with its ambiguity rule, from the list's glyph-to-text clusters: each CID maps to the string most of the document shows it for, and every other occurrence is wrapped in `/ActualText`.
     const toUnicode = buildToUnicode(listSegments(list));
@@ -213,7 +212,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         ? new ColorEmitter(context, { profileBytes: blobOf(list, colourWriting.profiles.cmyk), srgbBytes: blobOf(list, colourWriting.profiles.srgb), condition: colourWriting.condition, info: colourWriting.info, blackText: colourWriting.blackText })
         : null;
     // Every image is embedded before a page is written, because a page's /Resources /XObject has to name the streams the page's content refers to, and dedupe means one stream can be named by three pages. The list names each image by the walk's own index, and an item says which one it paints — by the index rather than by position since *the raster half of a continuation's drawing* (S42), because the measurement drops a picture that fell inside a straddling block's clipped tail. A resource no item paints is exactly that picture: nothing on any page refers to its stream, so nothing is embedded for it and its slot stays empty, which is what keeps `embeddedImages[image.index]` an answer.
-    const imageContext = createImageContext(context, { photoRule: list.writing.photoRule });
+    const imageContext = createImageContext(context);
     const embeddedImages: (EmbeddedImage|null)[] = [];
     // What each painted image is interpolated by: the item says, and the last item to paint an image decides, as the last measurement did.
     const interpolateOf: Map<number,boolean> = new Map<any, any>();
@@ -225,30 +224,24 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     for (const [key, request] of Object.entries(list.resources.images)) {
         const index = Number(key);
         const interpolate = interpolateOf.get(index);
-        if (interpolate === undefined || request.blob === undefined) {
+        if (interpolate === undefined || (request.blob === undefined && request.samples === undefined && request.jpeg === undefined)) {
             embeddedImages.push(null);
             continue;
         }
         if (request.kind === 'facsimile') {
             // Embedded after the loop, all together (one copier per source file; DESIGN.md S80); the slot is filled there.
-            facsimileSlots.push({ index, loaded: await reopenFacsimile(blobOf(list, request.blob), (request.facsimile as NonNullable<typeof request.facsimile>), request.domPath) });
+            facsimileSlots.push({ index, loaded: await reopenFacsimile(blobOf(list, request.blob as string), (request.facsimile as NonNullable<typeof request.facsimile>), request.domPath) });
             embeddedImages.push(null);
             continue;
         }
-        const file = { bytes: blobOf(list, request.blob), mimeType: (request.mime as string) };
-        // Every refusal in this printer names an element, and the decoder tiers are the one place where one did not (*an SVG that arrives through an `<img>` is a drawing*, S44). `decodeThroughCanvas` throws whatever the browser refused with — `InvalidStateError` on an SVG with no intrinsic size, and the same shape for a truncated file — and a refusal that names no element is a refusal the author has to bisect for.
+        // The image pass prepared every image before the list: a file passed through, the photo rule's JPEG, or the browser's pixels; the writer decodes nothing a browser must. A refusal names the element, as every refusal of this printer does (*an SVG that arrives through an `<img>` is a drawing*, S44).
         try {
-            embeddedImages.push(await embedImage(imageContext, {
-                kind: 'bytes',
-                bytes: file.bytes,
-                mimeType: file.mimeType,
-                interpolate,
-            }));
+            embeddedImages.push(await embedImage(imageContext, embedSourceOf(list, request, interpolate)));
         }
         catch (error) {
             if (error instanceof CasterError && error.element)
                 throw error;
-            throw new CasterError(`caster: the ${file.mimeType} at ${request.domPath} (${request.src}) could not be carried into the file: ${error instanceof Error ? error.message : String(error)}`, { element: request.domPath });
+            throw new CasterError(`caster: the ${request.mime ?? request.original?.format} at ${request.domPath} (${request.src}) could not be carried into the file: ${error instanceof Error ? error.message : String(error)}`, { element: request.domPath });
         }
     }
     const facsimileEmbeds = await embedFacsimiles(imageContext, pdfDoc, facsimileSlots.map((slot) => slot.loaded));
@@ -260,7 +253,9 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         if (spec.blob === undefined)
             continue;
         const samples = samplesFromRgba(blobOf(list, spec.blob), (spec.width as number), (spec.height as number));
-        rasterImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `${spec.feature}@${spec.dpi}dpi` }));
+        rasterImages.set(Number(key), await embedImage(imageContext, spec.jpeg
+            ? { kind: 'jpeg', jpeg: blobOf(list, spec.jpeg), interpolate: true, format: 'canvas', bytesIn: samples.rgb.length, gammaOnly: false, ...(spec.photo ? { photo: spec.photo } : {}) }
+            : { kind: 'samples', samples, interpolate: true, label: `${spec.feature}@${spec.dpi}dpi`, format: 'canvas', bytesIn: samples.rgb.length, ...(spec.photo ? { photo: spec.photo } : {}) }));
     }
     // E12A (`images.md`): one XObject per colour cluster, through the writer of E7 like every other image, so the `/SMask` and the dedupe are the ones E7 decided. Two occurrences of the same emoji at the same size are the same pixels and therefore the same object, which is the dedupe doing its job rather than a rule of E12's own. Untested: the `emoji` option is dormant in `print()`.
     const emojiImages: Map<number,EmbeddedImage> = new Map<any, any>();
@@ -268,7 +263,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         if (cluster.blob === undefined)
             continue;
         const samples = samplesFromRgba(blobOf(list, cluster.blob), (cluster.width as number), (cluster.height as number));
-        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `emoji:${cluster.text}@${cluster.sizePx}px` }));
+        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `emoji:${cluster.text}@${cluster.sizePx}px`, format: 'canvas', bytesIn: samples.rgb.length }));
     }
     const shadings = new ShadingBuilder(context);
     const transparency = new TransparencyBuilder(context);
@@ -539,7 +534,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         pages: mcidOwnersByPage.map((mcidOwners) => ({ mcidOwners })),
         tagCounts: tagCountsOf(elements),
     };
-    const photoRule = photoRuleRecord((embeddedImages.filter((embedded) => embedded !== null) as EmbeddedImage[]));
     // D7: the report's version and fixture are gone; this is a partial report `src/index.js` folds into the one it hands back.
     const report = (({
         elements: [],
@@ -559,7 +553,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             ? { computedBorderWidths: options.tables.computedWidths, gridLineSpreadPx: options.tables.gridLineSpreadPx }
             : {}),
         ...(options.decoderComparison ? { decoderComparison: options.decoderComparison } : {}),
-        ...(photoRule ? { photoRule } : {}),
         ...(colorSidecar ? { color: colorSidecar } : {}),
         ...(options.vector
             ? {
@@ -617,6 +610,25 @@ function imageOperators(image: ImageItem, name: PDFName, formSize: [number,numbe
     return operators;
 }
 /**
+ * What one image source hands the embed: the photo rule's JPEG, the decoded samples, or the file.
+ *
+ * @throws {CasterError} A source that names no blob the list holds.
+ */
+function embedSourceOf(list: DisplayList, source: ImageSource, interpolate: boolean): EmbedSource {
+    const photo = source.photo ? { photo: source.photo } : {};
+    const bytesIn = source.original?.bytes ?? 0;
+    const format = source.original?.format ?? source.mime ?? '';
+    if (source.jpeg !== undefined)
+        return { kind: 'jpeg', jpeg: blobOf(list, source.jpeg), interpolate, format, bytesIn, gammaOnly: source.original?.gammaOnly === true, ...photo };
+    if (source.samples !== undefined) {
+        const { blob, width, height, colorSpace, bitsPerComponent } = source.samples;
+        if (colorSpace !== 'DeviceRGB' || bitsPerComponent !== 8)
+            throw new CasterError(`caster: the samples of ${source.domPath} are ${String(colorSpace)} at ${String(bitsPerComponent)} bits, and the writer reads 8-bit DeviceRGB samples only`);
+        return { kind: 'samples', samples: samplesFromRgba(blobOf(list, blob), width, height), interpolate, label: format, format, bytesIn, ...photo };
+    }
+    return { kind: 'bytes', bytes: blobOf(list, source.blob as string), mimeType: source.mime as string, interpolate, ...photo, ...(source.refusal !== undefined ? { refusal: source.refusal } : {}) };
+}
+/**
  * The `/URI` of a link that leaves the file, as the list resolved it.
  *
  * @throws {CasterError} A link with no destination and no URI.
@@ -657,38 +669,6 @@ function utf16beHexOf(text: string): string {
     for (let i = 0; i < text.length; i++)
         out += text.charCodeAt(i).toString(16).padStart(4, '0').toUpperCase();
     return out;
-}
-/**
- * The photo rule's own record: what it ran with, what it chose, and the case it had to refuse.
- *
- * @remarks
- * Neither asset is named here. The rule was consulted for several images and the record is derived from what it actually did — the one it re-encoded, and the one it looked at and turned down — so a fixture that renamed its files would change nothing.
- *
- * @returns Undefined when the rule was consulted for no image.
- */
-function photoRuleRecord(images: EmbeddedImage[]): ReportPhotoRule|undefined {
-    const consulted = images.map((i) => i.info.photo).filter((p) => p !== undefined);
-    if (consulted.length === 0)
-        return undefined;
-    const chosen = consulted.filter((p) => p.chosenQuality !== null).sort((a, b) => b.pixels - a.pixels)[0];
-    const refused = consulted.filter((p) => p.chosenQuality === null && p.pixels > PHOTO_PIXEL_THRESHOLD)[0];
-    return {
-        pixelThreshold: PHOTO_PIXEL_THRESHOLD,
-        uniqueRatioThreshold: PHOTO_UNIQUE_RATIO_THRESHOLD,
-        runThreshold: PHOTO_RUN_THRESHOLD,
-        psnrTargetDb: PHOTO_PSNR_TARGET,
-        candidates: chosen ? chosen.candidates.map((c) => ({
-            quality: c.quality,
-            bytes: c.bytes,
-            psnrDb: Math.round(c.psnrDb * 100) / 100,
-            subsampling: c.subsampling,
-        })) : [],
-        chosenQuality: chosen ? chosen.chosenQuality : null,
-        photoUniqueRatio: chosen ? Math.round(chosen.uniqueRatio * 10000) / 10000 : 0,
-        photoLongestRun: chosen ? chosen.longestRun : 0,
-        screenshotRejected: refused !== undefined,
-        reason: refused ? refused.reason : 'nothing above the pixel threshold was refused',
-    };
 }
 /** The literal an artifact's property list serialises to. */
 function artifactProperties(artifact: ArtifactDescriptor): string {

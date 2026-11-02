@@ -59,9 +59,9 @@ const CORPUS: Doc[] = [
   { name: 'cast-divided-row', file: path.join(FIXTURES, 'cast-divided-row', 'index.html'), root: FIXTURES, why: 'a table row divided across pages' },
   { name: 'roads', file: path.join(FIXTURES, 'roads', 'index.html'), root: FIXTURES, options: { blackText: '100k' }, why: 'rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`' },
   { name: 'facsimile', file: path.join(FIXTURES, 'roads', 'facsimile.html'), root: FIXTURES, why: 'a page of another PDF, reopened by pdf-lib inside the writer' },
-  { name: 'webp', file: path.join(FIXTURES, 'roads', 'webp.html'), root: FIXTURES, why: 'a WebP, which the writer decodes through the browser' },
-  { name: 'arithmetic', file: path.join(FIXTURES, 'roads', 'arithmetic.html'), root: FIXTURES, why: 'an arithmetic-coded JPEG, which the writer decodes through the browser' },
-  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule may re-encode through the browser' }
+  { name: 'webp', file: path.join(FIXTURES, 'roads', 'webp.html'), root: FIXTURES, why: 'a WebP, which the image pass decodes through the browser before the list' },
+  { name: 'arithmetic', file: path.join(FIXTURES, 'roads', 'arithmetic.html'), root: FIXTURES, why: 'an arithmetic-coded JPEG, which the browser refuses to decode, so the image pass hands the file through' },
+  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list' }
 ];
 
 // ---- small helpers ---------------------------------------------------------------------------------------------------

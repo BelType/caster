@@ -19,6 +19,11 @@ import { canvasFromRgb } from './canvasDecode.ts';
 import { parseJpeg, subsamplingOf } from './jpeg.ts';
 import { CasterError } from '../errors.ts';
 
+import type { PhotoCandidate, PhotoEvidence } from '../displayList.ts';
+import type { ReportPhotoRule } from '../report.ts';
+
+export type { PhotoCandidate } from '../displayList.ts';
+
 /** Below this many pixels nothing is worth losing. */
 export const PHOTO_PIXEL_THRESHOLD = 250_000;
 
@@ -47,15 +52,8 @@ export type PhotoVerdict = {
   longestRun: number;
 };
 
-export type PhotoCandidate = {
-  quality: number;
-  bytes: number;
-  psnrDb: number;
-  /** What the browser's own encoder chose at this quality, read back off the frame. */
-  subsampling: string;
-};
-
-export type PhotoDecision = PhotoVerdict & { candidates: PhotoCandidate[], chosenQuality: number | null, jpeg: Uint8Array | null, encodeMs: number };
+/** The evidence the list records, the JPEG the rule chose, and what the re-encode cost. */
+export type PhotoDecision = PhotoEvidence & { jpeg: Uint8Array | null, encodeMs: number };
 
 /** A deterministic sampler, so two runs of the heuristic see the same pixels. */
 function sampler(seed: number): () => number {
@@ -211,4 +209,40 @@ export async function applyPhotoRule(input: PhotoInput): Promise<PhotoDecision> 
     };
   }
   return { ...verdict, candidates, chosenQuality: winner.quality, jpeg: (encoded.get(winner.quality) as Uint8Array), encodeMs };
+}
+
+/** The decision the opaque-photo rule would have made, when the flag says not to ask. The record is written the same way either way, because the report's reader has to be able to tell "not a photograph" from "never examined". */
+export function photoRuleOff(pixels: number): PhotoDecision {
+  return { isPhoto: false, reason: 'the photoRule flag is off', pixels, uniqueRatio: 0, longestRun: 0, candidates: [], chosenQuality: null, jpeg: null, encodeMs: 0 };
+}
+
+/**
+ * The photo rule's own record: what it ran with, what it chose, and the case it had to refuse.
+ *
+ * @remarks
+ * Neither asset is named here. The rule was consulted for several images and the record is derived from what it actually did — the one it re-encoded, and the one it looked at and turned down — so a fixture that renamed its files would change nothing. Moved from the writer in stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`: `print()` makes it from the evidence the list's image sources carry, in the order of their keys.
+ *
+ * @returns Undefined when the rule was consulted for no image.
+ */
+export function photoRuleRecord(consulted: PhotoEvidence[]): ReportPhotoRule|undefined {
+  if (consulted.length === 0) return undefined;
+  const chosen = consulted.filter((p) => p.chosenQuality !== null).sort((a, b) => b.pixels - a.pixels)[0];
+  const refused = consulted.filter((p) => p.chosenQuality === null && p.pixels > PHOTO_PIXEL_THRESHOLD)[0];
+  return {
+    pixelThreshold: PHOTO_PIXEL_THRESHOLD,
+    uniqueRatioThreshold: PHOTO_UNIQUE_RATIO_THRESHOLD,
+    runThreshold: PHOTO_RUN_THRESHOLD,
+    psnrTargetDb: PHOTO_PSNR_TARGET,
+    candidates: chosen ? chosen.candidates.map((c) => ({
+      quality: c.quality,
+      bytes: c.bytes,
+      psnrDb: Math.round(c.psnrDb * 100) / 100,
+      subsampling: c.subsampling,
+    })) : [],
+    chosenQuality: chosen ? chosen.chosenQuality : null,
+    photoUniqueRatio: chosen ? Math.round(chosen.uniqueRatio * 10000) / 10000 : 0,
+    photoLongestRun: chosen ? chosen.longestRun : 0,
+    screenshotRejected: refused !== undefined,
+    reason: refused ? refused.reason : 'nothing above the pixel threshold was refused',
+  };
 }
