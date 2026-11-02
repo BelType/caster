@@ -17,12 +17,13 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import * as mupdf from 'mupdf';
 import { contentType } from '@beltype/common/mime';
-import { load } from '../src/capabilities.ts';
+import { capability, load } from '../src/capabilities.ts';
 import { loadSubsetter } from '../src/fonts/hbSubset.ts';
 import { emitStructure } from '../src/emit/structureEmit.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
 import { resolveStructure } from '../src/displayList/structure.ts';
 import { CasterError } from '../src/errors.ts';
+import { deflate } from '../src/images/imageEmbed.ts';
 import { prepareImage } from '../src/images/imagePass.ts';
 import { photoVerdict } from '../src/images/photoRule.ts';
 import { decodePng } from '../src/images/png.ts';
@@ -380,6 +381,28 @@ test('the photo rule\'s choice and quality are the pass\'s: the list holds its J
   const off = await prepareImage({ bytes: png, mimeType: 'image/png' }, false);
   assert.equal(off.jpeg, undefined, 'the flag off, no re-encode');
   assert.equal(off.photo?.reason, 'the photoRule flag is off', 'and the record says the rule was never asked');
+});
+
+test('the image deflate is byte-stable across realms: node deflates the list\'s planes to the very streams the page wrote', async () => {
+  const { PDFDocument } = capability('pdf');
+  const context = (await PDFDocument.create()).context;
+  const checked: string[] = [];
+  for (const [name, rgba] of [['webp', (l: DisplayList) => l.resources.blobs[l.resources.images[0].samples!.blob]], ['roads', (l: DisplayList) => l.resources.blobs[l.resources.rasters[0].blob!]]] as const) {
+    const list = listOf(name);
+    const pixels = rgba(list);
+    const rgb = pixels.filter((_, i) => i % 4 !== 3);
+    const alpha = pixels.filter((_, i) => i % 4 === 3);
+    const file = fs.readFileSync(path.join(LISTS, `${name}.pdf`));
+    const doc = mupdf.Document.openDocument(file, 'application/pdf') as mupdf.PDFDocument;
+    const streams: Buffer[] = [];
+    for (let page = 0; page < doc.countPages(); page++) doc.loadPage(page).getObject().get('Resources').get('XObject')?.forEach((obj) => { if (obj.get('Subtype').asName() === 'Image') { streams.push(bytesOf(obj.readRawStream())); if (!obj.get('SMask').isNull()) streams.push(bytesOf(obj.get('SMask').readRawStream())); } });
+    const ours = deflate(context, rgb);
+    assert.ok(streams.some((stream) => stream.equals(Buffer.from(ours))), `${name}: the RGB stream the page wrote is node's deflate of the list's RGB`);
+    if (alpha.some((a) => a !== 255)) assert.ok(streams.some((stream) => stream.equals(Buffer.from(deflate(context, alpha)))), `${name}: and the /SMask is node's deflate of its alpha`);
+    assert.ok(Buffer.from(deflate(context, rgb)).equals(Buffer.from(ours)), `${name}: twice, the same bytes`);
+    checked.push(name);
+  }
+  assert.deepEqual(checked, ['webp', 'roads']);
 });
 
 // --- in the page ------------------------------------------------------------

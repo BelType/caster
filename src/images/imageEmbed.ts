@@ -123,10 +123,14 @@ async function sha256(...parts: (Uint8Array|string)[]): Promise<string> {
   return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', joined)));
 }
 
-/** Zlib-wrapped deflate, which is what `/FlateDecode` reads. */
-export async function deflate(bytes: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([(bytes as BlobPart)]).stream().pipeThrough(new CompressionStream('deflate'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+/**
+ * Zlib-wrapped deflate, which is what `/FlateDecode` reads: pdf-lib's own pako, the compressor of every other stream in the file.
+ *
+ * @remarks
+ * pako is JavaScript and deterministic, so one list deflates to the same bytes in the page and in node, and replay matches by construction; the platform's `CompressionStream('deflate')` wrote these streams until stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md` and made the bytes the platform zlib's (Egildo's ruling of 2026-11-02, a library deflate, re-recorded once). pako reaches Caster inside the vendored pdf-lib and pdf-lib exports no deflate, so `flateStream` is asked for one: the stream it makes is never registered, so only its contents reach the file.
+ */
+export function deflate(context: PDFContext, bytes: Uint8Array): Uint8Array {
+  return context.flateStream(bytes).getContents();
 }
 
 /** 16-bit samples as big-endian bytes, which is the only order a PDF stream has. */
@@ -141,14 +145,14 @@ function toBigEndian(samples: Uint16Array): Uint8Array {
 
 /** An `/ICCBased` colour-space array over a Flate-compressed profile. */
 async function iccColorSpace(context: PDFContext, profile: Uint8Array, components: number): Promise<any> {
-  const compressed = await deflate(profile);
+  const compressed = deflate(context, profile);
   const ref = context.register(context.stream(compressed, { N: components, Filter: 'FlateDecode', Length: compressed.length }));
   return context.register(context.obj(['ICCBased', ref]));
 }
 
 /** An 8- or 16-bit grayscale `/SMask` stream over an alpha plane. */
 async function smaskRef(context: PDFContext, width: number, height: number, bitsPerComponent: number, alpha: Uint8Array): Promise<{ ref: any; bytes: number; }> {
-  const compressed = await deflate(alpha);
+  const compressed = deflate(context, alpha);
   const ref = context.register(
     context.stream(compressed, {
       Type: 'XObject',
@@ -446,7 +450,7 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
     space = await pngColorSpace(pdf, info);
   }
 
-  const compressed = await deflate(colour);
+  const compressed = deflate(pdf, colour);
   const mask = alpha ? await smaskRef(pdf, info.width, info.height, bitsPerComponent, alpha) : null;
   const ref = pdf.register(
     pdf.stream(compressed, {
@@ -535,7 +539,7 @@ function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' 
 async function fromSamples(context: ImageContext, source: Extract<EmbedSource, { kind: 'samples' }>): Promise<Built> {
   const pdf = context.pdf;
   const { samples, interpolate, format, photo } = source;
-  const compressed = await deflate(samples.rgb);
+  const compressed = deflate(pdf, samples.rgb);
   const mask = samples.alpha ? await smaskRef(pdf, samples.width, samples.height, 8, samples.alpha) : null;
   const ref = pdf.register(
     pdf.stream(compressed, {

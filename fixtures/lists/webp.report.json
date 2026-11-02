@@ -1245,7 +1245,7 @@
    "alt": "A WebP image, decoded by the browser",
    "effectiveDpi": 61,
    "bytesIn": 596,
-   "bytesOut": 3011,
+   "bytesOut": 2967,
    "icc": "none",
    "gammaOnly": false,
    "interpolate": true,
@@ -1276,5 +1276,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 15794
+ "bytes": 15750
 }
