@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FLAGS, DEFAULTS, resolveOptions, colourOn, casterFlags } from '../src/options.ts';
+import { FLAGS, DEFAULTS, resolveOptions, colourOn, casterFlags, refuseUnbuiltTiers } from '../src/options.ts';
 import { CasterError } from '../src/errors.ts';
 
 test('every flag of the guide\'s table is present with the guide\'s default', () => {
@@ -52,4 +52,11 @@ test('casterFlags is the table in common\'s shape: the same rows, the same defau
   assert.equal(casterFlags.parse('shaper', 'fontkit'), 'fontkit');
   assert.equal(casterFlags.parse('photoRule', 'false'), false);
   assert.equal(casterFlags.parse('rasterDpi', '150'), 150);
+});
+
+test('a tier this port does not build refuses by its own flag, and the defaults pass', () => {
+  assert.doesNotThrow(() => refuseUnbuiltTiers(DEFAULTS));
+  for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['convertRgb', 'wasm'], ['pngDecoder', 'canvas']] as const) {
+    assert.throws(() => refuseUnbuiltTiers(resolveOptions({ [flag]: value })), (e: any) => e instanceof CasterError && e.flag === flag, `${flag}: ${value}`);
+  }
 });

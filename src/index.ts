@@ -13,7 +13,7 @@
  */
 
 import { CasterError, FontUnavailableError } from './errors.ts';
-import { resolveOptions, colourOn } from './options.ts';
+import { refuseUnbuiltTiers, resolveOptions, colourOn } from './options.ts';
 import { createReport, recordProblem, stage } from './report.ts';
 import { load, neededCapabilities, capability } from './capabilities.ts';
 import { lock, precheck } from './precheck.ts';
@@ -212,16 +212,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const subsetterStarted = now();
     if (options.subset === 'hb') await loadSubsetter();
     report.fontTiming = { declareMs: table.declareMs, declared: table.declared.length, fontFaces: table.fontFaces, fontFaceStatuses: table.fontFaceStatuses, unmatched: table.unmatched, ...(table.unmatched.length ? { faceKeys: table.faceKeys } : {}), unloaded: table.unloaded.length, faces: [...table.loads.values()], subsetterMs: Math.round((now() - subsetterStarted) * 1000) / 1000 };
-    // The two flag tiers this composition does not build, refused by name rather than left to fail three modules later. Each names the flag, and the modules behind them stay: they are what a host that grows the tier would call, and their own suites are what keep them honest.
-    if (options.shaper === 'fontkit') {
-      throw new CasterError("caster: `shaper: 'fontkit'` is not composed in this port. `measure/textMeasure.js` imports HarfBuzz's shaper directly, so under this flag the registry skips the harfbuzz load and the first word throws \"never handed bytes\" — and the tier itself is a documented wrong-glyph route (S6, `docs/guide/shaping.md` §\"The two tiers\"): fontkit gets 97% and 82% of two test blocks' glyph sequences wrong at zero width error, so a printer that fell back to it would pass every width assertion and show the wrong letters.", { flag: 'shaper' });
-    }
-    if (options.convertRgb !== 'none') {
-      throw new CasterError(`caster: \`convertRgb: '${options.convertRgb}'\` is not composed in this port. \`colorResources.js\` expects a transform — a \`{ mode, cmykOf }\` pair — and the flag is a string; no transform is built here, and the endpoint tier is a service BelType does not serve. \`colour/rgbToCmyk.js\` holds both routes and its own suite; nothing in the pipeline reaches them this round.`, { flag: 'convertRgb' });
-    }
-    if (options.subset === 'pdf-lib') {
-      throw new CasterError("caster: `subset: 'pdf-lib'` is a documented refusal in this port (docs/guide/font-embedding.md §\"The two tiers\"). pdf-lib's own embedder re-lays-out the string with fontkit, so it cannot show a glyph the shaper chose, cannot instance a variable face, cannot read WOFF2, has no /ActualText mechanism and writes no subset tag. It pairs only with `shaper: 'fontkit'` and inherits all three of that tier's pre-checks.", { flag: 'subset' });
-    }
+    refuseUnbuiltTiers(options);
     if (table.descriptors.length === 0) {
       throw new FontUnavailableError('caster: no @font-face in this document reached the printer as bytes, so there are no font programs to embed. The printer embeds programs — it cannot embed a system font a tab cannot read. BelType\'s addendum declares print faces of its own — Source Serif 4, Source Sans 3, Source Code Pro and Noto Emoji — so a document it dresses always has faces to embed; this one was rendered without the addendum, or none of the faces it declares could be fetched. Link BelType\'s addendum, or declare an @font-face in the venue\'s own stylesheet and serve the file beside the document.');
     }

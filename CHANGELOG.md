@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.6 — unreleased (branch `round/specimen-findings`)
+## 0.1.6 — unreleased
 
 The round *specimen findings*: faults the `delibera` and `trattato` specimens surfaced.
 
@@ -8,6 +8,7 @@ The round *specimen findings*: faults the `delibera` and `trattato` specimens su
 - **Text in an element that hides its overflow is clipped to its padding box.** Boxes and vectors were (`ancestorClips`), text was not: the trattato's contents leader, a long run in an `overflow: hidden` flex item, ran to the page edge in print only. A segment now carries the clips of its own element and its ancestors, measured by `textClips` (`vectors/cssBoxes.ts`, the same function with the walk starting at the element that holds the text), a line splits where its clips change, and the text item's new `clips` wrap the text object in the same `q`/`Q` as its `cm` (`lineWrap`). `overflow` is no longer taken from a non-replaced inline box, to which it does not apply. Not clipped: a colour cluster (emoji) and SVG `<text>`, whose own vector clips apply. `test/clipText.test.ts` is the red case, pixels beyond the box rendered with mupdf.
 - **A generated number hung by `float` or `position` keeps its place.** `prepare` replaces a painting `::before` with a real span and did not copy `float`, `position` or the offsets, so a clause number hung by `float: left` or `position: absolute` became a block of its own above the clause text, on screen and in print (the delibera's clauses; the cause is here and not in Cicero, whose page only showed the prepared document). `NOT_COPIED` now holds `content` and the counter operations. `test/reifyHanging.test.ts` is the red case: a paragraph was one line taller after `prepare`, for both forms.
 - **`styledBorders` defaults to `true`** (Egildo's ruling, 2026-11-02). A dotted or dashed border prints as written, where the default painted every one solid; `caster.styledBorders=false` is the opt-out. The corpus holds no styled border, so every committed PDF and display list is byte for byte what it was; the eight report snapshots change in their `options.styledBorders` field only, and `corpus.json` in its recorded commit. `test/options.test.ts` takes the new default.
+- **`pngDecoder: 'canvas'` refuses by name.** No canvas decoder is built; the registry only declined to load fast-png under it, so a PNG that needed decoding refused blaming the flag that had been set. It now refuses beside `shaper: 'fontkit'`, `subset: 'pdf-lib'` and `convertRgb`, which move with it from `print` into `refuseUnbuiltTiers` (`options.ts`), where `test/options.test.ts` covers all four. Found by printing every flag from the command line.
 
 ## 0.1.5 — unreleased (branch `round/close-the-list`)
 
