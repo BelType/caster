@@ -20,9 +20,8 @@ import { CasterError } from '../errors.ts';
 
 const pdf = () => capability('pdf');
 
-import type { Report, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportParagraph as ReportEmissionParagraph, ReportFace as ReportEmissionFace, ReportEmission } from '../report.ts';
 import type { CidFont } from '../fonts/fontEmbed.ts';
-import type { DisplayList, FontInstance, Page, TextItem, TextOrigin } from '../displayList.ts';
+import type { DisplayList, FontInstance, Page, TextItem } from '../displayList.ts';
 import type { Matrix } from '../images/imagePlace.ts';
 
 /** The document's pages, and each face's resource name on each. */
@@ -34,38 +33,17 @@ export type PageSetup = {
 /** Everything {@link emitRun} needs that is not the item. */
 export type RunContext = {
   context: PDFContext;
-  page: number;
-  mcid: number;
   font: CidFont;
   name: PDFName;
-  /** The face the item's font is an instance of. */
-  faceId: string;
   /** The font's units per em, which the item's advances are in. */
   upem: number;
-  /** What only the report reads of the run: `print()` answers for it (`EmitStructureOptions.originOf`). */
-  origin: TextOrigin;
-  sidecarRuns: ReportEmissionRun[];
-  sidecarWords: WordRecord[];
   onKern: () => void;
   /** The text one glyph really stands for, when the ToUnicode CMap cannot say it. A CID that the document paints for two different strings gets the most frequent one in the CMap and every other occurrence wrapped in `/Span <</ActualText (…)>> BDC … EMC`, which is the only place a reader can be told the truth about that one glyph. Absent, nothing is wrapped and the run is one `TJ` exactly as E3 (`text-emission.md`) wrote it. */
   actualTextFor?: (segment: TextSegment, glyphIndex: number) => string|null;
   /** Counted for the report: how many glyph occurrences were wrapped. */
   onActualText?: (text: string) => void;
   /** The colour switch of `colour.md` (E8). When present, what it returns replaces the run's `rg` and may wrap the run in an overprint graphics state. Absent, the run is painted `rg` from the computed style exactly as E3 (`text-emission.md`) wrote it, which is what keeps the content streams of E3, E4 (`font-embedding.md`) and E5 (`structure-tree.md`) byte-identical. */
-  colorOperators?: (item: TextItem, origin: TextOrigin, page: number) => RunColorOperators;
-};
-/** What the writer knows of one word it wrote, which `print()` joins to the measurement for the rest of the report's `words` (`index.js`, `joinWords`). */
-export type WordRecord = {
-  page: number;
-  mcid: number;
-  /** The run's index in the measurement (`origin.run`). */
-  runIndex: number;
-  /** The segment's place in its run. */
-  ordinal: number;
-  /** Where the pen was aimed (`segments.x`). */
-  xPt: number;
-  spaceEmitted: boolean;
-  emittedAdj: number | null;
+  colorOperators?: (item: TextItem) => RunColorOperators;
 };
 /** The colour a run is painted in, as the operators around and instead of its `rg` (`colour.md`, E8). */
 export type RunColorOperators = {
@@ -294,8 +272,9 @@ export function isClusterStart(segment: Pick<TextSegment,'text'|'clusters'>, ind
  * `pen` is where the renderer's text position will be, in points from the left edge of the page, after everything pushed so far. It is advanced by the /W entry the font will carry plus `Tc` per glyph, and by the rounded value of every adjustment actually written, so it never drifts from what a viewer computes.
  *
  * @param operators - The page's stream so far; the run is appended to it.
+ * @returns The pen adjustment written before each segment, in thousandths of an em, null for the first: the writer's record of the item (`WriterRecords.pens`).
  */
-export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContext) {
+export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContext): (number|null)[] {
     const sizePt = item.size;
     const tcPt = item.letterSpacing;
     const segments = segmentViews(item, ctx.upem);
@@ -305,7 +284,7 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
     // A run boundary with DOM whitespace across it — `phrase</strong> on` — still owes the reader one space glyph, and the run that starts after it is the only place left to put it: the previous run's TJ has already been closed by its own Tf/Tc state. The run therefore starts one space to the left of its first word and shows the space first, which puts the pen exactly on the measured x with no adjustment at all. Without this the gap is a jump between two text objects, MuPDF infers a space where there is no glyph, and an extraction that inhibits inferred spaces loses the word boundary.
     const leadingSpace = item.leadingSpace;
     const startPt = round3(item.segments.x[0] - (leadingSpace ? spaceAdvPt + tcPt : 0));
-    const colour = ctx.colorOperators?.(item, ctx.origin, ctx.page);
+    const colour = ctx.colorOperators?.(item);
     operators.push(...(colour?.setup ?? []), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetFontAndSize, [ctx.name, pdf().PDFNumber.of(round3(sizePt))]), ...(colour ? colour.fill : [pdf().PDFOperator.of(pdf().PDFOperatorNames.NonStrokingColorRgb, item.fill.rgb.map((c) => pdf().PDFNumber.of(round3(c))))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetCharacterSpacing, [pdf().PDFNumber.of(round3(tcPt))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextMatrix, [
         pdf().PDFNumber.of(1),
         pdf().PDFNumber.of(0),
@@ -314,19 +293,9 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
         pdf().PDFNumber.of(startPt),
         pdf().PDFNumber.of(baselinePt),
     ]));
-    ctx.sidecarRuns.push({
-        index: ctx.origin.run,
-        page: ctx.page,
-        line: item.lineIndex,
-        faceId: ctx.faceId,
-        instanceKey: item.font,
-        sizePt: round3(sizePt),
-        color: ctx.origin.color,
-        letterSpacingPt: round3(tcPt),
-        mcid: ctx.mcid,
-    });
     const items: (PDFHexString|PDFNumber)[] = [];
     let pen = startPt;
+    const adjustments: (number|null)[] = [];
     // The array is flushed as one `TJ` at the end of the run, which is the whole output of `text-emission.md` (E3), and mid-run wherever a glyph needs an `/ActualText` span around it: a BDC/EMC pair may sit inside a text object but not inside a `TJ` operand, so the only way to wrap one glyph is to close the array before it and open a new one after. Successive `TJ`s under one `Tm` continue from the pen the previous one left, so nothing about the geometry changes.
     const flush = () => {
         if (items.length === 0)
@@ -341,7 +310,6 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
     }
     segments.forEach((segment, index) => {
         let emittedAdj: number|null = null;
-        let spaceEmitted = index === 0 && leadingSpace;
         if (index > 0) {
             const nextPt = item.segments.x[index];
             // The space glyph, when there was DOM whitespace, is shown before the adjustment, so the adjustment closes whatever gap is left after it.
@@ -352,7 +320,6 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
                 items.push(glyphString([space.gid]));
                 ctx.font.use(space.gid, ' ');
                 pen += spaceAdvPt + tcPt;
-                spaceEmitted = true;
             }
             items.push(pdf().PDFNumber.of(adj));
             pen -= (adj / 1000) * sizePt;
@@ -397,20 +364,13 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
             }
         });
         closePending();
-        ctx.sidecarWords.push({
-            page: ctx.page,
-            mcid: ctx.mcid,
-            runIndex: ctx.origin.run,
-            ordinal: index,
-            xPt: item.segments.x[index],
-            spaceEmitted,
-            emittedAdj,
-        });
+        adjustments.push(emittedAdj);
     });
     // PDFOperatorArg admits a PDFArray, and PDFContext.obj passes PDFObject members through untouched, so the TJ operand is built as an ordinary array of hex strings and numbers rather than through a pdf-lib text helper.
     flush();
     if (colour)
         operators.push(...colour.reset);
+    return adjustments;
 }
 /** UTF-16BE hex, which is what an `/ActualText` value is once the BOM is on it. */
 function utf16beHex(text: string): string {

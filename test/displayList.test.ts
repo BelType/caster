@@ -2,7 +2,7 @@
  * The display list is all the writer is handed: the same list prints the same bytes, in node, with no page.
  *
  * @remarks
- * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it but the report's `originOf`, answered by a dummy: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
+ * The node half reads the committed fixtures (`fixtures/lists/`, recorded by `npm run identity -- record --list-out`) and hands each list to `emitStructure` with nothing beside it: all eight documents of the corpus, since stage 3 moved the browser's decoders before the list. The browser half prints one small page and asks HarfBuzz in the page, through the very module the print used, whether the list's widths are its own.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stage 1)
  * @packageDocumentation
@@ -53,9 +53,6 @@ function listOf(name: string): DisplayList {
   return list;
 }
 
-/** The report's join to the walk's text origins, which reaches no byte. */
-const originOf = (page: number, index: number) => ({ run: index, paragraph: 0, path: `test:${page}:${index}`, color: '', rectPt: [0, 0, 0, 0] as [number, number, number, number] });
-
 const textItems = (list: DisplayList) => list.pages.flatMap((page) => page.items.filter((item): item is TextItem => item.kind === 'text'));
 
 before(async () => {
@@ -68,7 +65,7 @@ test('the same list prints the same bytes: every committed list gives the commit
   for (const { name } of corpus) {
     const list = listOf(name);
     assert.equal(list.version, 5, `${name}: a version 5 list`);
-    const emitted = await emitStructure(list, { originOf });
+    const emitted = await emitStructure(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
 });
@@ -153,7 +150,7 @@ test('the list\'s tree is the tree the writer writes: every element, every /K in
   let compared = 0;
   for (const { name } of corpus) {
     const list = listOf(name);
-    compared += assertTreeIsWritten(name, list, treeOf(list), (await emitStructure(list, { originOf })).bytes);
+    compared += assertTreeIsWritten(name, list, treeOf(list), (await emitStructure(list)).bytes);
   }
   assert.ok(compared > 150, `${compared} elements compared`);
 });
@@ -224,7 +221,7 @@ test('the resolver writes the attribute objects /A carries, in order, and leaves
 test('the writer refuses a tree that is not one, with a sentence', async () => {
   /** A copy of cast's list with its tree changed by `change`. */
   const broken = (change: (list: DisplayList) => void) => { const list = listOf('cast'); change(list); return list; };
-  const refused = async (list: DisplayList, pattern: RegExp) => assert.rejects(emitStructure(list, { originOf }), (error: unknown) => error instanceof CasterError && pattern.test(error.message));
+  const refused = async (list: DisplayList, pattern: RegExp) => assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && pattern.test(error.message));
   const parentOfOne = (list: DisplayList) => list.structure.elements.findIndex((e) => e.children.includes(1));
   await refused(broken((list) => { list.structure.elements[0].children.push(list.structure.elements.length); }), /lists child \d+, which is not an element below the root/);
   await refused(broken((list) => { list.structure.elements[0].children.push(1); }), /lists element 1, which/);
@@ -257,14 +254,14 @@ test('the widths cover every glyph a text item shows and every space glyph it na
   const instance = list.resources.fonts.find((f) => textItems(list).some((item) => item.font === f.key))!;
   const dropped = instance.widths.gids.pop()!;
   instance.widths.units.pop();
-  await assert.rejects(emitStructure(list, { originOf }), (error: unknown) => error instanceof CasterError && error.message.includes(`glyph ${dropped} of ${instance.key}`));
+  await assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && error.message.includes(`glyph ${dropped} of ${instance.key}`));
 });
 
 test('the fonts array order is the resource order: the writer embeds and names F0, F1, … in it, whatever the order', async () => {
   for (const reversed of [false, true]) {
     const list = listOf('paper');
     if (reversed) list.resources.fonts.reverse();
-    const emitted = await emitStructure(list, { originOf });
+    const emitted = await emitStructure(list);
     const faces = emitted.report.emission!.faces;
     assert.deepEqual(faces.map((f) => f.id), list.resources.fonts.map((f) => f.key), 'the faces are recorded in the array order');
     const doc = mupdf.Document.openDocument(Buffer.from(emitted.bytes), 'application/pdf') as mupdf.PDFDocument;
@@ -300,16 +297,16 @@ test('a link that leaves the file carries its URI resolved: a relative href is a
 test('the writer reads the creation date from the list, and refuses one that is not an instant in UTC', async () => {
   const list = listOf('cast');
   list.info.created = '2026-11-02T10:20:30.456Z';
-  const text = Buffer.from((await emitStructure(list, { originOf })).bytes).toString('latin1');
+  const text = Buffer.from((await emitStructure(list)).bytes).toString('latin1');
   assert.ok(text.includes('/CreationDate (D:20261102102030Z)') && text.includes('/ModDate (D:20261102102030Z)'), 'both dates, at whole seconds');
   list.info.created = '2026-11-02 10:20';
-  await assert.rejects(emitStructure(list, { originOf }), CasterError);
+  await assert.rejects(emitStructure(list), CasterError);
 });
 
 test('the writer refuses a list of another version', async () => {
   const list = listOf('cast');
   (list as { version: number }).version = 2;
-  await assert.rejects(emitStructure(list, { originOf }), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
+  await assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
 });
 
 // --- the image roads, as the image pass left them ---------------------------------------------
@@ -334,7 +331,7 @@ test('an arithmetic-coded JPEG is handed through: the pass is refused a decode i
   const source = list.resources.images[0];
   assert.ok(source.blob && source.mime === 'image/jpeg' && source.samples === undefined, 'the list holds the file');
   assert.match(String(source.refusal), /could not decode image\/jpeg/u, 'and the page\'s refusal');
-  const emitted = await emitStructure(list, { originOf });
+  const emitted = await emitStructure(list);
   const [image] = imagesOf(emitted.bytes).values();
   assert.equal(image.get('Filter').asName(), 'DCTDecode');
   assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(file.bytes)), 'the stream is the file, byte for byte');
@@ -349,7 +346,7 @@ test('a WebP reaches the list as the browser\'s pixels, and the writer writes th
   assert.deepEqual({ colorSpace: samples.colorSpace, bitsPerComponent: samples.bitsPerComponent }, { colorSpace: 'DeviceRGB', bitsPerComponent: 8 });
   const rgba = list.resources.blobs[samples.blob];
   assert.equal(rgba.length, samples.width * samples.height * 4, 'RGBA, four bytes a pixel');
-  const [image] = imagesOf((await emitStructure(list, { originOf })).bytes).values();
+  const [image] = imagesOf((await emitStructure(list)).bytes).values();
   assert.deepEqual([image.get('Width').asNumber(), image.get('Height').asNumber(), image.get('ColorSpace').asName(), image.get('BitsPerComponent').asNumber(), image.get('Filter').asName()], [samples.width, samples.height, 'DeviceRGB', 8, 'FlateDecode']);
   const rgb = rgba.filter((_, i) => i % 4 !== 3);
   assert.ok(bytesOf(image.readStream()).equals(Buffer.from(rgb)), 'the stream inflates to the list\'s RGB');
@@ -370,7 +367,7 @@ test('the photo rule\'s choice and quality are the pass\'s: the list holds its J
   assert.equal(list.resources.blobs[source.jpeg!].length, photo.candidates[0].bytes, 'the JPEG is the chosen candidate');
   assert.equal(source.blob, undefined, 'the list does not hold the PNG');
   assert.equal(source.original?.format, 'image/png');
-  const [image] = imagesOf((await emitStructure(list, { originOf })).bytes).values();
+  const [image] = imagesOf((await emitStructure(list)).bytes).values();
   assert.equal(image.get('Filter').asName(), 'DCTDecode');
   assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(list.resources.blobs[source.jpeg!])), 'the file carries the pass\'s JPEG');
   // The gates and the sampled look are arithmetic over the PNG's own samples, so node reaches the same verdict the page did.

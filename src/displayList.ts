@@ -25,6 +25,7 @@ import type { MarkShape } from './coordinates/printMarks.ts';
 import type { BoxPt } from './coordinates/pageGeometry.ts';
 import type { FontProfile } from './fonts/fontEmbed.ts';
 import type { BlackTextPolicy } from './colour/colorResources.ts';
+import type { ReportColor, ReportColorElement, ReportWorklistEntry } from './report.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
@@ -304,7 +305,7 @@ export type Fill = {
   overprint?: 'fill' | 'stroke' | 'both';
 };
 
-/** What only the report reads of a run, and the colour emitter's record of it. The writer draws none of it, so it is not in the list: `buildDisplayList` hands it back beside the list, and `print()` answers the writer's `originOf(page, itemIndex)` from it. */
+/** What only the report reads of a run, and the colour emitter's record of it. The writer draws none of it, so it is not in the list: `buildDisplayList` hands it back beside the list, and `print()` joins it to the writer's records by the item (`origins[page][item]`), which is how the report's runs, words, paragraphs and colour rows learn what the measurement knows. */
 export type TextOrigin = {
   /** The run's index in the measurement. */
   run: number;
@@ -577,6 +578,31 @@ export type ArtifactStart = {
   /** What the group's first unit was, for the report. */
   kind?: 'paint' | 'image' | 'text';
 };
+
+/** An item of the list, by its page and its index in that page's `items`: the key every writer record that belongs to an item carries. */
+export type ListPlace = { page: number, item: number };
+
+/** One text item the writer wrote, and the pen adjustment it wrote before each segment, in thousandths of an em (null for the first): chosen, the writer's pen arithmetic. */
+export type WriterPen = ListPlace & { adjustments: (number|null)[] };
+
+/**
+ * The colour record a writer returns when the list has a colour story (`writing.colour`): the report's, with a text run's rows keyed by the item.
+ *
+ * @remarks
+ * Partly chosen. The resource names (`resource`, the colour spaces' and graphics states' names) and the output intent's object are the writer's; the resolved colour and the operator follow from the item's `fill` and the list's `blackText`. A rectangle's row is the report's row whole, from the item's own `paint`. A text run's row leaves out what the measurement alone knows (the paragraph's path where the item has no owner, the hint as declared, the ink box) and the run's text, and `print()` completes it.
+ */
+export type WrittenColour = Omit<ReportColor, 'elements' | 'worklist'> & {
+  /** One row per painted thing, in the order the writer painted them. */
+  elements: (ReportColorElement | WrittenRunColour)[];
+  /** One entry per distinct RGB colour left as `rg`, in the order each was first painted. */
+  worklist: (ReportWorklistEntry | WrittenRunWorklistEntry)[];
+};
+
+/** A text run's colour row, without what the measurement knows. */
+export type WrittenRunColour = Omit<ReportColorElement, 'path' | 'hint' | 'rectPt' | 'text' | 'page' | 'target'> & { at: ListPlace, target: 'fill' };
+
+/** A work-list entry a text run painted first: its path and computed colour are the measurement's. */
+export type WrittenRunWorklistEntry = Omit<ReportWorklistEntry, 'path' | 'css'> & { at: ListPlace };
 
 /**
  * One image item the writer painted, and the XObject it painted it with: a record the writer returns, keyed by the item.

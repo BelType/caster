@@ -39,7 +39,7 @@ import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
-import { imageNotesOf } from './displayList/records.ts';
+import { colourWith, imageNotesOf, paragraphMcidsOf, runsWith, textNotesOf } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
 import { PX_TO_PT, round3 } from './coordinates/units.ts';
 import { PAGE_LABEL_PROPERTY } from './emit/pageLabels.ts';
@@ -62,11 +62,10 @@ import { loadFacsimiles } from './images/facsimile.ts';
 import type { CasterOptions } from './options.ts';
 import type { PreparedImage } from './images/imagePass.ts';
 import type { Report, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
-import type { WordRecord } from './emit/textEmit.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
 import type { PageStrip } from './adapters/strip.ts';
-import type { DisplayList, ImageSource, ImageUse } from './displayList.ts';
-import type { ImageNote } from './displayList/records.ts';
+import type { DisplayList, ImageSource, ImageUse, ListPlace, WrittenColour } from './displayList.ts';
+import type { ImageNote, WordNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
 import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
 import type { FaceRequest } from './fonts/fontResolve.ts';
@@ -427,7 +426,6 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const displayListMs = now() - listStart;
     // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
     const emitted = await emitStructure(displayList, {
-      originOf: (page, index) => origins[page][index],
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       container: report.container,
       timing: report.timing,
@@ -452,9 +450,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     step('emit');
 
-    // 11 — report. The writer read the list and nothing else, so what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, and the page-label record.
+    // 11 — report. The writer read the list and nothing else, so what the report keeps of the measurement and of the walk is added here: the trailing letter-spacing samples and the baseline probes, each paragraph's text beside the marked content it was written under, the headings, the tables, the languages, and the page-label record. The writer's records name items (`ListPlace`), and the measurement is joined to them through the origins the builder handed back beside the list.
+    const originAt = (at: ListPlace) => origins[at.page][at.item];
+    const text = textNotesOf(displayList, emitted.mcids, emitted.pens);
+    const paragraphMcids = paragraphMcidsOf(text.runs, originAt);
+    if (emitted.report.color) emitted.report.color = colourWith(displayList, emitted.report.color as unknown as WrittenColour, originAt);
     emitted.report.emission = {
       ...(emitted.report.emission as ReportEmission),
+      runs: runsWith(text.runs, originAt),
       marginPt: pageGeometryFor(0).marginPt,
       pageWidthPt: pageGeometryFor(0).widthPt,
       pageHeightPt: pageGeometryFor(0).heightPt,
@@ -472,8 +475,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       probeOffLine: measurement.probeOffLineCount,
       probeBeforeOffLine: measurement.probeBeforeOffLineCount,
       containerScrollWidthPx: measurement.containerScrollWidthPx,
-      paragraphs: measurement.paragraphs.map((p, index) => ({ block: p.block, path: p.path, text: p.text, mcids: emitted.paragraphMcids.get(index) ?? [] })),
-      words: joinWords(emitted.wordRecords, measurement)
+      paragraphs: measurement.paragraphs.map((p, index) => ({ block: p.block, path: p.path, text: p.text, mcids: paragraphMcids.get(index) ?? [] })),
+      words: joinWords(text.words, measurement, originAt)
     };
     emitted.report.page = { widthPt: pageGeometryFor(0).widthPt, heightPt: pageGeometryFor(0).heightPt };
     emitted.report.pageBoxes = pageBoxRecords(measurement.pageCount, printMarks?.pages ?? []);
@@ -600,21 +603,22 @@ function pageBoxRecords(pageCount: number, marks: PageMarks[]): ReportPageBox[] 
 }
 
 /**
- * The report's `words`: what the writer knew of each word (where it aimed the pen, the space it wrote, the adjustment) joined to the measurement's segment for the rest.
+ * The report's `words`: what the list and the writer say of each word (where the pen was aimed, the space written, the adjustment) joined to the measurement's segment for the rest.
  *
  * @remarks
- * The join is the run's index and the segment's place in the run, which the text item carries as `origin.run` and the order of `segments`. The measurement's pixels become points here by the expressions the writer used, so the record is the one the writer used to write.
+ * The join is the run's index and the segment's place in the run: the text item's origin carries the first (`origin.run`), and the order of `segments` is the second. The measurement's pixels become points here by the expressions the writer used, so the record is the one the writer used to write.
  */
-function joinWords(records: WordRecord[], measurement: MeasureResult): ReportWord[] {
+function joinWords(records: WordNote[], measurement: MeasureResult, originAt: (at: ListPlace) => { run: number }): ReportWord[] {
   const runs: Map<number,MeasuredRun> = new Map<any, any>();
   for (const line of measurement.lines) for (const run of line.runs) runs.set(run.index, run);
   return records.map((record) => {
-    const segment = (runs.get(record.runIndex) as MeasuredRun).segments[record.ordinal];
+    const runIndex = originAt(record).run;
+    const segment = (runs.get(runIndex) as MeasuredRun).segments[record.ordinal];
     const { page } = record;
     return {
       page,
       mcid: record.mcid,
-      runIndex: record.runIndex,
+      runIndex,
       block: segment.block,
       text: segment.text,
       xPt: record.xPt,

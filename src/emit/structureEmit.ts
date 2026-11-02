@@ -49,15 +49,14 @@ import type { CidFont, CidFontStats } from '../fonts/fontEmbed.ts';
 import type { EmbeddedImage, EmbedSource } from '../images/imageEmbed.ts';
 import type { LoadedFacsimile } from '../images/facsimile.ts';
 import type { Matrix } from '../images/imagePlace.ts';
-import type { DisplayList, ImageSource, ImageUse, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, TextOrigin, ArtifactStart } from '../displayList.ts';
-import type { WordRecord } from './textEmit.ts';
+import type { DisplayList, ImageSource, ImageUse, StructAttribute, StructElement, FontInstance, EmojiOrigin, Fill, FormItem, GroupItem, ImageItem, LinkItem, LinkTarget, PlacedVector, RasterItem, RectItem, TextItem, ArtifactStart, WriterPen } from '../displayList.ts';
 
 import type { Report, ReportContainer, ReportTiming, ReportPageBox, ReportFace as ReportEmissionFace, ReportEmission, ReportStructure, ReportParagraph as ReportEmissionParagraph, ReportImage, ReportStructureNode, ReportStructureArtifact, ReportStructureAnnot, ReportPaint, ReportEmojiCluster, ReportRun as ReportEmissionRun, ReportWord as ReportEmissionWord, ReportColor, ReportOutlineItem, ReportPageLabel, ReportPrintMarks, ReportTable, ReportDecoderComparison, ReportPhotoRule, ReportSkipInk, ReportConversion, ReportDeferred, ReportStackingContext, ReportDecoration, ReportCtmReading, ReportCollapsedEdge, ReportComputedBorderWidth, ReportEmoji, ReportLink, ReportVectorNotes, ReportCtmNode } from '../report.ts';
 
 export type ArtifactDescriptor = ArtifactStart['artifact'];
 
-/** The members of the report's `emission` that only the measurement knows, which `print()` adds. */
-export type MeasuredEmissionKeys = 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
+/** The members of the report's `emission` that the measurement holds or joins, which `print()` adds. */
+export type MeasuredEmissionKeys = 'runs' | 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
 
 /**
  * The half of the emitter options that belongs to E9 (`vector-painting.md`): the painting-order contract, the raster pixels the browser drew, and everything the report records about painting.
@@ -84,8 +83,6 @@ export type EmitStructureOptions = {
   decoderComparison?: ReportDecoderComparison;
   /** E9 (`vector-painting.md`): vector painting. Absent, no vector is emitted and the order is DOM order. */
   vector?: VectorEmitOptions;
-  /** What only the report reads of the text item at `index` in page `page`'s list: its run, paragraph, block path, computed colour, hint and ink box. `print()` holds it; the list does not. */
-  originOf: (page: number, index: number) => TextOrigin;
   /** E10 (`coordinates-and-pages.md`): what the container frame recovered, for the report. */
   container?: ReportContainer;
   /** E10 (`coordinates-and-pages.md`): the measurement phase's cost, for the report. */
@@ -117,14 +114,14 @@ export type EmitStructureResult = {
   fontStats: ReportEmissionFace[];
   /** The bytes actually embedded, by instance key, for the instance check. */
   fontPrograms: Map<string, Uint8Array>;
-  /** The marked content each paragraph's lines were written under, by the paragraph's index in the measurement; the composition joins it to the paragraph's text for the report. */
-  paragraphMcids: Map<number, { page: number, mcid: number }[]>;
+  /** Per page, the item index of the content start each MCID opens, by MCID. */
+  mcids: number[][];
+  /** Per text item, in the order written, the pen adjustment before each segment. */
+  pens: WriterPen[];
   /** Every image the pages painted, in painting order: the composition joins each to the measurement's placement for the report's `images`. */
   imageUses: ImageUse[];
   /** How many distinct image XObjects the file holds. */
   xobjects: number;
-  /** What the writer knows of every word it wrote, in the order it wrote them; the composition joins each to the measurement's segment for the report's `words`. */
-  wordRecords: WordRecord[];
   /** Every `/ID` in the file, in the order the `/IDTree` lists them. */
   idTree: string[];
 };
@@ -167,7 +164,7 @@ const ANNOTATION_PRINT_FLAG = 4;
  *
  * @throws {CasterError} A used instance or an image with no bytes, images with no `imageAssets`, an image no decoder tier could carry (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; a structure tree that is not one, or an element index no element has (see `checkTree`); two elements with one `/ID`; and every refusal of the modules it composes.
  */
-export async function emitStructure(list: DisplayList, options: EmitStructureOptions): Promise<EmitStructureResult> {
+export async function emitStructure(list: DisplayList, options: EmitStructureOptions = {}): Promise<EmitStructureResult> {
     const pdfDoc = await createDocument();
     const context = pdfDoc.context;
     if (list.version !== 5)
@@ -271,9 +268,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
     };
     const pageScopes: ResourceScope[] = Array.from({ length: list.info.pageCount }, () => new ResourceScope());
     const streamOrder: string[] = [];
-    const paragraphMcids: Map<number,{ page: number; mcid: number; }[]> = new Map<any, any>();
-    const sidecarRuns: ReportEmissionRun[] = [];
-    const sidecarWords: WordRecord[] = [];
+    const pens: WriterPen[] = [];
     const sidecarArtifacts: ReportStructureArtifact[] = [];
     const imageUses: ImageUse[] = [];
     const linkItems: { item: LinkItem; page: number; }[] = [];
@@ -410,18 +405,11 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     openLineIndex = item.lineIndex;
                 }
                 const face = fontOf(fontByKey, item);
-                const origin = options.originOf(page, at);
-                emitRun(operators, item, {
-                    origin,
+                const adjustments = emitRun(operators, item, {
                     context,
-                    page,
-                    mcid: group?.mcid ?? -1,
                     font: (fonts.get(item.font) as CidFont),
                     name: (names[page].get(item.font) as PDFName),
-                    faceId: face.faceId,
                     upem: (face.upem as number),
-                    sidecarRuns,
-                    sidecarWords,
                     onKern: () => {
                         kernAdjustments += 1;
                     },
@@ -429,13 +417,9 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
                     onActualText: () => {
                         actualTextSpans += 1;
                     },
-                    ...(colour ? { colorOperators: (textItem, textOrigin, textPage) => colour.runOperators(textItem, textOrigin, textPage) } : {}),
+                    ...(colour ? { colorOperators: (textItem) => colour.runOperators(textItem, { page, item: at }) } : {}),
                 });
-                const mcids = paragraphMcids.get(origin.paragraph) ?? [];
-                if (group?.mcid !== undefined && !mcids.some((m) => m.page === page && m.mcid === group?.mcid)) {
-                    mcids.push({ page, mcid: group.mcid });
-                    paragraphMcids.set(origin.paragraph, mcids);
-                }
+                pens.push({ page, item: at, adjustments });
                 continue;
             }
             if (item.kind === 'link') {
@@ -515,7 +499,6 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
         kernAdjustments,
         actualTextSpans,
         faces,
-        runs: sidecarRuns,
     };
     const structure: Omit<ReportStructure,'headings'> = {
         namespace: PDF_2_NAMESPACE,
@@ -569,7 +552,7 @@ export async function emitStructure(list: DisplayList, options: EmitStructureOpt
             }
             : {}),
     } as unknown) as Partial<Report>);
-    return { bytes, pageStreams, report, fontStats: faces, fontPrograms, paragraphMcids, wordRecords: sidecarWords, imageUses, xobjects: imageContext.byHash.size, idTree: built.ids };
+    return { bytes, pageStreams, report, fontStats: faces, fontPrograms, mcids: mcidAt.map((pageMcids) => [...pageMcids.keys()]), pens, imageUses, xobjects: imageContext.byHash.size, idTree: built.ids };
 }
 /**
  * One image: the clip, the matrix, the `Do`.

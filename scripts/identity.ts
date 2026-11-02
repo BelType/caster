@@ -319,7 +319,7 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
  * Replay every saved list in node and compare bytes.
  *
  * @remarks
- * No stub is left: the writer is handed the list, and beside it only `originOf`, the report's join to the walk's text origins, answered here by a dummy. The bytes do not depend on it (the dummy's answers are not the page's, and the files are identical); stage 4 of the plan takes it out of the writer's arguments.
+ * No stub is left and nothing is handed beside the list: the writer is called with the list alone, as `emitStructure(list)`, since stage 4 of the plan took the report's join to the walk's text origins (`originOf`) out of the writer and into `print()`.
  *
  * @param without - Stubs to leave out, to measure what each one stands in for; kept for the stubs a later stage may need, and none is installed now.
  */
@@ -345,11 +345,8 @@ async function replay(dir: string, without: Set<string>) {
         if (sha256(bytes) !== hash) throw new CasterError(`replay: the blob ${hash} is not what its name says`);
         list.resources.blobs[hash] = bytes;
       }
-      const originOf = (page: number, index: number) => ({ run: index, paragraph: 0, path: `replay:${page}:${index}`, color: '', rectPt: [0, 0, 0, 0] as [number, number, number, number] });
       const colour = list.writing.colour !== undefined;
-      const emitted = await emitStructure(list, {
-        originOf
-      });
+      const emitted = await emitStructure(list);
       const now = Buffer.from(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
       result = `${was.equals(now) ? 'identical' : `DIFFERS: ${describe(was, now)}`}\n    colour ${colour ? 'on' : 'off'}`;
@@ -359,7 +356,7 @@ async function replay(dir: string, without: Set<string>) {
     gaps.push({ name: entry.name, stubs, result, ms: performance.now() - started });
   }
   for (const gap of gaps) console.log(`${gap.name.padEnd(18)} ${seconds(gap.ms).padStart(7)}  ${gap.result}`);
-  console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ') || 'none'}; beside the list, the report-only originOf (a dummy)${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
+  console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ') || 'none'}; nothing beside the list${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
   return gaps.every((g) => g.result.startsWith('identical')) ? 0 : 1;
 }
 
