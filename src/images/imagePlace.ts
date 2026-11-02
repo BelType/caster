@@ -32,6 +32,8 @@ import { CasterError } from '../errors.ts';
 import { IDENTITY, apply, mul } from '../coordinates/matrix.ts';
 
 import type { Matrix } from '../coordinates/matrix.ts';
+import type { PathSegment } from '../displayList.ts';
+export type { PathSegment } from '../displayList.ts';
 
 export type { Matrix } from '../coordinates/matrix.ts';
 
@@ -63,9 +65,6 @@ export type RectPx = {
   w: number;
   h: number;
 };
-
-/** One segment of a clip path, in PDF points. `c` carries two control points. */
-export type PathSegment = { op: 'm', to: [number, number] } | { op: 'l', to: [number, number] } | { op: 'c', c1: [number, number], c2: [number, number], to: [number, number] } | { op: 'h' };
 
 export type PlacedImage = {
   /** The column the image landed in, which is the PDF page. */

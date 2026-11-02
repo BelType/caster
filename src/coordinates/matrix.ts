@@ -2,13 +2,13 @@
  * `coordinates/matrix.js` — the PDF matrix and its two operations, product and application.
  *
  * @remarks
- * Pure arithmetic with no import, so the writer can multiply a matrix without reaching the placement and measurement modules that also use one (moved from `images/imagePlace.js`, stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
+ * Pure arithmetic with no value import (the type is the display list's, `displayList.js`), so the writer can multiply a matrix without reaching the placement and measurement modules that also use one (moved from `images/imagePlace.js`, stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
  *
  * @packageDocumentation
  */
 
-/** A PDF matrix, `[a b c d e f]`: x′ = ax + cy + e, y′ = bx + dy + f. */
-export type Matrix = [number, number, number, number, number, number];
+import type { Matrix } from '../displayList.ts';
+export type { Matrix } from '../displayList.ts';
 
 export const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
 

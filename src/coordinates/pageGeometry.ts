@@ -18,9 +18,8 @@ import { COLUMN_WIDTH_PX, MARGIN_PT, PAGE_HEIGHT_PT, PAGE_WIDTH_PT, PX_TO_PT, ro
 import { CasterError } from '../errors.ts';
 
 import type { FramePage } from './frame.ts';
-
-/** A PDF rectangle, `[llx lly urx ury]`, in points. */
-export type BoxPt = [number, number, number, number];
+import type { BoxPt } from '../displayList.ts';
+export type { BoxPt } from '../displayList.ts';
 
 /** One page's box in points, and the trim and bleed it declared. */
 export type PageGeometry = {

@@ -24,6 +24,8 @@ import type { Cmyk, OverprintMode, PredefinedHint, ResolvedColor, SpotHint } fro
 import type { Fill, ListPlace, PaintOrigin, RectItem, TextItem, WrittenColour, WrittenRunColour, WrittenRunWorklistEntry } from '../displayList.ts';
 import type { RunColorOperators } from '../emit/textEmit.ts';
 import type { ReportColorElement, ReportColorExtGState, ReportColorSpace, ColorTarget, ReportHintRegistration, ReportOutputIntent, ReportWorklistEntry } from '../report.ts';
+import type { BlackTextPolicy } from '../displayList.ts';
+export type { BlackTextPolicy } from '../displayList.ts';
 
 /** The colourant name a resolved spot writes into its `/Separation` array. Here and not in `colour/colorHints.js`, which reads computed style, so the writer reaches no DOM to name an ink (moved in stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). */
 export function colorantName(color: SpotHint|PredefinedHint): string {
@@ -32,9 +34,6 @@ export function colorantName(color: SpotHint|PredefinedHint): string {
 
 /** One colour operand, written to four decimals: a tint of 0.6 is 0.6, not 0.6000000001. */
 const num = (n: number): PDFNumber => capability('pdf').PDFNumber.of(Math.round(n * 10000) / 10000);
-
-/** What the black-text option does with an unhinted `rgb(0 0 0)` text fill. */
-export type BlackTextPolicy = 'none' | '100k';
 
 /** The colour half of a run's options: the profiles, the condition, and the two policies. */
 export type ColorOptions = {

@@ -19,12 +19,11 @@ import { apply } from '../coordinates/matrix.ts';
 import { CasterError } from '../errors.ts';
 
 import type { Matrix, PathSegment } from '../images/imagePlace.ts';
+import type { Path } from '../displayList.ts';
+export type { Path } from '../displayList.ts';
 
 /** A pair in whatever space the caller is working in. */
 export type Point = [number, number];
-
-/** A path as a flat list of segments: a subpath begins at an `m` and a closed one ends in an `h`. */
-export type Path = PathSegment[];
 
 /**
  * The kappa that makes four cubic Béziers a circle to within a thousandth of a radius.

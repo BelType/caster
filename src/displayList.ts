@@ -14,18 +14,12 @@
  *
  * VERSION 5 (stage 3 of the same plan). An image source is what the writer embeds, never what it must still decode: the image pass of `print()` (`images/imagePass.js`) asks the browser for the pixels of a file no PDF filter reads (WebP, AVIF, GIF, an arithmetic-coded JPEG the browser decodes) and runs the opaque-photo rule with its re-encode, before the builder. So a source is a file passed through as is (`blob`, `mime`), decoded pixels (`samples`) or the photo rule's JPEG (`jpeg`), with the rule's evidence (`photo`) wherever it was consulted, and a raster fallback carries the same `photo` and `jpeg`. `writing.photoRule` is gone: the flag reaches the pass, and the list records what the pass decided.
  *
+ * THE SCHEMA IN ONE FILE (stage 5 of the same plan). Every type the list is written in is defined here, the matrix, the path, the shading, the print marks, the font profile and the black-text policy among them, and the modules that compute them re-export them; what a writer returns for the list is `displayList/contract.js`, re-exported from here. A foreign writer reads those two files and no other. Order is data in every array and in no object: the writer reads no object's key order (the attribute objects are written in their schema's key order, whatever order a reader kept), and the arrays that carry an order of their own say so (`resources.fonts`, `structure.elements`, an element's `children`, a page's `items`).
+ *
  * @packageDocumentation
  */
 
-import type { Matrix } from './images/imagePlace.ts';
-import type { Path } from './vectors/pathData.ts';
-import type { ShadingSpec } from './vectors/vector.ts';
-import type { ArtifactDescriptor } from './walk/structure.ts';
-import type { MarkShape } from './coordinates/printMarks.ts';
-import type { BoxPt } from './coordinates/pageGeometry.ts';
-import type { CidFontStats, FontProfile } from './fonts/fontEmbed.ts';
-import type { BlackTextPolicy } from './colour/colorResources.ts';
-import type { ReportColor, ReportColorElement, ReportPaint, ReportWorklistEntry } from './report.ts';
+export type * from './displayList/contract.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
@@ -572,123 +566,83 @@ export type ContentStart = {
 };
 
 export type ArtifactStart = {
-  artifact: { type: ArtifactDescriptor['type'] | 'Page', subtype?: string };
+  artifact: { type: 'Pagination' | 'Layout' | 'Page', subtype?: string };
   /** The artifact's owner key; absent on the page's own ground, which the report does not list. */
   path?: string;
   /** What the group's first unit was, for the report. */
   kind?: 'paint' | 'image' | 'text';
 };
 
-/**
- * What a writer returns for a list: the file, and the records of what it chose.
- *
- * @remarks
- * THE WRITER'S RECORDS (stage 4 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). `emitStructure(list)` returns this and nothing else, and a foreign writer returns the same shape: plain data, no pdf-lib value, every record that belongs to an item keyed by its page and its index in that page's `items`. What the report says of the file beyond these records is derivable from the list and them, and `recordsOf` makes it (`displayList/records.js`); what it says of the measurement and the walk, `print()` joins by the item through the origins the builder hands back beside the list.
- */
-export type WriterResult = {
-  bytes: Uint8Array;
-  records: WriterRecords;
-  /** Each page's content stream as text, a diagnostic for a checker; a writer that has none leaves it out. */
-  pageStreams?: string[];
+/** A PDF matrix, `[a b c d e f]`: x′ = ax + cy + e, y′ = bx + dy + f. */
+export type Matrix = [number, number, number, number, number, number];
+
+/** A PDF rectangle, `[llx lly urx ury]`, in points. */
+export type BoxPt = [number, number, number, number];
+
+/** One segment of a clip path, in PDF points. `c` carries two control points. */
+export type PathSegment = { op: 'm', to: [number, number] } | { op: 'l', to: [number, number] } | { op: 'c', c1: [number, number], c2: [number, number], to: [number, number] } | { op: 'h' };
+
+/** A path as a flat list of segments: a subpath begins at an `m` and a closed one ends in an `h`. */
+export type Path = PathSegment[];
+
+/** One stop of a gradient, with the alpha kept beside the colour rather than folded in. */
+export type GradientStop = {
+  offset: number;
+  rgb: [number, number, number];
+  /** Present when the hint of `colour.md` (E8) declared the stop in CMYK. */
+  cmyk?: [number, number, number, number];
+  alpha: number;
 };
 
-/**
- * The records a writer returns: each one a choice the writer made, or the arithmetic of one.
- *
- * @remarks
- * Every member is chosen, except where its own documentation says partly. The derivable records the report reads (the structure tree as written, the annotations and links, the artifacts, each page's MCID owners, the tag counts, the `/IDTree`, the outline, the runs and words, the stream order, what each image's source was) are `recordsOf`'s, and a writer does not return them.
- */
-export type WriterRecords = {
-  /** Chosen: the MCIDs. Per page, the item index of the content start each MCID opens, indexed by MCID. This writer numbers a page's content starts 0, 1, 2 … in item order. */
-  mcids: number[][];
-  /** Chosen: the pen arithmetic. One entry per text item, in the order written. */
-  pens: WriterPen[];
-  /** Chosen: how many kerning adjustments the pen arithmetic wrote into the `TJ` arrays. */
-  kernAdjustments: number;
-  /** Chosen: how many `/ActualText` spans the content streams carry (an ambiguous glyph's, a colour cluster's). */
-  actualTextSpans: number;
-  /** Chosen: what each font instance became, one per instance in the order of `resources.fonts` (the subset tag, the glyphs kept, the program's sizes, the `/W` entries, the ToUnicode counts). */
-  faces: CidFontStats[];
-  /** Chosen: one entry per image item, in painting order. */
-  images: ImageUse[];
-  /** Chosen: how many distinct image XObjects the file holds, raster fallbacks and colour clusters included, by the writer's dedupe rule. */
-  xobjects: number;
-  /** Partly chosen: one row per vector node painted, in painting order. The geometry, the label and the reasons are the item's own `origin`; the resource names (`xobject`, `extGState`, `form`, a shading's) are the writer's. */
-  paint: ReportPaint[];
-  /** Chosen: how many of each vector resource the writer made. */
-  vectorResources: { shadings: number, patterns: number, extGStates: number, forms: number };
-  /** Partly chosen, and present only when the list has a colour story (`writing.colour`). */
-  colour?: WrittenColour;
-  /** Chosen: one entry per colour-cluster raster item, its `source` a key into `resources.emoji`. Dormant: no print reaches a colour cluster, and `print()` composes no report of them. */
-  emoji: ImageUse[];
+/** A shading, in the terms the PDF dictionary uses. */
+export type ShadingSpec = {
+  /** 2 for axial, 3 for radial; nothing else is built. */
+  type: 2 | 3;
+  /** `/Coords`, in the space `matrix` maps onto the page. */
+  coords: number[];
+  extend: [boolean, boolean];
+  stops: GradientStop[];
+  colorSpace: 'DeviceRGB' | 'DeviceCMYK';
+  /** The `cm` concatenated before `sh`, or folded into a pattern's `/Matrix`. */
+  matrix: Matrix;
+  /** The same coordinates mapped onto the page, for a human reading the report. */
+  coordsPt: number[];
+  /** `pad`, or the spread the stops were unrolled for. */
+  spread: 'pad' | 'reflect' | 'repeat';
+  /** How many periods the unrolling covers; 1 when the spread is `pad`. */
+  periods: number;
+  /** True when any stop is not fully opaque, which is what asks for a soft mask. */
+  hasAlpha: boolean;
+  /** What the gradient was written as, for the record. */
+  source: string;
+  /** Set when PDF has no shading that draws what the engine drew, with the reason. The caller rasterises instead of emitting the shading. */
+  degenerate?: string;
 };
 
-/** An item of the list, by its page and its index in that page's `items`: the key every writer record that belongs to an item carries. */
-export type ListPlace = { page: number, item: number };
-
-/** One text item the writer wrote, and the pen adjustment it wrote before each segment, in thousandths of an em (null for the first): chosen, the writer's pen arithmetic. */
-export type WriterPen = ListPlace & { adjustments: (number|null)[] };
-
-/**
- * The colour record a writer returns when the list has a colour story (`writing.colour`): the report's, with a text run's rows keyed by the item.
- *
- * @remarks
- * Partly chosen. The resource names (`resource`, the colour spaces' and graphics states' names) and the output intent's object are the writer's; the resolved colour and the operator follow from the item's `fill` and the list's `blackText`. A rectangle's row is the report's row whole, from the item's own `paint`. A text run's row leaves out what the measurement alone knows (the paragraph's path where the item has no owner, the hint as declared, the ink box) and the run's text, and `print()` completes it.
- */
-export type WrittenColour = Omit<ReportColor, 'elements' | 'worklist'> & {
-  /** One row per painted thing, in the order the writer painted them. */
-  elements: (ReportColorElement | WrittenRunColour)[];
-  /** One entry per distinct RGB colour left as `rg`, in the order each was first painted. */
-  worklist: (ReportWorklistEntry | WrittenRunWorklistEntry)[];
+/** One stroked shape of one mark, as a list of subpaths in page points. */
+export type MarkShape = {
+  kind: 'crop' | 'cross';
+  /** Which corner or side the shape belongs to. */
+  at: string;
+  /** Straight segments, `[x0, y0, x1, y1]`. */
+  segments: [number, number, number, number][];
+  /** A circle, `[cx, cy, r]`, present on a registration target. */
+  circle?: [number, number, number];
 };
 
-/** A text run's colour row, without what the measurement knows. */
-export type WrittenRunColour = Omit<ReportColorElement, 'path' | 'hint' | 'rectPt' | 'text' | 'page' | 'target'> & { at: ListPlace, target: 'fill' };
-
-/** A work-list entry a text run painted first: its path and computed colour are the measurement's. */
-export type WrittenRunWorklistEntry = Omit<ReportWorklistEntry, 'path' | 'css'> & { at: ListPlace };
-
-/**
- * One image item the writer painted, and the XObject it painted it with: a record the writer returns, keyed by the item.
- *
- * @remarks
- * Every member but the key is the writer's choice: the resource name, the dedupe hash (two items share an XObject when their hashes agree) and everything in `info`. What the report says of the source itself (its format, its length, why the road was taken) is derivable from the list and the writer's road, and `recordsOf` makes it (`displayList/records.js`).
- */
-export type ImageUse = {
-  page: number;
-  /** The image item's index in `pages[page].items`. */
-  item: number;
-  /** Key into `resources.images`. */
-  source: number;
-  /** The XObject's resource name on its page, without the slash. */
-  name: string;
-  /** The writer's dedupe key for the XObject. */
-  hash: string;
-  info: WrittenImageInfo;
+/** How every font is written. */
+export type FontProfile = {
+  /** Whether to embed only the glyphs the document shows. */
+  subset: boolean;
+  /** Decimals in the /W array. The emitter's pen follows the written value. */
+  widthDecimals: number;
+  /** Whether CFF goes in bare as /CIDFontType0C or wrapped as /OpenType. */
+  cffContainer: 'bare'|'opentype';
+  /** Whether /DW is the most common width rather than the 1000 default. */
+  dwFromMode: boolean;
 };
 
-/** What one image XObject became in the file: the writer's road and what it wrote. */
-export type WrittenImageInfo = {
-  /** How the samples got into the file: the file's own bytes under a filter that reads them, samples decoded and deflated, the photo rule's JPEG, or a facsimile's Form XObject. */
-  path: 'passthrough' | 'decode-flate' | 'decode-jpeg' | 'form';
-  filter: string;
-  bitsPerComponent: number;
-  /** `DeviceRGB`, `DeviceGray`, `DeviceCMYK`, `Indexed`, `ICCBased`. */
-  colorSpace: string;
-  hasSMask: boolean;
-  /** The `/Decode` array, when one is written. */
-  decode?: number[];
-  width: number;
-  height: number;
-  interpolate: boolean;
-  /** Stream bytes out, the `/SMask` included. */
-  bytesOut: number;
-  /** What the writer spent decoding, a timing the report rounds. */
-  decodeMs: number;
-  encodeMs: number;
-  icc: 'embedded' | 'none';
-  /** A `gAMA` with no `iCCP` and no `sRGB`: recorded, deliberately not acted on. */
-  gammaOnly: boolean;
-};
+/** What the black-text option does with an unhinted `rgb(0 0 0)` text fill. */
+export type BlackTextPolicy = 'none' | '100k';
 
 export {};

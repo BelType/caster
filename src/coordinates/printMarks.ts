@@ -23,6 +23,8 @@ import { KAPPA } from '../vectors/pathData.ts';
 import { PX_TO_PT } from './units.ts';
 
 import type { BoxPt, PageGeometry } from './pageGeometry.ts';
+import type { MarkShape } from '../displayList.ts';
+export type { MarkShape } from '../displayList.ts';
 
 /** The custom property a page element declares its marks through. */
 export const MARKS_PROPERTY = '--pdf-marks';
@@ -97,17 +99,6 @@ export function registerMarksProperty(): MarksRegistration {
     return { property: MARKS_PROPERTY, registered: /already/i.test(message), error: message };
   }
 }
-
-/** One stroked shape of one mark, as a list of subpaths in page points. */
-export type MarkShape = {
-  kind: 'crop' | 'cross';
-  /** Which corner or side the shape belongs to. */
-  at: string;
-  /** Straight segments, `[x0, y0, x1, y1]`. */
-  segments: [number, number, number, number][];
-  /** A circle, `[cx, cy, r]`, present on a registration target. */
-  circle?: [number, number, number];
-};
 
 /** Every mark one page carries, and the media box before and after it grew to hold them. */
 export type PageMarks = {
