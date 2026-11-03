@@ -301,7 +301,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
         const useTypo = os2?.fsSelection.useTypoMetrics === true;
         const ascent = useTypo && os2 ? os2.typoAscender : font.hhea.ascent;
         const descent = useTypo && os2 ? os2.typoDescender : font.hhea.descent;
-        const capHeight = os2?.capHeight && os2.capHeight > 0 ? os2.capHeight : capHeightFromH(pinned && spec.advanceOf ? source.getVariation(spec.coords) : font);
+        const capHeight = os2?.capHeight && os2.capHeight > 0 ? os2.capHeight : capHeightFromH(pinned && spec.advanceOf ? source.getVariation(spec.coords) : font, ascent);
         context.assign(descriptorRef, context.obj({
             Type: 'FontDescriptor',
             FontName: pdf().PDFName.of(psName),
@@ -392,14 +392,21 @@ function charsetIsIdentity(bytes: Uint8Array): boolean {
     const stats = cffStats(table);
     return !stats.isCid || stats.charsetIdentity === true;
 }
-/** `/CapHeight` when OS/2 does not carry it: the top of `H`, which is what it means. */
-function capHeightFromH(font: FontkitFont): number {
+/**
+ * `/CapHeight` when OS/2 does not carry it: the top of `H`, which is what it means, or the ascent when the face draws no `H`, which is pdf-lib's fallback.
+ *
+ * @remarks
+ * A face with no `H` answers with `.notdef`, whose top is not a cap height, and a face may map `H` to a glyph that draws nothing: Matrice 2D (`fixtures/specimen/fonts/matrice-2d.ttf`) maps every ASCII character to one. fontkit gives an empty glyph the box `[Infinity Infinity -Infinity -Infinity]`, and `/CapHeight -Infinity` is not a PDF number: pdf.js refuses the whole font and neither draws nor extracts its text.
+ */
+function capHeightFromH(font: FontkitFont, ascent: number): number {
+    let top = -Infinity;
     try {
-        return font.glyphForCodePoint(0x48).bbox.maxY;
+        const glyph = font.glyphForCodePoint(0x48);
+        if (glyph.id !== 0)
+            top = glyph.bbox.maxY;
     }
-    catch {
-        return font.capHeight;
-    }
+    catch { }
+    return Number.isFinite(top) ? top : ascent;
 }
 /**
  * The width that repeats most; `/DW` covers every CID the `/W` array does not.
