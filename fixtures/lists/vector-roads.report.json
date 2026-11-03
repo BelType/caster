@@ -19393,9 +19393,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.667,
-     0.4,
-     0.8
+     0.835,
+     0.498,
+     1
     ],
     "opacity": 1
    }
@@ -19417,9 +19417,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.8,
-     0.6,
-     0.2
+     1,
+     0.749,
+     0.247
     ],
     "opacity": 1
    }
@@ -19465,9 +19465,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.2,
-     0.6,
-     0.8
+     0.247,
+     0.749,
+     1
     ],
     "opacity": 1
    }
@@ -25089,5 +25089,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 291250
+ "bytes": 291263
 }
