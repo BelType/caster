@@ -15,6 +15,8 @@
  *
  * 3. **A pseudo that reads a value the engine has not delivered yet waits** (*a pseudo that reads a value the engine delivers is made real after the run*, DESIGN.md S79). Cicero rewrites `target-counter()`, `target-counters()` and `target-text()` into `var(--beltype-read-…, "")` and delivers the values while it runs, so before the run `getComputedStyle` answers the fallback: `"Figura " target-counter(…)` reads `"Figura "` and a lone `target-counter(…)` reads nothing, and a span frozen from either shows the screen's words with the screen's number missing. `reify(doc, { defer: true })` — the first moment's call — leaves such a pseudo native; the second moment, after the run, takes it with the values in. A pseudo is known to read one by asking the browser: every `--beltype-read-*` name the sheets mention is set to a sentinel on the element, and a pseudo whose computed `content` moves has no value of its own yet.
  *
+ * The page's own two counters wait as well. `counter(page)` and `counter(pages)` have no value before the cut, so a span frozen from either says 0 on every page: a running footer "Pagina 2 di 3" printed "Pagina 0 di 0" (the tester's administrative documents, 2026-11-03). Such a pseudo is known by its `content` alone, which `getComputedStyle` answers in specified form. After the run, the walk follows the light tree, and Cicero resets the two on the page host in the root's shadow while a running element's copy and a fragment stand in the light DOM, slotted into the page; so a `page` or `pages` counter the walk has no scope for is looked for up the flat tree, on the first element that resets it ({@link flatTreeReset}).
+ *
  * 4. **Idempotent.** An element already carrying a reified span (a `.marker` or `.caster-generated` child) or the suppress class reifies nothing twice, and a reified list item is `display: block` and so no longer a list item; a second call over a prepared document answers with empty `markers` and `generated`. This is what a second moment costs: nothing.
  *
  * @packageDocumentation
@@ -92,7 +94,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     doc.head.append(style);
   }
 
-  const reads = defer ? readNamesOf(doc) : [];
+  const reads = defer ? readNamesOf(doc) : null;
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
   const apply = ( style: CSSStyleDeclaration,  depth: number) => {
@@ -287,16 +289,16 @@ function ordinalOf(item: Element, items: Element[]) {
 /**
  * One pseudo-element as a real span, or null where it paints nothing or was already replaced.
  *
- * @param reads - The engine's `--beltype-read-*` names, when the pseudo is to wait for them.
+ * @param reads - The engine's `--beltype-read-*` names, when the pseudo is to wait for them and for the page counters; null when nothing waits.
  * @param writes - Where the element's own write is queued.
  * @throws {CasterError} A generated `content` this printer cannot express.
  */
-function pseudoSpan(view: Window, element: Element, which: '::before'|'::after', scopes: Scope[], apply: (style: CSSStyleDeclaration,depth: number) => void, depth: number, out: Reification, reads: string[], writes: (() => void)[]): HTMLElement|null {
+function pseudoSpan(view: Window, element: Element, which: '::before'|'::after', scopes: Scope[], apply: (style: CSSStyleDeclaration,depth: number) => void, depth: number, out: Reification, reads: string[]|null, writes: (() => void)[]): HTMLElement|null {
   if (element.classList.contains(which === '::before' ? SUPPRESS_CLASS.before : SUPPRESS_CLASS.after)) return null;
   const style = view.getComputedStyle(element, which);
   const content = style.content;
   if (!content || content === 'none' || content === 'normal') return null;
-  if (reads.length && waitsForReads(view, element, which, content, reads)) {
+  if (reads && (READS_PAGE.test(content) || (reads.length && waitsForReads(view, element, which, content, reads)))) {
     out.deferred.push(`${domPathish(element)}${which}`);
     return null;
   }
@@ -368,6 +370,28 @@ export function pairsOf( value: string,  fallback: number = 0) {
   return out;
 }
 
+/** A `content` that reads the page's own counters, which no element has before the cut. */
+const READS_PAGE = /\bcounter\(\s*pages?\s*[,)]/;
+
+/**
+ * The value of `name` reset on the nearest element up the flat tree, through each slot and shadow host, or null.
+ *
+ * @remarks For `page` and `pages` alone, which an engine may reset on a page host the light-tree walk never enters (Cicero's `setCounters`). An author counter keeps the walk's own answer.
+ */
+function flatTreeReset(element: Element, name: string): Scope|null {
+  const view = element.ownerDocument.defaultView as Window;
+  // A shadow root is the one fragment a node's parent can be, and its host is the next box up.
+  for (let node: Node|null = element; node;) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const pair = pairsOf(view.getComputedStyle(node as Element).counterReset).find(([n]) => n === name);
+      if (pair) return { name, value: pair[1], ownerDepth: 0 };
+    }
+    const parent: Node|null = node.parentNode;
+    node = (node as Element).assignedSlot ?? (parent?.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? (parent as ShadowRoot).host : parent);
+  }
+  return null;
+}
+
 /** The innermost counter of that name in scope, or undefined. */
 function innermost(scopes: Scope[], name: string) {
   for (let i = scopes.length - 1; i >= 0; i--) if (scopes[i].name === name) return scopes[i];
@@ -400,7 +424,7 @@ export function resolveGenerated(content: string, element: Element, scopes: Scop
       const fn = match[2].toLowerCase();
       const args = match[3].split(',').map((a) => a.trim());
       if (fn === 'counter') {
-        const hit = innermost(scopes, args[0]);
+        const hit = innermost(scopes, args[0]) ?? (args[0] === 'page' || args[0] === 'pages' ? flatTreeReset(element, args[0]) : null);
         out += counterValueText(hit ? hit.value : 0, args[1] ?? 'decimal');
         continue;
       }
