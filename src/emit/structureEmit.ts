@@ -208,12 +208,18 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         let group: Group|null = null;
         let openLine: TextItem|null = null;
         let openLineIndex = -1;
+        // `ET` and the line's wrapper, exactly as a line end writes them. Only text-object operators may sit inside `BT … ET` (ISO 32000-2, 9.4), so every item that paints anything but text closes the open line, and the next run opens a new one as a fresh line would; a page end closes it too.
+        const closeLine = () => {
+            if (openLine)
+                operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
+            openLine = null;
+        };
         for (const [at, item] of items.entries()) {
+            if (item.kind !== 'tag' && item.kind !== 'text' && item.kind !== 'link')
+                closeLine();
             if (item.kind === 'tag') {
                 if ('end' in item) {
-                    if (openLine)
-                        operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
-                    openLine = null;
+                    closeLine();
                     operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndMarkedContent));
                     artifact = false;
                     group = null;
@@ -273,11 +279,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
                 const embedded = emojiImages.get(item.source);
                 if (!embedded)
                     throw new CasterError(`caster: no raster for the colour cluster ${JSON.stringify(cluster.text)}`);
-                // Same nesting rule as a vector: a picture is not a text object, so the open line is closed before it and reopened after. The `/Span` around it carries no MCID and is therefore not a content item — which is what makes it legal inside the group's own `BDC`, and is exactly the mechanism E4 (`font-embedding.md`) already uses for a glyph whose ToUnicode cannot name it.
-                if (openLine) {
-                    operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
-                    openLine = null;
-                }
+                // A picture is not a text object, so the open line was closed before it, above, and the next run reopens it. The `/Span` around it carries no MCID and is therefore not a content item — which is what makes it legal inside the group's own `BDC`, and is exactly the mechanism E4 (`font-embedding.md`) already uses for a glyph whose ToUnicode cannot name it.
                 const name = useOnPage(imageContext, embedded, pages[page], page);
                 // `q … Q` around the whole of it, for the reason of E7 (`images.md`): a `cm` is not undone by anything else, and a picture that left one behind would move every word after it on the page. The chain of E10 (`coordinates-and-pages.md`), when the cluster carries one, goes inside the same pair.
                 const chained = lineWrap(item.chain);
@@ -288,8 +290,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             }
             if (item.kind === 'text') {
                 if (item.lineIndex !== openLineIndex || !openLine) {
-                    if (openLine)
-                        operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
+                    closeLine();
                     operators.push(...lineWrap(item.transform, item.clips).open, pdf().PDFOperator.of(pdf().PDFOperatorNames.BeginText));
                     openLine = item;
                     openLineIndex = item.lineIndex;
@@ -319,13 +320,10 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             }
             // A vector item: a shape, a group or a form of the node's own, or a raster fallback.
             const vector = (item as PlacedVector);
-            // A BDC/EMC pair may sit inside a text object but a path may not, so an open line is closed before the geometry goes down — and if that line was wrapped in the `q <cm>` of E10 (`coordinates-and-pages.md`), the `Q` goes with it. Nesting rather than interleaving: every `q` the emitter opens is closed before the next one is opened, whether it came from `lineWrap` or from a vector item's own chain.
-            if (openLine) {
-                operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
-                openLine = null;
-            }
+            // A BDC/EMC pair may sit inside a text object but a path may not, so the open line was closed before the geometry, above — and if that line was wrapped in the `q <cm>` of E10 (`coordinates-and-pages.md`), the `Q` went with it. Nesting rather than interleaving: every `q` the emitter opens is closed before the next one is opened, whether it came from `lineWrap` or from a vector item's own chain.
             operators.push(...vectorOperators(vector, vectorContext, pageScopes[page], artifact));
         }
+        closeLine();
         pageScopes[page].applyToPage(context, pages[page]);
         pages[page].pushOperators(...operators);
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);
