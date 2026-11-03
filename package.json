@@ -36,7 +36,8 @@
     "test": "node --test 'test/*.test.ts'",
     "bundle-vendor": "node scripts/bundle-vendor.js",
     "prepare": "pnpm run build",
-    "identity": "node scripts/identity.ts"
+    "identity": "node scripts/identity.ts",
+    "compliance": "node scripts/compliance.ts"
   },
   "dependencies": {
     "@beltype/common": "0.1.1"

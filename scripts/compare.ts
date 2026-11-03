@@ -2,11 +2,12 @@
  * `npm run identity -- compare <dir> [--only text,tags]`: the readers of the Rust writer's gate, holding forme's files to the oracle's on the committed lists.
  *
  * @remarks
- * `<dir>` holds what forme wrote from each list of `fixtures/lists/`: `<name>.pdf` and `<name>.records.json` (`forme write <list> --blobs <blobs> -o <name>.pdf --records <name>.records.json`). For every corpus document with a file there, three readers ask both files the same question and print the first disagreement of each (*the same list prints the same bytes*, DESIGN.md S102; the gate of `.claude/plans/the-rust-writer/plan-rust-writer.md` in the BelType monorepo):
+ * `<dir>` holds what forme wrote from each list of `fixtures/lists/`: `<name>.pdf` and `<name>.records.json` (`forme write <list> --blobs <blobs> -o <name>.pdf --records <name>.records.json`). For every corpus document with a file there, four readers ask both files the same question and print the first disagreement of each (*the same list prints the same bytes*, DESIGN.md S102; the gate of `.claude/plans/the-rust-writer/plan-rust-writer.md` in the BelType monorepo):
  *
  * - **The content streams.** Each page's content, inflated by mupdf, tokenised as ISO 32000-2 §7.2 does and compared operator for operator, operands as written. A font's resource name is mapped through the page's resources to its `/BaseFont`, and a glyph string under it to the list's glyph ids: the oracle's CIDs are the glyph ids, and forme's are each glyph's place in its subset, `.notdef` first, read back through forme's `faces` record. `--only` keeps the operator families a stage has built: `tags` is `BDC`, `BMC`, `EMC`; `text` is every operator from `BT` to `ET`, and the `q`, `cm`, clip and `Q` of a `q … Q` that holds a text object. A `q … Q` that holds none is another family's and is dropped; every other operator is kept, so one no family names is a disagreement.
  * - **The records.** The oracle's records are its own, made by replaying the list through `emitStructure` in node and read through JSON, as forme's cross; `mcids` and `pens` must be equal exactly, and `kernAdjustments` and `actualTextSpans` equal.
  * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under an `--only` without `images`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its image.
+ * - **The tree.** mupdf reads both files' structure trees element by element in allocation order and everything that points into them: every element's entries and `/K`, the ParentTree, the IDTree, `/MarkInfo`, each page's `/Tabs`, `/StructParents` and link annotations with their destinations, the outline item by item, `/PageLabels` (`treeOf`). Beside it, `recordsOf` over forme's records gives the `structure`, `links`, `outline` and `idTree` members of the committed report snapshot. The tree's families are not content, so `--only` does not restrict them.
  *
  * A list with a colour story is skipped by name until stage 6 writes it, and a list the oracle refuses (the CFF2 face) has no oracle file: its words are held to the list instead, each segment's first glyph at the segment's `x` on the run's baseline, within 0.01 pt. Reads only.
  *
@@ -254,6 +255,108 @@ function wordsAgainstList(list: any, forme: mupdf.PDFDocument): { first: string 
   return { first: null, segments };
 }
 
+/**
+ * The tree reader: the file's structure tree and everything that points into it, as lines a reader can compare, every reference named by what it points at.
+ *
+ * @remarks
+ * An element is named by its place in allocation order, the rank of its object number among the tree's elements, so two files agree only if both allocate in the list's order; a page by its index; an annotation by its `/StructParent`. Per element: `/S`, the namespace's `/NS`, `/P`, `/Pg`, `/Lang`, `/Alt`, `/E`, `/ID`, `/A` and every `/K` in order (an element, a bare MCID, an `/MCR` with its page, an `/OBJR` by its annotation's `/StructParent` and its page). Then the root's `/Namespaces`, `/ParentTreeNextKey`, the ParentTree's every key and value, the IDTree, `/MarkInfo`; each page's `/Tabs`, `/StructParents` and every link annotation, its `/Dest` included; the outline item by item with its depth, and whether its `/Parent`, `/Prev`, `/Next`, `/First`, `/Last` agree with where it was reached; `/PageLabels`. Numbers are compared as mupdf reads them, a real as a float, which is the precision a reader has.
+ */
+function treeOf(doc: mupdf.PDFDocument): string[] {
+  const lines: string[] = [];
+  const catalog = doc.getTrailer().get('Root');
+  const pageOf = new Map<number, number>();
+  for (let p = 0; p < doc.countPages(); p += 1) pageOf.set(doc.findPage(p).asIndirect(), p);
+  const page = (obj: mupdf.PDFObject) => (obj.isNull() ? null : `page ${pageOf.get(obj.asIndirect()) ?? `?${obj.asIndirect()}`}`);
+  const root = catalog.get('StructTreeRoot');
+  if (root.isNull()) return ['no /StructTreeRoot'];
+  // Every element reachable from the root, by object number, then ranked: the rank is the element's place in allocation order.
+  const found = new Map<number, mupdf.PDFObject>();
+  const collect = (obj: mupdf.PDFObject) => {
+    const kids = obj.get('K');
+    const each = kids.isArray() ? Array.from({ length: kids.length }, (_, i) => kids.get(i)) : kids.isNull() ? [] : [kids];
+    for (const kid of each) if (kid.isIndirect() && kid.isDictionary() && !kid.get('S').isNull() && !found.has(kid.asIndirect())) { found.set(kid.asIndirect(), kid); collect(kid); }
+  };
+  collect(root);
+  const order = [...found.keys()].sort((a, b) => a - b);
+  const rank = new Map(order.map((n, i) => [n, i]));
+  const el = (obj: mupdf.PDFObject) => (obj.isIndirect() && rank.has(obj.asIndirect()) ? `element ${rank.get(obj.asIndirect())}` : obj.isIndirect() && obj.asIndirect() === root.asIndirect() ? 'root' : `?${obj.toString()}`);
+  const plain = (obj: mupdf.PDFObject): unknown => {
+    if (obj.isNull()) return null;
+    if (obj.isIndirect() && rank.has(obj.asIndirect())) return el(obj);
+    if (obj.isIndirect() && pageOf.has(obj.asIndirect())) return page(obj);
+    if (obj.isName()) return `/${obj.asName()}`;
+    if (obj.isNumber()) return obj.asNumber();
+    if (obj.isBoolean()) return obj.asBoolean();
+    if (obj.isString()) return obj.asString();
+    if (obj.isArray()) return Array.from({ length: obj.length }, (_, i) => plain(obj.get(i)));
+    const out: [string, unknown][] = [];
+    obj.forEach((value, key) => { out.push([String(key), plain(value)]); });
+    return Object.fromEntries(out.sort(([a], [b]) => (a < b ? -1 : 1)));
+  };
+  const str = (obj: mupdf.PDFObject) => (obj.isNull() ? null : obj.asString());
+  order.forEach((n, i) => {
+    const e = found.get(n) as mupdf.PDFObject;
+    const kids = e.get('K');
+    const each = kids.isArray() ? Array.from({ length: kids.length }, (_, j) => kids.get(j)) : kids.isNull() ? [] : [kids];
+    const k = each.map((kid) => {
+      if (kid.isNumber()) return `mcid ${kid.asNumber()}`;
+      if (kid.isIndirect() && rank.has(kid.asIndirect())) return el(kid);
+      const type = kid.get('Type').isNull() ? null : kid.get('Type').asName();
+      if (type === 'MCR') return `mcr ${kid.get('MCID').asNumber()} on ${page(kid.get('Pg'))}`;
+      if (type === 'OBJR') return `objr ${kid.get('Obj').get('StructParent').asNumber()} on ${page(kid.get('Pg'))}`;
+      return `? ${kid.toString()}`;
+    });
+    const a = e.get('A');
+    lines.push(`element ${i}: ${JSON.stringify({ S: e.get('S').asName(), NS: str(e.get('NS').get('NS')), P: el(e.get('P')), Pg: page(e.get('Pg')), Lang: str(e.get('Lang')), Alt: str(e.get('Alt')), E: str(e.get('E')), ID: str(e.get('ID')), A: a.isNull() ? null : plain(a), K: k })}`);
+  });
+  const namespaces = root.get('Namespaces');
+  lines.push(`root: ${JSON.stringify({ K: plain(root.get('K')), Namespaces: Array.from({ length: namespaces.length }, (_, i) => str(namespaces.get(i).get('NS'))), ParentTreeNextKey: plain(root.get('ParentTreeNextKey')), MarkInfo: plain(catalog.get('MarkInfo')) })}`);
+  const nums = root.get('ParentTree').get('Nums');
+  for (let i = 0; i + 1 < nums.length; i += 2) lines.push(`parent tree ${nums.get(i).asNumber()}: ${JSON.stringify(plain(nums.get(i + 1)))}`);
+  const idTree = root.get('IDTree');
+  const ids = idTree.isNull() ? idTree : idTree.get('Names');
+  for (let i = 0; !ids.isNull() && i + 1 < ids.length; i += 2) lines.push(`id tree ${JSON.stringify(ids.get(i).asString())}: ${el(ids.get(i + 1))}`);
+  for (let p = 0; p < doc.countPages(); p += 1) {
+    const node = doc.findPage(p);
+    lines.push(`page ${p}: ${JSON.stringify({ Tabs: plain(node.get('Tabs')), StructParents: plain(node.get('StructParents')) })}`);
+    const annots = node.get('Annots');
+    for (let i = 0; !annots.isNull() && i < annots.length; i += 1) {
+      const annot = annots.get(i);
+      const { Type, Subtype, Rect, QuadPoints, F, Border, Contents, StructParent, P, A, Dest, ...rest } = plain(annot) as Record<string, unknown>;
+      lines.push(`page ${p} annotation ${i}: ${JSON.stringify({ Type, Subtype, Rect, QuadPoints, F, Border, Contents, StructParent, P, A, Dest, rest })}`);
+    }
+  }
+  const outlines = catalog.get('Outlines');
+  if (!outlines.isNull()) {
+    lines.push(`outline: ${JSON.stringify({ Type: plain(outlines.get('Type')), Count: plain(outlines.get('Count')) })}`);
+    const visit = (parent: mupdf.PDFObject, depth: number) => {
+      let previous: mupdf.PDFObject | null = null;
+      let last: mupdf.PDFObject | null = null;
+      for (let item = parent.get('First'); !item.isNull(); item = item.get('Next')) {
+        const linked = item.get('Parent').asIndirect() === parent.asIndirect() && (previous ? item.get('Prev').asIndirect() === previous.asIndirect() : item.get('Prev').isNull());
+        lines.push(`outline item: ${JSON.stringify({ depth, Title: str(item.get('Title')), Count: plain(item.get('Count')), Dest: plain(item.get('Dest')), linked })}`);
+        visit(item, depth + 1);
+        previous = item;
+        last = item;
+      }
+      if (last && parent.get('Last').asIndirect() !== last.asIndirect()) lines.push(`outline: /Last of a node at depth ${depth} is not its last kid`);
+    };
+    visit(outlines, 0);
+  }
+  const labels = catalog.get('PageLabels');
+  if (!labels.isNull()) lines.push(`page labels: ${JSON.stringify(plain(labels.get('Nums')))}`);
+  return lines;
+}
+
+/** The first line the two trees disagree on, or null; and how many elements were compared. */
+function compareTrees(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument): { first: string | null; elements: number; lines: number } {
+  const [a, b] = [treeOf(oracle), treeOf(forme)];
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if (a[i] !== b[i]) return { first: `line ${i}: oracle ${a[i] ?? '(end)'}, forme ${b[i] ?? '(end)'}`, elements: 0, lines: i };
+  }
+  return { first: null, elements: a.filter((l) => l.startsWith('element ')).length, lines: a.length };
+}
+
 function compareRecords(oracle: Records, forme: Records): string | null {
   for (const key of ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans'] as const) {
     if (!isDeepStrictEqual(oracle[key], forme[key])) {
@@ -268,6 +371,23 @@ function compareRecords(oracle: Records, forme: Records): string | null {
   return null;
 }
 
+/**
+ * The records of the tree through `recordsOf`: the `structure`, `links`, `outline` and `idTree` members it makes of the list and forme's records, held to the committed report snapshot, as Caster's records test holds the oracle's (`test/displayList.test.ts`).
+ */
+function compareTreeMembers(derived: any, report: any): { first: string | null; compared: string } {
+  const pairs: [string, unknown, unknown][] = [
+    ['structure', derived.structure, (({ headings, ...rest }) => rest)(report.structure)],
+    ['links', derived.links.length > 0 ? derived.links : undefined, report.links],
+    ['outline', derived.outline, report.outline],
+    ['idTree', report.idTree === undefined ? undefined : derived.idTree, report.idTree],
+  ];
+  for (const [key, a, b] of pairs) {
+    if (!isDeepStrictEqual(JSON.parse(JSON.stringify(a ?? null)), JSON.parse(JSON.stringify(b ?? null)))) return { first: `${key}: recordsOf ${JSON.stringify(a)?.slice(0, 200)}, the snapshot ${JSON.stringify(b)?.slice(0, 200)}`, compared: '' };
+  }
+  const tree = (node: any): number => 1 + node.kids.reduce((n: number, k: any) => n + tree(k), 0);
+  return { first: null, compared: `${tree(derived.structure.expectedTree)} nodes, ${derived.structure.annots.length} annotations, ${derived.links.length} links, ${derived.outline?.length ?? 0} outline items, ${derived.idTree.length} ids` };
+}
+
 /** The verb: every corpus document forme wrote a file for, through every reader. */
 export async function compare(lists: string, dir: string, onlyArg: string | null): Promise<number> {
   const families = onlyArg ? new Set(onlyArg.split(',').filter(Boolean)) : null;
@@ -275,6 +395,7 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
+  const { recordsOf } = await import('../src/displayList/records.ts');
   await load(['pdf', 'fontkit', 'hbSubset', 'fastPng']);
   await loadSubsetter();
   const corpus: { documents: { name: string; list?: { blobs: string[] }; refused?: string }[] } = JSON.parse(fs.readFileSync(path.join(lists, 'corpus.json'), 'utf8'));
@@ -307,11 +428,17 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const streams = compareStreams(oracle, forme, formeRecords.faces, families);
     const records = compareRecords(oracleRecords, formeRecords);
     const text = compareWords(oracle, forme, families !== null && !families.has('images'));
-    if (streams.first || records || text.first) failed += 1;
+    const tree = compareTrees(oracle, forme);
+    // forme's records have no `images` before stage 5 writes images; `recordsOf` reads it only for the report's image notes, which the tree's members do not hold.
+    const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
+    const members = compareTreeMembers(recordsOf(list, { images: [], ...formeRecords } as any), report);
+    if (streams.first || records || text.first || tree.first || members.first) failed += 1;
     line([
       `content${families ? ` (${[...families].join(',')})` : ''}: ${streams.first ?? `equal, ${streams.ops} operators`}`,
       `records: ${records ?? `equal, ${oracleRecords.pens.length} pens, ${oracleRecords.kernAdjustments} kerns, ${oracleRecords.actualTextSpans} spans`}`,
       `words: ${text.first ?? `equal, ${text.chars} characters, worst ${text.worst.toFixed(4)} pt`}`,
+      `tree: ${tree.first ?? `equal, ${tree.elements} elements, ${tree.lines} lines`}`,
+      `records of the tree: ${members.first ?? `equal to the report snapshot, ${members.compared}`}`,
     ].join('\n                   '));
   }
   console.log(`${compared} compared with the oracle, ${failed} with a disagreement`);
