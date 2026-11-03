@@ -398,21 +398,32 @@ function radialCentre(body: string, box: Box): Point {
  * The period is the stops' own range, not the gradient line. A `repeating-linear-gradient` whose stops end at 16 px of a 120 px line repeats every 16 px, so the axis grows by whole 16-pixel steps and the returned `fromT`/`toT` are in units of the *original* line — which is what the caller multiplies its direction vector by, and what a radial caller multiplies its radius by.
  *
  * Two stops at the same offset are a hard edge and are kept as two stops. That is the whole of what a striped repeating gradient is, and dropping the duplicate — which is the obvious way to keep a stitching function's bounds strictly increasing — turns every stripe into a ramp.
+ *
+ * `floor` is the least parameter the shading can draw: a radial gradient's radius cannot be negative, so its caller passes the parameter at radius zero. The periods are cut there, a stop interpolated at the cut, and `fromT` is the floor; without the cut the stops below it were squeezed into the radii above it, and every ring of a reflected or repeated radial gradient came out at half its width (measured on the vector roads document's `radial-reflect`, 2026-11-03).
  */
-export function unrollGradient(stops: GradientStop[], spread: 'reflect'|'repeat', periods: number): { stops: GradientStop[]; fromT: number; toT: number; } {
+export function unrollGradient(stops: GradientStop[], spread: 'reflect'|'repeat', periods: number, floor = -Infinity): { stops: GradientStop[]; fromT: number; toT: number; } {
   const first = stops[0].offset;
   const last = stops[stops.length - 1].offset;
   const span = last - first || 1e-6;
-  const fromT = first - periods * span;
   const toT = last + periods * span;
-  const total = toT - fromT;
-  const out: GradientStop[] = [];
+  let unrolled: GradientStop[] = [];
   for (let period = -periods; period <= periods; period++) {
     const flip = spread === 'reflect' && Math.abs(period) % 2 === 1;
     const source = flip ? [...stops].reverse().map((stop) => ({ ...stop, offset: first + last - stop.offset })) : stops;
-    for (const stop of source) out.push({ ...stop, offset: (stop.offset + period * span - fromT) / total });
+    for (const stop of source) unrolled.push({ ...stop, offset: stop.offset + period * span });
   }
-  return { stops: out, fromT, toT };
+  let fromT = first - periods * span;
+  if (floor > fromT) {
+    const at = unrolled.findIndex((stop) => stop.offset >= floor);
+    const [a, b] = [unrolled[at - 1], unrolled[at]];
+    const f = (floor - a.offset) / (b.offset - a.offset || 1);
+    const mix = (x: number, y: number) => x + (y - x) * f;
+    const cut: GradientStop = { offset: floor, rgb: a.rgb.map((c, i) => mix(c, b.rgb[i])) as GradientStop['rgb'], alpha: mix(a.alpha, b.alpha), ...(a.cmyk && b.cmyk ? { cmyk: a.cmyk.map((c, i) => mix(c, (b.cmyk as number[])[i])) as GradientStop['cmyk'] } : {}) };
+    unrolled = b.offset === floor ? unrolled.slice(at) : [cut, ...unrolled.slice(at)];
+    fromT = floor;
+  }
+  const total = toT - fromT;
+  return { stops: unrolled.map((stop) => ({ ...stop, offset: (stop.offset - fromT) / total })), fromT, toT };
 }
 
 /**
@@ -537,10 +548,10 @@ export function cssGradient(value: string, box: Box, toPage: Matrix, colorOf: St
   if (repeating && stops.length > 1) {
     const span = stops[stops.length - 1].offset - stops[0].offset;
     const count = periodsFor(diagonal / Math.max(Math.max(rx, ry), 1e-6), span);
-    const unrolled = unrollGradient(stops, 'repeat', count);
+    // A circle has no negative radius, so the periods are cut at radius zero and the ones that would have fallen inside it are not drawn.
+    const unrolled = unrollGradient(stops, 'repeat', count, 0);
     stops = unrolled.stops;
-    // A circle has no negative radius, so the inner end is clamped at zero and the periods that would have fallen inside it are simply not drawn.
-    innerRadius = Math.max(0, unrolled.fromT);
+    innerRadius = unrolled.fromT;
     outerRadius = unrolled.toT;
     spread = 'repeat';
     periods = 2 * count + 1;

@@ -361,6 +361,15 @@ test('a hard stop stays two stops, and unrolling covers the shape', () => {
   const reflected = unrollGradient(stops, 'reflect', 1);
   assert.deepEqual(reflected.stops.slice(0, 4).map((s) => s.rgb), [[0, 0, 1], [0, 0, 1], [1, 0, 0], [1, 0, 0]]);
 
+  // A radial gradient's periods are cut at radius zero: the first stop sits at the floor, every stop above it keeps its parameter, and the parameter of each stop is its radius over the outer radius, so a ring keeps its width.
+  const ramp: any[] = [{ offset: 0, rgb: [1, 1, 0], alpha: 1 }, { offset: 1, rgb: [0, 0, 1], alpha: 1 }];
+  const cut = unrollGradient(ramp, 'reflect', 2, 0);
+  assert.equal(cut.fromT, 0);
+  assert.equal(cut.toT, 3);
+  assert.deepEqual(cut.stops.map((s) => [s.offset * cut.toT, s.rgb]), [[0, [1, 1, 0]], [0, [1, 1, 0]], [1, [0, 0, 1]], [1, [0, 0, 1]], [2, [1, 1, 0]], [2, [1, 1, 0]], [3, [0, 0, 1]]]);
+  const mid = unrollGradient(ramp, 'repeat', 1, -0.25);
+  assert.deepEqual(mid.stops[0], { offset: 0, rgb: [0.25, 0.25, 0.75], alpha: 1 }, 'a stop interpolated at a floor inside a period');
+
   // periodsFor is how many stop-ranges fit across the shape, plus one so the edges are covered whatever the phase.
   assert.equal(periodsFor(1, 0.25), 5);
   assert.equal(periodsFor(1, 1), 2);

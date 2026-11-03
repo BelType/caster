@@ -904,9 +904,9 @@ function gradientSpec(context: SvgContext, element: Element, server: Element, to
     const extent = (units === 'userSpaceOnUse' ? diagonal : Math.SQRT2) / Math.max(r - fr, 1e-6);
     const span = stops[stops.length - 1].offset - stops[0].offset;
     const count = periodsFor(extent, span);
-    const unrolled = unrollGradient(stops, spread, count);
+    // The radius axis runs from the focal circle to the end circle; unrolling stretches it the same way an axial gradient's line is stretched, cut where the radius reaches zero, because a circle has no negative radius.
+    const unrolled = unrollGradient(stops, spread, count, -fr / Math.max(r - fr, 1e-6));
     stops = unrolled.stops;
-    // The radius axis runs from the focal circle to the end circle; unrolling stretches it the same way an axial gradient's line is stretched, with the inner end clamped at zero because a circle has no negative radius.
     innerRadius = Math.max(0, fr + unrolled.fromT * (r - fr));
     outerRadius = fr + unrolled.toT * (r - fr);
     periods = 2 * count + 1;
