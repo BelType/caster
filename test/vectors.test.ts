@@ -39,6 +39,7 @@ import {
   selectBestDashGap,
   strokeIsDashed,
 } from '../src/vectors/borderStyles.ts';
+import { snapBox, snapLength, snapPaintOffset } from '../src/coordinates/ctm.ts';
 import { bboxOf, boundaryPieces, borderSidePath, cssGradient, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
@@ -569,4 +570,21 @@ test('a box shadow carries its inset keyword and its spread', () => {
   // Only the first layer is painted, and the split is on top-level commas so a colour function keeps its own.
   assert.equal(parseBoxShadow('rgba(0, 0, 0, 0.4) 1px 1px 2px, rgb(255, 0, 0) 9px 9px 9px')?.dx, 1);
   assert.equal(parseBoxShadow('none'), null);
+});
+
+test('a transformed box snaps its paint offset and its own rectangle as Blink does', () => {
+  // `LayoutUnit::Round()`: half toward plus infinity, on device pixels.
+  assert.equal(snapLength(2.5, 1), 3);
+  assert.equal(snapLength(-2.5, 1), -2);
+  assert.equal(snapLength(10.25, 1), 10);
+  assert.equal(snapLength(10.25, 2), 10.5);
+  // A rotation keeps no fraction: the box moves to the rounded offset.
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [false, false], 1), { shift: [-0.25, 0.25], subpixel: [0, 0] });
+  // A translation keeps it on both axes and does not move; scale(1, 2) on x alone.
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [true, true], 1), { shift: [0, 0], subpixel: [0.25, -0.25] });
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [true, false], 1), { shift: [0, 0.25], subpixel: [0.25, 0] });
+  // The box's own rectangle: (0, 0, round(w), round(h)) under a rotation, each side snapped from the kept fraction under a translation. Measured in Chromium 153: a translated 50.4 by 20.7 box at 10.25, 20.75 paints 51 by 20.
+  assert.deepEqual(snapBox({ x: 10.25, y: 20.75, w: 50.4, h: 20.7 }, [0, 0], 1), { x: 10.25, y: 20.75, w: 50, h: 21 });
+  const translated = snapBox({ x: 10.25, y: 20.75, w: 50.4, h: 20.7 }, [0.25, -0.25], 1);
+  assert.deepEqual([translated.x, translated.y, translated.w, translated.h], [10, 21, 51, 20]);
 });
