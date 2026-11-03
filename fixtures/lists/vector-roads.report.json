@@ -14997,12 +14997,6 @@
     "type": "Layout",
     "page": 1,
     "kind": "text"
-   },
-   {
-    "path": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
    }
   ],
   "pages": [
@@ -23149,11 +23143,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "background",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23173,11 +23167,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-top",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23197,11 +23191,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-right",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     325.359,
@@ -23221,11 +23215,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-bottom",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23245,11 +23239,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-left",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23269,11 +23263,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "group",
    "label": "box:state",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "extGState": "GT10",
    "params": {
@@ -23282,11 +23276,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "group",
    "label": "box",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23300,6 +23294,28 @@
     "opacity": 1,
     "blend": "Difference",
     "children": 5
+   }
+  },
+  {
+   "path": "div[12]/div[1]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
+   "kind": "group",
+   "label": "isolation",
+   "page": 1,
+   "paintIndex": 588,
+   "artifact": true,
+   "geometry": [
+    204.07,
+    117.226,
+    362.801,
+    219.249
+   ],
+   "reason": "the stacking context a blend mode mixes with, isolated at div[12]/div[1]/div[0]",
+   "form": "Fm15",
+   "params": {
+    "opacity": 1,
+    "blend": "Normal",
+    "children": 2
    }
   }
  ],
@@ -24914,7 +24930,7 @@
    "shadings": 17,
    "patterns": 2,
    "extGStates": 11,
-   "forms": 15
+   "forms": 16
   },
   "streamOrder": [
    "div[0]/div[0]/svg[0]#svg",
@@ -24955,8 +24971,7 @@
    "div[9]/div[0]/div[0]/div[0]/svg[0]#svg",
    "div[9]/div[1]/div[0]/div[0]#box",
    "div[12]/div[0]/div[0]/div[0]#box",
-   "div[12]/div[1]/div[0]#background-image",
-   "div[12]/div[1]/div[0]/div[0]#box"
+   "div[12]/div[1]/div[0]#isolation"
   ],
   "figures": [
    {
@@ -25089,5 +25104,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 291257
+ "bytes": 291739
 }

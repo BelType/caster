@@ -26,7 +26,7 @@ import { CasterError } from '../errors.ts';
 import { ColorEmitter } from '../colour/colorResources.ts';
 import { ShadingBuilder } from '../vectors/shading.ts';
 import { TransparencyBuilder } from '../vectors/transparency.ts';
-import { ResourceScope, vectorOperators } from '../vectors/vectorEmit.ts';
+import { ResourceScope, holdsOpenBlend, vectorOperators } from '../vectors/vectorEmit.ts';
 import { embedFace } from '../fonts/fontEmbed.ts';
 import { createImageContext, embedImage, useOnPage } from '../images/imageEmbed.ts';
 import { embedFacsimiles, reopenFacsimile } from '../images/facsimile.ts';
@@ -188,6 +188,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         rasters: rasterImages,
         resources: list.resources,
         records: paint,
+        ...(colour ? { blendingSpace: () => context.obj([pdf().PDFName.of('ICCBased'), colour.resources.srgbRef()]) } : {}),
     };
     const pageScopes: ResourceScope[] = Array.from({ length: list.info.pageCount }, () => new ResourceScope());
     const pens: WriterPen[] = [];
@@ -324,6 +325,9 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             operators.push(...vectorOperators(vector, vectorContext, pageScopes[page], artifact));
         }
         closeLine();
+        // A blend no group isolates mixes with the page, so the page's group is its blending space (Egildo's ruling 15a of the Rust writer): the document's sRGB profile, as Chromium's page is an RGB stacking context.
+        if (vectorContext.blendingSpace && items.some((item) => (item.kind === 'shape' || item.kind === 'group' || item.kind === 'form' || (item.kind === 'raster' && 'table' in item)) && holdsOpenBlend(item as PlacedVector)))
+            pages[page].node.set(pdf().PDFName.of('Group'), context.obj({ Type: 'Group', S: 'Transparency', CS: vectorContext.blendingSpace() }));
         pageScopes[page].applyToPage(context, pages[page]);
         pages[page].pushOperators(...operators);
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);

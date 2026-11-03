@@ -158,9 +158,11 @@ export class TransparencyBuilder {
    * A transparency-group form XObject.
    *
    * @remarks
+   * `colourSpace` is the group's blending space, `/DeviceRGB` unless the caller names one: the isolation boundary of a blend names the document's sRGB profile (Egildo's ruling 15a of the Rust writer).
+   *
    * `/I true` — an isolated group — is what makes the group composite against a transparent backdrop rather than against whatever is already on the page, which is the difference between "these shapes, then faded" and "these shapes blended with the page, then faded". `/K false` is non-knockout, which is what a group of overlapping shapes means everywhere outside a print workflow.
    */
-  form(bbox: [number,number,number,number], content: string, resources: Record<string,unknown>): { ref: PDFRef; name: string; } {
+  form(bbox: [number,number,number,number], content: string, resources: Record<string,unknown>, colourSpace?: unknown): { ref: PDFRef; name: string; } {
     const { PDFName } = capability('pdf');
     const name = `Fm${this.forms++}`;
     const ref = this.context.register(
@@ -169,7 +171,7 @@ export class TransparencyBuilder {
         Subtype: 'Form',
         FormType: 1,
         BBox: bbox.map(round4),
-        Group: { S: 'Transparency', I: true, K: false, CS: PDFName.of('DeviceRGB') },
+        Group: { S: 'Transparency', I: true, K: false, CS: colourSpace ?? PDFName.of('DeviceRGB') },
         Resources: resources,
       }),
     );

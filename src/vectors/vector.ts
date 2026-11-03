@@ -260,3 +260,9 @@ export function blendName(value: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
 }
+
+/** Whether a node's blend mode reaches past it to a backdrop outside: its own blend mode, or one under a group that is no transparency group of its own (Egildo's ruling 15a of the Rust writer). */
+export function holdsOpenBlend(node: VectorNode): boolean {
+  if (node.blend !== 'Normal') return true;
+  return node.kind === 'group' && !node.forceForm && node.children.some(holdsOpenBlend);
+}

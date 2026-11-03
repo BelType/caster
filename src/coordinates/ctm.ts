@@ -235,7 +235,7 @@ function paintOffsetRoot(element: Element, captured: Map<Element, CapturedStyle>
 }
 
 /** An element's parent in the flat tree: its assigned slot, or its parent, crossing a shadow root to its host. */
-function flatParent(node: Element): Element|null {
+export function flatParent(node: Element): Element|null {
     if (node.assignedSlot)
         return node.assignedSlot;
     const parent = node.parentNode;

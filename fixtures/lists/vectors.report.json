@@ -452,12 +452,6 @@
     "type": "Layout",
     "page": 0,
     "kind": "text"
-   },
-   {
-    "path": "artifact:paint:div[0]/div[0]",
-    "type": "Layout",
-    "page": 0,
-    "kind": "text"
    }
   ],
   "pages": [
@@ -852,11 +846,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "fill",
    "label": "background",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     51.012,
@@ -876,11 +870,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "fill",
    "label": "border-top",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     51.012,
@@ -900,11 +894,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "fill",
    "label": "border-right",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     136.793,
@@ -924,11 +918,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "fill",
    "label": "border-bottom",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     51.012,
@@ -948,11 +942,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "fill",
    "label": "border-left",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     51.012,
@@ -972,11 +966,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "group",
    "label": "box:state",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "extGState": "GT1",
    "params": {
@@ -985,11 +979,11 @@
   },
   {
    "path": "div[0]/div[0]",
-   "owner": "artifact:paint:div[0]/div[0]",
+   "owner": "artifact:paint:div[0]",
    "kind": "group",
    "label": "box",
    "page": 0,
-   "paintIndex": 32,
+   "paintIndex": 30,
    "artifact": true,
    "geometry": [
     51.012,
@@ -1003,6 +997,28 @@
     "opacity": 1,
     "blend": "Multiply",
     "children": 5
+   }
+  },
+  {
+   "path": "div[0]",
+   "owner": "artifact:paint:div[0]",
+   "kind": "group",
+   "label": "isolation",
+   "page": 0,
+   "paintIndex": 30,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    206.68,
+    306.129,
+    246.36
+   ],
+   "reason": "the stacking context a blend mode mixes with, isolated at div[0]",
+   "form": "Fm3",
+   "params": {
+    "opacity": 1,
+    "blend": "Normal",
+    "children": 2
    }
   }
  ],
@@ -1106,12 +1122,11 @@
    "shadings": 1,
    "patterns": 0,
    "extGStates": 2,
-   "forms": 3
+   "forms": 4
   },
   "streamOrder": [
    "svg[0]#svg",
-   "div[0]#background",
-   "div[0]/div[0]#box"
+   "div[0]#isolation"
   ],
   "figures": [
    {
@@ -1129,5 +1144,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 8742
+ "bytes": 9092
 }
