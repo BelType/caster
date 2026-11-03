@@ -12,7 +12,9 @@ import { CasterError } from '../src/errors.ts';
 test('every flag of the guide\'s table is present with the guide\'s default', () => {
   assert.deepEqual(DEFAULTS, {
     shaper: 'harfbuzz', subset: 'hb', cffContainer: 'bare', widthDecimals: 3,
-    pngDecoder: 'fast-png', photoRule: true, rasterDpi: 300, paintOrder: 'css',
+    pngDecoder: 'fast-png', photoRule: true,
+    downsampleImages: true, imageResolution: 300, downsampleThreshold: 1.5, downsampleType: 'bicubic',
+    rasterDpi: 300, paintOrder: 'css',
     styledBorders: true, blackText: 'none', convertRgb: 'none', skipInk: true,
     colour: 'auto', unknownElements: 'infer', standard: 'ua-2', writer: 'pdf-lib'
   });
@@ -40,9 +42,9 @@ test('colour: auto is on for a colour hint, for a black-text policy, and for a c
   assert.equal(colourOn({ colourHints: false }, resolveOptions({ colour: 'on' })), true);
 });
 
-test('FLAGS names a positive number rather than a set for rasterDpi alone', () => {
+test('FLAGS names a positive number rather than a set for rasterDpi, imageResolution and downsampleThreshold alone', () => {
   const free = Object.entries(FLAGS).filter(([, spec]) => spec.values === null).map(([name]) => name);
-  assert.deepEqual(free, ['rasterDpi']);
+  assert.deepEqual(free, ['imageResolution', 'downsampleThreshold', 'rasterDpi']);
 });
 
 test('casterFlags is the table in common\'s shape: the same rows, the same defaults, and parse reads a command-line string', () => {

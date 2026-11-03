@@ -388,7 +388,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     }
     step('rasters');
     // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
-    const prepared = await prepareImages(measurement.images.map((image) => walk.images[image.index]), (src) => imageBytes.get(src), options.photoRule);
+    const prepared = await prepareImages(measurement.images.map((image) => ({ ...walk.images[image.index], ppi: image.placement.effectiveDpi })), (src) => imageBytes.get(src), options.photoRule, { on: options.downsampleImages, resolution: options.imageResolution, threshold: options.downsampleThreshold, type: options.downsampleType });
     const rasterPhotos = new Map<any, any>();
     for (const [spec, samples] of rasterSamples) rasterPhotos.set(spec, await photoOf(samples, options.photoRule));
     step('images');
@@ -500,6 +500,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     Object.assign(report, composed);
     report.options = ((options as unknown) as Record<string, unknown>);
     report.bytes = emitted.bytes.length;
+    // An image placed below 150 ppi is a warning and never a refusal: Adobe's minimum-resolution policy ships ignored, and a line costs nothing.
+    for (const image of report.images ?? []) if (image.effectiveDpi < 150) report.warnings.push(`the image at ${image.domPath} (${image.src}) prints at ${image.effectiveDpi} ppi, below 150`);
     report.warnings.push(...unreadableFamilies(table).map((f) => `the family ${JSON.stringify(f)} is declared but its bytes could not be read; nothing resolved to it in this document, so the export continued`));
     return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams ?? [], displayList, displayListMs };
   } catch (error) {
@@ -526,16 +528,16 @@ function imageRecords(uses: ImageUse[], notes: ImageNote[], measurement: Measure
   return uses.map((use, at) => {
     const source = list.resources.images[use.source];
     const pass = prepared.get(source.src);
-    return imageRecord((placed.get(use.source) as MeasuredImage), source, use, notes[at], pass && { decodeMs: pass.decodeMs, encodeMs: pass.encodeMs });
+    return imageRecord((placed.get(use.source) as MeasuredImage), source, use, notes[at], pass);
   });
 }
 
 /**
  * Everything about one painted image, in the shape the node checker reads back: what the file became (the writer's `use`) and what its source was (the `note` of `recordsOf`) beside where the measurement put it (`image`).
  *
- * @param timing - What the image pass spent decoding and re-encoding the file, which the writer did not.
+ * @param pass - What the image pass did to the file, which the writer did not: the time it spent decoding, resampling and re-encoding, and where it reduced the file or chose not to.
  */
-function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath'|'tag'|'alt'>, use: ImageUse, note: ImageNote, timing?: { decodeMs: number, encodeMs: number }): ReportImage {
+function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath'|'tag'|'alt'>, use: ImageUse, note: ImageNote, pass?: PreparedImage): ReportImage {
   const info = use.info;
   const placement = image.placement;
   return {
@@ -562,8 +564,10 @@ function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath
     effectiveDpi: placement.effectiveDpi,
     bytesIn: note.bytesIn,
     bytesOut: info.bytesOut,
-    decodeMs: Math.round((timing?.decodeMs ?? info.decodeMs) * 100) / 100,
-    encodeMs: Math.round((timing?.encodeMs ?? info.encodeMs) * 100) / 100,
+    decodeMs: Math.round((pass?.decodeMs ?? info.decodeMs) * 100) / 100,
+    encodeMs: Math.round((pass?.encodeMs ?? info.encodeMs) * 100) / 100,
+    ...(pass?.resampled ? { resampled: pass.resampled, resampleMs: Math.round((pass.resampleMs ?? 0) * 100) / 100 } : {}),
+    ...(pass?.notResampled ? { notResampled: pass.notResampled } : {}),
     ...(placement.exifOrientation !== 1 ? { exifOrientation: placement.exifOrientation } : {}),
     ...(placement.imageOrientation ? { imageOrientation: placement.imageOrientation } : {}),
     ...(placement.declaredExifOrientation !== undefined ? { declaredExifOrientation: placement.declaredExifOrientation } : {}),

@@ -258,7 +258,8 @@ export type PngPixels = {
   palette?: Uint8Array;
   /** The `iCCP` profile, inflated, never with `Indexed`. */
   icc?: Uint8Array;
-  why: PngDecodeReason;
+  /** Why the pass decoded a PNG whose `IDAT` no predictor describes; absent where the pass decoded it to reduce it. */
+  why?: PngDecodeReason;
 };
 
 /**

@@ -347,6 +347,12 @@ export type ReportImage = {
   bytesOut: number;
   decodeMs: number;
   encodeMs: number;
+  /** Where the image pass reduced the file to `imageResolution`: its stored size, the size it was reduced to, the smallest resolution it prints at over all its uses, and the filter. */
+  resampled?: { from: [number, number], to: [number, number], ppi: number, type: 'bicubic'|'average'|'subsample' };
+  /** Milliseconds in the resampler, with `resampled`. */
+  resampleMs?: number;
+  /** Why a file that qualified for reduction was left as it was (a CMYK JPEG, a one-bit image, an indexed PNG). */
+  notResampled?: string;
   exifOrientation?: number;
   imageOrientation?: string;
   declaredExifOrientation?: number;

@@ -44,6 +44,10 @@
   "widthDecimals": 3,
   "pngDecoder": "fast-png",
   "photoRule": true,
+  "downsampleImages": true,
+  "imageResolution": 300,
+  "downsampleThreshold": 1.5,
+  "downsampleType": "bicubic",
   "rasterDpi": 300,
   "paintOrder": "css",
   "styledBorders": true,
@@ -56,7 +60,16 @@
   "writer": "pdf-lib"
  },
  "errors": [],
- "warnings": [],
+ "warnings": [
+  "the image at figure[0]/img[0] (https://print.invalid/roads/cmyk-adobe.jpg) prints at 50.8 ppi, below 150",
+  "the image at figure[1]/img[0] (https://print.invalid/roads/icc.jpg) prints at 50.8 ppi, below 150",
+  "the image at figure[2]/img[0] (https://print.invalid/roads/alpha.png) prints at 50.8 ppi, below 150",
+  "the image at figure[3]/img[0] (https://print.invalid/roads/interlaced.png) prints at 50.8 ppi, below 150",
+  "the image at figure[4]/img[0] (https://print.invalid/roads/palette-trns.png) prints at 50.8 ppi, below 150",
+  "the image at figure[5]/img[0] (https://print.invalid/roads/deep.png) prints at 50.8 ppi, below 150",
+  "the image at figure[6]/img[0] (https://print.invalid/roads/deep-alpha.png) prints at 50.8 ppi, below 150",
+  "the image at figure[7]/img[0] (https://print.invalid/roads/grey.png) prints at 50.8 ppi, below 150"
+ ],
  "needs": {
   "forcedPngDecode": true,
   "woff2Only": true,

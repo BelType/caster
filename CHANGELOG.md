@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Images are downsampled** (Egildo's rulings of 2026-11-03, `.claude/plans/image-handling/` in the BelType monorepo). Four flags in Distiller's words: `downsampleImages` (default `true`), `imageResolution` (`300`), `downsampleThreshold` (`1.5`, from 1 to 10) and `downsampleType` (`bicubic`, Catmull-Rom, the default; `average`; `subsample`). A file that prints above `imageResolution × downsampleThreshold` at its smallest resolution over all its uses is decoded in its own colour space, reduced by `src/images/resample.ts` (Caster's own arithmetic, premultiplied alpha, 8 or 16 bits), and then goes past the photo rule as any pixels do; a JPEG source stays a JPEG and keeps its ICC profile. A CMYK JPEG, an indexed or sub-byte PNG and a PNG with a colour key are left alone and named in the report (`notResampled`), a reduced file in `resampled` and `resampleMs`; an image placed below 150 ppi is a warning. Nothing a writer reads changes (display list version 6). The corpus holds a sixteenth document, `downsample`, and its fixtures are drawn by `scripts/make-test-photo.ts`.
+
 ## 0.1.6 — 2026-11-03
 
 The Rust writer, forme, behind `writer: 'forme'` (the default stays `'pdf-lib'`), with the rounds that followed it: PDF/UA-2 as a flag, the vector roads round and Egildo's vector rulings, and a writer a host may keep warm for `beltype serve`. Every file the default writer prints is byte for byte what 0.1.5 printed except where an entry below names the change and its re-record.

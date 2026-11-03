@@ -39,6 +39,10 @@
   "widthDecimals": 3,
   "pngDecoder": "fast-png",
   "photoRule": true,
+  "downsampleImages": true,
+  "imageResolution": 300,
+  "downsampleThreshold": 1.5,
+  "downsampleType": "bicubic",
   "rasterDpi": 300,
   "paintOrder": "css",
   "styledBorders": true,
@@ -51,7 +55,9 @@
   "writer": "pdf-lib"
  },
  "errors": [],
- "warnings": [],
+ "warnings": [
+  "the image at figure[0]/img[0] (https://print.invalid/roads/logo.webp) prints at 61 ppi, below 150"
+ ],
  "needs": {
   "forcedPngDecode": false,
   "woff2Only": true,
