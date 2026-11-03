@@ -134,6 +134,7 @@ test('a glyph takes its cluster’s text, and a later member of the same cluster
 const CRIMSON = fileURLToPath(new URL('../fixtures/specimen/fonts/CrimsonText-Regular.ttf', import.meta.url));
 const JETBRAINS = fileURLToPath(new URL('../fixtures/specimen/fonts/JetBrainsMono-Regular.ttf', import.meta.url));
 const MATRICE = fileURLToPath(new URL('../fixtures/specimen/fonts/matrice-2d.ttf', import.meta.url));
+const CODICE = fileURLToPath(new URL('../fixtures/specimen/fonts/codice-128-senza-nome-ps.ttf', import.meta.url));
 
 /**
  * A WOFF built around a real SFNT, so the decoder is checked against a font rather than against a shape.
@@ -368,4 +369,10 @@ test('a face that maps H to an empty glyph writes a finite /CapHeight, its ascen
   const descriptor = await descriptorOf(MATRICE);
   assert.match(descriptor, /\/Ascent 250\b/);
   assert.match(descriptor, /\/CapHeight 250\b/);
+});
+
+test('a face with no PostScript name is named Family-Style from its family and style names, as PDF says to derive one', async () => {
+  // Codice 128, from the tester's report of 2026-11-03 (specimens, cases/font-senza-nome-postscript): the name table carries IDs 1 (Codice 128) and 2 (Regular) and no 6, and the print threw on the missing name.
+  const descriptor = await descriptorOf(CODICE);
+  assert.match(descriptor, /\/FontName \/Codice128-Regular\n/);
 });

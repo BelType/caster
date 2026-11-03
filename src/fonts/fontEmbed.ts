@@ -136,6 +136,21 @@ export function subsetTagFor(faceId: string, coords: Coords, gids: number[]): st
 /** A PDF name may not carry a space or a delimiter; a PostScript name should not either. */
 const cleanName = (name: string): string => name.replace(/[\s()<>[\]{}/%#]/g, '');
 /**
+ * The face's PostScript name, or, when its name table carries none (name ID 6), one derived as `Family-Style` from name IDs 1 and 2.
+ *
+ * @remarks
+ * PDF says to derive a TrueType font's missing PostScript name from the name the font is known by, its spaces removed (ISO 32000-1 9.6.3). The tester's Codice 128 (`fixtures/specimen/fonts/codice-128-senza-nome-ps.ttf`) has no ID 6 on purpose, and is named `Codice128-Regular`.
+ *
+ * @throws {CasterError} The face has neither a PostScript name nor a family name.
+ */
+function postScriptNameOf(font: FontkitFont, id: string): string {
+    if (font.postscriptName)
+        return font.postscriptName;
+    if (!font.familyName)
+        throw new CasterError(`caster: ${id} has neither a PostScript name (name ID 6) nor a family name (name ID 1) to write as its /BaseFont`);
+    return cleanName(font.subfamilyName ? `${font.familyName}-${font.subfamilyName}` : font.familyName);
+}
+/**
  * The subsetter request that pins a variable face to its instance, or `null` for a static face.
  *
  * @remarks
@@ -164,6 +179,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
     // With `advanceOf` the widths are HarfBuzz's for the instance, which is the shaper layout used and the arithmetic that bakes `hmtx` into the cut program; fontkit then only describes the face. Without it they are fontkit's own instance of the source (hmtx plus HVAR). Either way the program is pinned once, at finish(), over the used glyphs only, and its hmtx is then checked against the widths.
     const source: FontkitFont = create(spec.bytes);
     const font: FontkitFont = pinned && !spec.advanceOf ? source.getVariation(spec.coords) : source;
+    const postScriptName = postScriptNameOf(font, spec.id);
     const upem = font.unitsPerEm;
     const scale = PDF_GLYPH_UNITS / upem;
     const instanceMs = 0;
@@ -265,7 +281,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             throw new CasterError(`caster: ${spec.id} shows glyph(s) ${missing.join(',')} that the subset left with no outline, and the face itself draws them`);
         }
         const subsetTag = profile.subset ? subsetTagFor(spec.faceId, spec.coords, gids) : '';
-        const baseName = cleanName(font.postscriptName);
+        const baseName = cleanName(postScriptName);
         const psName = subsetTag === '' ? baseName : `${subsetTag}+${baseName}`;
         context.assign(fontRef, context.obj({
             Type: 'Font',
@@ -335,7 +351,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             cidToText[gid] = spec.cidToText?.[gid] ?? [textOf(gid)];
         return {
             id: spec.id,
-            postScriptName: font.postscriptName,
+            postScriptName,
             usedGlyphs: gids.length,
             fontFileBytes: streamBytes.length,
             multiCharToUnicode: gids.filter((gid) => textOf(gid).length > 1).length,
@@ -366,7 +382,7 @@ export function embedFace(context: PDFContext, spec: FontEmbedSpec): CidFont {
             ms: { instance: instanceMs, parse: parseMs, subset: subsetMs, write: ms3(clock() - finishStarted) },
         };
     };
-    return { id: spec.id, ref: fontRef, postScriptName: font.postscriptName, upem, advance, width, use, finish };
+    return { id: spec.id, ref: fontRef, postScriptName, upem, advance, width, use, finish };
 }
 /**
  * The advance of a glyph as the program's own `hmtx` carries it, in font units.
