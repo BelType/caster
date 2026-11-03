@@ -15465,7 +15465,7 @@
     634.717
    ],
    "reason": "clip-path url(#star) on div[1]/div[1]/svg[0]/rect[0], userSpaceOnUse",
-   "evenOdd": false
+   "evenOdd": true
   },
   {
    "path": "div[1]/div[1]/svg[0]/rect[0]",
@@ -25067,5 +25067,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 249992
+ "bytes": 249995
 }
