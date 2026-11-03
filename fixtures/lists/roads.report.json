@@ -52,6 +52,7 @@
   "skipInk": true,
   "colour": "auto",
   "unknownElements": "infer",
+  "standard": "ua-2",
   "writer": "pdf-lib"
  },
  "errors": [],

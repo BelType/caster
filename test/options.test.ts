@@ -14,7 +14,7 @@ test('every flag of the guide\'s table is present with the guide\'s default', ()
     shaper: 'harfbuzz', subset: 'hb', cffContainer: 'bare', widthDecimals: 3,
     pngDecoder: 'fast-png', photoRule: true, rasterDpi: 300, paintOrder: 'css',
     styledBorders: true, blackText: 'none', convertRgb: 'none', skipInk: true,
-    colour: 'auto', unknownElements: 'infer', writer: 'pdf-lib'
+    colour: 'auto', unknownElements: 'infer', standard: 'ua-2', writer: 'pdf-lib'
   });
 });
 

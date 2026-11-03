@@ -233,9 +233,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       renders: (element) => strip.pageElementOf(element) !== null,
       unknownElements: options.unknownElements
     });
-    // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2.
+    // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
-    report.conformance = walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
+    report.conformance = options.standard === 'none' || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
     report.warnings.push(...walk.warnings);
     // The image bytes, before the measurement rather than after it. The order of `coordinates-and-pages.md` (E10) puts everything that is not a measurement outside the neutralised window, and this is outside it in both directions: fetching reads no layout at all. It has to happen first because only the file says what an image's stored pixel size and EXIF orientation are — `naturalWidth` is the size after the engine applied the orientation, so a sideways-stored JPEG measured from the DOM was placed with the identity orientation and printed on its side, with the file's own tag in the report saying otherwise.
     const imageBytes = await fetchImages(walk.images, gateway);
@@ -400,6 +400,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
         ...(colourOn(needs, options) ? { colour: colourOptions(options) } : {})
       },
       paintOrder: options.paintOrder,
+      conformance: report.conformance,
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
       outline: true,

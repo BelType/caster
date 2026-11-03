@@ -18,6 +18,7 @@ import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';
 import { rgbaOf } from '../images/samples.ts';
 import { spaceGlyph } from '../measure/textMeasure.ts';
+import { checkGaps } from './validate.ts';
 import { glyphAdvance } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';
 import { pageGeometryFor, xToPt, yToPt } from '../coordinates/pageGeometry.ts';
@@ -25,7 +26,7 @@ import { pageLabelRuns } from '../emit/pageLabels.ts';
 import { scopeNameOf } from '../walk/tableHeaders.ts';
 import { PX_TO_PT, round3 } from '../coordinates/units.ts';
 
-import type { ContentStart, ColourWriting, DisplayList, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, PhotoEvidence, RasterSource } from '../displayList.ts';
+import type { ContentStart, ColourWriting, DisplayList, DocumentInfo, FontWidths, Writing, Item, Page, OutlineEntry, Resources, TextItem, TextOrigin, Fill, LinkItem, RectItem, VectorItem, VectorOrigin, Painting, Paint, Stroke, FormDefinition, ImageSource, PhotoEvidence, RasterSource } from '../displayList.ts';
 import type { MeasuredLine, MeasuredPaint, MeasuredImage, MeasuredEmoji, MeasuredRun, MeasureResult } from '../measure/textMeasure.ts';
 import type { MeasuredVector, PaintSpec, RasterSpec, VectorNode } from '../vectors/vector.ts';
 import type { DecodedSamples } from '../images/samples.ts';
@@ -48,6 +49,8 @@ export type BuildInputs = {
   baseUri?: string;
   /** The list's `writing`, with the colour story's profiles as bytes, which the builder hashes into `blobs`. */
   writing: Omit<Writing, 'colour'> & { colour?: Omit<ColourWriting, 'profiles'> & { profileBytes: Uint8Array, srgbBytes: Uint8Array } };
+  /** The list's `info.conformance`: `tagged` under `standard: 'none'` or once a guess withdrew the claim (S90, S103), as `print()` decided it for the report. */
+  conformance: DocumentInfo['conformance'];
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
   paintOrder?: 'dom' | 'css';
   /** The `@page` ground each page paints, already resolved. */
@@ -908,8 +911,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         info: {
             lang: walk.lang,
             title: inputs.title,
-            // *The printer guesses, says so, and withdraws the claim* (S90): a guess in the tree withdraws the claim.
-            conformance: walk.inferred?.length ? 'tagged' : 'pdfua2',
+            conformance: inputs.conformance,
             pageCount: measurement.pageCount,
             created: inputs.created,
         },
@@ -920,6 +922,8 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         pageLabels,
         pages,
     };
+    // *PDF/UA-2 is a flag, not a given* (S103): the builder knows the flag, so a gap PDF/UA-2 forbids is refused here, before either writer is asked; the writers' validators hold the same rule for a list that reaches them some other way.
+    checkGaps(list);
     return { list, origins };
 }
 

@@ -44,7 +44,7 @@ export type DocumentInfo = {
   /** The catalog `/Lang`. */
   lang: string;
   title: string;
-  /** `tagged` once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90). */
+  /** `tagged` under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103), or once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90): the file then claims nothing in its XMP. */
   conformance: 'pdfua2' | 'tagged';
   pageCount: number;
   /** The moment the file says it was made: an ISO 8601 instant in UTC, `YYYY-MM-DDTHH:mm:ss` with optional fractional seconds and a final `Z`, as `Date.prototype.toISOString` writes it. Set by `print()` from the host's `created`, or from the wall clock when the host gives none; the writer writes it at whole seconds into both `/CreationDate` and `/ModDate`, and reads no clock. Version 3. */
@@ -279,7 +279,7 @@ export type TextItem = {
   text: string;
   /** The run owes the reader a space glyph before its first word: DOM whitespace stood across the boundary with the run before it, and this is not the first run of its line. */
   leadingSpace: boolean;
-  /** The glyph id of U+0020 in the run's font under its features, which the writer shows for every space it writes. From `spaceGlyph(run.url, run.features, run.coords).gid`. */
+  /** The glyph id of U+0020 in the run's font under its features, which the writer shows for every space it writes. From `spaceGlyph(run.url, run.features, run.coords).gid`. 0 where the face has no space glyph: a list claiming PDF/UA-2 may then owe no gap, and under a list claiming nothing the writer writes each gap as positioning with no glyph (S103). */
   space: number;
   glyphs: TextGlyphs;
   segments: TextSegments;

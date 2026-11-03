@@ -186,7 +186,7 @@ export function textNotesOf(list: DisplayList, mcids: number[][], pens: WriterPe
       if (!adjustments) throw new CasterError(`caster: the writer's records hold no pen for the text item ${at} of page ${page + 1}`, { listItem: { page, item: at } });
       runs.push({ page, item: at, line: item.lineIndex, faceId: fontOf(fonts, item).faceId, instanceKey: item.font, sizePt: round3(item.size), letterSpacingPt: round3(item.letterSpacing), mcid });
       item.segments.x.forEach((xPt, ordinal) => {
-        words.push({ page, item: at, mcid, ordinal, xPt, spaceEmitted: ordinal === 0 ? item.leadingSpace : item.segments.spaceBefore[ordinal], emittedAdj: adjustments[ordinal] ?? null });
+        words.push({ page, item: at, mcid, ordinal, xPt, spaceEmitted: item.space !== 0 && (ordinal === 0 ? item.leadingSpace : item.segments.spaceBefore[ordinal]), emittedAdj: adjustments[ordinal] ?? null });
       });
     });
   });
