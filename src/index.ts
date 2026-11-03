@@ -38,7 +38,7 @@ import { registerBytes as registerVarBytes } from './fonts/varShaper.ts';
 import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
-import { writeWithForme } from './emit/forme.ts';
+import { writeWithForme, SHARED_WORKER } from './emit/forme.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
 import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
@@ -85,6 +85,8 @@ export type PrintInput = {
   created?: string;
   /** The gateway's asset manifest. Same-origin needs none. */
   manifest?: ReadonlyMap<string, string>;
+  /** A port to a running `emit/formeShared.js` worker (open it with `new SharedWorker(formeSharedWorkerUrl(), { type: 'module' })`), which forme writes through when `writer` is `'forme'` (*a host may keep the writer warm*, S104). Absent, a dedicated worker per write; ignored under `'pdf-lib'`, and in node. */
+  formePort?: MessagePort;
   /** Progress, per capability, as it lands. */
   onCapability?: (entry: ReportCapability) => void;
   /** Progress, per pipeline step. */
@@ -421,7 +423,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     const displayListMs = now() - listStart;
     // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it. Either writer is handed the same list and returns the same `WriterResult` (the `writer` flag).
-    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList) : emitStructure(displayList)).catch((error) => {
+    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList, input.formePort) : emitStructure(displayList)).catch((error) => {
       if (error instanceof CasterError && error.listItem && error.element === undefined) {
         const origin = origins[error.listItem.page]?.[error.listItem.item];
         if (origin) error.element = origin.path;
@@ -793,6 +795,9 @@ function now() { return typeof performance === 'object' ? performance.now() : Da
 
 export { PX_TO_PT } from './coordinates/units.ts';
 export { CasterError } from './errors.ts';
+
+/** The URL of the shared writer worker, beside `forme.js`, for a host that keeps the writer warm: `new SharedWorker(formeSharedWorkerUrl(), { type: 'module', name: 'forme' })`. */
+export function formeSharedWorkerUrl(): URL { return new URL(SHARED_WORKER); }
 export { CAPABILITIES } from './capabilities.ts';
 export { FLAGS, DEFAULTS, resolveOptions, casterFlags } from './options.ts';
 export { adaptCicero } from './adapters/cicero.ts';
