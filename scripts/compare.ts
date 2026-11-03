@@ -158,9 +158,10 @@ function pageFonts(page: mupdf.PDFObject, faces: Face[] | null): FontMap {
   fonts.forEach((font, key) => {
     const base = font.get('BaseFont').asName();
     let gidOf = (cid: number) => cid;
-    if (faces) {
-      const face = faces.find((f) => base.startsWith(`${f.subsetTag}+`));
-      const set = [...new Set([0, ...(face?.glyphsUsed ?? [])])].sort((a, b) => a - b);
+    // A font forme subset has its CIDs mapped back to glyph ids; any other (a facsimile's own, inside its Form XObject) is read as it is.
+    const face = faces?.find((f) => base.startsWith(`${f.subsetTag}+`));
+    if (face) {
+      const set = [...new Set([0, ...face.glyphsUsed])].sort((a, b) => a - b);
       gidOf = (cid) => set[cid] ?? -1;
     }
     map.set(String(key), { base, gidOf });
