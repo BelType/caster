@@ -11,7 +11,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { buildFontTable, localUrlsOf, parseWeightDescriptor, refuseFamily } from '../src/host/fonts.ts';
-import { load } from '../src/capabilities.ts';
+import { capability, load } from '../src/capabilities.ts';
+import { embedCidFont } from '../src/fonts/cidFont.ts';
 import { isClusterStart, segmentViews, textForGlyph } from '../src/emit/textEmit.ts';
 import { decodeWoff, isWoff, isWoff2 } from '../src/fonts/woff.ts';
 import { buildToUnicode } from '../src/fonts/toUnicode.ts';
@@ -132,6 +133,8 @@ test('a glyph takes its cluster’s text, and a later member of the same cluster
 
 const CRIMSON = fileURLToPath(new URL('../fixtures/specimen/fonts/CrimsonText-Regular.ttf', import.meta.url));
 const JETBRAINS = fileURLToPath(new URL('../fixtures/specimen/fonts/JetBrainsMono-Regular.ttf', import.meta.url));
+const MATRICE = fileURLToPath(new URL('../fixtures/specimen/fonts/matrice-2d.ttf', import.meta.url));
+const CODICE = fileURLToPath(new URL('../fixtures/specimen/fonts/codice-128-senza-nome-ps.ttf', import.meta.url));
 
 /**
  * A WOFF built around a real SFNT, so the decoder is checked against a font rather than against a shape.
@@ -347,4 +350,29 @@ test("a face's own empty glyph is not a subset that dropped one: JetBrains Mono'
     [],
     'nothing the face draws was left without an outline, which is what `embedFace` refuses on',
   );
+});
+
+// --- `fonts/fontEmbed.js`: the descriptor of a face the tester built -------
+
+/** Embed one face whole, show glyph 1, and hand back the FontDescriptor as pdf-lib writes it. */
+async function descriptorOf(file: string): Promise<string> {
+  await load(['pdf', 'fontkit']);
+  const doc = await capability('pdf').PDFDocument.create();
+  const font = embedCidFont(doc.context, new Uint8Array(readFileSync(file)), 'probe');
+  font.use(1, 'x');
+  font.finish();
+  return doc.context.enumerateIndirectObjects().map(([, object]: [unknown, unknown]) => String(object)).find((text: string) => text.includes('/Type /FontDescriptor'))!;
+}
+
+test('a face that maps H to an empty glyph writes a finite /CapHeight, its ascent (pdf-lib\'s fallback)', async () => {
+  // Matrice 2D, from the tester's report of 2026-11-03 (specimens, cases/matrice-2d): OS/2 says cap height 0, and every ASCII character, H included, maps to glyph 1, which draws nothing. fontkit gives an empty glyph the box [Infinity Infinity -Infinity -Infinity], and `/CapHeight -Infinity` made pdf.js refuse the font and lose all its text.
+  const descriptor = await descriptorOf(MATRICE);
+  assert.match(descriptor, /\/Ascent 250\b/);
+  assert.match(descriptor, /\/CapHeight 250\b/);
+});
+
+test('a face with no PostScript name is named Family-Style from its family and style names, as PDF says to derive one', async () => {
+  // Codice 128, from the tester's report of 2026-11-03 (specimens, cases/font-senza-nome-postscript): the name table carries IDs 1 (Codice 128) and 2 (Regular) and no 6, and the print threw on the missing name.
+  const descriptor = await descriptorOf(CODICE);
+  assert.match(descriptor, /\/FontName \/Codice128-Regular\n/);
 });
