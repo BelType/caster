@@ -417,6 +417,8 @@ function paintElement(context: SvgContext, element: Element, clips: ClipSpec[]):
           formReason: `opacity ${style.opacity} over a fill and a stroke that overlap`,
         };
       }
+      // A shape with markers is a group, and `opacity` fades the shape and its markers together, once.
+      if (node.kind === 'group') return { ...node, opacity, forceForm: true, formReason: node.formReason || `opacity ${style.opacity} on ${domPath}, its markers included` };
       return { ...node, opacity: node.opacity * opacity, strokeOpacity: node.strokeOpacity * opacity };
     }
     return node;
@@ -547,14 +549,19 @@ function shapeNode(context: SvgContext, element: Element, style: CSSStyleDeclara
   // E12c (`vector-painting.md`): markers are painted after the shape they belong to, which is SVG's own order — an arrowhead sits on top of the line it ends.
   const markerNodes = markerNodesFor(context, element, style, local, toPage, widthUser, domPath);
   if (markerNodes.length === 0) return shape;
+  // A marker is part of its element's rendering (SVG 2 §11.6.2), so the element's mask and blend mode apply to the shape and its markers together, composited once: they go on the group, which becomes a form, and the shape inside keeps its fill and stroke alpha alone. On the shape they masked and blended the line and left the arrowheads as they were.
+  const { softMask: _mask, ...bare } = shape;
+  const composite = mask !== undefined || blend !== 'Normal';
   return {
     ...emptyNodeCommon(domPath, `${label}:with-markers`),
     kind: 'group',
-    children: [{ ...shape, clips: [] }, ...markerNodes],
+    children: [{ ...bare, clips: [], blend: 'Normal' }, ...markerNodes],
     clips,
     bboxPt: bboxOf([shape, ...markerNodes]),
-    forceForm: false,
-    formReason: '',
+    blend,
+    ...(mask ? { softMask: mask } : {}),
+    forceForm: composite,
+    formReason: !composite ? '' : mask ? `mask on ${domPath}, its markers included` : `mix-blend-mode: ${style.mixBlendMode} on ${domPath}, its markers included`,
   };
 }
 
