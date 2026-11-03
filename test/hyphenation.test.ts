@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import * as mupdf from 'mupdf';
 import { launchBrowser } from './launch.ts';
 import { contentType } from '@beltype/common/mime';
+import { WRITER } from './writer.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const DIST = path.join(PACKAGE, 'dist');
@@ -61,7 +62,7 @@ test('a word Blink hyphenates is drawn with its hyphen, and the rest of it flush
       return [...range.getClientRects()].map((r) => ({ left: r.left, top: r.top }));
     });
     assert.ok(new Set(laid.map((r) => Math.round(r.top))).size === 2, `the fixture's precondition: Blink divides "temperature" across two lines (${JSON.stringify(laid)})`);
-    const base64 = await page.evaluate(async () => {
+    const base64 = await page.evaluate(async (writer: string) => {
       const load = (p: string) => import(p);
       const caster = await load('/src/index.js');
       caster.prepare(document);
@@ -75,11 +76,11 @@ test('a word Blink hyphenates is drawn with its hyphen, and the rest of it flush
           pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(box.width), heightPt: pt(box.height) }, declaredPx: { widthPx: box.width, heightPx: box.height }, contentArea: strip, continuations: [] }],
           pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
         },
-      });
+      }, { writer });
       let binary = '';
       for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
       return btoa(binary);
-    });
+    }, WRITER);
     const doc = mupdf.Document.openDocument(Buffer.from(base64, 'base64'), 'application/pdf');
     const lines: { x: number; text: string }[] = JSON.parse(doc.loadPage(0).toStructuredText('preserve-whitespace').asJSON()).blocks.flatMap((b: { lines: { bbox: { x: number }; text: string }[] }) => b.lines.map((l) => ({ x: l.bbox.x, text: l.text })));
     const first = lines.findIndex((l) => /tem/.test(l.text) && !/temperature/.test(l.text));

@@ -18,8 +18,7 @@ import { fileURLToPath } from 'node:url';
 import * as mupdf from 'mupdf';
 import { contentType } from '@beltype/common/mime';
 import { capability, load } from '../src/capabilities.ts';
-import { loadSubsetter } from '../src/fonts/hbSubset.ts';
-import { emitStructure } from '../src/emit/structureEmit.ts';
+import { WRITER, loadWriters, oracleOnly, writeList } from './writer.ts';
 import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from '../src/displayList/records.ts';
 import { absoluteUri } from '../src/displayList/build.ts';
 import { resolveStructure } from '../src/displayList/structure.ts';
@@ -61,25 +60,24 @@ function listOf(name: string): DisplayList {
 const textItems = (list: DisplayList) => list.pages.flatMap((page) => page.items.filter((item): item is TextItem => item.kind === 'text'));
 
 before(async () => {
-  await load(['pdf', 'fontkit', 'hbSubset', 'fastPng']);
-  await loadSubsetter();
+  await loadWriters();
 });
 
-test('the same list prints the same bytes: every committed list gives the committed file, in node, the browser-decoded images and the photo rule\'s JPEG included', async () => {
+test('the same list prints the same bytes: every committed list gives the committed file, in node, the browser-decoded images and the photo rule\'s JPEG included', { skip: oracleOnly('the committed files are its own') }, async () => {
   assert.ok(corpus.length >= 8 && ['webp', 'photo', 'arithmetic'].every((name) => corpus.some((e) => e.name === name)), 'the whole corpus, the image roads among it');
   for (const { name } of corpus) {
     const list = listOf(name);
     assert.equal(list.version, 6, `${name}: a version 6 list`);
-    const emitted = await emitStructure(list);
+    const emitted = await writeList(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
 });
 
-test('a list the oracle refuses is refused again: every committed list recorded with a refusal gives the writer\'s same message, in node', async () => {
+test('a list the oracle refuses is refused again: every committed list recorded with a refusal gives the writer\'s same message, in node', { skip: oracleOnly('forme writes the CFF2 face the oracle refuses') }, async () => {
   const refused = committed.filter((e) => e.refused !== undefined);
   assert.ok(refused.some((e) => e.name === 'cff2'), 'the CFF2 face is among them');
   for (const { name, refused: message } of refused) {
-    await assert.rejects(emitStructure(listOf(name)), (error: Error) => error.message === message, `${name}: refused with the recorded message`);
+    await assert.rejects(writeList(listOf(name)), (error: Error) => error.message === message, `${name}: refused with the recorded message`);
   }
 });
 
@@ -119,11 +117,11 @@ function recordMembers(list: DisplayList, written: WriterRecords, report?: any) 
   return { fromRecords: snapshotOf(fromRecords), fromReport: fromReport && snapshotOf(fromReport) };
 }
 
-test('the records are enough for the report: recordsOf over the writer\'s records, in node, gives every member of each committed report snapshot that the list and the writer decide', async () => {
+test('the records are enough for the report: recordsOf over the writer\'s records, in node, gives every member of each committed report snapshot that the list and the writer decide', { skip: oracleOnly('the snapshots are its own, its font programs\' sizes among them; compare holds forme\'s records to the members the writers share') }, async () => {
   let rows = 0;
   for (const { name } of corpus) {
     const list = listOf(name);
-    const { records } = await emitStructure(list);
+    const { records } = await writeList(list);
     const report = JSON.parse(fs.readFileSync(path.join(LISTS, `${name}.report.json`), 'utf8'));
     const { fromRecords, fromReport } = recordMembers(list, records, report);
     const { joined, ...compared } = fromRecords;
@@ -140,7 +138,7 @@ test('the records are enough for the report: recordsOf over the writer\'s record
 test('a foreign writer\'s return is plain data and enough: the records through JSON, with nothing else, give recordsOf and print()\'s joins the same answers', async () => {
   for (const { name } of corpus) {
     const list = listOf(name);
-    const { records } = await emitStructure(list);
+    const { records } = await writeList(list);
     // What a writer in another language hands back: the declared members and nothing more, through JSON.
     const keys: (keyof WriterRecords)[] = ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans', 'faces', 'images', 'xobjects', 'paint', 'vectorResources', 'colour', 'emoji'];
     assert.deepEqual(Object.keys(records).sort(), keys.filter((k) => records[k] !== undefined).sort(), `${name}: the writer returns the declared records and nothing else`);
@@ -149,7 +147,7 @@ test('a foreign writer\'s return is plain data and enough: the records through J
   }
   // A hand-made return for a list with one text item: the writer's choices made up, and the joins complete.
   const list = listOf('arithmetic');
-  const { records } = await emitStructure(list);
+  const { records } = await writeList(list);
   const made: WriterRecords = { ...records, mcids: records.mcids.map((items) => [...items].reverse()), pens: records.pens.map((pen) => ({ ...pen, adjustments: pen.adjustments.map((a, at) => (at === 0 ? null : 7)) })) };
   const derived = recordsOf(list, made);
   assert.ok(derived.words.every((word) => word.emittedAdj === null || word.emittedAdj === 7), 'the words carry the made-up pen');
@@ -238,7 +236,7 @@ test('the list\'s tree is the tree the writer writes: every element, every /K in
   let compared = 0;
   for (const { name } of corpus) {
     const list = listOf(name);
-    compared += assertTreeIsWritten(name, list, treeOf(list), (await emitStructure(list)).bytes);
+    compared += assertTreeIsWritten(name, list, treeOf(list), (await writeList(list)).bytes);
   }
   assert.ok(compared > 150, `${compared} elements compared`);
 });
@@ -309,7 +307,7 @@ test('the resolver writes the attribute objects /A carries, in order, and leaves
 test('the writer refuses a tree that is not one, with a sentence', async () => {
   /** A copy of cast's list with its tree changed by `change`. */
   const broken = (change: (list: DisplayList) => void) => { const list = listOf('cast'); change(list); return list; };
-  const refused = async (list: DisplayList, pattern: RegExp) => assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && pattern.test(error.message));
+  const refused = async (list: DisplayList, pattern: RegExp) => assert.rejects(writeList(list), (error: unknown) => error instanceof CasterError && pattern.test(error.message));
   const parentOfOne = (list: DisplayList) => list.structure.elements.findIndex((e) => e.children.includes(1));
   await refused(broken((list) => { list.structure.elements[0].children.push(list.structure.elements.length); }), /lists child \d+, which is not an element below the root/);
   await refused(broken((list) => { list.structure.elements[0].children.push(1); }), /lists element 1, which/);
@@ -342,14 +340,14 @@ test('the widths cover every glyph a text item shows and every space glyph it na
   const instance = list.resources.fonts.find((f) => textItems(list).some((item) => item.font === f.key))!;
   const dropped = instance.widths.gids.pop()!;
   instance.widths.units.pop();
-  await assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && error.message.includes(`glyph ${dropped} of ${instance.key}`));
+  await assert.rejects(writeList(list), (error: unknown) => error instanceof CasterError && error.message.includes(`glyph ${dropped} of ${instance.key}`));
 });
 
 test('the fonts array order is the resource order: the writer embeds and names F0, F1, … in it, whatever the order', async () => {
   for (const reversed of [false, true]) {
     const list = listOf('paper');
     if (reversed) list.resources.fonts.reverse();
-    const emitted = await emitStructure(list);
+    const emitted = await writeList(list);
     const faces = emitted.records.faces;
     assert.deepEqual(faces.map((f) => f.id), list.resources.fonts.map((f) => f.key), 'the faces are recorded in the array order');
     const doc = mupdf.Document.openDocument(Buffer.from(emitted.bytes), 'application/pdf') as mupdf.PDFDocument;
@@ -385,16 +383,16 @@ test('a link that leaves the file carries its URI resolved: a relative href is a
 test('the writer reads the creation date from the list, and refuses one that is not an instant in UTC', async () => {
   const list = listOf('cast');
   list.info.created = '2026-11-02T10:20:30.456Z';
-  const text = Buffer.from((await emitStructure(list)).bytes).toString('latin1');
+  const text = Buffer.from((await writeList(list)).bytes).toString('latin1');
   assert.ok(text.includes('/CreationDate (D:20261102102030Z)') && text.includes('/ModDate (D:20261102102030Z)'), 'both dates, at whole seconds');
   list.info.created = '2026-11-02 10:20';
-  await assert.rejects(emitStructure(list), CasterError);
+  await assert.rejects(writeList(list), CasterError);
 });
 
 test('the writer refuses a list of another version', async () => {
   const list = listOf('cast');
   (list as { version: number }).version = 2;
-  await assert.rejects(emitStructure(list), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
+  await assert.rejects(writeList(list), (error: unknown) => error instanceof CasterError && /version 2/.test(error.message));
 });
 
 // --- validateList: what a writer could not write, refused before a byte -----------------------------
@@ -462,7 +460,7 @@ test('an arithmetic-coded JPEG is handed through: the pass is refused a decode i
   const source = list.resources.images[0];
   assert.ok(source.blob && source.mime === 'image/jpeg' && source.samples === undefined, 'the list holds the file');
   assert.match(String(source.refusal), /could not decode image\/jpeg/u, 'and the page\'s refusal');
-  const emitted = await emitStructure(list);
+  const emitted = await writeList(list);
   const [image] = imagesOf(emitted.bytes).values();
   assert.equal(image.get('Filter').asName(), 'DCTDecode');
   assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(file.bytes)), 'the stream is the file, byte for byte');
@@ -477,7 +475,7 @@ test('a WebP reaches the list as the browser\'s pixels, and the writer writes th
   assert.deepEqual({ colorSpace: samples.colorSpace, bitsPerComponent: samples.bitsPerComponent }, { colorSpace: 'DeviceRGB', bitsPerComponent: 8 });
   const rgba = list.resources.blobs[samples.blob];
   assert.equal(rgba.length, samples.width * samples.height * 4, 'RGBA, four bytes a pixel');
-  const [image] = imagesOf((await emitStructure(list)).bytes).values();
+  const [image] = imagesOf((await writeList(list)).bytes).values();
   assert.deepEqual([image.get('Width').asNumber(), image.get('Height').asNumber(), image.get('ColorSpace').asName(), image.get('BitsPerComponent').asNumber(), image.get('Filter').asName()], [samples.width, samples.height, 'DeviceRGB', 8, 'FlateDecode']);
   const rgb = rgba.filter((_, i) => i % 4 !== 3);
   assert.ok(bytesOf(image.readStream()).equals(Buffer.from(rgb)), 'the stream inflates to the list\'s RGB');
@@ -499,7 +497,7 @@ test('a PNG no predictor describes reaches the list as its own samples, decoded 
     assert.ok(Buffer.from(prepared.png!.data).equals(Buffer.from(list.resources.blobs[source.samples!.blob])), `${name}: node's decode is the page's, byte for byte`);
     assert.equal(source.blob, undefined, `${name}: the list does not hold the PNG`);
   }
-  const doc = mupdf.Document.openDocument(Buffer.from((await emitStructure(list)).bytes), 'application/pdf') as mupdf.PDFDocument;
+  const doc = mupdf.Document.openDocument(Buffer.from((await writeList(list)).bytes), 'application/pdf') as mupdf.PDFDocument;
   const images: mupdf.PDFObject[] = [];
   for (let page = 0; page < doc.countPages(); page++) doc.loadPage(page).getObject().get('Resources').get('XObject')?.forEach((obj) => { if (obj.get('Subtype').asName() === 'Image') images.push(obj); });
   const indexed = images.filter((image) => image.get('ColorSpace').isArray() && image.get('ColorSpace').get(0).asName() === 'Indexed');
@@ -517,7 +515,7 @@ test('the photo rule\'s choice and quality are the pass\'s: the list holds its J
   assert.equal(list.resources.blobs[source.jpeg!].length, photo.candidates[0].bytes, 'the JPEG is the chosen candidate');
   assert.equal(source.blob, undefined, 'the list does not hold the PNG');
   assert.equal(source.original?.format, 'image/png');
-  const [image] = imagesOf((await emitStructure(list)).bytes).values();
+  const [image] = imagesOf((await writeList(list)).bytes).values();
   assert.equal(image.get('Filter').asName(), 'DCTDecode');
   assert.ok(bytesOf(image.readRawStream()).equals(Buffer.from(list.resources.blobs[source.jpeg!])), 'the file carries the pass\'s JPEG');
   // The gates and the sampled look are arithmetic over the PNG's own samples, so node reaches the same verdict the page did.
@@ -589,7 +587,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
     await page.evaluate(() => document.fonts.ready);
     /** What the page answers. */
     type Seen = { version: number; created: string; fonts: { key: string; coords: Record<string, number>; gids: number[]; units: number[]; harfbuzz: number[] }[]; used: { font: string; gids: number[] }[]; links: { href: string; uri?: string }[]; file: string };
-    const seen: Seen = await page.evaluate(async () => {
+    const seen: Seen = await page.evaluate(async (writer: string) => {
       const load = (p: string) => import(p);
       const caster = await load('/src/index.js');
       // The module the print shaped with: one URL, one instance, one registry of fonts.
@@ -607,7 +605,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
           pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(box.width), heightPt: pt(box.height) }, declaredPx: { widthPx: box.width, heightPx: box.height }, contentArea: strip, continuations: [] }],
           pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
         },
-      });
+      }, { writer });
       const list = printed.displayList;
       const fonts = list.resources.fonts.map((f: any) => ({
         key: f.key,
@@ -625,7 +623,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         links: items.filter((i: any) => i.kind === 'link').map((i: any) => i.target),
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
-    });
+    }, WRITER);
     assert.equal(seen.version, 6);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
@@ -652,7 +650,7 @@ test('in the page: one WebP painted twice is decoded once, names one blob of pix
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/twice`);
     await page.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map((image) => image.decode())); });
-    const seen: { decodes: number; sources: { samples?: string; blob?: string }[]; painted: number; file: string } = await page.evaluate(async () => {
+    const seen: { decodes: number; sources: { samples?: string; blob?: string }[]; painted: number; file: string } = await page.evaluate(async (writer: string) => {
       const load = (p: string) => import(p);
       const caster = await load('/src/index.js');
       // Count the browser's decodes of a WebP: the image pass is the only caller.
@@ -671,7 +669,7 @@ test('in the page: one WebP painted twice is decoded once, names one blob of pix
           pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(box.width), heightPt: pt(box.height) }, declaredPx: { widthPx: box.width, heightPx: box.height }, contentArea: strip, continuations: [] }],
           pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
         },
-      });
+      }, { writer });
       const list = printed.displayList;
       let binary = '';
       for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
@@ -681,7 +679,7 @@ test('in the page: one WebP painted twice is decoded once, names one blob of pix
         painted: list.pages.flatMap((p: any) => p.items).filter((item: any) => item.kind === 'image').length,
         file: btoa(binary),
       };
-    });
+    }, WRITER);
     assert.equal(seen.decodes, 1, 'the WebP is decoded once');
     assert.equal(seen.painted, 2, 'and painted twice');
     assert.equal(seen.sources.length, 2, 'two image sources, one per element');

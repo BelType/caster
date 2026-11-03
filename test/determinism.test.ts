@@ -13,9 +13,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { load } from '../src/capabilities.ts';
-import { loadSubsetter } from '../src/fonts/hbSubset.ts';
-import { emitStructure } from '../src/emit/structureEmit.ts';
+import { WRITER, loadWriters, writeList } from './writer.ts';
 import { validateList } from '../src/displayList/validate.ts';
 
 import type { DisplayList, StructChild } from '../src/displayList.ts';
@@ -39,18 +37,18 @@ function keysReversed(value: unknown): any {
   return Object.fromEntries(Object.keys(value).reverse().map((key) => [key, keysReversed((value as Record<string, unknown>)[key])]));
 }
 
-const written = async (list: DisplayList) => Buffer.from((await emitStructure(list)).bytes);
+const written = async (list: DisplayList) => Buffer.from((await writeList(list)).bytes);
 
 before(async () => {
-  await load(['pdf', 'fontkit', 'hbSubset', 'fastPng']);
-  await loadSubsetter();
+  await loadWriters();
 });
 
-test('each committed list written twice gives the same bytes, and the committed file', async () => {
+test('each committed list written twice gives the same bytes, and, by the oracle, the committed file', async () => {
   for (const { name } of corpus) {
     const first = await written(listOf(name));
     assert.ok(first.equals(await written(listOf(name))), `${name}: the second write is the first`);
-    assert.ok(first.equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: and the committed file`);
+    // The committed file is the oracle's; forme is held to it by the readers (`npm run identity -- compare`), not by its bytes.
+    if (WRITER === 'pdf-lib') assert.ok(first.equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: and the committed file`);
   }
 });
 
