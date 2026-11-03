@@ -130,13 +130,13 @@
   },
   {
    "name": "cff2",
-   "why": "a CFF2 variable face with `HVAR` (HarfBuzz's subset of Source Serif 4 Variable) at weight 700, away from its default master",
-   "refused": "caster: Source Serif 4 Variable#2|opsz=32,wght=700 glyph 1: layout used an advance of 635 but the embedded program's hmtx carries 645 after pinning {\"wght\":700,\"opsz\":32}",
+   "why": "a CFF2 variable face with `HVAR` (HarfBuzz's Hello World subset of Source Serif 4 Variable, its space glyph among them) at weight 700, away from its default master",
+   "refused": "caster: Source Serif 4 Variable#2|opsz=32,wght=700 glyph 1: layout used an advance of 208 but the embedded program's hmtx carries 233 after pinning {\"wght\":700,\"opsz\":32}",
    "list": {
-    "bytes": 5428,
+    "bytes": 5588,
     "blobs": [
-     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "5b572e01c0e07cad835bc3ed5ea4df977cac57993ebeb238956bbd9b9c21670b"
+     "345dbc9c76c982d443190dba173d94d91f06537651ee8643de956a064eb78863",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
    }
   },
