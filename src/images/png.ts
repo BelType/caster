@@ -13,10 +13,14 @@
  *
  * The decoder is for the three cases where that does not hold. Alpha has to become a separate `/SMask` stream, and PDF has no way to split an interleaved RGBA scanline. Adam7 interleaves seven reduced images that PDF's predictor knows nothing about. And a palette with `tRNS` needs the alpha looked up per pixel. In all three the samples come out of `fast-png`, which reads the file's own bit depth rather than a canvas's eight bits.
  *
+ * The decode runs in the image pass, before the display list, and {@link pngPixels} shapes its samples as the list carries them (version 6, Egildo's ruling of 2026-11-03 amending *the same list prints the same bytes*, S102); the writer reads this module's chunk reader and never its decoder.
+ *
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
 import { CasterError } from '../errors.ts';
+
+import type { PngDecodeReason } from '../displayList.ts';
 
 const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -216,4 +220,85 @@ export function decodePng(bytes: Uint8Array): PngSamples {
 export async function inflate(deflated: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([(deflated as BlobPart)]).stream().pipeThrough(new DecompressionStream('deflate'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/**
+ * One sample per byte, from a PNG's packed sub-byte rows.
+ *
+ * @remarks
+ * A PNG scanline of depth 1, 2 or 4 is packed most-significant bit first and padded to a whole byte at the end of each row, so the stride is `ceil(width * depth / 8)` and the last bits of a row are not the first pixels of the next. fast-png hands the packed buffer over as it stands; the list wants one sample a byte.
+ *
+ * @param depth - 1, 2 or 4.
+ */
+export function unpackSubByte(packed: Uint8Array, depth: number, width: number, height: number): Uint8Array {
+  const perByte = 8 / depth;
+  const mask = (1 << depth) - 1;
+  const stride = Math.ceil((width * depth) / 8);
+  const out = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const byte = packed[y * stride + Math.floor(x / perByte)] ?? 0;
+      const shift = (perByte - 1 - (x % perByte)) * depth;
+      out[y * width + x] = (byte >> shift) & mask;
+    }
+  }
+  return out;
+}
+
+/** A decoded PNG as the display list carries it: an `ImageSamples` with its bytes in place of its blob keys. */
+export type PngPixels = {
+  width: number;
+  height: number;
+  /** Interleaved, row-major from the top: each pixel's colour components, then its alpha where `alpha` is set; big-endian at 16 bits. */
+  data: Uint8Array;
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
+  bitsPerComponent: 8 | 16;
+  alpha: boolean;
+  /** The `PLTE`, with `Indexed`. */
+  palette?: Uint8Array;
+  /** The `iCCP` profile, inflated, never with `Indexed`. */
+  icc?: Uint8Array;
+  why: PngDecodeReason;
+};
+
+/**
+ * Decode a PNG whose `IDAT` no predictor describes, into the samples the list carries: the file's own depth (a depth under 8 unpacked to one sample a byte), its own colour space, the palette's index with its `tRNS` alpha beside it, the profile inflated.
+ *
+ * @throws {CapabilityError} The `fastPng` capability was not loaded.
+ * @throws {CasterError} A palettised PNG with no `PLTE`.
+ */
+export async function pngPixels(bytes: Uint8Array, info: PngInfo): Promise<PngPixels> {
+  const decoded = decodePng(bytes);
+  const { width, height } = info;
+  const pixels = width * height;
+  const why: PngDecodeReason = info.hasAlphaChannel ? 'alpha' : info.interlace !== 0 ? 'interlace' : 'palette-trns';
+  const icc = info.iccpDeflated && info.colorType !== PngColorType.Palette ? { icc: await inflate(info.iccpDeflated) } : {};
+  if (info.colorType === PngColorType.Palette) {
+    if (!info.palette) throw new CasterError('png: a palettised PNG with no PLTE');
+    const indices = decoded.depth < 8 ? unpackSubByte((decoded.data as Uint8Array), decoded.depth, width, height) : (decoded.data as Uint8Array);
+    // fast-png folds `tRNS` into its RGBA palette entries; an entry it gives no alpha is opaque.
+    let data = indices;
+    if (info.trns !== null) {
+      data = new Uint8Array(pixels * 2);
+      for (let i = 0; i < pixels; i++) {
+        const entry = decoded.palette?.[indices[i]];
+        data[i * 2] = indices[i];
+        data[i * 2 + 1] = entry && entry.length > 3 ? entry[3] : 255;
+      }
+    }
+    return { width, height, data, colorSpace: 'Indexed', bitsPerComponent: 8, alpha: info.trns !== null, palette: info.palette, why };
+  }
+  const colorSpace = info.colorType === PngColorType.Rgb || info.colorType === PngColorType.Rgba ? 'DeviceRGB' : 'DeviceGray';
+  let data: Uint8Array;
+  if (decoded.depth === 16) {
+    const samples = (decoded.data as Uint16Array);
+    data = new Uint8Array(samples.length * 2);
+    for (let i = 0; i < samples.length; i++) {
+      data[i * 2] = samples[i] >> 8;
+      data[i * 2 + 1] = samples[i] & 0xff;
+    }
+  } else {
+    data = decoded.depth < 8 ? unpackSubByte((decoded.data as Uint8Array), decoded.depth, width, height) : (decoded.data as Uint8Array);
+  }
+  return { width, height, data, colorSpace, bitsPerComponent: decoded.depth === 16 ? 16 : 8, alpha: info.hasAlphaChannel, ...icc, why };
 }

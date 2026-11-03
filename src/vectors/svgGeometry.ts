@@ -417,6 +417,8 @@ function paintElement(context: SvgContext, element: Element, clips: ClipSpec[]):
           formReason: `opacity ${style.opacity} over a fill and a stroke that overlap`,
         };
       }
+      // A shape with markers is a group, and `opacity` fades the shape and its markers together, once.
+      if (node.kind === 'group') return { ...node, opacity, forceForm: true, formReason: node.formReason || `opacity ${style.opacity} on ${domPath}, its markers included` };
       return { ...node, opacity: node.opacity * opacity, strokeOpacity: node.strokeOpacity * opacity };
     }
     return node;
@@ -440,6 +442,13 @@ function localBoxOf(context: SvgContext, rect: DOMRect): Box {
 /** The rectangle an `<svg>` element clips its content to, in page points. */
 function viewportClip(context: SvgContext, element: Element, domPath: string): ClipSpec[] {
   if (getComputedStyle(element).overflow === 'visible') return [];
+  // A nested `<svg>`'s viewport is its `x`, `y`, `width` and `height` in its parent's user space; its client rectangle is the box around what it draws, which is no clip at all.
+  if (element !== context.svg && element.parentElement) {
+    const nested = element as SVGSVGElement;
+    const box: Box = { x: nested.x.baseVal.value, y: nested.y.baseVal.value, w: nested.width.baseVal.value, h: nested.height.baseVal.value };
+    if (box.w <= 0 || box.h <= 0) return [];
+    return [{ path: transformPath(roundedRectPath(box), context.toPageOf(element.parentElement)), evenOdd: false, reason: `the <svg> viewport at ${domPath}` }];
+  }
   const box = localBoxOf(context, element.getBoundingClientRect());
   if (box.w <= 0 || box.h <= 0) return [];
   return [{ path: transformPath(roundedRectPath(box), context.toPage), evenOdd: false, reason: `the <svg> viewport at ${domPath}` }];
@@ -547,14 +556,19 @@ function shapeNode(context: SvgContext, element: Element, style: CSSStyleDeclara
   // E12c (`vector-painting.md`): markers are painted after the shape they belong to, which is SVG's own order — an arrowhead sits on top of the line it ends.
   const markerNodes = markerNodesFor(context, element, style, local, toPage, widthUser, domPath);
   if (markerNodes.length === 0) return shape;
+  // A marker is part of its element's rendering (SVG 2 §11.6.2), so the element's mask and blend mode apply to the shape and its markers together, composited once: they go on the group, which becomes a form, and the shape inside keeps its fill and stroke alpha alone. On the shape they masked and blended the line and left the arrowheads as they were.
+  const { softMask: _mask, ...bare } = shape;
+  const composite = mask !== undefined || blend !== 'Normal';
   return {
     ...emptyNodeCommon(domPath, `${label}:with-markers`),
     kind: 'group',
-    children: [{ ...shape, clips: [] }, ...markerNodes],
+    children: [{ ...bare, clips: [], blend: 'Normal' }, ...markerNodes],
     clips,
     bboxPt: bboxOf([shape, ...markerNodes]),
-    forceForm: false,
-    formReason: '',
+    blend,
+    ...(mask ? { softMask: mask } : {}),
+    forceForm: composite,
+    formReason: !composite ? '' : mask ? `mask on ${domPath}, its markers included` : `mix-blend-mode: ${style.mixBlendMode} on ${domPath}, its markers included`,
   };
 }
 
@@ -904,9 +918,9 @@ function gradientSpec(context: SvgContext, element: Element, server: Element, to
     const extent = (units === 'userSpaceOnUse' ? diagonal : Math.SQRT2) / Math.max(r - fr, 1e-6);
     const span = stops[stops.length - 1].offset - stops[0].offset;
     const count = periodsFor(extent, span);
-    const unrolled = unrollGradient(stops, spread, count);
+    // The radius axis runs from the focal circle to the end circle; unrolling stretches it the same way an axial gradient's line is stretched, cut where the radius reaches zero, because a circle has no negative radius.
+    const unrolled = unrollGradient(stops, spread, count, -fr / Math.max(r - fr, 1e-6));
     stops = unrolled.stops;
-    // The radius axis runs from the focal circle to the end circle; unrolling stretches it the same way an axial gradient's line is stretched, with the inner end clamped at zero because a circle has no negative radius.
     innerRadius = Math.max(0, fr + unrolled.fromT * (r - fr));
     outerRadius = fr + unrolled.toT * (r - fr);
     periods = 2 * count + 1;
@@ -968,15 +982,19 @@ function elementClips(context: SvgContext, element: Element, style: CSSStyleDecl
   const units = clipPath.getAttribute('clipPathUnits') ?? 'userSpaceOnUse';
   const bbox = (element as SVGGraphicsElement).getBBox();
   const unitsMatrix: Matrix = units === 'objectBoundingBox' ? [bbox.width, 0, 0, bbox.height, bbox.x, bbox.y] : IDENTITY;
-  const evenOdd = getComputedStyle(clipPath).clipRule === 'evenodd';
 
+  // `clip-rule` is each child's own (SVG 2 §14.3.5); it inherits, so one set on the `<clipPath>` reaches every child. The children are one path under one rule, so a rule they do not share is said out loud and the clip takes nonzero.
   const path: Path = [];
+  const rules = new Set<string>();
   for (const child of clipPath.children) {
     const local = shapePath(child);
     if (!local || local.length === 0) continue;
+    rules.add(getComputedStyle(child).clipRule);
     path.push(...transformPath(local, mul(mul(localMatrix(child), unitsMatrix), toPage)));
   }
   if (path.length === 0) return [];
+  if (rules.size > 1) context.out.deferred.push({ path: domPath, feature: `clip-rule differing between the children of <clipPath id="${id}">`, paintedAs: 'one path clipped by nonzero' });
+  const evenOdd = rules.size === 1 && rules.has('evenodd');
   return [{ path, evenOdd, reason: `clip-path url(#${id}) on ${domPath}, ${units}` }];
 }
 
@@ -1182,13 +1200,24 @@ function rasterOf(context: SvgContext, element: Element, style: CSSStyleDeclarat
     if (target.contains(candidate)) continue;
     candidate.remove();
   }
+  // The ancestors' opacity, mask, filter and blend mode are painted by the vector group the raster sits in (`groupNode`), so they are neutralised here, or a `<g mask>` or `<g opacity>` would be applied twice, once in the pixels and once around them. The element's own stay: nothing outside the raster paints them.
+  for (let node: Element | null = target.parentElement; node && node !== clone; node = node.parentElement) {
+    const own = (node as Element & ElementCSSInlineStyle).style;
+    own.setProperty('opacity', '1');
+    own.setProperty('mask', 'none');
+    own.setProperty('filter', 'none');
+    own.setProperty('mix-blend-mode', 'normal');
+  }
+  clone.setAttribute('x', '0');
+  clone.setAttribute('y', '0');
   clone.setAttribute('width', String(svgBox.w));
   clone.setAttribute('height', String(svgBox.h));
 
+  // The clone goes in whole, its `viewBox` with it: its content is in the drawing's user units, and only the `<svg>` maps them to the px the box is measured in. Its children alone were drawn one user unit a px, small and in the corner.
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${box.w}" height="${box.h}" viewBox="0 0 ${box.w} ${box.h}">`,
     `<g transform="translate(${offsetX - box.x} ${offsetY - box.y})">`,
-    clone.innerHTML,
+    new XMLSerializer().serializeToString(clone),
     '</g></svg>',
   ].join('');
 

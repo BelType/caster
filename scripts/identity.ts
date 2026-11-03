@@ -1,5 +1,5 @@
 /**
- * `npm run identity -- record|check|replay [dir]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list.
+ * `npm run identity -- record|check|replay [dir] [--writer forme]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list; `npm run identity -- compare <dir> [--only <families>]` holds forme's files in `<dir>` to the oracle's with the readers of `scripts/compare.ts`; `npm run identity -- browser <dir>` holds both writers' files to the browser, drawing by drawing.
  *
  * @remarks
  * Ported from the monorepo's `packages/caster/scripts/identity.js` (Caster 0.32.0), which is a model and not a dependency: its corpus and doors (the editing tools, the CLI's `Orchestrator`, Paged.js) are not this repository's. The shape is kept: `record` prints the corpus and writes each file, `check` prints it again and compares bytes. **No byte is masked.** The door hands every print the same `created` (2000-01-01T00:00:00Z), which the display list carries as `info.created` and the writer writes into `/CreationDate` and `/ModDate`, so the gate compares the files exactly; a file that does not carry that date in both entries is a failure, so a writer that went back to a clock cannot turn the gate into a quiet pass.
@@ -10,7 +10,13 @@
  *
  * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, holds it to `validateList`, hands it to `emitStructure` with nothing beside it, and compares the bytes with the recorded file. What differs or throws is a writer that is no longer a function of the list; nothing here fixes it.
  *
- * Kept out of `npm test`: it prints eight documents in Chromium.
+ * **`--writer forme`** prints with the Rust writer (Caster's `writer` flag). `replay --writer forme --out <dir>` writes every saved list with the vendored module in node, each twice, into `<dir>`: the files and records `compare` reads, and a `corpus.json` naming them by their SHA-256. `check <dir> --writer forme` then prints the corpus in the page with forme and holds each file to those bytes, so the page and node agree. Under forme no document refuses in the writer, and no file is held to `beltype print`'s, which prints with the default; `record` stays the oracle's.
+ *
+ * **A document that `refuses`** is one the oracle refuses in its writer (the CFF2 face, whose pinned `hmtx` is not the instance's): its page loads the writer through a wrapper that keeps the list it was handed, and `corpus.json` records the refusal's message with no file and no report; `check` asks for the same refusal and the same list, and `replay` for the same refusal from the saved list.
+ *
+ * **`browser <dir> [--out <dir>]`** is the gate against the browser, since two writers can agree and both be wrong (Egildo's ruling 13 of the Rust writer): every corpus document that names drawings (`data-drawing`) is looked at through the same door as its author sees it, at two device pixels a CSS px, and each drawing's region is held to the oracle's file and to forme's in `<dir>`, rendered by mupdf and by yapr at the same resolution (`againstBrowser`, `scripts/compare.ts`, which states the method and the line). `--out` writes each drawing's crops as PNG.
+ *
+ * Kept out of `npm test`: it prints fifteen documents in Chromium.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stage 0)
  * @packageDocumentation
@@ -22,7 +28,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { chromium, type BrowserContext } from 'playwright-core';
+import { chromium, type BrowserContext, type Page } from 'playwright-core';
 import { contentType } from '@beltype/common/mime';
 import { CasterError } from '../src/errors.ts';
 
@@ -43,6 +49,9 @@ const FIXED_DATE = 'D:20000101000000Z';
 const FIXED_CREATED = '2000-01-01T00:00:00.000Z';
 const DATE_PATTERN = /(\/(?:CreationDate|ModDate) \()D:[^)]*\)/gu;
 
+/** The writer the page prints with, `--writer` on the command line: the oracle's by default. Under `forme` no document refuses in the writer, since forme writes the CFF2 face, and no file is held to `beltype print`'s, which prints with the default. */
+let WRITER: 'pdf-lib' | 'forme' = 'pdf-lib';
+
 /**
  * One document of the corpus.
  *
@@ -50,8 +59,9 @@ const DATE_PATTERN = /(\/(?:CreationDate|ModDate) \()D:[^)]*\)/gu;
  * @property options - Caster's flags for this print; the defaults when absent, as `beltype print` passes them.
  * @property cli - Also printed by `beltype print`, whose file must equal the door's.
  * @property why - The road the document is in the corpus for.
+ * @property refuses - The oracle is expected to refuse the print in its writer: the list the builder handed the writer is recorded, with the refusal, and no file.
  */
-type Doc = { name: string; file: string; root?: string; options?: Record<string, unknown>; cli?: boolean; why: string };
+type Doc = { name: string; file: string; root?: string; options?: Record<string, unknown>; cli?: boolean; why: string; refuses?: true };
 
 const CORPUS: Doc[] = [
   { name: 'paper', file: path.join(SPECIMENS, 'paper', 'index.html'), cli: true, why: 'the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces' },
@@ -61,7 +71,14 @@ const CORPUS: Doc[] = [
   { name: 'facsimile', file: path.join(FIXTURES, 'roads', 'facsimile.html'), root: FIXTURES, why: 'a page of another PDF, reopened by pdf-lib inside the writer' },
   { name: 'webp', file: path.join(FIXTURES, 'roads', 'webp.html'), root: FIXTURES, why: 'a WebP, which the image pass decodes through the browser before the list' },
   { name: 'arithmetic', file: path.join(FIXTURES, 'roads', 'arithmetic.html'), root: FIXTURES, why: 'an arithmetic-coded JPEG, which the browser refuses to decode, so the image pass hands the file through' },
-  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list' }
+  { name: 'photo', file: path.join(FIXTURES, 'roads', 'photo.html'), root: FIXTURES, why: 'an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list' },
+  { name: 'faces', file: path.join(FIXTURES, 'roads', 'faces.html'), root: FIXTURES, why: 'a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2' },
+  { name: 'cff2', file: path.join(FIXTURES, 'roads', 'cff2.html'), root: FIXTURES, why: 'a CFF2 variable face with `HVAR` (HarfBuzz\'s Hello World subset of Source Serif 4 Variable, its space glyph among them) at weight 700, away from its default master', refuses: true },
+  { name: 'images', file: path.join(FIXTURES, 'roads', 'images.html'), root: FIXTURES, why: 'a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel' },
+  { name: 'facsimile-pages', file: path.join(FIXTURES, 'roads', 'facsimile-pages.html'), root: FIXTURES, why: 'two pages of one facsimile file' },
+  { name: 'vectors', file: path.join(FIXTURES, 'roads', 'vectors.html'), root: FIXTURES, why: 'an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)' },
+  { name: 'pages', file: path.join(FIXTURES, 'roads', 'pages.html'), root: FIXTURES, why: 'a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)' },
+  { name: 'vector-roads', file: path.join(FIXTURES, 'roads', 'vector-roads.html'), root: FIXTURES, why: 'every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo\'s ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend' }
 ];
 
 // ---- small helpers ---------------------------------------------------------------------------------------------------
@@ -130,7 +147,7 @@ function firstDifference(a: unknown, b: unknown, at = ''): string | null {
 // ---- the door --------------------------------------------------------------------------------------------------------
 
 /** What the page hands back: the file, the list without its blobs, the blobs and the report. */
-type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; ms: number };
+type Printed = { bytes: Buffer; list: string; blobs: Record<string, Buffer>; report: unknown; ms: number; refused?: string };
 
 /** The CLI's modules, from its checkout: its in-page cut and the Cicero it serves. */
 async function cliParts() {
@@ -146,31 +163,42 @@ async function cliParts() {
 
 /**
  * Caster prints the presented pages and hands back everything this script records. Runs in the page, so it closes over nothing.
+ *
+ * @remarks
+ * Where the print refuses and the writer had been handed a list (`__identityList`, set by {@link CAPTURE_EMIT} for a document that `refuses`), the list comes back beside the refusal's message.
  */
 async function printInPage({ options, created }: { options: Record<string, unknown>; created: string }) {
+  const base64 = (bytes: Uint8Array) => {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(binary);
+  };
+  const bare = (list: { resources: { blobs: Record<string, Uint8Array> } }) => {
+    const blobs: Record<string, string> = {};
+    for (const [hash, bytes] of Object.entries(list.resources.blobs)) blobs[hash] = base64(bytes);
+    return { list: JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } }), blobs };
+  };
   try {
     const load = (url: string) => import(url);
     const caster = await load('/_beltype/caster/src/index.js');
     const started = performance.now();
     const printed = await caster.print({ document, created }, options);
     const ms = performance.now() - started;
-    const base64 = (bytes: Uint8Array) => {
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      return btoa(binary);
-    };
-    const list = printed.displayList;
-    const blobs: Record<string, string> = {};
-    for (const [hash, bytes] of Object.entries(list.resources.blobs as Record<string, Uint8Array>)) blobs[hash] = base64(bytes);
-    const bare = JSON.stringify({ ...list, resources: { ...list.resources, blobs: undefined } });
-    return { base64: base64(printed.bytes), list: bare, blobs, report: JSON.stringify(printed.report), ms };
+    return { base64: base64(printed.bytes), ...bare(printed.displayList), report: JSON.stringify(printed.report), ms };
   } catch (error) {
-    return { refused: String((error as Error | undefined)?.stack ?? error) };
+    const handed = (globalThis as { __identityList?: Parameters<typeof bare>[0] }).__identityList;
+    return { refused: String((error as Error | undefined)?.stack ?? error), message: String((error as Error | undefined)?.message ?? error), ...(handed ? bare(handed) : {}) };
   }
 }
 
+/** The writer's module as the page of a document that `refuses` loads it, through its import map: the real one, whose `emitStructure` keeps the list it is handed where {@link printInPage} finds it after a refusal. */
+const CAPTURE_EMIT = `import * as real from '/_beltype/caster/src/emit/structureEmit.js?real';
+export * from '/_beltype/caster/src/emit/structureEmit.js?real';
+export async function emitStructure(list, ...rest) { globalThis.__identityList = list; return real.emitStructure(list, ...rest); }
+`;
+
 /** Every request answered from disk, as `beltype print` answers it; anything else is a refusal. */
-async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: { root: string; docPath: string; served: string; dirs: Record<string, string>; files: Record<string, string> }) {
+async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: { root: string; docPath: string; served: string; dirs: Record<string, string>; files: Record<string, string>; bodies?: Record<string, string> }) {
   const within = (dir: string, rel: string) => {
     const file = path.resolve(dir, rel);
     const inside = path.relative(dir, file);
@@ -180,6 +208,8 @@ async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: 
     const url = new URL(route.request().url());
     if (url.origin !== ORIGIN) { missing.add(url.href); return route.abort('blockedbyclient'); }
     if (url.pathname === o.docPath) return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: o.served });
+    const body = o.bodies?.[url.pathname];
+    if (body !== undefined) return route.fulfill({ status: 200, contentType: 'text/javascript; charset=utf-8', body });
     const pathname = decodeURIComponent(url.pathname);
     let file: string | null = null;
     if (pathname.startsWith('/_beltype/')) {
@@ -195,33 +225,35 @@ async function answerFromDisk(context: BrowserContext, missing: Set<string>, o: 
   });
 }
 
-/** Print every document through one browser, a fresh context each. */
-async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => void | Promise<void>) {
+/**
+ * Open every document through the CLI's door, one browser and a fresh context each, cut it with the CLI's `cutInPage`, and hand the page to `visit`.
+ *
+ * @param look - Where the page is looked at rather than printed: the browser drops the print's forced device scale factor and the context takes `scale`, as an author's screen does.
+ */
+async function throughDoor(docs: Doc[], visit: (doc: Doc, page: Page, done: { started: number; refuses: boolean; missing: Set<string> }) => Promise<void>, look: { scale: number } | null = null) {
   const parts = await cliParts();
   const cicero = parts.ciceroEngine.vendorAssets();
   // `caster` is this checkout's `dist/`, as `beltype print` serves the Caster it resolves.
   const dirs = { ...cicero.dirs, caster: path.join(PACKAGE, 'dist'), common: parts.common };
   const imports = Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/_beltype/common/${m}.js`]));
-  const browser = await chromium.launch({ headless: true, args: ARGS });
+  const browser = await chromium.launch({ headless: true, args: look ? ARGS.filter((a) => !a.startsWith('--force-device-scale-factor')) : ARGS });
   try {
     for (const doc of docs) {
       const started = Date.now();
       const root = doc.root ?? path.dirname(doc.file);
       const docPath = `/${path.relative(root, doc.file).split(path.sep).map(encodeURIComponent).join('/')}`;
-      const served = parts.spliceHead(fs.readFileSync(doc.file, 'utf8'), `<script type="importmap">${JSON.stringify({ imports })}</script>\n  ${parts.ciceroEngine.headHtml('/')}`);
-      const context = await browser.newContext({ viewport: VIEWPORT, serviceWorkers: 'block' });
+      const refuses = Boolean(doc.refuses && WRITER === 'pdf-lib' && !look);
+      const capture = refuses ? { '/_beltype/caster/src/emit/structureEmit.js': '/_beltype/identity/capture-emit.js' } : {};
+      const served = parts.spliceHead(fs.readFileSync(doc.file, 'utf8'), `<script type="importmap">${JSON.stringify({ imports: { ...imports, ...capture } })}</script>\n  ${parts.ciceroEngine.headHtml('/')}`);
+      const context = await browser.newContext({ viewport: VIEWPORT, serviceWorkers: 'block', ...(look ? { deviceScaleFactor: look.scale } : {}) });
       try {
         const missing = new Set<string>();
-        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files });
+        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files, ...(refuses ? { bodies: { '/_beltype/identity/capture-emit.js': CAPTURE_EMIT } } : {}) });
         const page = await context.newPage();
         await page.goto(ORIGIN + docPath, { waitUntil: 'load' });
         const cut: { refused?: string; at?: string } = await page.evaluate(parts.cutInPage, { cicero: {}, measures: false });
         if (cut.refused !== undefined) throw new CasterError(`identity: ${doc.name}: the ${cut.at} step refused: ${cut.refused}`);
-        const answer = await page.evaluate(printInPage, { options: doc.options ?? {}, created: FIXED_CREATED });
-        if ('refused' in answer) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
-        if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
-        const blobs = Object.fromEntries(Object.entries(answer.blobs).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
-        await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), ms: Date.now() - started });
+        await visit(doc, page, { started, refuses, missing });
       } finally {
         await context.close();
       }
@@ -229,6 +261,19 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
   } finally {
     await browser.close();
   }
+}
+
+/** Print every document through the door. */
+async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => void | Promise<void>) {
+  await throughDoor(docs, async (doc, page, { started, refuses, missing }) => {
+    const answer = await page.evaluate(printInPage, { options: { ...doc.options, ...(WRITER === 'forme' ? { writer: 'forme' } : {}) }, created: FIXED_CREATED });
+    if ('refused' in answer && !(refuses && answer.list)) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
+    if (refuses && !('refused' in answer)) throw new CasterError(`identity: ${doc.name}: the print was expected to refuse in the writer, and printed`);
+    if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
+    const blobs = Object.fromEntries(Object.entries(answer.blobs ?? {}).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
+    if ('refused' in answer) await each(doc, { bytes: Buffer.alloc(0), list: answer.list as string, blobs, report: null, ms: Date.now() - started, refused: answer.message });
+    else await each(doc, { bytes: Buffer.from(answer.base64, 'base64'), list: answer.list, blobs, report: JSON.parse(answer.report), ms: Date.now() - started });
+  });
 }
 
 /** The same document printed by `beltype print` itself, its dates set to the door's. */
@@ -243,20 +288,26 @@ function viaCli(doc: Doc): Buffer {
   }
 }
 
+/** The commits the corpus is printed with: this checkout's, and the Cicero checkout's the CLI's door serves (`node_modules/@beltype/cicero`, a link to the sibling), each short. */
+function heads(): { caster: string; cicero: string } {
+  const rev = (cwd: string) => execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd }).toString().trim();
+  return { caster: rev(PACKAGE), cicero: rev(fs.realpathSync(path.join(CLI, 'node_modules', '@beltype', 'cicero'))) };
+}
+
 // ---- the verbs -------------------------------------------------------------------------------------------------------
 
-/** One recorded document, as `corpus.json` lists it. */
-type Entry = { name: string; why: string; sha256: string; bytes: number; options?: Record<string, unknown>; cli?: 'same' | string; list?: { bytes: number; blobs: string[] } };
+/** One recorded document, as `corpus.json` lists it: a file's hash and size, or, for a document that `refuses`, the writer's refusal. */
+type Entry = { name: string; why: string; sha256?: string; bytes?: number; refused?: string; options?: Record<string, unknown>; cli?: 'same' | string; list?: { bytes: number; blobs: string[] } };
 
 async function record(dir: string, listOut: string | null) {
   fs.mkdirSync(dir, { recursive: true });
   const entries: Entry[] = [];
   const started = Date.now();
   await printCorpus(CORPUS, (doc, printed) => {
-    const file = fixedDated(printed.bytes);
-    fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), file);
-    const entry: Entry = { name: doc.name, why: doc.why, sha256: sha256(file), bytes: file.length, ...(doc.options ? { options: doc.options } : {}) };
-    if (doc.cli) entry.cli = cliVerdict(doc, file);
+    const file = printed.refused === undefined ? fixedDated(printed.bytes) : null;
+    if (file) fs.writeFileSync(path.join(dir, `${doc.name}.pdf`), file);
+    const entry: Entry = { name: doc.name, why: doc.why, ...(file ? { sha256: sha256(file), bytes: file.length } : { refused: printed.refused }), ...(doc.options ? { options: doc.options } : {}) };
+    if (doc.cli && file) entry.cli = cliVerdict(doc, file);
     if (listOut) {
       fs.mkdirSync(path.join(listOut, 'blobs'), { recursive: true });
       for (const [hash, bytes] of Object.entries(printed.blobs)) {
@@ -264,13 +315,13 @@ async function record(dir: string, listOut: string | null) {
         fs.writeFileSync(path.join(listOut, 'blobs', hash), bytes);
       }
       fs.writeFileSync(path.join(listOut, `${doc.name}.json`), `${printed.list}\n`);
-      fs.writeFileSync(path.join(listOut, `${doc.name}.report.json`), `${JSON.stringify(snapshot(printed.report), null, 1)}\n`);
+      if (file) fs.writeFileSync(path.join(listOut, `${doc.name}.report.json`), `${JSON.stringify(snapshot(printed.report), null, 1)}\n`);
       entry.list = { bytes: Buffer.byteLength(printed.list), blobs: Object.keys(printed.blobs).sort() };
     }
     entries.push(entry);
-    console.log(`${doc.name.padEnd(18)} ${String(file.length).padStart(9)} bytes  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
+    console.log(`${doc.name.padEnd(18)} ${file ? `${String(file.length).padStart(9)} bytes` : '  refused'}  ${seconds(printed.ms)}${entry.cli ? `  cli: ${entry.cli}` : ''}${entry.list ? `  list ${entry.list.bytes} bytes, ${entry.list.blobs.length} blobs` : ''}`);
   });
-  fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ caster: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: PACKAGE }).toString().trim(), documents: entries }, null, 1)}\n`);
+  fs.writeFileSync(path.join(dir, 'corpus.json'), `${JSON.stringify({ ...heads(), documents: entries }, null, 1)}\n`);
   console.log(`recorded ${entries.length} documents into ${dir} in ${seconds(Date.now() - started)}`);
   return 0;
 }
@@ -281,7 +332,10 @@ function cliVerdict(doc: Doc, file: Buffer): string {
 }
 
 async function check(dir: string) {
-  const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  const recorded: { caster?: string; cicero?: string; documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  // A Cicero that moved layout makes the corpus differ with no change in Caster (the stage 0 results of the Rust writer); naming both commits when they moved says where to look first.
+  const now = heads();
+  if (recorded.caster !== now.caster || recorded.cicero !== now.cicero) console.log(`recorded with caster ${recorded.caster ?? '?'} and cicero ${recorded.cicero ?? '?'}; printing with caster ${now.caster} and cicero ${now.cicero}`);
   const names = new Set(recorded.documents.map((d) => d.name));
   const started = Date.now();
   let failures = 0;
@@ -289,8 +343,18 @@ async function check(dir: string) {
   await printCorpus(CORPUS.filter((d) => names.has(d.name)), (doc, printed) => {
     seen++;
     const entry = recorded.documents.find((d) => d.name === doc.name) as Entry;
-    const now = fixedDated(printed.bytes);
     const problems: string[] = [];
+    if (entry.refused !== undefined || printed.refused !== undefined) {
+      if (printed.refused !== entry.refused) problems.push(`refused ${JSON.stringify(printed.refused ?? null)}, recorded ${JSON.stringify(entry.refused ?? null)}`);
+      const listFile = path.join(dir, `${doc.name}.json`);
+      if (fs.existsSync(listFile)) {
+        const differs = firstDifference(JSON.parse(fs.readFileSync(listFile, 'utf8')), JSON.parse(printed.list));
+        if (differs) problems.push(`the list differs first at ${differs}`);
+      }
+      if (problems.length) { failures++; console.log(`DIFFERS ${doc.name}\n  ${problems.join('\n  ')}`); } else console.log(`same    ${doc.name.padEnd(18)} ${seconds(printed.ms)}  refused as recorded`);
+      return;
+    }
+    const now = fixedDated(printed.bytes);
     if (sha256(now) !== entry.sha256) {
       const file = path.join(dir, `${doc.name}.pdf`);
       problems.push(fs.existsSync(file) ? describe(fs.readFileSync(file), now) : `the file's SHA-256 is ${sha256(now)}, recorded ${entry.sha256}`);
@@ -301,7 +365,7 @@ async function check(dir: string) {
       const differs = firstDifference(JSON.parse(fs.readFileSync(reportFile, 'utf8')), snapshot(printed.report));
       if (differs) problems.push(`the report differs first at ${differs}`);
     }
-    if (doc.cli && entry.cli === 'same') {
+    if (doc.cli && entry.cli === 'same' && WRITER === 'pdf-lib') {
       const verdict = cliVerdict(doc, now);
       if (verdict !== 'same') problems.push(`beltype print ${verdict}`);
     }
@@ -323,7 +387,8 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
  *
  * @param without - Stubs to leave out, to measure what each one stands in for; kept for the stubs a later stage may need, and none is installed now.
  */
-async function replay(dir: string, without: Set<string>) {
+async function replay(dir: string, without: Set<string>, out: string | null) {
+  if (out) return replayForme(dir, out);
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
@@ -350,6 +415,12 @@ async function replay(dir: string, without: Set<string>) {
       validateList(list);
       const validMs = performance.now() - checked;
       const colour = list.writing.colour !== undefined;
+      if (entry.refused !== undefined) {
+        const refusal = await emitStructure(list).then(() => null, (error) => String((error as Error)?.message ?? error));
+        result = refusal === entry.refused ? 'refused as recorded' : `DIFFERS: refused ${JSON.stringify(refusal)}, recorded ${JSON.stringify(entry.refused)}`;
+        gaps.push({ name: entry.name, stubs, result, ms: performance.now() - started });
+        continue;
+      }
       const emitted = await emitStructure(list);
       const now = Buffer.from(emitted.bytes);
       const was = fs.readFileSync(path.join(dir, `${entry.name}.pdf`));
@@ -361,20 +432,161 @@ async function replay(dir: string, without: Set<string>) {
   }
   for (const gap of gaps) console.log(`${gap.name.padEnd(18)} ${seconds(gap.ms).padStart(7)}  ${gap.result}`);
   console.log(`stubs: ${[...new Set(gaps.flatMap((g) => g.stubs))].join(', ') || 'none'}; nothing beside the list${without.size ? `; left out: ${[...without].join(', ')}` : ''}`);
-  return gaps.every((g) => g.result.startsWith('identical')) ? 0 : 1;
+  return gaps.every((g) => g.result.startsWith('identical') || g.result === 'refused as recorded') ? 0 : 1;
+}
+
+/**
+ * Write every saved list with forme's vendored module in node, into `out`: `<name>.pdf` and `<name>.records.json` for `compare`, and a `corpus.json` naming forme's files by their SHA-256 for `check --writer forme <out>`.
+ *
+ * @remarks
+ * The list is handed as `print()` hands it, through `emit/forme.ts`, its blobs checked against their names first. A list the oracle refuses (`refuses`) is one forme writes, so its entry here is a file. Each list is written twice and the two files must be one, and the time of each write is printed: the second, with the module compiled and the glue initialised, is the write's own.
+ */
+async function replayForme(dir: string, out: string) {
+  const { load } = await import('../src/capabilities.ts');
+  const { writeWithForme } = await import('../src/emit/forme.ts');
+  const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  await load(['forme']);
+  fs.mkdirSync(out, { recursive: true });
+  const entries: Entry[] = [];
+  let failures = 0;
+  for (const entry of recorded.documents) {
+    const listFile = path.join(dir, `${entry.name}.json`);
+    if (!fs.existsSync(listFile)) { failures++; console.log(`${entry.name.padEnd(18)} no saved list (record with --list-out)`); continue; }
+    try {
+      const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
+      list.resources.blobs = {};
+      for (const hash of entry.list?.blobs ?? []) {
+        const bytes = new Uint8Array(fs.readFileSync(path.join(dir, 'blobs', hash)));
+        if (sha256(bytes) !== hash) throw new CasterError(`replay: the blob ${hash} is not what its name says`);
+        list.resources.blobs[hash] = bytes;
+      }
+      const times: number[] = [];
+      const files: Buffer[] = [];
+      let records: unknown = null;
+      for (let i = 0; i < 2; i++) {
+        const started = performance.now();
+        const written = await writeWithForme(list);
+        times.push(performance.now() - started);
+        files.push(Buffer.from(written.bytes));
+        records = written.records;
+      }
+      const file = fixedDated(files[0]);
+      fs.writeFileSync(path.join(out, `${entry.name}.pdf`), file);
+      fs.writeFileSync(path.join(out, `${entry.name}.records.json`), `${JSON.stringify(records)}\n`);
+      entries.push({ name: entry.name, why: entry.why, sha256: sha256(file), bytes: file.length, ...(entry.options ? { options: entry.options } : {}) });
+      const twice = files[0].equals(files[1]);
+      if (!twice) failures++;
+      console.log(`${entry.name.padEnd(18)} ${String(file.length).padStart(9)} bytes  ${sha256(file).slice(0, 12)}  ${times.map((t) => `${t.toFixed(1)} ms`).join(', ')}${twice ? '' : '  DIFFERS: written twice, two files'}`);
+    } catch (error) {
+      failures++;
+      console.log(`${entry.name.padEnd(18)} THROWS: ${String((error as Error)?.message ?? error).split('\n')[0]}`);
+    }
+  }
+  fs.writeFileSync(path.join(out, 'corpus.json'), `${JSON.stringify({ ...heads(), writer: 'forme', documents: entries }, null, 1)}\n`);
+  console.log(`${failures ? `${failures} FAILED` : `wrote ${entries.length} files with forme`} into ${out}`);
+  return failures ? 1 : 0;
+}
+
+/** The device pixels a CSS px the browser's gate looks at the page with, as a screen of twice the density shows it. */
+const LOOK_SCALE = 2;
+
+/**
+ * Every presented page and every `data-drawing` element, in CSS px from the document's top left; runs in the page. Each page is first moved by the fraction of a device pixel its layout left it at, so that its top left falls on a whole device pixel as a PDF renderer's page does.
+ */
+function drawingsInPage(scale: number) {
+  const host = document.querySelector('beltype-root');
+  const pageElements = [...(host?.shadowRoot ?? document).querySelectorAll('beltype-page')] as HTMLElement[];
+  const box = (e: Element) => { const r = e.getBoundingClientRect(); return [r.left + scrollX, r.top + scrollY, r.width, r.height]; };
+  for (const element of pageElements) {
+    const [x, y] = box(element);
+    const fx = x * scale - Math.floor(x * scale);
+    const fy = y * scale - Math.floor(y * scale);
+    element.style.translate = `${-fx / scale}px ${-fy / scale}px`;
+  }
+  const pages = pageElements.map(box);
+  const drawings = [...document.querySelectorAll('[data-drawing]')].map((e) => ({ name: e.getAttribute('data-drawing') as string, at: box(e) })).filter((d) => d.at[2] > 0 && d.at[3] > 0);
+  return { pages, drawings };
+}
+
+/**
+ * `browser <dir>`: every corpus document with drawings (`data-drawing`), looked at through the door as its author sees it and held, drawing by drawing, to the oracle's file in `fixtures/lists/` and forme's in `<dir>` by `againstBrowser` (`scripts/compare.ts`).
+ *
+ * @param out - `--out <dir>`: each drawing's crops as PNG.
+ */
+async function browserGate(dir: string, out: string | null) {
+  const { againstBrowser } = await import('./compare.ts');
+  const { decode } = await import('fast-png');
+  const docs = CORPUS.filter((d) => fs.readFileSync(d.file, 'utf8').includes('data-drawing="'));
+  let failed = 0;
+  await throughDoor(docs, async (doc, page) => {
+    const seen = await page.evaluate(drawingsInPage, LOOK_SCALE);
+    const full = decode(await page.screenshot({ fullPage: true, scale: 'device', type: 'png' }));
+    const shots = seen.pages.map(([x, y, w, h]) => {
+      const [x0, y0] = [Math.floor(x * LOOK_SCALE), Math.floor(y * LOOK_SCALE)];
+      const [width, height] = [Math.ceil((x + w) * LOOK_SCALE) - x0, Math.ceil((y + h) * LOOK_SCALE) - y0];
+      const pixels = new Uint8Array(width * height * full.channels);
+      for (let row = 0; row < height; row++) pixels.set(full.data.subarray(((y0 + row) * full.width + x0) * full.channels, ((y0 + row) * full.width + x0 + width) * full.channels), row * width * full.channels);
+      return { pixels, width, height, channels: full.channels, scale: LOOK_SCALE };
+    });
+    const drawings = seen.drawings.map((d) => {
+      const page = seen.pages.findIndex(([x, y, w, h]) => d.at[0] >= x - 0.01 && d.at[1] >= y - 0.01 && d.at[0] + d.at[2] <= x + w + 0.01 && d.at[1] + d.at[3] <= y + h + 0.01);
+      if (page < 0) throw new CasterError(`identity: ${doc.name}: the drawing ${d.name} lies on no page (its box ${JSON.stringify(d.at)}, the pages ${JSON.stringify(seen.pages)})`);
+      const [px, py] = seen.pages[page];
+      const [fx, fy] = [Math.floor(px * LOOK_SCALE) / LOOK_SCALE, Math.floor(py * LOOK_SCALE) / LOOK_SCALE];
+      return { name: d.name, page, rect: [d.at[0] - fx, d.at[1] - fy, d.at[2], d.at[3]] as [number, number, number, number] };
+    });
+    failed += await againstBrowser(doc.name, shots, drawings, path.join(LISTS, `${doc.name}.pdf`), path.join(dir, `${doc.name}.pdf`), out);
+  }, { scale: LOOK_SCALE });
+  console.log(failed ? `${failed} drawings past the line` : 'every drawing within the line');
+  return failed ? 1 : 0;
 }
 
 const all = process.argv.slice(2);
-const withoutAt = all.indexOf('--without');
-const without = new Set(withoutAt >= 0 ? (all[withoutAt + 1] ?? '').split(',').filter(Boolean) : []);
-const args = withoutAt >= 0 ? all.filter((_, i) => i !== withoutAt && i !== withoutAt + 1) : all;
+if (all[0] === 'compare') {
+  const onlyAt = all.indexOf('--only');
+  const rest = all.filter((_, i) => i > 0 && (onlyAt < 0 || (i !== onlyAt && i !== onlyAt + 1)));
+  if (rest.length !== 1) {
+    console.error('usage: npm run identity -- compare <dir> [--only text,tags,images]');
+    process.exit(2);
+  }
+  const { compare } = await import('./compare.ts');
+  process.exit(await compare(LISTS, path.resolve(rest[0]), onlyAt >= 0 ? all[onlyAt + 1] ?? '' : null));
+}
+if (all[0] === 'browser') {
+  const outAt = all.indexOf('--out');
+  const rest = all.filter((_, i) => i > 0 && (outAt < 0 || (i !== outAt && i !== outAt + 1)));
+  if (rest.length !== 1) {
+    console.error('usage: npm run identity -- browser <dir> [--out <dir>]');
+    process.exit(2);
+  }
+  process.exit(await browserGate(path.resolve(rest[0]), outAt >= 0 ? path.resolve(all[outAt + 1] ?? '.') : null));
+}
+/** A flag with a value, taken out of `from`: its value, or null where it is absent. */
+const take = (from: string[], name: string): string | null => {
+  const at = from.indexOf(name);
+  if (at < 0) return null;
+  const [, value] = from.splice(at, 2);
+  return value ?? '';
+};
+const rest = [...all];
+const withoutArg = take(rest, '--without');
+const without = new Set((withoutArg ?? '').split(',').filter(Boolean));
+const writerArg = take(rest, '--writer');
+if (writerArg !== null && writerArg !== 'forme' && writerArg !== 'pdf-lib') { console.error(`identity: --writer takes forme or pdf-lib, not ${JSON.stringify(writerArg)}`); process.exit(2); }
+const writer = (writerArg ?? 'pdf-lib') as 'pdf-lib' | 'forme';
+WRITER = writer;
+const outArg = take(rest, '--out');
+const args = rest;
 const flag = args.indexOf('--list-out');
 const flagValue = flag >= 0 && args[flag + 1] && !args[flag + 1].startsWith('--') ? args[flag + 1] : null;
 const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir] [--writer forme]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- replay [dir] --writer forme --out <dir>\n       npm run identity -- compare <dir> [--only text,tags,images]\n       npm run identity -- browser <dir> [--out <dir>]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
-process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));
+if (outArg !== null && (verb !== 'replay' || writer !== 'forme')) { console.error('identity: --out is replay --writer forme\'s'); process.exit(2); }
+if (writer === 'forme' && verb === 'replay' && outArg === null) { console.error('identity: replay --writer forme needs --out <dir>'); process.exit(2); }
+if (writer === 'forme' && verb === 'record') { console.error('identity: record is the oracle\'s until the flip; write forme\'s files with replay --writer forme --out <dir>'); process.exit(2); }
+process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without, outArg === null ? null : path.resolve(outArg))));

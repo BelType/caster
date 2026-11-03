@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import * as mupdf from 'mupdf';
 import { launchBrowser } from './launch.ts';
 import { contentType } from '@beltype/common/mime';
+import { WRITER } from './writer.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const DIST = path.join(PACKAGE, 'dist');
@@ -48,7 +49,7 @@ test('text in an overflow: hidden box is not painted beyond its padding box', as
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.evaluate(() => document.fonts.ready);
-    const { base64, box } = await page.evaluate(async () => {
+    const { base64, box } = await page.evaluate(async (writer: string) => {
       const load = (p: string) => import(p);
       const caster = await load('/src/index.js');
       caster.prepare(document);
@@ -63,11 +64,11 @@ test('text in an overflow: hidden box is not painted beyond its padding box', as
           pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(stripBox.width), heightPt: pt(stripBox.height) }, declaredPx: { widthPx: stripBox.width, heightPx: stripBox.height }, contentArea: strip, continuations: [] }],
           pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
         },
-      });
+      }, { writer });
       let binary = '';
       for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
       return { base64: btoa(binary), box: { left: pt(clip.left - stripBox.left), right: pt(clip.right - stripBox.left), top: pt(clip.top - stripBox.top), bottom: pt(clip.bottom - stripBox.top) } };
-    });
+    }, WRITER);
     const doc = mupdf.Document.openDocument(Buffer.from(base64, 'base64'), 'application/pdf');
     const pixmap = doc.loadPage(0).toPixmap(mupdf.Matrix.scale(2, 2), mupdf.ColorSpace.DeviceGray, false, true);
     const { width, height } = { width: pixmap.getWidth(), height: pixmap.getHeight() };

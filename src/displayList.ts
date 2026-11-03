@@ -14,6 +14,8 @@
  *
  * VERSION 5 (stage 3 of the same plan). An image source is what the writer embeds, never what it must still decode: the image pass of `print()` (`images/imagePass.js`) asks the browser for the pixels of a file no PDF filter reads (WebP, AVIF, GIF, an arithmetic-coded JPEG the browser decodes) and runs the opaque-photo rule with its re-encode, before the builder. So a source is a file passed through as is (`blob`, `mime`), decoded pixels (`samples`) or the photo rule's JPEG (`jpeg`), with the rule's evidence (`photo`) wherever it was consulted, and a raster fallback carries the same `photo` and `jpeg`. `writing.photoRule` is gone: the flag reaches the pass, and the list records what the pass decided.
  *
+ * VERSION 6 (stage 5 of `.claude/plans/the-rust-writer/plan-rust-writer.md`, Egildo's ruling of 2026-11-03 amending *the same list prints the same bytes*, S102). A PNG whose `IDAT` no `/Predictor 15` describes (an alpha channel, Adam7 interlace, a palette with `tRNS`) is decoded in the image pass too, by fast-png, so the writer decodes nothing at all and a second writer links no PNG decoder. Its `samples` are the file's own, not a canvas's: its bit depth, its colour space, its palette and inflated `iCCP` beside them, its alpha interleaved; `original.why` keeps the reason for the report.
+
  * THE SCHEMA IN ONE FILE (stage 5 of the same plan). Every type the list is written in is defined here, the matrix, the path, the shading, the print marks, the font profile and the black-text policy among them, and the modules that compute them re-export them; what a writer returns for the list is `displayList/contract.js`, re-exported from here. A foreign writer reads those two files and no other. Order is data in every array and in no object: the writer reads no object's key order (the attribute objects are written in their schema's key order, whatever order a reader kept), and the arrays that carry an order of their own say so (`resources.fonts`, `structure.elements`, an element's `children`, a page's `items`).
  *
  * @packageDocumentation
@@ -25,7 +27,7 @@ export { recordsOf } from './displayList/records.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 5;
+  version: 6;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;
@@ -42,7 +44,7 @@ export type DocumentInfo = {
   /** The catalog `/Lang`. */
   lang: string;
   title: string;
-  /** `tagged` once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90). */
+  /** `tagged` under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103), or once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90): the file then claims nothing in its XMP. */
   conformance: 'pdfua2' | 'tagged';
   pageCount: number;
   /** The moment the file says it was made: an ISO 8601 instant in UTC, `YYYY-MM-DDTHH:mm:ss` with optional fractional seconds and a final `Z`, as `Date.prototype.toISOString` writes it. Set by `print()` from the host's `created`, or from the wall clock when the host gives none; the writer writes it at whole seconds into both `/CreationDate` and `/ModDate`, and reads no clock. Version 3. */
@@ -136,12 +138,12 @@ export type ImageSource = {
   blob?: string;
   /** With a file `blob`. */
   mime?: string;
-  /** The pixels the image pass decoded, where no PDF filter reads the file (WebP, AVIF, GIF). Version 5. */
+  /** The pixels the image pass decoded, where no PDF filter reads the file (WebP, AVIF, GIF), or where no predictor describes a PNG's `IDAT` (version 6). Version 5. */
   samples?: ImageSamples;
   /** Key into `blobs`: the JPEG the opaque-photo rule re-encoded the pixels as, which the writer carries under `/DCTDecode`. Version 5. */
   jpeg?: string;
-  /** What the source was, where the list holds the pass's pixels or JPEG and not the file: its format as the report names it (the MIME type, or `image/jpeg (arithmetic)` for an arithmetic-coded JPEG the browser decoded), its length, and a PNG's `gAMA`-only flag. Report only. Version 5. */
-  original?: { format: string, bytes: number, gammaOnly?: boolean };
+  /** What the source was, where the list holds the pass's pixels or JPEG and not the file: its format as the report names it (the MIME type, or `image/jpeg (arithmetic)` for an arithmetic-coded JPEG the browser decoded), its length, a PNG's `gAMA`-only flag, and why a PNG was decoded (version 6). Report only. Version 5. */
+  original?: { format: string, bytes: number, gammaOnly?: boolean, why?: PngDecodeReason };
   /** The opaque-photo rule's evidence, wherever the pass consulted it, `the photoRule flag is off` included. Version 5. */
   photo?: PhotoEvidence;
   /** Why the pass handed the file through when it asked the browser for its pixels: the browser's refusal of an arithmetic-coded JPEG, for the report. Version 5. */
@@ -153,15 +155,26 @@ export type ImageSource = {
  * Decoded pixels as the list carries them.
  *
  * @remarks
- * The blob is RGBA, row-major from the top, eight bits a sample in the browser's sRGB, as a raster fallback's is: what `createImageBitmap` and `getImageData` gave back, unpremultiplied. The writer splits it into the RGB stream and, where any pixel is not opaque, the `/SMask`. Version 5.
+ * The blob is interleaved samples, row-major from the top: each pixel's colour components in `colorSpace`, then its alpha where `alpha` is set, `bitsPerComponent` bits each, big-endian at 16. Two producers write it. The browser's decode (WebP, AVIF, GIF, an arithmetic JPEG it decodes) gives RGBA at eight bits in its sRGB, as a raster fallback's is: what `createImageBitmap` and `getImageData` gave back, unpremultiplied (version 5). fast-png's decode of a PNG whose `IDAT` no predictor describes gives the file's own samples: its depth, a depth under 8 unpacked to one sample a byte; grey, RGB or a palette's indices; the alpha of an alpha channel, or of the palette's `tRNS` looked up per pixel (version 6). The writer splits the colour from the alpha and writes the `/SMask` only where some pixel is not opaque.
  */
+/** Why the image pass decoded a PNG: what in it `/Predictor 15` cannot describe. Version 6. */
+export type PngDecodeReason = 'alpha' | 'interlace' | 'palette-trns';
+
 export type ImageSamples = {
-  /** Key into `blobs`: the pixels as RGBA. */
+  /** Key into `blobs`: the interleaved samples. */
   blob: string;
   width: number;
   height: number;
-  colorSpace: 'DeviceRGB';
-  bitsPerComponent: 8;
+  /** `Indexed` is over `DeviceRGB`, with `palette`. Version 6 adds `DeviceGray` and `Indexed`. */
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
+  /** 16 only from a 16-bit PNG, never with `Indexed`. Version 6. */
+  bitsPerComponent: 8 | 16;
+  /** Each pixel carries an alpha sample after its colour. Version 6. */
+  alpha: boolean;
+  /** Key into `blobs`: the palette as RGB triples (a PNG's `PLTE`), with `Indexed` only. Version 6. */
+  palette?: string;
+  /** Key into `blobs`: the ICC profile the colour components are in (a PNG's `iCCP`, inflated), never with `Indexed`. Version 6. */
+  icc?: string;
 };
 
 /** One quality the opaque-photo rule encoded and measured. */
@@ -266,7 +279,7 @@ export type TextItem = {
   text: string;
   /** The run owes the reader a space glyph before its first word: DOM whitespace stood across the boundary with the run before it, and this is not the first run of its line. */
   leadingSpace: boolean;
-  /** The glyph id of U+0020 in the run's font under its features, which the writer shows for every space it writes. From `spaceGlyph(run.url, run.features, run.coords).gid`. */
+  /** The glyph id of U+0020 in the run's font under its features, which the writer shows for every space it writes. From `spaceGlyph(run.url, run.features, run.coords).gid`. 0 where the face has no space glyph: a list claiming PDF/UA-2 may then owe no gap, and under a list claiming nothing the writer writes each gap as positioning with no glyph (S103). */
   space: number;
   glyphs: TextGlyphs;
   segments: TextSegments;

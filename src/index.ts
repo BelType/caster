@@ -38,6 +38,7 @@ import { registerBytes as registerVarBytes } from './fonts/varShaper.ts';
 import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
+import { writeWithForme } from './emit/forme.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
 import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
@@ -210,7 +211,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       if (load) load.shaperMs = Math.round((now() - shaperStarted) * 1000) / 1000;
     }
     const subsetterStarted = now();
-    if (options.subset === 'hb') await loadSubsetter();
+    if (options.subset === 'hb' && options.writer === 'pdf-lib') await loadSubsetter();
     report.fontTiming = { declareMs: table.declareMs, declared: table.declared.length, fontFaces: table.fontFaces, fontFaceStatuses: table.fontFaceStatuses, unmatched: table.unmatched, ...(table.unmatched.length ? { faceKeys: table.faceKeys } : {}), unloaded: table.unloaded.length, faces: [...table.loads.values()], subsetterMs: Math.round((now() - subsetterStarted) * 1000) / 1000 };
     refuseUnbuiltTiers(options);
     if (table.descriptors.length === 0) {
@@ -232,9 +233,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       renders: (element) => strip.pageElementOf(element) !== null,
       unknownElements: options.unknownElements
     });
-    // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2.
+    // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
-    report.conformance = walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
+    report.conformance = options.standard === 'none' || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
     report.warnings.push(...walk.warnings);
     // The image bytes, before the measurement rather than after it. The order of `coordinates-and-pages.md` (E10) puts everything that is not a measurement outside the neutralised window, and this is outside it in both directions: fetching reads no layout at all. It has to happen first because only the file says what an image's stored pixel size and EXIF orientation are — `naturalWidth` is the size after the engine applied the orientation, so a sideways-stored JPEG measured from the DOM was placed with the identity orientation and printed on its side, with the file's own tag in the report saying otherwise.
     const imageBytes = await fetchImages(walk.images, gateway);
@@ -399,6 +400,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
         ...(colourOn(needs, options) ? { colour: colourOptions(options) } : {})
       },
       paintOrder: options.paintOrder,
+      conformance: report.conformance,
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
       outline: true,
@@ -417,8 +419,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       }
     });
     const displayListMs = now() - listStart;
-    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
-    const emitted = await emitStructure(displayList).catch((error) => {
+    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it. Either writer is handed the same list and returns the same `WriterResult` (the `writer` flag).
+    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList) : emitStructure(displayList)).catch((error) => {
       if (error instanceof CasterError && error.listItem && error.element === undefined) {
         const origin = origins[error.listItem.page]?.[error.listItem.item];
         if (origin) error.element = origin.path;

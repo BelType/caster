@@ -11,7 +11,7 @@
  *
  * PDF has no gradient. It has a *shading*: a colour space, a geometry — two points for an axis, two circles for a radial — and a function from one parameter to a colour. So every gradient in the document, CSS or SVG, arrives here as the same three things and leaves as a `/ShadingType 2` or `3` dictionary over a `/FunctionType 3` stitching function whose segments are `/FunctionType 2` exponential interpolations between neighbouring stops.
  *
- * Two details are decisions rather than transcription. The parameter domain is the stops' own range rather than `[0 1]`: a gradient whose first stop sits at 20% keeps its geometry and moves its `/Domain`, which is exact, where rewriting the coordinates would be arithmetic that has to be undone to check it. And alpha never enters the colour function. A stop's alpha becomes a *second* shading, in `/DeviceGray`, painted into a transparency-group form that an `/SMask <</S /Luminosity>>` points at — because a PDF colour has no alpha channel and the only place transparency lives is the graphics state.
+ * Two details are decisions rather than transcription. The stitching function's domain is the stops' own range, and the shading's `/Domain` is `[0 1]`, the gradient line's own parameter: a shading maps the start of its axis to the first value of its `/Domain` (ISO 32000-2, 8.7.4.5.3, t = t0 + (t1 − t0) × s), so a gradient whose first stop sits at 40% keeps that stop at 40% of the line, and the function, asked below its domain, answers with its first stop's colour, which is the pad CSS and SVG draw before the first stop. (The shading's `/Domain` was the stops' range until 2026-11-03, which drew the 40% stop at the start of the line; the vector roads document's `gradient-stroke-radial` showed it.) And alpha never enters the colour function. A stop's alpha becomes a *second* shading, in `/DeviceGray`, painted into a transparency-group form that an `/SMask <</S /Luminosity>>` points at — because a PDF colour has no alpha channel and the only place transparency lives is the graphics state.
  *
  * Objects are shared by value. Two boxes with the same gradient are one shading, one function and one soft mask, which is what keeps a page of repeated decoration from writing the same dictionary twenty times.
  *
@@ -163,13 +163,13 @@ export class ShadingBuilder {
         ShadingType: spec.type,
         ColorSpace: PDFName.of(space),
         Coords: spec.coords.map(round4),
-        Domain: [round6(t0), round6(t1)],
+        Domain: [0, 1],
         Extend: spec.extend,
         Function: functionRef,
       }),
     );
 
-    const emitted: EmittedShading = { name: `Sh${this.shadings.size}`, ref, domain: [round6(t0), round6(t1)] };
+    const emitted: EmittedShading = { name: `Sh${this.shadings.size}`, ref, domain: [0, 1] };
     this.shadings.set(key, emitted);
     return emitted;
   }

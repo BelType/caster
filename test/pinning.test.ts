@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { launchBrowser } from './launch.ts';
 import { contentType } from '@beltype/common/mime';
+import { WRITER } from './writer.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const DIST = path.join(PACKAGE, 'dist');
@@ -44,7 +45,7 @@ async function printStrip(port: number) {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.evaluate(() => document.fonts.ready);
-    return await page.evaluate(async () => {
+    return await page.evaluate(async (writer: string) => {
       const load = (p: string) => import(p);
       const caster = await load('/src/index.js');
       caster.prepare(document);
@@ -59,14 +60,14 @@ async function printStrip(port: number) {
             pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(box.width), heightPt: pt(box.height) }, declaredPx: { widthPx: box.width, heightPx: box.height }, contentArea: strip, continuations: [] }],
             pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
           },
-        }, {});
+        }, { writer });
         let binary = '';
         for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
         return { base64: btoa(binary), faces: (printed.report.emission?.faces ?? []).map((f: any) => ({ coords: f.coords, outlineType: f.outlineType, used: f.usedGlyphs, stale: f.staleAdvances })) };
       } catch (error) {
         return { refused: String((error as Error).message) };
       }
-    });
+    }, WRITER);
   } finally {
     await browser.close();
   }

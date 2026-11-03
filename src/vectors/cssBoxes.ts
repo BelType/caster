@@ -63,6 +63,24 @@ const px = (value: string): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** CSS px per absolute unit (CSS Values 4 §6.2). */
+const UNIT_PX: Record<string, number> = { px: 1, pt: 96 / 72, pc: 16, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6 };
+
+/** The absolute length units {@link lengthPx} reads, as a pattern's alternation. */
+const UNITS = 'px|pt|pc|in|cm|mm|q|em|rem';
+
+/**
+ * A length in a gradient's computed value, in CSS px.
+ *
+ * @remarks
+ * Chromium resolves a gradient's font-relative lengths to px in its computed value but keeps an absolute one as written (`2mm`, `1in`, `3pt`; measured 2026-11-03), so `parseFloat` alone read `2mm` as 2 px: a repeating gradient of millimetre stripes printed as one ramp (the vector roads document's `repeating-gradient`). A unit outside the table is read as px, as before.
+ */
+const lengthPx = (token: string): number => {
+  const match = /^(-?[\d.]+(?:e-?\d+)?)([a-z]*)$/i.exec(token.trim());
+  if (!match) return px(token);
+  return Number.parseFloat(match[1]) * (UNIT_PX[match[2].toLowerCase()] ?? 1);
+};
+
 /** One corner's radius pair, as the computed style spells it (`10px` or `10px 20px`). */
 function cornerRadius(value: string, w: number, h: number): Radius {
   const parts = value.trim().split(/\s+/).filter((p) => p !== '');
@@ -256,7 +274,7 @@ function parseStops(args: string[]): RawStop[] {
   const stops: RawStop[] = [];
   for (const arg of args) {
     // A colour may itself contain spaces (`rgb(1 2 3)`), so the position is taken off the end rather than the colour off the front.
-    const match = /^(.*?)\s+((?:-?[\d.]+(?:px|%|em|rem|pt)?)(?:\s+-?[\d.]+(?:px|%|em|rem|pt)?)?)$/is.exec(arg.trim());
+    const match = new RegExp(`^(.*?)\\s+((?:-?[\\d.]+(?:${UNITS}|%)?)(?:\\s+-?[\\d.]+(?:${UNITS}|%)?)?)$`, 'is').exec(arg.trim());
     if (match) {
       for (const position of match[2].trim().split(/\s+/)) stops.push({ color: match[1].trim(), position });
       continue;
@@ -271,7 +289,7 @@ function stopOffset(position: string|null, lineLengthPx: number): number|null {
   if (position === null) return null;
   const text = position.trim();
   if (text.endsWith('%')) return Number.parseFloat(text) / 100;
-  const value = px(text);
+  const value = lengthPx(text);
   return lineLengthPx > 0 ? value / lineLengthPx : 0;
 }
 
@@ -362,13 +380,13 @@ function radialRadii(tokens: string[], shape: string, centre: Point, box: Box): 
     const scale = Math.SQRT2;
     return [sideX * scale, sideY * scale];
   }
-  const lengths = tokens.filter((t) => /^-?[\d.]+(px|%|em|rem|pt)$/i.test(t));
+  const lengths = tokens.filter((t) => new RegExp(`^-?[\\d.]+(${UNITS}|%)$`, 'i').test(t));
   if (lengths.length === 0) {
     const corners = dx.flatMap((x) => dy.map((y) => Math.hypot(x, y)));
     const r = Math.max(...corners);
     return shape === 'circle' ? [r, r] : [Math.max(...dx) * Math.SQRT2, Math.max(...dy) * Math.SQRT2];
   }
-  const one = (token: string, reference: number): number => (token.endsWith('%') ? (Number.parseFloat(token) / 100) * reference : px(token));
+  const one = (token: string, reference: number): number => (token.endsWith('%') ? (Number.parseFloat(token) / 100) * reference : lengthPx(token));
   const rx = one(lengths[0], box.w);
   const ry = lengths[1] !== undefined ? one(lengths[1], box.h) : rx;
   return [rx, ry];
@@ -384,7 +402,7 @@ function radialCentre(body: string, box: Box): Point {
     if (token === 'center') return start + size / 2;
     if (token === 'right' || token === 'bottom') return start + size;
     if (token.endsWith('%')) return start + (Number.parseFloat(token) / 100) * size;
-    return start + px(token);
+    return start + lengthPx(token);
   };
   return [one(parts[0] ?? 'center', box.w, box.x), one(parts[1] ?? 'center', box.h, box.y)];
 }
@@ -398,21 +416,34 @@ function radialCentre(body: string, box: Box): Point {
  * The period is the stops' own range, not the gradient line. A `repeating-linear-gradient` whose stops end at 16 px of a 120 px line repeats every 16 px, so the axis grows by whole 16-pixel steps and the returned `fromT`/`toT` are in units of the *original* line — which is what the caller multiplies its direction vector by, and what a radial caller multiplies its radius by.
  *
  * Two stops at the same offset are a hard edge and are kept as two stops. That is the whole of what a striped repeating gradient is, and dropping the duplicate — which is the obvious way to keep a stitching function's bounds strictly increasing — turns every stripe into a ramp.
+ *
+ * `floor` is the least parameter the shading can draw: a radial gradient's radius cannot be negative, so its caller passes the parameter at radius zero. The periods are cut there, a stop interpolated at the cut, and `fromT` is the floor; without the cut the stops below it were squeezed into the radii above it, and every ring of a reflected or repeated radial gradient came out at half its width (measured on the vector roads document's `radial-reflect`, 2026-11-03).
  */
-export function unrollGradient(stops: GradientStop[], spread: 'reflect'|'repeat', periods: number): { stops: GradientStop[]; fromT: number; toT: number; } {
+export function unrollGradient(stops: GradientStop[], spread: 'reflect'|'repeat', periods: number, floor = -Infinity): { stops: GradientStop[]; fromT: number; toT: number; } {
   const first = stops[0].offset;
   const last = stops[stops.length - 1].offset;
   const span = last - first || 1e-6;
-  const fromT = first - periods * span;
   const toT = last + periods * span;
-  const total = toT - fromT;
-  const out: GradientStop[] = [];
+  let unrolled: GradientStop[] = [];
   for (let period = -periods; period <= periods; period++) {
     const flip = spread === 'reflect' && Math.abs(period) % 2 === 1;
     const source = flip ? [...stops].reverse().map((stop) => ({ ...stop, offset: first + last - stop.offset })) : stops;
-    for (const stop of source) out.push({ ...stop, offset: (stop.offset + period * span - fromT) / total });
+    for (const stop of source) unrolled.push({ ...stop, offset: stop.offset + period * span });
   }
-  return { stops: out, fromT, toT };
+  let fromT = first - periods * span;
+  if (floor > fromT) {
+    const at = unrolled.findIndex((stop) => stop.offset >= floor);
+    const [a, b] = [unrolled[at - 1], unrolled[at]];
+    const f = (floor - a.offset) / (b.offset - a.offset || 1);
+    const mix = (x: number, y: number) => x + (y - x) * f;
+    const cut: GradientStop = { offset: floor, rgb: a.rgb.map((c, i) => mix(c, b.rgb[i])) as GradientStop['rgb'], alpha: mix(a.alpha, b.alpha), ...(a.cmyk && b.cmyk ? { cmyk: a.cmyk.map((c, i) => mix(c, (b.cmyk as number[])[i])) as GradientStop['cmyk'] } : {}) };
+    unrolled = b.offset === floor ? unrolled.slice(at) : [cut, ...unrolled.slice(at)];
+    fromT = floor;
+  }
+  const total = toT - fromT;
+  // A period's last stop and the next period's first are one offset in arithmetic and can come out an ulp apart, the later one first; the shading builder's stable sort then swapped them, and a stripe that should have been flat between two hard edges was drawn as a ramp (measured on the vector roads document's striped backdrop, 2026-11-03). The offsets are held non-decreasing in list order, so such a pair is one hard edge.
+  let previous = 0;
+  return { stops: unrolled.map((stop) => { previous = Math.max(previous, (stop.offset - fromT) / total); return { ...stop, offset: previous }; }), fromT, toT };
 }
 
 /**
@@ -537,10 +568,10 @@ export function cssGradient(value: string, box: Box, toPage: Matrix, colorOf: St
   if (repeating && stops.length > 1) {
     const span = stops[stops.length - 1].offset - stops[0].offset;
     const count = periodsFor(diagonal / Math.max(Math.max(rx, ry), 1e-6), span);
-    const unrolled = unrollGradient(stops, 'repeat', count);
+    // A circle has no negative radius, so the periods are cut at radius zero and the ones that would have fallen inside it are not drawn.
+    const unrolled = unrollGradient(stops, 'repeat', count, 0);
     stops = unrolled.stops;
-    // A circle has no negative radius, so the inner end is clamped at zero and the periods that would have fallen inside it are simply not drawn.
-    innerRadius = Math.max(0, unrolled.fromT);
+    innerRadius = unrolled.fromT;
     outerRadius = unrolled.toT;
     spread = 'repeat';
     periods = 2 * count + 1;

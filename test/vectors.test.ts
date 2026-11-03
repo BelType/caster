@@ -38,7 +38,7 @@ import {
   selectBestDashGap,
   strokeIsDashed,
 } from '../src/vectors/borderStyles.ts';
-import { bboxOf, boundaryPieces, borderSidePath, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
+import { bboxOf, boundaryPieces, borderSidePath, cssGradient, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
 import { blendName, emptyNodeCommon, parseCssColor } from '../src/vectors/vector.ts';
@@ -360,6 +360,23 @@ test('a hard stop stays two stops, and unrolling covers the shape', () => {
   // `reflect` reverses the stop list on alternate copies.
   const reflected = unrollGradient(stops, 'reflect', 1);
   assert.deepEqual(reflected.stops.slice(0, 4).map((s) => s.rgb), [[0, 0, 1], [0, 0, 1], [1, 0, 0], [1, 0, 0]]);
+
+  // A radial gradient's periods are cut at radius zero: the first stop sits at the floor, every stop above it keeps its parameter, and the parameter of each stop is its radius over the outer radius, so a ring keeps its width.
+  const ramp: any[] = [{ offset: 0, rgb: [1, 1, 0], alpha: 1 }, { offset: 1, rgb: [0, 0, 1], alpha: 1 }];
+  const cut = unrollGradient(ramp, 'reflect', 2, 0);
+  assert.equal(cut.fromT, 0);
+  assert.equal(cut.toT, 3);
+  assert.deepEqual(cut.stops.map((s) => [s.offset * cut.toT, s.rgb]), [[0, [1, 1, 0]], [0, [1, 1, 0]], [1, [0, 0, 1]], [1, [0, 0, 1]], [2, [1, 1, 0]], [2, [1, 1, 0]], [3, [0, 0, 1]]]);
+  const mid = unrollGradient(ramp, 'repeat', 1, -0.25);
+  assert.deepEqual(mid.stops[0], { offset: 0, rgb: [0.25, 0.25, 0.75], alpha: 1 }, 'a stop interpolated at a floor inside a period');
+
+  // Chromium keeps a gradient's absolute lengths as written in its computed value, so a stripe of 2mm is 2mm, 7.559 px, and not 2 px.
+  const striped = cssGradient('repeating-linear-gradient(90deg, rgb(0, 0, 0) 0px, rgb(0, 0, 0) 2mm, rgb(255, 221, 0) 2mm, rgb(255, 221, 0) 4mm)', { x: 0, y: 0, w: 100, h: 10 }, [1, 0, 0, 1, 0, 0]).shading as any;
+  const line = Math.hypot(striped.coords[2] - striped.coords[0], striped.coords[3] - striped.coords[1]);
+  near((striped.stops[2].offset - striped.stops[0].offset) * line, (2 * 96) / 25.4, 1e-6, 'a 2mm stripe');
+  // A period's last stop and the next one's first are one offset; in floats they can come out an ulp apart and in the wrong order, which the shading builder's sort turned into a ramp. Measured on the vector roads document's backdrop, a box 211.640625 px wide, as layout measured it.
+  const backdrop = cssGradient('repeating-linear-gradient(90deg, rgb(0, 0, 0) 0px, rgb(0, 0, 0) 4mm, rgb(255, 221, 0) 4mm, rgb(255, 221, 0) 8mm)', { x: 0, y: 0, w: 211.640625, h: 10 }, [1, 0, 0, 1, 0, 0]).shading as any;
+  assert.ok(backdrop.stops.every((stop: any, i: number) => i === 0 || stop.offset >= backdrop.stops[i - 1].offset), 'the unrolled offsets never decrease');
 
   // periodsFor is how many stop-ranges fit across the shape, plus one so the edges are covered whatever the phase.
   assert.equal(periodsFor(1, 0.25), 5);

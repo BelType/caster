@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { canPassThroughIdat, colourKeyMask, parsePng, PngColorType } from '../src/images/png.ts';
-import { unpackSubByte } from '../src/images/imageEmbed.ts';
+import { unpackSubByte } from '../src/images/png.ts';
 import { borderRadii, fitRect } from '../src/images/imagePlace.ts';
 import { jpegColorSpaceName, parseJpeg, subsamplingOf } from '../src/images/jpeg.ts';
 import {

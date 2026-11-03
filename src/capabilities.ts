@@ -17,6 +17,7 @@ import { colourOn } from './options.ts';
 
 import type { CasterOptions } from './options.ts';
 import type { ReportCapability, ReportNeeds } from './report.ts';
+import type { FormeGlue } from './emit/forme.ts';
 
 /**
  * What `capability(name)` hands back, per registry key — the one structural type of the package, and what makes "never a fallback" checkable: no member is `| undefined`, so a caller cannot write the branch that would be one.
@@ -41,6 +42,8 @@ export type CapabilityMap = {
   woff2: any;
   /** The ICC profiles by basename: `srgb.icc`, `default_cmyk.icc`. */
   profiles: Record<string, Uint8Array>;
+  /** forme's wasm-bindgen glue (`--target web`) and the module's bytes, fetched once per realm and node's read through {@link fetchBytes}: in a page `emit/forme.ts` compiles the bytes and its worker instantiates them, and in node it hands them to the glue's `initSync`. */
+  forme: { module: FormeGlue, wasm: Uint8Array };
   /** Reserved, not built (PLAN.md D2). */
   localFonts: never;
 };
@@ -70,12 +73,14 @@ export const CAPABILITIES: Record<keyof CapabilityMap,CapabilitySpec> = {
   pdf: { url: '../vendor/pdf-lib.js', always: true },
   fontkit: { url: '../vendor/fontkit.js', always: true },
   harfbuzz: { url: '../vendor/harfbuzz.js', when: (needs, o) => o.shaper === 'harfbuzz', flag: 'shaper' },
-  hbSubset: { wasm: '../vendor/harfbuzz-subset.wasm', when: (needs, o) => o.subset === 'hb', flag: 'subset' },
+  hbSubset: { wasm: '../vendor/harfbuzz-subset.wasm', when: (needs, o) => o.subset === 'hb' && o.writer === 'pdf-lib', flag: 'subset' },
   fastPng: { url: '../vendor/fast-png.js', when: (needs, o) => Boolean(needs.forcedPngDecode) && o.pngDecoder === 'fast-png', flag: 'pngDecoder' },
   lcms: { url: '../vendor/lcms.js', wasm: '../vendor/lcms.wasm', when: (needs, o) => o.convertRgb === 'wasm', flag: 'convertRgb' },
   // *BelType ships faces of its own, and WOFF2 is decoded* (DESIGN.md S46). Loaded only for a descriptor whose only source is a WOFF2 — a CSSOM read, no byte fetched, the same shape as `forcedPngDecode`. `src: url(x.woff2), url(x.woff)` still takes the WOFF and never loads this, which is what keeps KaTeX's twenty-odd faces from paying 307 kB for a decode nobody needed. There is no flag: nothing the operator can set selects it, so a WOFF2 that reaches `decodeWoff2` without it still refuses by name through `capability()`, the way every other capability does.
   woff2: { url: '../vendor/wawoff2.js', when: (needs) => Boolean(needs.woff2Only) },
   profiles: { files: ['../profiles/srgb.icc', '../profiles/default_cmyk.icc'], when: (needs, o) => colourOn(needs, o), flag: 'colour' },
+  // The Rust writer (`vendor/README.md` says where it was built from). Loaded only under `writer: 'forme'`, and refused by name when the module is absent: the oracle is never taken in its place.
+  forme: { url: '../vendor/forme.js', wasm: '../vendor/forme_bg.wasm', when: (needs, o) => o.writer === 'forme', flag: 'writer' },
   localFonts: { reserved: 'Local Font Access — not built this round. D2: the printer embeds programs, so every face must reach it as bytes; a system font a tab cannot read is an export error naming the family.' }
 };
 
@@ -116,7 +121,7 @@ export function neededCapabilities(needs: ReportNeeds, options: CasterOptions): 
  *
  * @param onProgress - Called once per capability, as each lands and not in `names` order.
  * @returns One entry per name, in `names` order, with what each cost.
- * @throws {CapabilityError} A name the registry does not hold; a reserved door (`localFonts`); a `wasm` or `files` entry the realm can neither fetch nor read, or whose fetch answers other than 2xx.
+ * @throws {CapabilityError} A name the registry does not hold; a reserved door (`localFonts`); a `url` the realm cannot import; a `wasm` or `files` entry the realm can neither fetch nor read, or whose fetch answers other than 2xx.
  */
 export async function load(names: CapabilityName[], onProgress?: (entry: ReportCapability) => void): Promise<ReportCapability[]> {
   const entries = await Promise.all(names.map((name) => loadOne(name, onProgress)));
@@ -143,7 +148,14 @@ async function loadOne(name: CapabilityName, onProgress?: (entry: ReportCapabili
   let bytes = 0;
   // `any` until it is stored: the shape is decided by which of `url`, `wasm` and `files` the spec has, and `CapabilityMap` names it per key at the read.
   let value: any;
-  if (spec.url) value = await import(/* @vite-ignore */ new URL(spec.url, import.meta.url).href);
+  if (spec.url) {
+    const url = new URL(spec.url, import.meta.url);
+    try { value = await import(/* @vite-ignore */ url.href); }
+    catch (error) {
+      const flag = spec.flag ? ` The flag that asked for it is '${spec.flag}'.` : '';
+      throw new CapabilityError(`caster: the '${name}' capability could not be imported from ${url.pathname} (${String(error)}), and there is no fallback for it.${flag}`, { capability: name, flag: spec.flag });
+    }
+  }
   if (spec.wasm) {
     const wasm = await fetchBytes(new URL(spec.wasm, import.meta.url), name);
     bytes += wasm.byteLength;

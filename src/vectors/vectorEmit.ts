@@ -13,7 +13,7 @@
  *
  *   flat fill            path, then `f` or `f*`
  *   flat stroke          `w J j M d`, path, then `S`
- *   both                 one path, then `B` or `B*`
+ *   both                 one path, then `B` or `B*`; with a stroke alpha below one, the path filled and then the path stroked
  *   gradient fill        `q` path `W n` `cm` `/Shn sh` `Q` — a clip, never a pattern
  *   gradient stroke      `/Pattern CS /Pn SCN` and `S`, with the page-space matrix folded into the pattern's own `/Matrix`
  *   constant alpha       `/GTn gs` with `/ca` and `/CA`
@@ -566,6 +566,12 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
       out.push(PDFOperator.of(Ops.StrokePath));
       out.push(...pathOperators(node.path));
       out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOdd : Ops.FillNonZero));
+    }
+    else if (flatFill && strokes && node.strokeOpacity !== undefined) {
+      // `B` paints its fill and its stroke as one non-isolated knockout group (ISO 32000-2, 11.7.4.4), so a stroke that is not opaque composites with the backdrop under the fill and not with the fill, where SVG and CSS composite a stroke over its own fill. With a stroke alpha below one the path is written twice, filled and then stroked, which is what the browser draws.
+      out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOdd : Ops.FillNonZero));
+      out.push(...pathOperators(node.path));
+      out.push(PDFOperator.of(Ops.StrokePath));
     }
     else if (flatFill && strokes) out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOddAndStroke : Ops.FillNonZeroAndStroke));
     else if (flatFill) out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOdd : Ops.FillNonZero));

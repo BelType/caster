@@ -2,7 +2,7 @@
  * `images/imagePass.js` — the image pass: what the browser does to an image before the display list holds it.
  *
  * @remarks
- * A file no PDF filter reads (WebP, AVIF, GIF) has its pixels asked of the browser, which decoded it for the screen and is the only decoder of it in this stack (`canvasDecode.js`); an opaque 8-bit RGB PNG over the pixel threshold, and every decoded or rasterised set of pixels, goes past the opaque-photo rule, whose JPEG re-encode and PSNR read-back are the browser's canvas too (`photoRule.js`). Both used to run inside the writer; they run here, in `print()` before the builder, so the list holds bytes the writer embeds and nothing it must still decode, and the writer reaches no browser API (*the same list prints the same bytes*, DESIGN.md S102, a draft; stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). Every other file is handed through untouched: a JPEG to `/DCTDecode`, a PNG's `IDAT` to `/FlateDecode`, and the writer's own refusals (a frame PDF cannot carry, a JPEG at other than 8 bits) stay the writer's.
+ * A file no PDF filter reads (WebP, AVIF, GIF) has its pixels asked of the browser, which decoded it for the screen and is the only decoder of it in this stack (`canvasDecode.js`); an opaque 8-bit RGB PNG over the pixel threshold, and every decoded or rasterised set of pixels, goes past the opaque-photo rule, whose JPEG re-encode and PSNR read-back are the browser's canvas too (`photoRule.js`). Both used to run inside the writer; they run here, in `print()` before the builder, so the list holds bytes the writer embeds and nothing it must still decode, and the writer reaches no browser API (*the same list prints the same bytes*, DESIGN.md S102, a draft; stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`). A PNG whose `IDAT` no `/Predictor 15` describes (an alpha channel, Adam7, a palette with `tRNS`) is decoded here by fast-png, at its own depth and in its own colour space (`png.js`'s `pngPixels`), since version 6 of the list: the writer decodes nothing at all (Egildo's ruling of 2026-11-03 amending S102). Every other file is handed through untouched: a JPEG to `/DCTDecode`, a PNG's `IDAT` to `/FlateDecode`, and the writer's own refusals (a frame PDF cannot carry, a JPEG at other than 8 bits) stay the writer's.
  *
  * One file is prepared once however many elements paint it: the pass is keyed by `src`, as the fetch is, and identical pixels name one blob in the list, so the writer's dedupe by content makes one XObject of them.
  *
@@ -11,11 +11,12 @@
 import { decodeThroughCanvas } from './canvasDecode.ts';
 import { applyPhotoRule, photoRuleOff, PHOTO_PIXEL_THRESHOLD } from './photoRule.ts';
 import { parseJpeg } from './jpeg.ts';
-import { canPassThroughIdat, decodePng, parsePng, PngColorType } from './png.ts';
+import { canPassThroughIdat, decodePng, parsePng, pngPixels, PngColorType } from './png.ts';
 import { CasterError } from '../errors.ts';
 
 import type { DecodedSamples } from './samples.ts';
 import type { PhotoDecision } from './photoRule.ts';
+import type { PngPixels } from './png.ts';
 
 /** A file as the gateway fetched it. */
 export type ImageFile = { bytes: Uint8Array, mimeType: string };
@@ -27,6 +28,8 @@ export type PreparedImage = {
   file: ImageFile;
   /** The pixels the browser decoded. */
   samples?: DecodedSamples;
+  /** The samples fast-png decoded from a PNG whose `IDAT` no predictor describes, as the list carries them. */
+  png?: PngPixels;
   /** The JPEG the photo rule chose. */
   jpeg?: Uint8Array;
   /** The source format as the report names it, where the list holds pixels or a JPEG and not the file. */
@@ -58,6 +61,7 @@ async function fromPixels(file: ImageFile, samples: DecodedSamples, format: stri
  * Prepare one file for the list.
  *
  * @throws {CasterError} The browser cannot decode a file no PDF filter reads (`canvasDecode.js`), and whatever `png.js` refuses.
+ * @throws {CapabilityError} A PNG to decode with no `fastPng` loaded.
  */
 export async function prepareImage(file: ImageFile, photoRule: boolean): Promise<PreparedImage> {
   const { bytes, mimeType } = file;
@@ -73,15 +77,20 @@ export async function prepareImage(file: ImageFile, photoRule: boolean): Promise
   }
   if (mimeType === 'image/png') {
     const info = parsePng(bytes);
-    // The photo rule still gets a look at an opaque RGB PNG, because a photograph stored losslessly is the case it exists for; it needs the samples to decide, and it only gets them when it might act. Any other PNG is the writer's, passed through or decoded by fast-png, which is pure.
+    const gammaOnly = info.gama !== null && info.iccpDeflated === null && info.srgbIntent === null;
+    if (!canPassThroughIdat(info)) {
+      const started = performance.now();
+      const png = await pngPixels(bytes, info);
+      return { file, png, format: mimeType, ...(gammaOnly ? { gammaOnly } : {}), decodeMs: performance.now() - started, encodeMs: 0 };
+    }
+    // The photo rule still gets a look at an opaque RGB PNG, because a photograph stored losslessly is the case it exists for; it needs the samples to decide, and it only gets them when it might act. Any other PNG the predictor describes is the writer's, passed through.
     const pixels = info.width * info.height;
-    if (!canPassThroughIdat(info) || info.colorType !== PngColorType.Rgb || info.bitDepth !== 8 || pixels <= PHOTO_PIXEL_THRESHOLD) return { file, decodeMs: 0, encodeMs: 0 };
+    if (info.colorType !== PngColorType.Rgb || info.bitDepth !== 8 || pixels <= PHOTO_PIXEL_THRESHOLD) return { file, decodeMs: 0, encodeMs: 0 };
     const started = performance.now();
     const decoded = decodePng(bytes);
     const decodeMs = performance.now() - started;
     // The `photoRule` flag reaches here and nowhere else. It ran unconditionally once, so the flag was accepted, reported, and inert: a document printed with it off still had its opaque photographs re-encoded as JPEG.
     const photo = photoRule ? await applyPhotoRule({ width: info.width, height: info.height, rgb: decoded.data as Uint8Array, hasAlpha: false }) : photoRuleOff(pixels);
-    const gammaOnly = info.gama !== null && info.iccpDeflated === null && info.srgbIntent === null;
     return { file, photo, gammaOnly, ...(photo.jpeg ? { jpeg: photo.jpeg, format: mimeType } : {}), decodeMs, encodeMs: photo.encodeMs };
   }
   // WebP, AVIF, GIF: no PDF filter at all.

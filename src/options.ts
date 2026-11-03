@@ -45,6 +45,10 @@ export type CasterOptions = {
   colour: 'auto'|'on'|'off';
   /** Caster's own (*the printer guesses, says so, and withdraws the claim*, S90). Default `'infer'` (the decision chose `'refuse'`; flipped the same day at Egildo's call, so a document the other engines print prints here too): a custom element the walk's table does not name is walked as CSS laid it out, the way a `<span>` or a `<div>` is, every guess is listed in `report.inferred` and the warnings, and the file no longer claims PDF/UA-2 in its XMP, since a tag the printer guessed is not a claim it can stand behind. Measured on the bench's determina specimen: four `<dm-variable>` elements, each with no meaning a tag could name, refused the whole document. Under `'refuse'` it refuses the print by name, as every element the walk cannot name always has. A `bt-` or `beltype-` element is refused under both. */
   unknownElements: 'refuse'|'infer';
+  /** Caster's own (*PDF/UA-2 is a flag, not a given*, S103; Egildo's ruling of 2026-11-03, after Typst's `--pdf-standard`, WeasyPrint's `--pdf-variant` and Prince's `--pdf-profile`). Default `'ua-2'`: the file claims PDF/UA-2 in its XMP, and forme adds both Well-Tagged PDF declarations beside it, and a word gap in a face with no space glyph is refused by name, since it would be glyph 0, `.notdef`, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9). Basis: the Rust writer's cff2 fixture, HarfBuzz's test subset of Source Serif 4 Variable, has no space glyph, and forme's file showed `.notdef` in every gap under a claim veraPDF's `ua2`, `wt1a` and `wt1r` all failed. Under `'none'` the file is tagged as ever and claims nothing, and such a gap is written as positioning with no glyph. A guess under `unknownElements: 'infer'` still withdraws a `'ua-2'` claim (S90), the one road on which the claim asked for is softened. */
+  standard: 'ua-2'|'none';
+  /** Default `'pdf-lib'`. Which writer turns the display list into the file: `'pdf-lib'`, the TypeScript writer (`emit/structureEmit.ts`, through pdf-lib and HarfBuzz's subsetter), or `'forme'`, the Rust writer vendored as a WebAssembly module (`vendor/forme_bg.wasm`, loaded only under this value), which in a page writes in a dedicated worker (`emit/forme.ts`). Both read the same list and return the same `WriterResult`; forme is held to the oracle's files by every reader of *the same list prints the same bytes* (S102). The default stays the oracle's until Egildo has read the Rust writer's stage 9 gate. */
+  writer: 'pdf-lib'|'forme';
   /** The document title for `/Title` and the XMP; the panel fills it from the document. */
   title?: string;
   /** The catalog `/Lang`, when the DOM declares none. */
@@ -81,7 +85,9 @@ export const FLAGS = (({
   convertRgb: { values: ['none', 'endpoint', 'wasm'], default: 'none' },
   skipInk: { values: [true, false], default: true },
   colour: { values: ['auto', 'on', 'off'], default: 'auto' },
-  unknownElements: { values: ['refuse', 'infer'], default: 'infer' }
+  unknownElements: { values: ['refuse', 'infer'], default: 'infer' },
+  standard: { values: ['ua-2', 'none'], default: 'ua-2' },
+  writer: { values: ['pdf-lib', 'forme'], default: 'pdf-lib' }
 } as const) satisfies { [K in FlagName]: FlagSpec<K> });
 
 /**

@@ -285,7 +285,9 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
     const spaceAdvPt = (ctx.font.width(space.gid) / 1000) * sizePt;
     const baselinePt = item.baseline;
     // A run boundary with DOM whitespace across it — `phrase</strong> on` — still owes the reader one space glyph, and the run that starts after it is the only place left to put it: the previous run's TJ has already been closed by its own Tf/Tc state. The run therefore starts one space to the left of its first word and shows the space first, which puts the pen exactly on the measured x with no adjustment at all. Without this the gap is a jump between two text objects, MuPDF infers a space where there is no glyph, and an extraction that inhibits inferred spaces loses the word boundary.
-    const leadingSpace = item.leadingSpace;
+    // A face with no space glyph has `space: 0`, and a list that claims nothing writes its gaps as positioning with no glyph (*PDF/UA-2 is a flag, not a given*, S103; a list claiming PDF/UA-2 with such a gap was refused by `validateList`).
+    const gap = item.space !== 0;
+    const leadingSpace = item.leadingSpace && gap;
     const startPt = round3(item.segments.x[0] - (leadingSpace ? spaceAdvPt + tcPt : 0));
     const colour = ctx.colorOperators?.(item);
     operators.push(...(colour?.setup ?? []), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetFontAndSize, [ctx.name, pdf().PDFNumber.of(round3(sizePt))]), ...(colour ? colour.fill : [pdf().PDFOperator.of(pdf().PDFOperatorNames.NonStrokingColorRgb, item.fill.rgb.map((c) => pdf().PDFNumber.of(round3(c))))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetCharacterSpacing, [pdf().PDFNumber.of(round3(tcPt))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextMatrix, [
@@ -316,10 +318,11 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
         if (index > 0) {
             const nextPt = item.segments.x[index];
             // The space glyph, when there was DOM whitespace, is shown before the adjustment, so the adjustment closes whatever gap is left after it.
-            const adj = segment.spaceBefore
+            const spaced = segment.spaceBefore && gap;
+            const adj = spaced
                 ? round3((-(nextPt - pen - spaceAdvPt - tcPt) / sizePt) * 1000)
                 : round3((-(nextPt - pen) / sizePt) * 1000);
-            if (segment.spaceBefore) {
+            if (spaced) {
                 items.push(glyphString([space.gid]));
                 ctx.font.use(space.gid, ' ');
                 pen += spaceAdvPt + tcPt;

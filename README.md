@@ -190,11 +190,12 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 | `pdf` | `vendor/pdf-lib.js` | always (the object layer and the writer) |
 | `fontkit` | `vendor/fontkit.js` | always (table parsing, metrics, glyph outlines) |
 | `harfbuzz` | `vendor/harfbuzz.js` and `harfbuzz.wasm` | `shaper: 'harfbuzz'`, the default |
-| `hbSubset` | `vendor/harfbuzz-subset.wasm` | `subset: 'hb'`, the default |
+| `hbSubset` | `vendor/harfbuzz-subset.wasm` | `subset: 'hb'`, the default, under `writer: 'pdf-lib'` |
 | `fastPng` | `vendor/fast-png.js` | an `<img>` points at a `.png` and `pngDecoder` is `fast-png` |
 | `woff2` | `vendor/wawoff2.js` | some `@font-face` has only WOFF2 sources |
 | `profiles` | `profiles/srgb.icc`, `profiles/default_cmyk.icc` | the document has a colour story |
 | `lcms` | `vendor/lcms.js` and `lcms.wasm` | `convertRgb: 'wasm'` (a tier `print()` refuses today) |
+| `forme` | `vendor/forme.js` and `forme_bg.wasm` | `writer: 'forme'`; an absent module refuses by name, and the oracle is never taken in its place. In a page it writes in a dedicated worker (`src/emit/formeWorker.js`), and a page whose policy forbids the worker or WebAssembly refuses by name, never writing on the main thread |
 | `localFonts` | none | never: a reserved door that refuses by name |
 
 `capability(name)` returns the loaded bundle or throws a `CapabilityError` naming the capability and the flag that would have loaded it.
@@ -307,6 +308,8 @@ sequenceDiagram
 | `skipInk` | `true`, `false` | `true` | 34.2% of a body-size underline is removed by the descenders it would strike |
 | `colour` | `auto`, `on`, `off` | `auto` | Caster's own: colour objects are written only when the document has a colour story |
 | `unknownElements` | `refuse`, `infer` | `infer` | Caster's own: `infer` prints a custom element by its layout, lists each guess and drops the PDF/UA-2 claim; `refuse` refuses it by name |
+| `standard` | `ua-2`, `none` | `ua-2` | Caster's own: `ua-2` claims PDF/UA-2 (and forme both Well-Tagged PDF declarations) and refuses by name a word gap in a face with no space glyph; `none` claims nothing and writes such a gap as positioning with no glyph |
+| `writer` | `pdf-lib`, `forme` | `pdf-lib` | Caster's own: which writer turns the display list into the file, the TypeScript writer or forme, the Rust writer vendored as WebAssembly; both read the same list, and forme is held to the oracle's files by every reader of the gate, so the default stays the oracle's until the flip. In a page forme writes in a dedicated worker and holds no frame; the host must serve `src/emit/formeWorker.js` beside the other modules and allow a module worker from its origin (`worker-src`) and WebAssembly (`'wasm-unsafe-eval'`) |
 
 ## What Caster refuses and why refusing is the design
 
@@ -346,6 +349,14 @@ npm run identity -- record [dir] [--list-out [dir]]   # print the corpus through
 npm run identity -- check [dir]                       # print it again, compare the bytes and the report snapshots with what was recorded
 npm run identity -- replay [dir]                      # node, no browser: validate each saved list, write it, compare the bytes with the recorded file
 ```
+
+Two writers can agree and both be wrong, so one more verb holds the files to the browser:
+
+```bash
+npm run identity -- browser <dir> [--out <dir>]       # each drawing a corpus page names by data-drawing, Chromium's page against the oracle's file and forme's in <dir> under mupdf and yapr
+```
+
+`<dir>` is what `replay --writer forme --out <dir>` wrote. The method and the line are `againstBrowser`'s, in `scripts/compare.ts`: each drawing's region is registered on the browser's by up to two CSS px, then a pixel's difference is how far it lies outside its 3 × 3 neighbourhood in the other render, so antialiasing is forgiven and a wrong colour or shape is not; a drawing passes within one CSS px of registration, no pixel past 64 of 255 and no more than 0.5 % of its region past 8. `fixtures/roads/vector-roads.html` names its drawings.
 
 `dir` defaults to `fixtures/lists/`. `record` and `check` need the CLI's checkout (`BELTYPE_CLI`, the sibling `../cli` by default) and Chromium; `replay` needs neither. None of them runs in `npm test`, which replays the committed lists on its own (`test/displayList.test.ts`, `test/determinism.test.ts`).
 

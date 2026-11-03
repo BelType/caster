@@ -1,0 +1,783 @@
+{
+ "page": {
+  "widthPt": 340.157,
+  "heightPt": 340.157
+ },
+ "elements": [],
+ "capabilities": [
+  {
+   "name": "pdf",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "fontkit",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "harfbuzz",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "hbSubset",
+   "bytes": 622493,
+   "loaded": true
+  },
+  {
+   "name": "woff2",
+   "bytes": 0,
+   "loaded": true
+  }
+ ],
+ "conformance": "pdfua2",
+ "options": {
+  "shaper": "harfbuzz",
+  "subset": "hb",
+  "cffContainer": "bare",
+  "widthDecimals": 3,
+  "pngDecoder": "fast-png",
+  "photoRule": true,
+  "rasterDpi": 300,
+  "paintOrder": "css",
+  "styledBorders": true,
+  "blackText": "none",
+  "convertRgb": "none",
+  "skipInk": true,
+  "colour": "auto",
+  "unknownElements": "infer",
+  "standard": "ua-2",
+  "writer": "pdf-lib"
+ },
+ "errors": [],
+ "warnings": [],
+ "needs": {
+  "forcedPngDecode": false,
+  "woff2Only": true,
+  "colourHints": false,
+  "hasTables": false,
+  "hasSvg": false,
+  "hasEmoji": false,
+  "faces": 1
+ },
+ "color": {
+  "registrations": [
+   {
+    "name": "--pdf-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-top-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-right-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-bottom-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-left-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-fill",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-stroke",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-overprint",
+    "registered": true,
+    "emptyInitialValue": true
+   }
+  ]
+ },
+ "container": {
+  "scaleRecovered": 1,
+  "scaleFromHeight": 1,
+  "scaleFromWidthRatio": 1.0000005512302357,
+  "scaleFromHeightRatio": 1.0000005524483406,
+  "linear": [
+   1,
+   0,
+   0,
+   1
+  ],
+  "offAxisPx": 0,
+  "cornersAxisAligned": true,
+  "pageRectPx": [
+   [
+    373.234375,
+    24,
+    453.53125,
+    452.53125
+   ],
+   [
+    373.234375,
+    492.53125,
+    453.53125,
+    452.53125
+   ]
+  ],
+  "untransformedWidthPx": [
+   453.531,
+   453.531
+  ],
+  "offsetWidthPx": [
+   454,
+   454
+  ],
+  "widthSource": "computed",
+  "zoomSeen": [],
+  "scrollPx": {
+   "windowX": 0,
+   "windowY": 0,
+   "ancestorX": 0,
+   "ancestorY": 0
+  },
+  "devicePixelRatio": 1,
+  "warnings": [],
+  "errors": []
+ },
+ "pageBoxes": [
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    340.157,
+    340.157
+   ],
+   "measuredWidthPx": 453.531,
+   "measuredHeightPx": 452.531
+  },
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    340.157,
+    340.157
+   ],
+   "measuredWidthPx": 453.531,
+   "measuredHeightPx": 452.531
+  }
+ ],
+ "inferred": [],
+ "svgImages": [],
+ "emission": {
+  "pageCount": 2,
+  "baselineMethod": "measureText",
+  "columnWidthPx": 794,
+  "kernAdjustments": 5,
+  "actualTextSpans": 0,
+  "faces": [
+   {
+    "id": "Source Sans 3#1|wght=700",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 13,
+    "fontFileBytes": 14220,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 700
+    },
+    "glyphsUsed": [
+     1,
+     21,
+     28,
+     32,
+     33,
+     34,
+     36,
+     39,
+     41,
+     42,
+     43,
+     46,
+     50
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 14220,
+    "subsetFlateBytes": 2373,
+    "numGlyphs": 2319,
+    "nonEmptyGlyphs": 15,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "DZAWDL",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "21": [
+      "T"
+     ],
+     "28": [
+      "a"
+     ],
+     "32": [
+      "e"
+     ],
+     "33": [
+      "f"
+     ],
+     "34": [
+      "g"
+     ],
+     "36": [
+      "i"
+     ],
+     "39": [
+      "l"
+     ],
+     "41": [
+      "n"
+     ],
+     "42": [
+      "o"
+     ],
+     "43": [
+      "p"
+     ],
+     "46": [
+      "s"
+     ],
+     "50": [
+      "w"
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   }
+  ],
+  "runs": [
+   {
+    "index": 0,
+    "page": 0,
+    "line": 0,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   }
+  ],
+  "marginPt": 0,
+  "pageWidthPt": 340.157,
+  "pageHeightPt": 340.157,
+  "trailingLetterSpacing": false,
+  "trailingSamples": [],
+  "baselineAgreementPt": null,
+  "usableProbes": 5,
+  "probeMoved": 0,
+  "probeOffLine": 0,
+  "probeBeforeOffLine": 0,
+  "containerScrollWidthPx": 1200,
+  "paragraphs": [
+   {
+    "block": "H1",
+    "path": "Document/H1[0]",
+    "text": "Two pages of one file",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 0
+     }
+    ]
+   }
+  ],
+  "words": [
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "Two",
+    "xPt": 34.008,
+    "rightPt": 71.109,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     21,
+     50,
+     42
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     10.64,
+     15.36,
+     11.1
+    ],
+    "advanceWidthPt": 37.1,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "pages",
+    "xPt": 75.094,
+    "rightPt": 126.41,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     43,
+     28,
+     34,
+     32,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     11.24,
+     10.54,
+     10.32,
+     10.36,
+     8.86
+    ],
+    "advanceWidthPt": 51.32,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.703
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "of",
+    "xPt": 130.395,
+    "rightPt": 148.219,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     33
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     11,
+     6.82
+    ],
+    "advanceWidthPt": 17.82,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.953
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "one",
+    "xPt": 152.215,
+    "rightPt": 185.109,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     42,
+     41,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     11.1,
+     11.44,
+     10.36
+    ],
+    "advanceWidthPt": 32.9,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.001
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "file",
+    "xPt": 189.094,
+    "rightPt": 217.523,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     33,
+     36,
+     39,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     6.82,
+     5.52,
+     5.72,
+     10.36
+    ],
+    "advanceWidthPt": 28.42,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.053
+   }
+  ]
+ },
+ "structure": {
+  "namespace": "http://iso.org/pdf2/ssn",
+  "lang": "en",
+  "expectedTree": {
+   "tag": "Document",
+   "path": "Document",
+   "mcids": [],
+   "attrs": {},
+   "kids": [
+    {
+     "tag": "H1",
+     "path": "Document/H1[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "Figure",
+     "path": "Document/Figure[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 1
+      }
+     ],
+     "attrs": {
+      "alt": "The first page of the facsimile fixture"
+     },
+     "kids": []
+    },
+    {
+     "tag": "Figure",
+     "path": "Document/Figure[1]",
+     "pg": 1,
+     "mcids": [
+      {
+       "page": 1,
+       "mcid": 0
+      }
+     ],
+     "attrs": {
+      "alt": "The second page of the facsimile fixture"
+     },
+     "kids": []
+    }
+   ]
+  },
+  "annots": [],
+  "artifacts": [],
+  "pages": [
+   {
+    "mcidOwners": [
+     "Document/H1[0]",
+     "Document/Figure[0]"
+    ]
+   },
+   {
+    "mcidOwners": [
+     "Document/Figure[1]"
+    ]
+   }
+  ],
+  "tagCounts": [
+   {
+    "tag": "Document",
+    "count": 1
+   },
+   {
+    "tag": "Figure",
+    "count": 2
+   },
+   {
+    "tag": "H1",
+    "count": 1
+   }
+  ],
+  "headings": [
+   {
+    "path": "Document/H1[0]",
+    "level": 1
+   }
+  ]
+ },
+ "outline": [
+  {
+   "path": "Document/H1[0]",
+   "title": "Two pages of one file",
+   "level": 1,
+   "depth": 0,
+   "page": 0,
+   "topPt": 290.505,
+   "count": 0
+  }
+ ],
+ "paint": [],
+ "paintOrder": [
+  "#decoration",
+  "h1[0]#decoration",
+  "object[0]#decoration",
+  "object[0]/img[0]#decoration",
+  "object[1]#decoration",
+  "object[1]/img[0]#decoration",
+  "object[2]#decoration",
+  "object[2]/canvas[0]#decoration",
+  "object[3]#decoration",
+  "object[3]/canvas[0]#decoration",
+  "#content",
+  "h1[0]#content",
+  "object[0]#content",
+  "object[0]/img[0]#content",
+  "object[1]#content",
+  "object[1]/img[0]#content",
+  "object[2]#content",
+  "object[2]/canvas[0]#content",
+  "object[3]#content",
+  "object[3]/canvas[0]#content"
+ ],
+ "deferred": [],
+ "rasterDpi": 300,
+ "vectorNotes": {
+  "paintOrderMode": "css",
+  "stackingContexts": [
+   {
+    "path": "",
+    "reason": "the container the exporter was handed",
+    "zIndex": "auto",
+    "position": "static"
+   }
+  ],
+  "decorations": [],
+  "ctmReadings": [],
+  "resources": {
+   "shadings": 0,
+   "patterns": 0,
+   "extGStates": 0,
+   "forms": 0
+  },
+  "streamOrder": [],
+  "figures": []
+ },
+ "images": [
+  {
+   "src": "facsimile:https://print.invalid/facsimile/fixture.pdf#1",
+   "domPath": "object[0]",
+   "format": "application/pdf",
+   "path": "form",
+   "filter": "FlateDecode",
+   "bpc": 0,
+   "colorSpace": "n/a",
+   "hasSMask": false,
+   "intrinsic": [
+    300,
+    400
+   ],
+   "displayedIntrinsic": [
+    300,
+    400
+   ],
+   "paintedRectPt": [
+    76.528,
+    132.981,
+    85.034,
+    113.379
+   ],
+   "cm": [
+    85.034,
+    0,
+    0,
+    113.379,
+    76.528,
+    132.981
+   ],
+   "xobjectHash": "4760ee3df195da7d664c409438da778724dfd0bf4285d21512af5c0057d5db2d",
+   "xobjectName": "Fc0",
+   "page": 0,
+   "tag": "Figure",
+   "alt": "The first page of the facsimile fixture",
+   "effectiveDpi": 254,
+   "bytesIn": 102878,
+   "bytesOut": 0,
+   "icc": "none",
+   "gammaOnly": false,
+   "interpolate": false,
+   "objectFit": "contain",
+   "objectPosition": "50% 50%",
+   "transform": "none",
+   "reason": "page 1 of https://print.invalid/facsimile/fixture.pdf, embedded as a Form XObject: vectors, text and fonts stay what they were"
+  },
+  {
+   "src": "facsimile:https://print.invalid/facsimile/fixture.pdf#2",
+   "domPath": "object[1]",
+   "format": "application/pdf",
+   "path": "form",
+   "filter": "FlateDecode",
+   "bpc": 0,
+   "colorSpace": "n/a",
+   "hasSMask": false,
+   "intrinsic": [
+    300,
+    400
+   ],
+   "displayedIntrinsic": [
+    300,
+    400
+   ],
+   "paintedRectPt": [
+    76.528,
+    192.77,
+    85.034,
+    113.379
+   ],
+   "cm": [
+    85.034,
+    0,
+    0,
+    113.379,
+    76.528,
+    192.77
+   ],
+   "xobjectHash": "2715aa35d34b0650176841201bd5d9fadec9ccdec383a95f5795263fdad53d81",
+   "xobjectName": "Fc1",
+   "page": 1,
+   "tag": "Figure",
+   "alt": "The second page of the facsimile fixture",
+   "effectiveDpi": 254,
+   "bytesIn": 102878,
+   "bytesOut": 0,
+   "icc": "none",
+   "gammaOnly": false,
+   "interpolate": false,
+   "objectFit": "contain",
+   "objectPosition": "50% 50%",
+   "transform": "none",
+   "reason": "page 2 of https://print.invalid/facsimile/fixture.pdf, embedded as a Form XObject: vectors, text and fonts stay what they were"
+  }
+ ],
+ "xobjects": 2,
+ "langs": [
+  {
+   "path": "catalog",
+   "tag": "html",
+   "lang": "en",
+   "source": "documentElement"
+  }
+ ],
+ "bytes": 111424
+}

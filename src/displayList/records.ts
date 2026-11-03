@@ -14,7 +14,7 @@ import { outlineItems } from '../emit/outline.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { CasterError } from '../errors.ts';
 
-import type { DisplayList, ImageSource, ImageUse, LinkItem, ListPlace, StructElement, TextItem, TextOrigin, WriterPen, WriterRecords, WrittenColour } from '../displayList.ts';
+import type { DisplayList, ImageSource, ImageUse, PngDecodeReason, LinkItem, ListPlace, StructElement, TextItem, TextOrigin, WriterPen, WriterRecords, WrittenColour } from '../displayList.ts';
 import type { ReportColor, ReportColorElement, ReportEmission, ReportLink, ReportOutlineItem, ReportRun, ReportStructure, ReportStructureAnnot, ReportStructureArtifact, ReportStructureNode, ReportWorklistEntry } from '../report.ts';
 
 /** The members of the report's `emission` that the measurement holds or joins, which `print()` adds. */
@@ -186,7 +186,7 @@ export function textNotesOf(list: DisplayList, mcids: number[][], pens: WriterPe
       if (!adjustments) throw new CasterError(`caster: the writer's records hold no pen for the text item ${at} of page ${page + 1}`, { listItem: { page, item: at } });
       runs.push({ page, item: at, line: item.lineIndex, faceId: fontOf(fonts, item).faceId, instanceKey: item.font, sizePt: round3(item.size), letterSpacingPt: round3(item.letterSpacing), mcid });
       item.segments.x.forEach((xPt, ordinal) => {
-        words.push({ page, item: at, mcid, ordinal, xPt, spaceEmitted: ordinal === 0 ? item.leadingSpace : item.segments.spaceBefore[ordinal], emittedAdj: adjustments[ordinal] ?? null });
+        words.push({ page, item: at, mcid, ordinal, xPt, spaceEmitted: item.space !== 0 && (ordinal === 0 ? item.leadingSpace : item.segments.spaceBefore[ordinal]), emittedAdj: adjustments[ordinal] ?? null });
       });
     });
   });
@@ -274,6 +274,7 @@ function imageNote(list: DisplayList, source: ImageSource, path: ImageUse['info'
     const chose = `the photo rule chose JPEG at quality ${source.photo?.chosenQuality ?? null}`;
     return { format, bytesIn, reason: format === 'image/png' ? chose : `no PDF filter reads ${format}; ${chose}` };
   }
+  if (source.samples !== undefined && source.original?.why !== undefined) return { format, bytesIn, reason: `decoded because of ${PNG_DECODE_REASONS[source.original.why]}` };
   if (source.samples !== undefined) {
     return { format, bytesIn, reason: source.photo ? `no PDF filter reads ${format}; the photo rule declined: ${source.photo.reason}` : `no PDF filter reads ${format}` };
   }
@@ -291,13 +292,16 @@ function imageNote(list: DisplayList, source: ImageSource, path: ImageUse['info'
     return { format: 'image/png', bytesIn: bytes.length, reason: source.photo ? `IDAT passthrough with /Predictor 15; the photo rule declined: ${source.photo.reason}` : 'IDAT passthrough with /Predictor 15' };
   }
   const info = parsePng(bytes);
-  const why = info.hasAlphaChannel
-    ? 'an alpha channel PDF has to carry as a separate /SMask'
-    : info.interlace !== 0
-      ? 'Adam7 interlacing, which /Predictor 15 does not describe'
-      : 'a palette with tRNS, whose alpha is a per-pixel lookup';
-  return { format: 'image/png', bytesIn: bytes.length, reason: `decoded because of ${why}` };
+  const why = info.hasAlphaChannel ? 'alpha' : info.interlace !== 0 ? 'interlace' : 'palette-trns';
+  return { format: 'image/png', bytesIn: bytes.length, reason: `decoded because of ${PNG_DECODE_REASONS[why]}` };
 }
+
+/** Why a PNG was decoded, as the report says it. */
+const PNG_DECODE_REASONS: Record<PngDecodeReason, string> = {
+  alpha: 'an alpha channel PDF has to carry as a separate /SMask',
+  interlace: 'Adam7 interlacing, which /Predictor 15 does not describe',
+  'palette-trns': 'a palette with tRNS, whose alpha is a per-pixel lookup',
+};
 
 /**
  * The bytes a blob key names.

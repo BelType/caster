@@ -2,7 +2,7 @@
  * `displayList/validate.js` — `validateList(list)`: the refusals of a list a writer could not write, each a sentence, before a byte is written.
  *
  * @remarks
- * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
+ * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; each image's samples in a shape the schema names, as many bytes as it says (version 6); the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); under a PDF/UA-2 claim, no word gap of a face with no space glyph (S103); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
  *
  * @packageDocumentation
  */
@@ -12,7 +12,7 @@ import { CasterError } from '../errors.ts';
 import type { DisplayList, Item, LinkItem, StructElement } from '../displayList.ts';
 
 /** The version this module and the writer read. */
-export const LIST_VERSION = 5;
+export const LIST_VERSION = 6;
 
 /** The keys an attribute object of `/A` may carry: `StructAttribute`'s, which the writer writes in this order. */
 export const ATTRIBUTE_KEYS = ['O', 'ListNumbering', 'BBox', 'Scope', 'Headers', 'RowSpan', 'ColSpan', 'TextPosition'] as const;
@@ -26,7 +26,9 @@ export function validateList(list: DisplayList): void {
   if (list.version !== LIST_VERSION)
     throw new CasterError(`caster: the writer reads a display list of version ${LIST_VERSION}, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
   checkBlobs(list);
+  checkSamples(list);
   checkFonts(list);
+  checkGaps(list);
   checkItems(list);
   checkLinks(list);
   checkTree(list);
@@ -44,6 +46,8 @@ function checkBlobs(list: DisplayList) {
     named(image.blob, `image ${key} (${image.domPath})`);
     named(image.jpeg, `image ${key}'s photo JPEG`);
     named(image.samples?.blob, `image ${key}'s samples`);
+    named(image.samples?.palette, `image ${key}'s palette`);
+    named(image.samples?.icc, `image ${key}'s profile`);
   }
   for (const [key, raster] of Object.entries(rasters)) {
     named(raster.blob, `raster ${key} (${raster.feature})`);
@@ -53,6 +57,25 @@ function checkBlobs(list: DisplayList) {
   if (list.writing.colour) {
     named(list.writing.colour.profiles.cmyk, 'the colour story\'s CMYK profile');
     named(list.writing.colour.profiles.srgb, 'the colour story\'s sRGB profile');
+  }
+}
+
+/** Each image's samples in a shape the schema names, holding as many bytes as the shape says. */
+function checkSamples(list: DisplayList) {
+  const { blobs, images } = list.resources;
+  for (const [key, image] of Object.entries(images)) {
+    const samples = image.samples;
+    if (!samples) continue;
+    const { colorSpace, bitsPerComponent, alpha, palette, icc } = samples;
+    const indexed = colorSpace === 'Indexed';
+    const paletteBytes = palette === undefined ? 0 : blobs[palette].length;
+    const named = (colorSpace === 'DeviceRGB' || colorSpace === 'DeviceGray' || indexed) && (bitsPerComponent === 8 || bitsPerComponent === 16);
+    if (!named || indexed !== (palette !== undefined) || (indexed && (bitsPerComponent !== 8 || icc !== undefined || paletteBytes % 3 !== 0 || paletteBytes < 3 || paletteBytes > 768)))
+      throw new CasterError(`caster: image ${key}'s samples are ${String(colorSpace)} at ${String(bitsPerComponent)} bits${palette !== undefined ? ` with a palette of ${paletteBytes} bytes` : ''}${icc !== undefined ? ' with a profile' : ''}, a shape the schema does not name`);
+    const expected = samples.width * samples.height * ((colorSpace === 'DeviceRGB' ? 3 : 1) + (alpha ? 1 : 0)) * (bitsPerComponent / 8);
+    const held = blobs[samples.blob].length;
+    if (held !== expected)
+      throw new CasterError(`caster: image ${key}'s samples hold ${held} bytes, and ${samples.width} by ${samples.height} ${colorSpace} at ${bitsPerComponent} bits${alpha ? ' with alpha' : ''} is ${expected}`);
   }
 }
 
@@ -76,6 +99,24 @@ function checkFonts(list: DisplayList) {
       if (gid !== 0 && !have.has(gid))
         throw new CasterError(`caster: the display list holds no width for glyph ${gid} of ${item.font}; the builder writes one for every glyph a text item shows and every space glyph it names`, { listItem: { page: p, item: at } });
     }
+  }));
+}
+
+/**
+ * A list that claims PDF/UA-2 shows no word gap as glyph 0 (*PDF/UA-2 is a flag, not a given*, S103).
+ *
+ * @remarks
+ * A text item's `space` is 0 when its face has no space glyph, and a gap it owes (`leadingSpace`, or `spaceBefore` past the first segment) would then show `.notdef`, which PDF/UA-2 forbids (ISO 14289-2, 8.4.5.9). Under a list that claims nothing (`tagged`) the writer writes such a gap as positioning with no glyph. The builder calls this too, since it knows the flag; the sentence names the face and the flag that prints it.
+ *
+ * @throws {CasterError} carrying `listItem`.
+ */
+export function checkGaps(list: DisplayList): void {
+  if (list.info.conformance !== 'pdfua2') return;
+  list.pages.forEach((page, p) => page.items.forEach((item, at) => {
+    if (item.kind !== 'text' || item.space !== 0) return;
+    if (!item.leadingSpace && !item.segments.spaceBefore.some((gap, i) => i > 0 && gap)) return;
+    const family = list.resources.fonts.find((instance) => instance.key === item.font)?.family || item.font;
+    throw new CasterError(`caster: the face ${family} (${item.font}) has no space glyph, so the word gap in text item ${at} of page ${p + 1} would be glyph 0, .notdef, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9); give the text a face with a space, or print with \`standard: 'none'\`, which claims no standard and writes the gap as positioning with no glyph`, { listItem: { page: p, item: at } });
   }));
 }
 

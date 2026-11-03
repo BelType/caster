@@ -1,5 +1,6 @@
 {
- "caster": "5f9790e",
+ "caster": "aa6366b",
+ "cicero": "ef1da70",
  "documents": [
   {
    "name": "paper",
@@ -80,7 +81,7 @@
    "sha256": "ef0f11e5ab300fe8fc9718128f01eb8120976e90e1529b38408a6d0d8aceb8ea",
    "bytes": 15750,
    "list": {
-    "bytes": 4578,
+    "bytes": 4591,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "fdef67ed03d9c723810020f2a8a1339850fd0202a896ceea337a2859729350c1"
@@ -110,6 +111,108 @@
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "90047c45011fc5f796e495d71874e619dc6d2d39073f5640bf127eab121c8972"
+    ]
+   }
+  },
+  {
+   "name": "faces",
+   "why": "a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2",
+   "sha256": "6159a43916d2bdef659fa90ce22ad45ade1a696615844159af5edea6ba25c50d",
+   "bytes": 35478,
+   "list": {
+    "bytes": 7623,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "48e6c5d5ad1d01599d374ecb817e15890d1feb3b8a3a88e527d44c90389e1f06",
+     "cd978d919f1c6015f2b61530ece710215762bc39ba54e0b977005582c9b86a1d"
+    ]
+   }
+  },
+  {
+   "name": "cff2",
+   "why": "a CFF2 variable face with `HVAR` (HarfBuzz's Hello World subset of Source Serif 4 Variable, its space glyph among them) at weight 700, away from its default master",
+   "refused": "caster: Source Serif 4 Variable#2|opsz=32,wght=700 glyph 1: layout used an advance of 208 but the embedded program's hmtx carries 233 after pinning {\"wght\":700,\"opsz\":32}",
+   "list": {
+    "bytes": 5588,
+    "blobs": [
+     "345dbc9c76c982d443190dba173d94d91f06537651ee8643de956a064eb78863",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "images",
+   "why": "a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel",
+   "sha256": "d05f12b03b26c7a9938fc6d7023c9375b7b0f6e4a7fd926a9e24dc56bb49c81a",
+   "bytes": 26472,
+   "list": {
+    "bytes": 13837,
+    "blobs": [
+     "0c9fc65dab67d463886f5e8fa01f4c19bf2d7a2f1b6e928712221338ab8d3d5c",
+     "18a5c0178233370f7d628b46a29c5124c002ee40b48cd4e23606edb8cae5f379",
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "552530795c2419f904114506dc5dbc884ca7e52eb938613f883eaf461fcd2fc1",
+     "99b35dfd94df719e9e06891d0f1af7b5ad16e1ac3f71a62cb65a943c5aa20172",
+     "a34b180c28cd5cff72460a3fe061d6d335e070f9feddf27c8b76ff582af276c3",
+     "ab6f5c87a8b9935d51d12f8e75a1753436e36cbe43c2e734d8064c6e23db827c",
+     "d4101f0f92913c05b612be0dcd4f1faabd809a6802f6b3f7e1032a78b6d2e195",
+     "eaf98d9c521d03dd3bf10d62e3880b517a60712f4bb32a8ba77098f79cc38657",
+     "fc7ea1e792c55b5f413e5e34dd83243f3054b7b67626d027556fbfe156a76487"
+    ]
+   }
+  },
+  {
+   "name": "facsimile-pages",
+   "why": "two pages of one facsimile file",
+   "sha256": "bc3fb807ada18f90bd87c9be6d31b3dc430de6d91a9879dc895a700c8187575e",
+   "bytes": 111424,
+   "list": {
+    "bytes": 3208,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "ca5f3785f28f421b2a8ecfd5ebbe9bfdf395e6832f6fa67d48ad8603faf36cbd"
+    ]
+   }
+  },
+  {
+   "name": "vectors",
+   "why": "an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)",
+   "sha256": "58ad8b00638a80e2187f57d6baf276486d825aa7a5383fe56da5f9dc0ae7cbdd",
+   "bytes": 8752,
+   "list": {
+    "bytes": 8027,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "pages",
+   "why": "a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)",
+   "sha256": "90b686c9c8803835cad2205270bcd75547483abc89e12d3177aa37e84133445a",
+   "bytes": 17627,
+   "list": {
+    "bytes": 13628,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
+    ]
+   }
+  },
+  {
+   "name": "vector-roads",
+   "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
+   "sha256": "2489eeae113942ed722a2ba83a4762f90b3ea8882b94621a8afa1aa0e253012f",
+   "bytes": 291300,
+   "list": {
+    "bytes": 148560,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "59956d3bb2db9376db81b5b3efa56c2a2a9cce11f76747ad50ba23b57c5b88a7",
+     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+     "8b75f1753b9dc80814a9c3e4c6f65fd8a1a2b68e138c150d84631f1185655dd6",
+     "9b9fbed07be70434c1e98bbc3b80e0976d3f79c04fd3886e44391538503ba373",
+     "eb5750d714f8f24a329e9e3815cf83f8e32d75d941928c53a712f232b9b869b2",
+     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
    }
   }

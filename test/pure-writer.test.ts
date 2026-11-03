@@ -2,7 +2,7 @@
  * The writer's import closure is a short list of modules, none of which names the DOM, a decoder of the browser's, a clock that reaches a byte, chance or the environment: a guard on what `emitStructure`, `recordsOf` and `validateList` can reach, not on what they happen to call.
  *
  * @remarks
- * A sweep of the writer's own files by text would pass while the writer still imported the walk through one pure helper, which is how the closure reached 47 modules and fifteen DOM reads at Caster 0.1.4 (the inventory of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo). This reads the value imports and re-exports of the four roots (`emit/structureEmit.ts`, `vectors/vectorEmit.ts`, `displayList/records.ts`, `displayList/validate.ts`), transitively, and holds the closure to an allowed list; a module that joins it is a decision to make here, by name, and the refusal names the import chain that brought it. Each module in it is read with its comments removed, and a line that names a forbidden thing fails unless it is excused below with its reason, which the test prints. The clocks excused are the timings the records and the report carry and the writer's pause cadence; none reaches a byte, which the determinism suite proves on the corpus. `crypto.subtle.digest('SHA-256', …)` is allowed: a hash, the same in every realm, which the image and facsimile dedupe and the colour story's profile record read.
+ * A sweep of the writer's own files by text would pass while the writer still imported the walk through one pure helper, which is how the closure reached 47 modules and fifteen DOM reads at Caster 0.1.4 (the inventory of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo). This reads the value imports and re-exports of the five roots (`emit/structureEmit.ts`, `emit/forme.ts`, the Rust writer's door, `vectors/vectorEmit.ts`, `displayList/records.ts`, `displayList/validate.ts`), transitively, and holds the closure to an allowed list; a module that joins it is a decision to make here, by name, and the refusal names the import chain that brought it. Each module in it is read with its comments removed, and a line that names a forbidden thing fails unless it is excused below with its reason, which the test prints. The clocks excused are the timings the records and the report carry and the writer's pause cadence; none reaches a byte, which the determinism suite proves on the corpus. `crypto.subtle.digest('SHA-256', …)` is allowed: a hash, the same in every realm, which the image and facsimile dedupe and the colour story's profile record read.
  *
  * @see /Users/egildo/Privata/dev/beltype/.claude/plans/the-rust-writer/plan-close-the-list.md (stages 2 and 5)
  * @packageDocumentation
@@ -16,8 +16,8 @@ import { fileURLToPath } from 'node:url';
 
 const SRC = path.join(path.dirname(fileURLToPath(new URL('../package.json', import.meta.url))), 'src');
 
-/** Where the closure starts: the writer, its vector half, the records a report derives from the writer's, and the validator. */
-const ROOTS = ['emit/structureEmit.ts', 'vectors/vectorEmit.ts', 'displayList/records.ts', 'displayList/validate.ts'];
+/** Where the closure starts: the writer, the Rust writer's door, its vector half, the records a report derives from the writer's, and the validator. */
+const ROOTS = ['emit/structureEmit.ts', 'emit/forme.ts', 'vectors/vectorEmit.ts', 'displayList/records.ts', 'displayList/validate.ts'];
 
 /** Every module the writer may reach, relative to `src/`. */
 const ALLOWED = new Set([
@@ -25,7 +25,7 @@ const ALLOWED = new Set([
   'colour/colorResources.ts',
   'coordinates/matrix.ts', 'coordinates/printMarks.ts', 'coordinates/units.ts',
   'displayList/records.ts', 'displayList/validate.ts',
-  'emit/document.ts', 'emit/outline.ts', 'emit/pdf20-writer.ts', 'emit/structureEmit.ts', 'emit/textEmit.ts',
+  'emit/document.ts', 'emit/forme.ts', 'emit/outline.ts', 'emit/pdf20-writer.ts', 'emit/structureEmit.ts', 'emit/textEmit.ts',
   'fonts/axisMap.ts', 'fonts/cidFont.ts', 'fonts/clusters.ts', 'fonts/fontEmbed.ts', 'fonts/fontProgram.ts', 'fonts/hbSubset.ts', 'fonts/toUnicode.ts',
   'images/facsimile.ts', 'images/imageEmbed.ts', 'images/jpeg.ts', 'images/png.ts', 'images/samples.ts',
   'vectors/pathData.ts', 'vectors/shading.ts', 'vectors/transparency.ts', 'vectors/vectorEmit.ts',
@@ -35,7 +35,6 @@ const ALLOWED = new Set([
 const EXCUSED: Record<string, { line: RegExp, reason: string }[]> = {
   'capabilities.ts': [{ line: /performance\.now\(\) : Date\.now\(\)/u, reason: 'a capability\'s load time, which the report prints and no byte reads' }],
   'fonts/fontEmbed.ts': [{ line: /const clock = \(\) => performance\.now\(\);/u, reason: 'an instance\'s embed timing (`CidFontStats.ms`), a record the snapshot drops' }],
-  'images/imageEmbed.ts': [{ line: /= performance\.now\(\)/u, reason: 'a decoded PNG\'s `decodeMs`, a record the snapshot drops' }],
   'images/facsimile.ts': [{ line: /performance\.now\(\)/u, reason: 'a facsimile\'s `decodeMs`, a record the snapshot drops' }],
   'emit/pdf20-writer.ts': [{ line: /performance\.now\(\);/u, reason: 'when the writer yields to the page, every 50 ms, never what it writes' }],
 };

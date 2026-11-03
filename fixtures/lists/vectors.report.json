@@ -1,0 +1,1133 @@
+{
+ "page": {
+  "widthPt": 340.157,
+  "heightPt": 340.157
+ },
+ "elements": [],
+ "capabilities": [
+  {
+   "name": "pdf",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "fontkit",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "harfbuzz",
+   "bytes": 0,
+   "loaded": true
+  },
+  {
+   "name": "hbSubset",
+   "bytes": 622493,
+   "loaded": true
+  },
+  {
+   "name": "woff2",
+   "bytes": 0,
+   "loaded": true
+  }
+ ],
+ "conformance": "pdfua2",
+ "options": {
+  "shaper": "harfbuzz",
+  "subset": "hb",
+  "cffContainer": "bare",
+  "widthDecimals": 3,
+  "pngDecoder": "fast-png",
+  "photoRule": true,
+  "rasterDpi": 300,
+  "paintOrder": "css",
+  "styledBorders": true,
+  "blackText": "none",
+  "convertRgb": "none",
+  "skipInk": true,
+  "colour": "auto",
+  "unknownElements": "infer",
+  "standard": "ua-2",
+  "writer": "pdf-lib"
+ },
+ "errors": [],
+ "warnings": [],
+ "needs": {
+  "forcedPngDecode": false,
+  "woff2Only": true,
+  "colourHints": false,
+  "hasTables": false,
+  "hasSvg": true,
+  "hasEmoji": false,
+  "faces": 1
+ },
+ "color": {
+  "registrations": [
+   {
+    "name": "--pdf-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-top-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-right-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-bottom-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-border-left-color",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-fill",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-stroke",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-background",
+    "registered": true,
+    "emptyInitialValue": true
+   },
+   {
+    "name": "--pdf-overprint",
+    "registered": true,
+    "emptyInitialValue": true
+   }
+  ]
+ },
+ "container": {
+  "scaleRecovered": 1,
+  "scaleFromHeight": 1,
+  "scaleFromWidthRatio": 1.0000005512302357,
+  "scaleFromHeightRatio": 1.0000005524483406,
+  "linear": [
+   1,
+   0,
+   0,
+   1
+  ],
+  "offAxisPx": 0,
+  "cornersAxisAligned": true,
+  "pageRectPx": [
+   [
+    373.234375,
+    24,
+    453.53125,
+    452.53125
+   ]
+  ],
+  "untransformedWidthPx": [
+   453.531
+  ],
+  "offsetWidthPx": [
+   454
+  ],
+  "widthSource": "computed",
+  "zoomSeen": [],
+  "scrollPx": {
+   "windowX": 0,
+   "windowY": 0,
+   "ancestorX": 0,
+   "ancestorY": 0
+  },
+  "devicePixelRatio": 1,
+  "warnings": [],
+  "errors": []
+ },
+ "pageBoxes": [
+  {
+   "nominal": "",
+   "media": [
+    0,
+    0,
+    340.157,
+    340.157
+   ],
+   "measuredWidthPx": 453.531,
+   "measuredHeightPx": 452.531
+  }
+ ],
+ "inferred": [],
+ "svgImages": [],
+ "emission": {
+  "pageCount": 1,
+  "baselineMethod": "measureText",
+  "columnWidthPx": 794,
+  "kernAdjustments": 5,
+  "actualTextSpans": 0,
+  "faces": [
+   {
+    "id": "Source Sans 3#1|wght=700",
+    "postScriptName": "SourceSans3-Roman",
+    "usedGlyphs": 10,
+    "fontFileBytes": 3084,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Sans 3#1",
+    "family": "Source Sans 3",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 700
+    },
+    "glyphsUsed": [
+     1,
+     23,
+     28,
+     30,
+     31,
+     32,
+     42,
+     45,
+     46,
+     47
+    ],
+    "sourceBytes": 652916,
+    "subsetBytes": 3084,
+    "subsetFlateBytes": 1802,
+    "numGlyphs": 48,
+    "nonEmptyGlyphs": 9,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "AEXUXG",
+    "cffContainer": "bare",
+    "cidToText": {
+     "1": [
+      " "
+     ],
+     "23": [
+      "V"
+     ],
+     "28": [
+      "a"
+     ],
+     "30": [
+      "c"
+     ],
+     "31": [
+      "d"
+     ],
+     "32": [
+      "e"
+     ],
+     "42": [
+      "o"
+     ],
+     "45": [
+      "r"
+     ],
+     "46": [
+      "s"
+     ],
+     "47": [
+      "t"
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/cast/SourceSans3-Variable.woff2"
+   }
+  ],
+  "runs": [
+   {
+    "index": 0,
+    "page": 0,
+    "line": 0,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 20,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   }
+  ],
+  "marginPt": 0,
+  "pageWidthPt": 340.157,
+  "pageHeightPt": 340.157,
+  "trailingLetterSpacing": false,
+  "trailingSamples": [],
+  "baselineAgreementPt": null,
+  "usableProbes": 2,
+  "probeMoved": 0,
+  "probeOffLine": 0,
+  "probeBeforeOffLine": 0,
+  "containerScrollWidthPx": 1200,
+  "paragraphs": [
+   {
+    "block": "H1",
+    "path": "Document/H1[0]",
+    "text": "Vector roads",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 0
+     }
+    ]
+   }
+  ],
+  "words": [
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "Vector",
+    "xPt": 34.008,
+    "rightPt": 90.609,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     23,
+     32,
+     30,
+     47,
+     42,
+     45
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     10.74,
+     10.36,
+     9.16,
+     7.3,
+     11.1,
+     7.96
+    ],
+    "advanceWidthPt": 56.62,
+    "spaceBefore": false,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 0,
+    "mcid": 0,
+    "runIndex": 0,
+    "block": "H1",
+    "text": "roads",
+    "xPt": 94.605,
+    "rightPt": 144.105,
+    "topPt": 290.505,
+    "baselineMeasureTextPt": 270.255,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     45,
+     42,
+     28,
+     31,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.76,
+     10.88,
+     10.54,
+     11.46,
+     8.86
+    ],
+    "advanceWidthPt": 49.5,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 1.154
+   }
+  ]
+ },
+ "structure": {
+  "namespace": "http://iso.org/pdf2/ssn",
+  "lang": "en",
+  "expectedTree": {
+   "tag": "Document",
+   "path": "Document",
+   "mcids": [],
+   "attrs": {},
+   "kids": [
+    {
+     "tag": "H1",
+     "path": "Document/H1[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 0
+      }
+     ],
+     "attrs": {},
+     "kids": []
+    },
+    {
+     "tag": "Figure",
+     "path": "Document/Figure[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 1
+      }
+     ],
+     "attrs": {
+      "alt": "A line with arrowheads, and a square under a soft mask"
+     },
+     "kids": []
+    }
+   ]
+  },
+  "annots": [],
+  "artifacts": [
+   {
+    "path": "artifact:hr[0]",
+    "type": "Layout",
+    "page": 0,
+    "kind": "paint"
+   },
+   {
+    "path": "artifact:paint:div[0]",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   },
+   {
+    "path": "artifact:paint:div[0]/div[0]",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   }
+  ],
+  "pages": [
+   {
+    "mcidOwners": [
+     "Document/H1[0]",
+     "Document/Figure[0]"
+    ]
+   }
+  ],
+  "tagCounts": [
+   {
+    "tag": "Document",
+    "count": 1
+   },
+   {
+    "tag": "Figure",
+    "count": 1
+   },
+   {
+    "tag": "H1",
+    "count": 1
+   }
+  ],
+  "headings": [
+   {
+    "path": "Document/H1[0]",
+    "level": 1
+   }
+  ]
+ },
+ "outline": [
+  {
+   "path": "Document/H1[0]",
+   "title": "Vector roads",
+   "level": 1,
+   "depth": 0,
+   "page": 0,
+   "topPt": 290.505,
+   "count": 0
+  }
+ ],
+ "paint": [
+  {
+   "path": "svg[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "clip",
+   "label": "svg:clip",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    34.008,
+    120.161,
+    204.082,
+    188.188
+   ],
+   "reason": "the <svg> viewport at svg[0]",
+   "evenOdd": false
+  },
+  {
+   "path": "svg[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "stroke",
+   "label": "path",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    42.514,
+    131.499,
+    110.542,
+    174.016
+   ],
+   "params": {
+    "widthPt": 2.834,
+    "cap": 0,
+    "join": 0,
+    "miterLimit": 4,
+    "dashPt": [],
+    "nonScaling": false
+   }
+  },
+  {
+   "path": "svg[0]/defs[0]/marker[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "clip",
+   "label": "path:clip",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    0,
+    0,
+    4,
+    4
+   ],
+   "reason": "the marker viewport of #arrow",
+   "evenOdd": false
+  },
+  {
+   "path": "svg[0]/defs[0]/marker[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "fill",
+   "label": "path",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    0,
+    0,
+    4,
+    4
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.8,
+     0,
+     0.2
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "svg[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "form",
+   "label": "marker-start",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    0,
+    0,
+    4,
+    4
+   ],
+   "ctm": [
+    -1.771,
+    -2.213,
+    -2.213,
+    1.771,
+    50.482,
+    132.384
+   ],
+   "reason": "<marker id=\"arrow\"> on the start vertex of svg[0]/path[0]",
+   "form": "Fx0",
+   "params": {
+    "key": "svg[0]#arrow",
+    "reused": false
+   }
+  },
+  {
+   "path": "svg[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "form",
+   "label": "marker-mid",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    0,
+    0,
+    4,
+    4
+   ],
+   "ctm": [
+    2.834,
+    0,
+    0,
+    -2.834,
+    70.859,
+    179.685
+   ],
+   "reason": "<marker id=\"arrow\"> on the mid vertex of svg[0]/path[0]",
+   "form": "Fx0",
+   "params": {
+    "key": "svg[0]#arrow",
+    "reused": true
+   }
+  },
+  {
+   "path": "svg[0]/path[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "form",
+   "label": "marker-end",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    0,
+    0,
+    4,
+    4
+   ],
+   "ctm": [
+    1.771,
+    -2.213,
+    -2.213,
+    -1.771,
+    111.427,
+    139.467
+   ],
+   "reason": "<marker id=\"arrow\"> on the end vertex of svg[0]/path[0]",
+   "form": "Fx0",
+   "params": {
+    "key": "svg[0]#arrow",
+    "reused": true
+   }
+  },
+  {
+   "path": "svg[0]/defs[0]/mask[0]/rect[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "shading",
+   "label": "mask-rect",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    133.217,
+    125.83,
+    195.576,
+    182.519
+   ],
+   "ctm": [
+    62.358,
+    0,
+    0,
+    -56.689,
+    133.217,
+    182.519
+   ],
+   "params": {
+    "type": 2,
+    "coords": [
+     0,
+     0,
+     1,
+     0
+    ],
+    "coordsPt": [
+     133.217,
+     182.519,
+     195.576,
+     182.519
+    ],
+    "extend": [
+     true,
+     true
+    ],
+    "domain": [
+     0,
+     1
+    ],
+    "stops": [
+     {
+      "offset": 0,
+      "rgb": [
+       1,
+       1,
+       1
+      ],
+      "alpha": 1
+     },
+     {
+      "offset": 1,
+      "rgb": [
+       0,
+       0,
+       0
+      ],
+      "alpha": 1
+     }
+    ],
+    "colorSpace": "DeviceRGB",
+    "matrix": [
+     62.358,
+     0,
+     0,
+     -56.689,
+     133.217,
+     182.519
+    ],
+    "spread": "pad",
+    "periods": 1,
+    "shading": "Sh0",
+    "source": "<lineargradient id=\"fade\"> objectBoundingBox"
+   },
+   "reason": "a gradient fill is `sh` inside a clip, never a shading pattern",
+   "evenOdd": false
+  },
+  {
+   "path": "svg[0]/g[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "smask",
+   "label": "g:mask",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    133.217,
+    125.83,
+    195.576,
+    182.519
+   ],
+   "reason": "mask url(#soft) on svg[0]/g[0], userSpaceOnUse, luminosity",
+   "form": "Fm0"
+  },
+  {
+   "path": "svg[0]/g[0]/rect[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "fill",
+   "label": "rect",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    133.217,
+    125.83,
+    195.576,
+    182.519
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.6,
+     0.8
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "svg[0]/g[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "smask",
+   "label": "g:state",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "extGState": "GT0",
+   "params": {
+    "smask": "Luminosity"
+   }
+  },
+  {
+   "path": "svg[0]/g[0]",
+   "owner": "Document/Figure[0]",
+   "kind": "group",
+   "label": "g",
+   "page": 0,
+   "paintIndex": 18,
+   "artifact": false,
+   "geometry": [
+    133.217,
+    125.83,
+    195.576,
+    182.519
+   ],
+   "reason": "mask on svg[0]/g[0]",
+   "form": "Fm1",
+   "params": {
+    "opacity": 1,
+    "blend": "Normal",
+    "children": 1
+   }
+  },
+  {
+   "path": "div[0]",
+   "owner": "artifact:paint:div[0]",
+   "kind": "fill",
+   "label": "background",
+   "page": 0,
+   "paintIndex": 30,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    206.68,
+    306.129,
+    246.36
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     1,
+     0.867,
+     0
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "fill",
+   "label": "background",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    51.012,
+    213.688,
+    137.543,
+    237.864
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.6,
+     0.8
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "fill",
+   "label": "border-top",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    51.012,
+    237.114,
+    137.543,
+    237.864
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.2,
+     0.4
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "fill",
+   "label": "border-right",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    136.793,
+    213.688,
+    137.543,
+    237.864
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.2,
+     0.4
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "fill",
+   "label": "border-bottom",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    51.012,
+    213.688,
+    137.543,
+    214.438
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.2,
+     0.4
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "fill",
+   "label": "border-left",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    51.012,
+    213.688,
+    51.762,
+    237.864
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0,
+     0.2,
+     0.4
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "group",
+   "label": "box:state",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "extGState": "GT1",
+   "params": {
+    "BM": "Multiply"
+   }
+  },
+  {
+   "path": "div[0]/div[0]",
+   "owner": "artifact:paint:div[0]/div[0]",
+   "kind": "group",
+   "label": "box",
+   "page": 0,
+   "paintIndex": 32,
+   "artifact": true,
+   "geometry": [
+    51.012,
+    213.688,
+    137.543,
+    237.864
+   ],
+   "reason": "mix-blend-mode: multiply makes the box a transparency group",
+   "form": "Fm2",
+   "params": {
+    "opacity": 1,
+    "blend": "Multiply",
+    "children": 5
+   }
+  }
+ ],
+ "paintOrder": [
+  "#decoration",
+  "h1[0]#decoration",
+  "hr[0]#decoration",
+  "svg[0]#decoration",
+  "svg[0]/defs[0]#decoration",
+  "svg[0]/defs[0]/marker[0]#decoration",
+  "svg[0]/defs[0]/marker[0]/path[0]#decoration",
+  "svg[0]/defs[0]/lineargradient[0]#decoration",
+  "svg[0]/defs[0]/lineargradient[0]/stop[0]#decoration",
+  "svg[0]/defs[0]/lineargradient[0]/stop[1]#decoration",
+  "svg[0]/defs[0]/mask[0]#decoration",
+  "svg[0]/defs[0]/mask[0]/rect[0]#decoration",
+  "svg[0]/path[0]#decoration",
+  "svg[0]/g[0]#decoration",
+  "svg[0]/g[0]/rect[0]#decoration",
+  "#content",
+  "h1[0]#content",
+  "hr[0]#content",
+  "svg[0]#content",
+  "svg[0]/defs[0]#content",
+  "svg[0]/defs[0]/marker[0]#content",
+  "svg[0]/defs[0]/marker[0]/path[0]#content",
+  "svg[0]/defs[0]/lineargradient[0]#content",
+  "svg[0]/defs[0]/lineargradient[0]/stop[0]#content",
+  "svg[0]/defs[0]/lineargradient[0]/stop[1]#content",
+  "svg[0]/defs[0]/mask[0]#content",
+  "svg[0]/defs[0]/mask[0]/rect[0]#content",
+  "svg[0]/path[0]#content",
+  "svg[0]/g[0]#content",
+  "svg[0]/g[0]/rect[0]#content",
+  "div[0]#decoration",
+  "div[0]#content",
+  "div[0]/div[0]#decoration",
+  "div[0]/div[0]#content"
+ ],
+ "deferred": [],
+ "rasterDpi": 300,
+ "vectorNotes": {
+  "paintOrderMode": "css",
+  "stackingContexts": [
+   {
+    "path": "",
+    "reason": "the container the exporter was handed",
+    "zIndex": "auto",
+    "position": "static"
+   },
+   {
+    "path": "div[0]",
+    "reason": "isolation: isolate",
+    "zIndex": "auto",
+    "position": "relative"
+   },
+   {
+    "path": "div[0]/div[0]",
+    "reason": "mix-blend-mode: multiply",
+    "zIndex": "auto",
+    "position": "absolute"
+   }
+  ],
+  "decorations": [],
+  "ctmReadings": [
+   {
+    "path": "svg[0]",
+    "case": "the outer <svg> itself",
+    "ctm": [
+     1.8896484375,
+     0,
+     0,
+     1.8896484375,
+     0.003906249999993741,
+     0
+    ],
+    "screenCtm": [
+     1.8896484375,
+     0,
+     0,
+     1.8896484375,
+     418.58203125,
+     226.625
+    ],
+    "bbox": [
+     6,
+     4,
+     108,
+     40
+    ],
+    "clientRect": [
+     418.578125,
+     226.625,
+     226.765625,
+     90.703125
+    ],
+    "note": ""
+   }
+  ],
+  "resources": {
+   "shadings": 1,
+   "patterns": 0,
+   "extGStates": 2,
+   "forms": 3
+  },
+  "streamOrder": [
+   "svg[0]#svg",
+   "div[0]#background",
+   "div[0]/div[0]#box"
+  ],
+  "figures": [
+   {
+    "path": "svg[0]",
+    "tag": "Figure",
+    "alt": "A line with arrowheads, and a square under a soft mask"
+   }
+  ]
+ },
+ "langs": [
+  {
+   "path": "catalog",
+   "tag": "html",
+   "lang": "en",
+   "source": "documentElement"
+  }
+ ],
+ "bytes": 8752
+}

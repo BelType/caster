@@ -15,6 +15,9 @@ Each is loaded by `src/capabilities.js` through `new URL(rel, import.meta.url)`,
 | `lcms.wasm` | lcms-wasm/dist/lcms.wasm | 315910 | located by lcms.js through import.meta.url |
 | `harfbuzz.js` | harfbuzzjs 1.6.1, rebuilt | 41194 | shaping that reproduces every browser width and glyph sequence, marks included. Emscripten glue: `harfbuzz.wasm` must sit beside this file |
 | `harfbuzz.wasm` | harfbuzzjs 1.6.1, rebuilt | 456589 | located by harfbuzz.js through import.meta.url |
+| `forme.js` | forme 1577783, built | 11355 | the Rust writer's glue, wasm-bindgen `--target web`: the `Writer` class `emit/forme.js` calls under `writer: 'forme'`: imported in a page by its worker, `emit/formeWorker.js`, and instantiated there from the module the page compiled, and initialised in node with the bytes the registry read |
+| `forme_bg.wasm` | forme 1577783, built | 939819 | the Rust writer: the display list in, the file and the records out. Fetched by the registry; compiled once in a page and posted to the worker, handed to the glue's `initSync` in node |
+| `forme-NOTICE.txt` | forme 1577783, built | 7928 | forme's `NOTICE`: the notices of the code subsetter adapts, and what forme's copies of skrifa, write-fonts, hayro-write and hayro-syntax change, which travel with the module |
 
 ## `harfbuzz.js` and `harfbuzz.wasm` are rebuilt, not copied
 
@@ -24,3 +27,12 @@ The npm build of harfbuzzjs compiles with `-DHB_TINY`, which drops HarfBuzz's fa
 - harfbuzzjs 1.6.1 (tag `v1.6.1`) with HarfBuzz 14.4.0 at commit `36cb489cb02ce4b92099669ba9f9bea348eff93f`, the submodule commit that tag pins.
 - The override: `#undef HB_NO_LEGACY`, appended to `config-override.h`. Nothing else in harfbuzzjs or HarfBuzz is edited. `harfbuzz-subset.wasm` is untouched: it has its own override file and shapes nothing.
 - To rebuild: `docker pull emscripten/emsdk@sha256:fb7864e398acfda863dfcea78b8bc8adad359fa60c6a0bbeb845931de64aa68a`, then `node scripts/rebuild-harfbuzz.js <harfbuzzjs v1.6.1 checkout> <harfbuzz checkout at the commit above>` (the script runs `docker run --rm -v <work>:/src -w /src emscripten/emsdk@sha256:fb7864e398acfda863dfcea78b8bc8adad359fa60c6a0bbeb845931de64aa68a make harfbuzz`), then `docker rmi` the image.
+
+## `forme.js` and `forme_bg.wasm` are built from forme, not copied
+
+forme is BelType's Rust PDF writer (`codeberg.org/BelType/forme`), which reads the display list and nothing else. `scripts/bundle-forme.js` builds these three from a forme checkout (`FORME`, the sibling `../forme` by default); `bundle-vendor.js` leaves them alone.
+
+- forme untagged, commit `1577783`, with its own copies of skrifa, write-fonts, hayro-write and hayro-syntax under `vendor/` (`forme-NOTICE.txt` says what each changes).
+- rustc 1.99.1 (58cf8f9c3 2026-10-13); wasm-bindgen 0.2.129 (`--target web --no-typescript`), the version forme's `Cargo.lock` pins; wasm-opt version 133.
+- The recipe: `cargo rustc --lib --profile wasm --target wasm32-unknown-unknown --crate-type cdylib`, with `RUSTFLAGS` remapping crates.io's source folder to `crates` and the checkout to `forme`, then wasm-bindgen, then `wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int` on the module. The crate type is named because cargo performs no LTO on a library that is also an `rlib`.
+- The module is 939819 bytes and its glue 11355, 951174 together, against the 1061704 bytes forme lets Caster delete (`harfbuzz-subset.wasm` and `pdf-lib.js`).
