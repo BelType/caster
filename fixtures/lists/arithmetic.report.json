@@ -1359,7 +1359,7 @@
    "tag": "Figure",
    "alt": "An arithmetic-coded JPEG, decoded by the browser",
    "effectiveDpi": 61,
-   "bytesIn": 0,
+   "bytesIn": 1169,
    "bytesOut": 1169,
    "icc": "none",
    "gammaOnly": false,
@@ -1367,7 +1367,7 @@
    "objectFit": "fill",
    "objectPosition": "50% 50%",
    "transform": "none",
-   "reason": "reduced by the image pass, carried as samples"
+   "reason": "arithmetic coding, and no browser decoder: CasterError: canvasDecode: the browser could not decode image/jpeg: InvalidStateError: The source image could not be decoded.; the entropy-coded data goes to /DCTDecode unread"
   }
  ],
  "xobjects": 1,

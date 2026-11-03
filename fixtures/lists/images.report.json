@@ -2657,7 +2657,7 @@
    "tag": "Figure",
    "alt": "A CMYK JPEG with the Adobe marker",
    "effectiveDpi": 50.8,
-   "bytesIn": 0,
+   "bytesIn": 497,
    "bytesOut": 497,
    "icc": "none",
    "gammaOnly": false,
@@ -2665,7 +2665,7 @@
    "objectFit": "fill",
    "objectPosition": "50% 50%",
    "transform": "none",
-   "reason": "reduced by the image pass, carried as samples"
+   "reason": "SOF 0xc0, 4 components, APP14 Adobe"
   },
   {
    "src": "https://print.invalid/roads/icc.jpg",
@@ -2704,7 +2704,7 @@
    "tag": "Figure",
    "alt": "A JPEG with an ICC profile",
    "effectiveDpi": 50.8,
-   "bytesIn": 0,
+   "bytesIn": 2935,
    "bytesOut": 2935,
    "icc": "embedded",
    "gammaOnly": false,
@@ -2712,7 +2712,7 @@
    "objectFit": "fill",
    "objectPosition": "50% 50%",
    "transform": "none",
-   "reason": "reduced by the image pass, carried as samples"
+   "reason": "SOF 0xc0, 3 components"
   },
   {
    "src": "https://print.invalid/roads/alpha.png",
