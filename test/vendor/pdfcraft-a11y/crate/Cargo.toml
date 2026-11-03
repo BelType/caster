@@ -1,0 +1,21 @@
+[package]
+name = "pdfcraft-a11y-wasm"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.129"
+pdfcraft-a11y = { git = "https://github.com/storytold/pdfcraft", rev = "43550c448db3ba91753f638e3843c0da036bbd60" }
+pdfcraft-cos = { git = "https://github.com/storytold/pdfcraft", rev = "43550c448db3ba91753f638e3843c0da036bbd60" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

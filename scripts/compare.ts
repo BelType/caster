@@ -11,6 +11,7 @@
  * - **The tree.** mupdf reads both files' structure trees element by element in allocation order and everything that points into them: every element's entries and `/K`, the ParentTree, the IDTree, `/MarkInfo`, each page's `/Tabs`, `/StructParents` and link annotations with their destinations, the outline item by item, `/PageLabels` (`treeOf`). Beside it, `recordsOf` over forme's records gives the `structure`, `links`, `outline` and `idTree` members of the committed report snapshot. The tree's families are not content, so `--only` does not restrict them.
  *
  * - **The pixels.** With no `--only`, mupdf renders each page of both files at 144 dpi, RGB, 8 bits; per page the largest channel difference and the share of pixels more than 8 of 255 apart are printed; a page with a pixel more than 64 apart, or more than 0.2 per cent of its pixels past 8, is a disagreement.
+ * - **yapr**, the second reader (*a second reader is asked the same question*, S83), with no `--only`: its glyphs of each page, the text and pen origin of every glyph in content order, within 0.01 pt; and its renders of each page at 144 dpi, held to the pixel lines above. On a list with no oracle file, its glyphs are held to the list as mupdf's are. The module is `test/vendor/yapr/`.
  * - **The colour objects**, for a list with a colour story: per page every `/ColorSpace` and `/ExtGState` entry, `/DefaultRGB` by name and the rest by what they are, and the catalog's `/OutputIntents`, each described as the images are.
  *
  * A list the oracle refuses (the CFF2 face) has no oracle file: its words are held to the list instead, each segment's first glyph at the segment's `x` on the run's baseline, within 0.01 pt. Reads only.
@@ -23,6 +24,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import * as mupdf from 'mupdf';
+import { openYapr, pageGlyphs } from '../test/read-back-yapr.ts';
+import type { Yapr } from '../test/read-back-yapr.ts';
 
 type Token = { t: 'num' | 'name' | 'op' | 'bool' | 'null'; v: string } | { t: 'hex' | 'str'; v: Uint8Array } | { t: 'array'; v: Token[] } | { t: 'dict'; v: [string, Token][] };
 type Op = { op: string; args: Token[] };
@@ -333,7 +336,16 @@ function words(doc: mupdf.PDFDocument, own = false): Char[][] {
 const TOLERANCE = 0.01;
 
 function compareWords(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument, own: boolean): { first: string | null; chars: number; worst: number } {
-  const [a, b] = [words(oracle, own), words(forme, own)];
+  return compareChars(words(oracle, own), words(forme, own));
+}
+
+/** yapr's glyphs of each page, the second reader's words (*a second reader is asked the same question*, S83): every glyph's text and pen origin, in content order. */
+function yaprWords(viewer: Yapr): Char[][] {
+  return Array.from({ length: viewer.page_count() }, (_, p) => pageGlyphs(viewer, p));
+}
+
+/** Two files' characters, page by page, in order: the same character at origins within {@link TOLERANCE}. */
+function compareChars(a: Char[][], b: Char[][]): { first: string | null; chars: number; worst: number } {
   let chars = 0;
   let worst = 0;
   for (let p = 0; p < a.length; p += 1) {
@@ -350,8 +362,7 @@ function compareWords(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument, own: 
 }
 
 /** forme's words held to the list where no oracle file exists: each segment's first glyph is a character at the segment's `x` on the run's baseline. */
-function wordsAgainstList(list: any, forme: mupdf.PDFDocument): { first: string | null; segments: number } {
-  const pages = words(forme);
+function wordsAgainstList(list: any, pages: Char[][]): { first: string | null; segments: number } {
   let segments = 0;
   for (const [p, page] of list.pages.entries()) {
     const top = page.boxes.media[3];
@@ -544,26 +555,44 @@ const PIXEL_SHARE = 0.002;
  * The pixels reader: mupdf renders each page of both files at 144 dpi, RGB, 8 bits; per page, the largest channel difference, where it is (in points from the page's top left), and the share of pixels differing by more than 8 of 255. A page past either line is the first disagreement; every page's numbers are returned for the record.
  */
 function comparePixels(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument): { first: string | null; pages: { max: number; share: number; at: [number, number] }[] } {
+  return pixelLines(oracle.countPages(), (p) => [oracle, forme].map((doc) => {
+    const pixmap = doc.loadPage(p).toPixmap(mupdf.Matrix.scale(2, 2), mupdf.ColorSpace.DeviceRGB, false);
+    return { pixels: pixmap.getPixels(), width: pixmap.getWidth(), height: pixmap.getHeight(), channels: 3 };
+  }) as [Raster, Raster]);
+}
+
+/** The same reader on yapr's renderer: each page of both files at 2 device pixels a point, 144 dpi, RGBA, its alpha left out, held to the same lines. */
+function compareYaprPixels(oracle: Yapr, forme: Yapr): { first: string | null; pages: { max: number; share: number; at: [number, number] }[] } {
+  return pixelLines(oracle.page_count(), (p) => [oracle, forme].map((viewer) => {
+    const pixels = viewer.render(p, 2);
+    return { pixels, width: viewer.width(), height: viewer.height(), channels: 4 };
+  }) as [Raster, Raster]);
+}
+
+type Raster = { pixels: Uint8Array | Uint8ClampedArray; width: number; height: number; channels: number };
+
+/** Every page's two numbers of the pixels reader, the rasters made by `render`, and the first page past either line. */
+function pixelLines(count: number, render: (page: number) => [Raster, Raster]): { first: string | null; pages: { max: number; share: number; at: [number, number] }[] } {
   const pages: { max: number; share: number; at: [number, number] }[] = [];
   let first: string | null = null;
-  for (let p = 0; p < oracle.countPages(); p += 1) {
-    const [a, b] = [oracle, forme].map((doc) => doc.loadPage(p).toPixmap(mupdf.Matrix.scale(2, 2), mupdf.ColorSpace.DeviceRGB, false));
-    if (a.getWidth() !== b.getWidth() || a.getHeight() !== b.getHeight()) {
-      first ??= `page ${p + 1}: ${a.getWidth()} by ${a.getHeight()} pixels against ${b.getWidth()} by ${b.getHeight()}`;
+  for (let p = 0; p < count; p += 1) {
+    const [a, b] = render(p);
+    if (a.width !== b.width || a.height !== b.height) {
+      first ??= `page ${p + 1}: ${a.width} by ${a.height} pixels against ${b.width} by ${b.height}`;
       pages.push({ max: 255, share: 1, at: [0, 0] });
       continue;
     }
-    const [x, y] = [a.getPixels(), b.getPixels()];
-    const width = a.getWidth();
+    const [x, y, n] = [a.pixels, b.pixels, a.channels];
+    const width = a.width;
     let max = 0;
     let worst = 0;
     let near = 0;
-    for (let i = 0; i < x.length; i += 3) {
+    for (let i = 0; i < x.length; i += n) {
       const d = Math.max(Math.abs(x[i] - y[i]), Math.abs(x[i + 1] - y[i + 1]), Math.abs(x[i + 2] - y[i + 2]));
-      if (d > max) { max = d; worst = i / 3; }
+      if (d > max) { max = d; worst = i / n; }
       if (d > PIXEL_NEAR) near += 1;
     }
-    const share = near / (x.length / 3);
+    const share = near / (x.length / n);
     const at: [number, number] = [(worst % width) / 2, Math.floor(worst / width) / 2];
     pages.push({ max, share, at });
     if (max > PIXEL_MAX || share > PIXEL_SHARE) first ??= `page ${p + 1}: largest difference ${max} of 255 at ${at[0]}, ${at[1]} pt from the top left, ${(share * 100).toFixed(4)} % of pixels past ${PIXEL_NEAR}`;
@@ -608,9 +637,10 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const list = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.json`), 'utf8'));
     const forme = open(mine);
     if (entry.refused !== undefined) {
-      const held = wordsAgainstList(list, forme);
-      if (held.first) failed += 1;
-      line(`no oracle file (the oracle refuses it); words held to the list: ${held.first ?? `${held.segments} segments at their x and baseline`}`);
+      const held = wordsAgainstList(list, words(forme));
+      const second = wordsAgainstList(list, yaprWords(await openYapr(fs.readFileSync(mine))));
+      if (held.first || second.first) failed += 1;
+      line(`no oracle file (the oracle refuses it); words held to the list: ${held.first ?? `${held.segments} segments at their x and baseline`}; by yapr: ${second.first ?? `${second.segments} segments`}`);
       continue;
     }
     compared += 1;
@@ -633,12 +663,17 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const tree = compareTrees(oracle, forme);
     // A partial gate leaves families out of the content, so the page cannot be drawn whole: the pixels are read with no `--only`.
     const pixels = families ? { first: null, pages: [] } : comparePixels(oracle, forme);
+    // The second reader, with no `--only`: yapr's glyphs and yapr's pixels, the questions mupdf was asked (S83).
+    const viewers = families ? null : await Promise.all([path.join(lists, `${entry.name}.pdf`), mine].map((file) => openYapr(fs.readFileSync(file))));
+    const yaprText = viewers ? compareChars(yaprWords(viewers[0]), yaprWords(viewers[1])) : null;
+    const yaprPixels = viewers ? compareYaprPixels(viewers[0], viewers[1]) : null;
+    for (const viewer of viewers ?? []) viewer.free();
     const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
     const members = compareTreeMembers(recordsOf(list, formeRecords as any), report);
     // The report's note on each image, which `recordsOf` derives from the list and the writer's road: forme's road gives the oracle's notes.
     const notes = (r: Records) => recordsOf(list, r as any).images;
     const imageNotes = isDeepStrictEqual(notes(oracleRecords), notes(formeRecords)) ? null : `oracle ${JSON.stringify(notes(oracleRecords)).slice(0, 300)}, forme ${JSON.stringify(notes(formeRecords)).slice(0, 300)}`;
-    if (streams.first || records || text.first || tree.first || members.first || images.first || imageNotes || colour?.first || pixels.first) failed += 1;
+    if (streams.first || records || text.first || tree.first || members.first || images.first || imageNotes || colour?.first || pixels.first || yaprText?.first || yaprPixels?.first) failed += 1;
     line([
       `content${families ? ` (${[...families].join(',')})` : ''}: ${streams.first ?? `equal, ${streams.ops} operators`}`,
       `records: ${records ?? `equal, ${oracleRecords.pens.length} pens, ${oracleRecords.kernAdjustments} kerns, ${oracleRecords.actualTextSpans} spans, ${formeRecords.images.length} image uses, ${formeRecords.xobjects} XObjects, ${formeRecords.paint.length} paint rows, vectorResources ${JSON.stringify(formeRecords.vectorResources)}`}`,
@@ -646,6 +681,7 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
       ...(colour ? [`colour: ${colour.first ?? `equal, ${colour.objects} colour spaces, graphics states and intents; record equal but names, ${formeRecords.colour.elements.length} rows, ${formeRecords.colour.blackTextRuns} black-text runs, ${formeRecords.colour.worklist.length} work-list entries`}`] : []),
       `words: ${text.first ?? `equal, ${text.chars} characters, worst ${text.worst.toFixed(4)} pt`}`,
       ...(families ? [] : [`pixels: ${pixels.first ?? 'within the lines'}; per page, largest difference and share past ${PIXEL_NEAR}: ${pixels.pages.map((q, i) => `${i + 1}: ${q.max} ${(q.share * 100).toFixed(4)} %${q.max > 0 ? ` at ${q.at[0]},${q.at[1]}` : ''}`).join('; ')}`]),
+      ...(yaprText && yaprPixels ? [`yapr words: ${yaprText.first ?? `equal, ${yaprText.chars} glyphs, worst ${yaprText.worst.toFixed(4)} pt`}`, `yapr pixels: ${yaprPixels.first ?? 'within the lines'}; ${yaprPixels.pages.map((q, i) => `${i + 1}: ${q.max} ${(q.share * 100).toFixed(4)} %${q.max > 0 ? ` at ${q.at[0]},${q.at[1]}` : ''}`).join('; ')}`] : []),
       `tree: ${tree.first ?? `equal, ${tree.elements} elements, ${tree.lines} lines`}`,
       `records of the tree: ${members.first ?? `equal to the report snapshot, ${members.compared}`}`,
     ].join('\n                   '));
