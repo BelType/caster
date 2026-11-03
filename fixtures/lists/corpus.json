@@ -229,6 +229,19 @@
      "c3819a733e8072157df07f43a35388061d640117af0a579acc2af7200e7adb66"
     ]
    }
+  },
+  {
+   "name": "canvas",
+   "why": "a `<canvas>` figure painted by a script (a gradient, a circle, a square, three lines) with an `aria-label`: the image pass reads its pixels off the element as eight-bit RGBA, past the photo rule, and the list holds them as an image; the figure's /Alt is the label",
+   "sha256": "42431d768748dc781584bb050e6c22733f8debc89ce9a5bdd12457513a69065c",
+   "bytes": 143186,
+   "list": {
+    "bytes": 4635,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "f00b3a5d87956d59f7087d62a135fb033e04952adfa2d7806172e1159639204f"
+    ]
+   }
   }
  ]
 }

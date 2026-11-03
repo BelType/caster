@@ -10,7 +10,7 @@
  *
  * @packageDocumentation
  */
-import { decodeThroughCanvas } from './canvasDecode.ts';
+import { decodeCanvasElement, decodeThroughCanvas } from './canvasDecode.ts';
 import { applyPhotoRule, photoRuleOff, PHOTO_PIXEL_THRESHOLD, PHOTO_QUALITIES } from './photoRule.ts';
 import { parseJpeg, withIccProfile } from './jpeg.ts';
 import { canPassThroughIdat, decodePng, parsePng, pngPixels, PngColorType } from './png.ts';
@@ -158,6 +158,18 @@ async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction)
   if (jpeg && (jpeg.unsupportedFrame || jpeg.precision !== 8)) return 'a JPEG frame the browser cannot decode is left alone';
   if (jpeg && jpeg.arithmetic) return 'an arithmetic-coded JPEG has no browser decoder';
   const decoded = await decodeThroughCanvas(bytes, mimeType, { colorSpaceConversion: jpeg ? 'none' : 'default' });
+  return reduceDecoded(file, mimeType, decoded, photoRule, reduction, jpeg !== null, jpeg?.iccProfile ?? null);
+}
+
+/**
+ * Resample browser-decoded pixels and encode them: the second half of {@link reduce}, and the whole of it for a `<canvas>`, whose pixels have no file.
+ *
+ * @param asJpeg - The source was a JPEG, so the result is a JPEG again even where the photo rule declines.
+ * @param profile - The source's ICC profile, spliced back into the encoded JPEG.
+ * @returns The prepared file, or the reason the pixels were left as they are.
+ */
+async function reduceDecoded(file: ImageFile, format: string, decoded: DecodedSamples, photoRule: boolean, reduction: Reduction, asJpeg: boolean, profile: Uint8Array | null): Promise<PreparedImage | string> {
+  const { ppi, resolution, type } = reduction;
   const [width, height] = reducedSize(decoded.width, decoded.height, ppi, resolution);
   if (width >= decoded.width && height >= decoded.height) return 'already at or below the target size';
   const resampleStarted = performance.now();
@@ -171,15 +183,15 @@ async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction)
   const photo = await photoOf(samples, photoRule);
   let encoded = photo.jpeg;
   let encodeMs = photo.encodeMs;
-  if (!encoded && jpeg) {
+  if (!encoded && asJpeg) {
     const started = performance.now();
     encoded = await jpegAt(samples.rgb, width, height, PHOTO_QUALITIES[PHOTO_QUALITIES.length - 1]);
     encodeMs += performance.now() - started;
   }
   return {
-    file, format: mimeType, photo, decodeMs: decoded.decodeMs, encodeMs, resampleMs,
+    file, format, photo, decodeMs: decoded.decodeMs, encodeMs, resampleMs,
     resampled: { from: [decoded.width, decoded.height], to: [width, height], ppi, type },
-    ...(encoded ? jpegOf(encoded, jpeg?.iccProfile ?? null) : { samples })
+    ...(encoded ? jpegOf(encoded, profile) : { samples })
   };
 }
 
@@ -231,7 +243,24 @@ export async function prepareImage(file: ImageFile, photoRule: boolean, reductio
 }
 
 /** One image the print paints: where its file is, and what a refusal names. */
-export type PaintedImage = { src: string, domPath: string, kind: string, ppi?: number };
+export type PaintedImage = { src: string, domPath: string, kind: string, ppi?: number, element?: Element };
+
+/** What the pass calls the file of a `<canvas>`, which has none: no bytes, and a format that names the element's kind. */
+const CANVAS_FILE: ImageFile = { bytes: new Uint8Array(0), mimeType: 'canvas' };
+
+/**
+ * A `<canvas>` figure's pixels, read from the element as eight-bit RGBA and sent the way any decoded image's go: reduced if it prints far above `imageResolution`, then past the photo rule, so it reaches the list as a JPEG or as samples.
+ *
+ * @throws {CasterError} The canvas cannot be read (`canvasDecode.js`).
+ */
+async function prepareCanvas(canvas: HTMLCanvasElement, photoRule: boolean, reduction?: Reduction): Promise<PreparedImage> {
+  const decoded = decodeCanvasElement(canvas);
+  if (reduction) {
+    const reduced = await reduceDecoded(CANVAS_FILE, 'canvas', decoded, photoRule, reduction, false, null);
+    if (typeof reduced !== 'string') return reduced;
+  }
+  return fromPixels(CANVAS_FILE, decoded, 'canvas', photoRule);
+}
 
 /**
  * Prepare every painted image's file, once per `src`.
@@ -248,15 +277,17 @@ export async function prepareImages(painted: PaintedImage[], fileOf: (src: strin
   for (const image of painted) if (image.ppi !== undefined) smallest.set(image.src, Math.min(smallest.get(image.src) ?? Infinity, image.ppi));
   for (const image of painted) {
     if (image.kind === 'facsimile' || prepared.has(image.src)) continue;
-    const file = fileOf(image.src);
+    // A canvas has no file to fetch: its element is the source.
+    const canvas = image.kind === 'canvas' && image.element instanceof HTMLCanvasElement ? image.element : undefined;
+    const file = canvas ? CANVAS_FILE : fileOf(image.src);
     if (!file) continue;
     const ppi = smallest.get(image.src);
     const reduction = downsample?.on && ppi !== undefined && ppi > downsample.resolution * downsample.threshold ? { ...downsample, ppi } : undefined;
     try {
-      prepared.set(image.src, await prepareImage(file, photoRule, reduction));
+      prepared.set(image.src, canvas ? await prepareCanvas(canvas, photoRule, reduction) : await prepareImage(file, photoRule, reduction));
     } catch (error) {
       if (error instanceof CasterError && error.element) throw error;
-      throw new CasterError(`caster: the ${file.mimeType} at ${image.domPath} (${image.src}) could not be carried into the file: ${error instanceof Error ? error.message : String(error)}`, { element: image.domPath });
+      throw new CasterError(`caster: the ${canvas ? '<canvas>' : file.mimeType} at ${image.domPath} (${image.src}) could not be carried into the file: ${error instanceof Error ? error.message : String(error)}`, { element: image.domPath });
     }
   }
   return prepared;

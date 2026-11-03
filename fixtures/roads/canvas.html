@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The canvas road: a figure painted by a script, read as pixels</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    figure { margin: 0 0 3mm; break-inside: avoid; }
+    figcaption { font-size: 8pt; }
+    canvas { display: block; width: 100mm; }
+  </style>
+</head>
+<body>
+  <h1>A canvas</h1>
+  <figure>
+    <canvas id="chart" width="800" height="500" aria-label="A painted figure: a blue to orange gradient behind a dark circle, a pale square and three diagonal lines"></canvas>
+    <figcaption>A canvas of 800 by 500 pixels, painted by a script, a hundred millimetres wide.</figcaption>
+  </figure>
+  <script>
+    // Deterministic: a gradient, a few shapes, no text and no random numbers. The 2d context asks for willReadFrequently, so it is not accelerated and its pixels are the same on any machine.
+    const ctx = document.getElementById('chart').getContext('2d', { willReadFrequently: true });
+    const sky = ctx.createLinearGradient(0, 0, 800, 500);
+    sky.addColorStop(0, '#1f4e9c');
+    sky.addColorStop(1, '#f08a24');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, 800, 500);
+    ctx.fillStyle = '#1b1b2a';
+    ctx.beginPath();
+    ctx.arc(250, 250, 140, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f4efe2';
+    ctx.fillRect(480, 90, 200, 200);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(60 + i * 40, 480);
+      ctx.lineTo(420 + i * 120, 360);
+      ctx.stroke();
+    }
+  </script>
+</body>
+</html>

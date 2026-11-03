@@ -62,15 +62,25 @@ export async function decodeThroughCanvas(bytes: Uint8Array, mimeType: string, s
 /**
  * A `<canvas>` element's own pixels, which for a canvas are the source of truth.
  *
- * @throws {CasterError} The canvas has no 2d context.
+ * @remarks
+ * A canvas with a 2d context answers `getImageData` directly (the context is the one the page made, so the attributes asked here are ignored); a canvas whose context is another kind (`webgl`, `bitmaprenderer`) has no 2d context to ask, so it is drawn onto a `willReadFrequently` canvas of the same size and read from there. Either way the samples are eight-bit RGBA, unpremultiplied, as `getImageData` gives them.
+ *
+ * @throws {CasterError} The canvas has no pixels (a width or height of zero), or the browser refuses to read them: a canvas that drew a cross-origin image without CORS is tainted.
  */
 export function decodeCanvasElement(canvas: HTMLCanvasElement): DecodedSamples {
   const started = performance.now();
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) throw new CasterError('canvasDecode: <canvas> has no 2d context');
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const split = splitImageData(data);
-  return { width: data.width, height: data.height, ...split, decodeMs: performance.now() - started };
+  if (canvas.width === 0 || canvas.height === 0) throw new CasterError(`canvasDecode: <canvas> is ${canvas.width} by ${canvas.height} pixels, so there is nothing to print`);
+  try {
+    const own = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = own ?? context2d(canvas.width, canvas.height);
+    if (!own) ctx.drawImage(canvas, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const split = splitImageData(data);
+    return { width: data.width, height: data.height, ...split, decodeMs: performance.now() - started };
+  } catch (error) {
+    if (error instanceof CasterError) throw error;
+    throw new CasterError(`canvasDecode: the browser will not let the printer read the pixels of the <canvas> (a canvas that drew an image from another origin without CORS is tainted): ${String(error)}`);
+  }
 }
 
 /** Put RGB samples back on a canvas, which is what the JPEG re-encoder needs. */
