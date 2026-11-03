@@ -148,3 +148,61 @@ test('a page whose policy forbids the worker is refused by name, and nothing is 
   assert.match(answer.refused!.message, /no fallback to the main thread/);
   assert.equal(answer.mainThread, false, 'the glue was never initialised on the main thread');
 });
+
+test('a shared writer worker kept by a holder page writes node\'s bytes for three document pages in turn, refuses as node does, and the second and third writes take under half the first\'s time', async () => {
+  const paper = listOf('paper');
+  const inNode = await writeWithForme(listOf('paper'));
+  const { list: broken } = brokenCast();
+  const refusedInNode = await writeWithForme(brokenCast().list).then(() => null, (error: CasterError) => error);
+  assert.ok(refusedInNode instanceof CasterError);
+  const server = await serve();
+  const port = (server.address() as { port: number }).port;
+  const browser = await launchBrowser();
+  const wire = (list: DisplayList) => ({ json: JSON.stringify({ ...list, resources: { ...list.resources, blobs: {} } }), blobs: Object.fromEntries(Object.entries(list.resources.blobs).map(([key, bytes]) => [key, Array.from(bytes)])) });
+  try {
+    const context = await browser.newContext();
+    const holder = await context.newPage();
+    await holder.goto(`http://127.0.0.1:${port}/`);
+    await holder.evaluate(async () => {
+      const caster = await (0, eval)('import("/src/index.js")');
+      (globalThis as unknown as { keep: SharedWorker }).keep = new SharedWorker(caster.formeSharedWorkerUrl(), { type: 'module', name: 'forme' });
+    });
+    const times: number[] = [];
+    for (let n = 0; n < 3; n++) {
+      const page = await context.newPage();
+      await page.goto(`http://127.0.0.1:${port}/`);
+      const answer = await page.evaluate(async ({ paper, broken }) => {
+        const load = (p: string) => import(/* webpackIgnore: true */ p);
+        const capabilities = await load('/src/capabilities.js');
+        const forme = await load('/src/emit/forme.js');
+        const caster = await load('/src/index.js');
+        await capabilities.load(['forme']);
+        const revive = ({ json, blobs }: { json: string, blobs: Record<string, number[]> }) => {
+          const list = JSON.parse(json);
+          list.resources.blobs = Object.fromEntries(Object.entries(blobs).map(([key, bytes]) => [key, new Uint8Array(bytes)]));
+          return list;
+        };
+        const worker = new SharedWorker(caster.formeSharedWorkerUrl(), { type: 'module', name: 'forme' });
+        const list = revive(paper);
+        const start = performance.now();
+        const written = await forme.writeWithForme(list, worker.port);
+        const ms = performance.now() - start;
+        const out: { ms: number, bytes: number[], refused?: { name: string, message: string, listItem?: unknown } } = { ms, bytes: Array.from(written.bytes as Uint8Array) };
+        try { await forme.writeWithForme(revive(broken), worker.port); }
+        catch (error) { const e = error as { name: string, message: string, listItem?: unknown }; out.refused = { name: e.name, message: e.message, listItem: e.listItem }; }
+        return out;
+      }, { paper: wire(paper), broken: wire(broken) });
+      assert.ok(Buffer.from(answer.bytes).equals(Buffer.from(inNode.bytes)), `page ${n + 1}: the file is node's, byte for byte`);
+      assert.equal(answer.refused?.name, 'CasterError', `page ${n + 1}: the refusal`);
+      assert.equal(answer.refused?.message, refusedInNode.message);
+      assert.deepEqual(answer.refused?.listItem, refusedInNode.listItem);
+      times.push(answer.ms);
+      await page.close();
+    }
+    console.log(`# shared writer, paper write per page in the page (ms): ${times.map((t) => t.toFixed(1)).join(', ')}`);
+    assert.ok(times[1]! < times[0]! / 2 && times[2]! < times[0]! / 2, `warm writes under half the first: ${times.join(', ')}`);
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

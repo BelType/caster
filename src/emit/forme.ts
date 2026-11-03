@@ -34,6 +34,9 @@ export type FormeGlue = {
 /** What the page posts to the worker: the glue's URL, the compiled module, the list's JSON and the blobs by key. */
 export type FormeRequest = { glue: string, module: WebAssembly.Module, list: string, blobs: [string, Uint8Array][] };
 
+/** What the page posts to a shared writer worker: the glue's URL, the module's bytes (read on the first message only), the list's JSON and the blobs by key. */
+export type FormeSharedRequest = { glue: string, wasm: Uint8Array, list: string, blobs: [string, Uint8Array][] };
+
 /** A refusal of forme's as it crosses a realm: its sentence, and the item it names as `[page, item]`. */
 export type FormeRefusal = { message: string, listItem?: [number, number] };
 
@@ -74,13 +77,14 @@ function casterErrorOf({ message, listItem }: FormeRefusal): CasterError {
 }
 
 /**
- * Write the list with forme: in a dedicated worker in a page, by a direct call in node.
+ * Write the list with forme: through `port` to a shared writer worker in a page that has one, in a dedicated worker in a page that has none, by a direct call in node.
  *
+ * @param port - A port to a running `emit/formeShared.js` (*a host may keep the writer warm*, S104); ignored in node.
  * @throws {CasterError} Every refusal of forme's, its validator's first, in forme's sentence, with `listItem` where it names an item.
  * @throws {CapabilityError} The `forme` capability was not loaded (the flag is `writer`), or, in a page, the module could not be compiled or its worker could not start.
  */
-export async function writeWithForme(list: DisplayList): Promise<WriterResult> {
-  return typeof document === 'undefined' ? writeHere(list) : writeInWorker(list);
+export async function writeWithForme(list: DisplayList, port?: MessagePort): Promise<WriterResult> {
+  return typeof document === 'undefined' ? writeHere(list) : port ? writeThroughPort(list, port) : writeInWorker(list);
 }
 
 /** The write on the calling thread, for a realm with no frame. */
@@ -110,6 +114,39 @@ const GLUE = new URL('../../vendor/forme.js', import.meta.url);
 /** The refusal of a worker that could not write at all. */
 function cannotStart(why: string): CapabilityError {
   return new CapabilityError(`caster: the 'forme' capability writes in a dedicated worker, and the worker could not start (${why}); the page must allow a module worker from ${WORKER.origin} (its worker-src), and there is no fallback to the main thread. The flag that asked for it is 'writer'.`, { capability: 'forme', flag: 'writer' });
+}
+
+/** The shared writer worker's script, beside this module; a host opens it with a `SharedWorker` and hands `print()` the port. */
+export const SHARED_WORKER = new URL('./formeShared.js', import.meta.url);
+
+/** How long a port may stay silent before it is refused. */
+const PORT_TIMEOUT_MS = 60_000;
+
+/** The write through a port to a shared worker the host keeps alive; the worker keeps the instance, never the list. */
+async function writeThroughPort(list: DisplayList, port: MessagePort): Promise<WriterResult> {
+  const { wasm } = capability('forme');
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const reply = await new Promise<FormeReply>((resolve, reject) => {
+      port.onmessage = (event: MessageEvent<FormeReply>) => resolve(event.data);
+      port.onmessageerror = () => reject(cannotStartPort('its answer could not be read'));
+      timer = setTimeout(() => reject(new CapabilityError(`caster: the port to the 'forme' writer worker answered nothing within ${PORT_TIMEOUT_MS / 1000} s; the host's shared worker (${SHARED_WORKER.pathname}) is not running or is stuck, and there is no fallback to the main thread. The flag that asked for it is 'writer'.`, { capability: 'forme', flag: 'writer' })), PORT_TIMEOUT_MS);
+      const request: FormeSharedRequest = { glue: GLUE.href, wasm: wasm as Uint8Array, list: listJson(list), blobs: Object.entries(list.resources.blobs) };
+      port.postMessage(request);
+    });
+    if ('start' in reply) throw cannotStartPort(reply.start);
+    if ('refusal' in reply) throw casterErrorOf(reply.refusal);
+    return { bytes: reply.bytes, records: JSON.parse(reply.records) as WriterRecords };
+  } finally {
+    clearTimeout(timer);
+    port.onmessage = null;
+    port.onmessageerror = null;
+  }
+}
+
+/** The refusal of a shared worker that could not write at all. */
+function cannotStartPort(why: string): CapabilityError {
+  return new CapabilityError(`caster: the 'forme' capability writes through the host's shared worker, and the worker could not write (${why}); the page must allow a module shared worker from ${SHARED_WORKER.origin}, and there is no fallback to the main thread. The flag that asked for it is 'writer'.`, { capability: 'forme', flag: 'writer' });
 }
 
 /** The write in a fresh dedicated worker, terminated when it answers. */
