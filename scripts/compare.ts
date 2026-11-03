@@ -9,7 +9,7 @@
  * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under an `--only` without `images`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its image.
  * - **The tree.** mupdf reads both files' structure trees element by element in allocation order and everything that points into them: every element's entries and `/K`, the ParentTree, the IDTree, `/MarkInfo`, each page's `/Tabs`, `/StructParents` and link annotations with their destinations, the outline item by item, `/PageLabels` (`treeOf`). Beside it, `recordsOf` over forme's records gives the `structure`, `links`, `outline` and `idTree` members of the committed report snapshot. The tree's families are not content, so `--only` does not restrict them.
  *
- * A list with a colour story is skipped by name until stage 6 writes it, and a list the oracle refuses (the CFF2 face) has no oracle file: its words are held to the list instead, each segment's first glyph at the segment's `x` on the run's baseline, within 0.01 pt. Reads only.
+ * A list with a colour story has its content, records and words skipped by name until stage 6 writes it, and its tree read, and a list the oracle refuses (the CFF2 face) has no oracle file: its words are held to the list instead, each segment's first glyph at the segment's `x` on the run's baseline, within 0.01 pt. Reads only.
  *
  * @packageDocumentation
  */
@@ -406,7 +406,20 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const line = (verdict: string) => console.log(`${entry.name.padEnd(18)} ${verdict}`);
     if (!fs.existsSync(mine)) { line('no file of forme\'s'); continue; }
     const list = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.json`), 'utf8'));
-    if (list.writing.colour) { line('skipped: a colour story, which stage 6 writes'); continue; }
+    if (list.writing.colour) {
+      // The content and the records wait on stage 6, which writes the colour story; the tree does not depend on it, so it is read now.
+      const tree = compareTrees(open(path.join(lists, `${entry.name}.pdf`)), open(mine));
+      const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
+      const formeRecords = JSON.parse(fs.readFileSync(path.join(dir, `${entry.name}.records.json`), 'utf8'));
+      const members = compareTreeMembers(recordsOf(list, { images: [], ...formeRecords }), report);
+      if (tree.first || members.first) failed += 1;
+      line([
+        'content, records and words skipped: a colour story, which stage 6 writes',
+        `tree: ${tree.first ?? `equal, ${tree.elements} elements, ${tree.lines} lines`}`,
+        `records of the tree: ${members.first ?? `equal to the report snapshot, ${members.compared}`}`,
+      ].join('\n                   '));
+      continue;
+    }
     const forme = open(mine);
     if (entry.refused !== undefined) {
       const held = wordsAgainstList(list, forme);
