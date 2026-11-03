@@ -15288,7 +15288,7 @@
      true
     ],
     "domain": [
-     0.4,
+     0,
      1
     ],
     "stops": [
@@ -25089,5 +25089,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 291302
+ "bytes": 291300
 }
