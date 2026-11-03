@@ -206,7 +206,7 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 
 **Images as their own bytes.** The pixels on an element are what the compositor chose to show: colour-managed, 8-bit, possibly downsampled. The file is better, so `src/host/gateway.js` fetches the bytes behind `img.currentSrc` and sniffs the type from them. `src/images/imageEmbed.js` then asks one question per image: does PDF already have a filter that reads this file? A JPEG goes in verbatim under `/DCTDecode`, progressive and CMYK ones included. A non-interlaced PNG without alpha goes in as its own `IDAT` stream under `/FlateDecode` with the PNG predictor, 16-bit samples intact.
 
-Only what PDF cannot read is decoded, and an opaque photograph stored as PNG may be re-encoded as JPEG once a measured 40 dB PSNR is cleared (`src/images/photoRule.js`). Stored size and EXIF orientation come from the file header, not from `naturalWidth`, which reports the size after the browser rotated the image.
+Only what PDF cannot read is decoded, and an opaque photograph stored as PNG may be re-encoded as JPEG once a measured 40 dB PSNR is cleared (`src/images/photoRule.js`). An image that prints far above its target resolution is reduced first (`downsampleImages`, `src/images/imagePass.js`), at the smallest resolution over every place the file is used. Stored size and EXIF orientation come from the file header, not from `naturalWidth`, which reports the size after the browser rotated the image.
 
 **Vectors as paths.** Backgrounds, borders, rounded corners, shadows and gradients are collected from computed styles by `src/vectors/cssBoxes.js` and written as paths and shadings. Collapsed table borders are resolved on the grid lines by `src/vectors/tableBorders.js`. Inline SVG is walked by `src/vectors/svgGeometry.js` into PDF paths, its `<text>` measured character by character; an SVG served through an `<img>` is parsed and seated as a drawing too, never rasterised (`src/images/svgInline.js`).
 
@@ -300,6 +300,10 @@ sequenceDiagram
 | `widthDecimals` | `3`, `0` | `3` | the specification's rule; integers cost up to half a thousandth of an em per glyph |
 | `pngDecoder` | `fast-png`, `canvas` | `fast-png` | a canvas gets 64 094 of 65 280 low-alpha pixels wrong and has no 16-bit sample |
 | `photoRule` | `true`, `false` | `true` | 3 826 435 B of PNG becomes 130 207 B of JPEG at 43.90 dB |
+| `downsampleImages` | `true`, `false` | `true` | an image placed above `imageResolution × downsampleThreshold` is reduced to `imageResolution` before the list; no corpus image prints above 450 ppi, so no recorded byte moved |
+| `imageResolution` | a positive number | `300` | the resolution an image is reduced to, in pixels per inch |
+| `downsampleThreshold` | a number from 1 to 10 | `1.5` | the ratio above which it is reduced; outside 1 to 10 refused naming the flag |
+| `downsampleType` | `bicubic`, `average`, `subsample` | `bicubic` | Catmull-Rom computed by Caster's own arithmetic (`src/images/resample.js`), whose bytes are the same in every engine |
 | `rasterDpi` | a positive number | `300` | every raster fallback and every emoji cluster is drawn at this |
 | `paintOrder` | `css`, `dom` | `css` | CSS paint order is what Chromium paints; `dom` is wrong as soon as anything overlaps |
 | `styledBorders` | `true`, `false` | `false` | exact arithmetic, but it repaints every stream with a non-solid border |

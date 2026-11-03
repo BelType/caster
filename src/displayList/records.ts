@@ -270,11 +270,15 @@ function imageNote(list: DisplayList, source: ImageSource, path: ImageUse['info'
   }
   const format = source.original?.format ?? source.mime ?? '';
   const bytesIn = source.original?.bytes ?? 0;
+  // A JPEG or PNG whose pixels the image pass reduced to `imageResolution` (the report's `resampled` says from what to what, which the list does not hold): a JPEG source reaches the list as a JPEG of the pass's making, a PNG as samples.
+  const reduced = format === 'image/jpeg' || (format === 'image/png' && source.samples !== undefined && source.original?.why === undefined);
   if (source.jpeg !== undefined) {
-    const chose = `the photo rule chose JPEG at quality ${source.photo?.chosenQuality ?? null}`;
-    return { format, bytesIn, reason: format === 'image/png' ? chose : `no PDF filter reads ${format}; ${chose}` };
+    const chose = source.photo?.chosenQuality != null ? `the photo rule chose JPEG at quality ${source.photo.chosenQuality}` : 'the photo rule declined, so the pass encoded JPEG at the highest quality it tries';
+    return { format, bytesIn, reason: format === 'image/png' || format === 'image/jpeg' ? chose : `no PDF filter reads ${format}; ${chose}` };
   }
+  if (source.mime === 'image/jpeg' && source.original) return { format, bytesIn, reason: 'reduced by the image pass, its ICC profile kept' };
   if (source.samples !== undefined && source.original?.why !== undefined) return { format, bytesIn, reason: `decoded because of ${PNG_DECODE_REASONS[source.original.why]}` };
+  if (reduced) return { format, bytesIn, reason: 'reduced by the image pass, carried as samples' };
   if (source.samples !== undefined) {
     return { format, bytesIn, reason: source.photo ? `no PDF filter reads ${format}; the photo rule declined: ${source.photo.reason}` : `no PDF filter reads ${format}` };
   }

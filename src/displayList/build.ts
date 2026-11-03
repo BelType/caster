@@ -859,9 +859,13 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         const prepared = inputs.images.preparedOf(request.src);
         if (!prepared)
             throw new CasterError(`caster: no bytes registered for ${request.src}`);
-        // What the image pass made of the file: the photo rule's JPEG, the browser's pixels, fast-png's samples of a PNG no predictor describes, or the file as it is.
+        // What the image pass made of the file: the photo rule's JPEG, a reduced JPEG that carries its profile (a file to the writer), the browser's pixels, fast-png's samples of a PNG no predictor describes, or the file as it is.
         if (prepared.jpeg)
             source.jpeg = await blobOf(prepared.jpeg);
+        else if (prepared.carried) {
+            source.blob = await blobOf(prepared.carried);
+            source.mime = 'image/jpeg';
+        }
         else if (prepared.samples)
             source.samples = { blob: await blobOf(rgbaOf(prepared.samples)), width: prepared.samples.width, height: prepared.samples.height, colorSpace: 'DeviceRGB', bitsPerComponent: 8, alpha: true };
         else if (prepared.png) {
@@ -872,8 +876,8 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             source.blob = await blobOf(prepared.file.bytes);
             source.mime = prepared.file.mimeType;
         }
-        if (prepared.jpeg || prepared.samples || prepared.png)
-            source.original = { format: prepared.format ?? prepared.file.mimeType, bytes: prepared.file.bytes.length, ...(prepared.gammaOnly ? { gammaOnly: true } : {}), ...(prepared.png ? { why: prepared.png.why } : {}) };
+        if (prepared.jpeg || prepared.carried || prepared.samples || prepared.png)
+            source.original = { format: prepared.format ?? prepared.file.mimeType, bytes: prepared.file.bytes.length, ...(prepared.gammaOnly ? { gammaOnly: true } : {}), ...(prepared.png?.why ? { why: prepared.png.why } : {}) };
         if (prepared.photo)
             source.photo = evidenceOf(prepared.photo);
         if (prepared.refusal !== undefined)

@@ -38,14 +38,16 @@ function context2d(width: number, height: number): OffscreenCanvasRenderingConte
  * @remarks
  * `createImageBitmap` takes the first frame of an animated GIF, which is the only frame a PDF image can be; `premultiplyAlpha: 'none'` asks for the unpremultiplied samples an `/SMask` needs, so a low-alpha pixel keeps whatever colour precision the engine has rather than being rounded through a premultiplied intermediate.
  *
+ * @param stored - Set by the image pass's downsampling: the file's own pixel order and, with `'none'`, its own numbers.
  * @throws {CasterError} The browser cannot decode the bytes as `mimeType`, or offers no 2d context.
  */
-export async function decodeThroughCanvas(bytes: Uint8Array, mimeType: string): Promise<DecodedSamples> {
+export async function decodeThroughCanvas(bytes: Uint8Array, mimeType: string, stored?: { colorSpaceConversion: 'none' | 'default' }): Promise<DecodedSamples> {
   const started = performance.now();
   const blob = new Blob([(bytes as BlobPart)], { type: mimeType });
   let bitmap: ImageBitmap;
   try {
-    bitmap = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'default' });
+    // `stored` asks for the pixels as the file keeps them, in the order it keeps them: no EXIF turn, so the placement's own matrix still applies it once, and with `'none'` no conversion to sRGB, so a profile the caller keeps still describes them (the image pass's downsampling, which resamples what is stored).
+    bitmap = await createImageBitmap(blob, stored ? { premultiplyAlpha: 'none', colorSpaceConversion: stored.colorSpaceConversion, imageOrientation: 'none' } : { premultiplyAlpha: 'none', colorSpaceConversion: 'default' });
   } catch (error) {
     throw new CasterError(`canvasDecode: the browser could not decode ${mimeType}: ${String(error)}`);
   }

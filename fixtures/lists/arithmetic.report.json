@@ -39,6 +39,10 @@
   "widthDecimals": 3,
   "pngDecoder": "fast-png",
   "photoRule": true,
+  "downsampleImages": true,
+  "imageResolution": 300,
+  "downsampleThreshold": 1.5,
+  "downsampleType": "bicubic",
   "rasterDpi": 300,
   "paintOrder": "css",
   "styledBorders": true,
@@ -51,7 +55,9 @@
   "writer": "pdf-lib"
  },
  "errors": [],
- "warnings": [],
+ "warnings": [
+  "the image at figure[0]/img[0] (https://print.invalid/roads/logo-arithmetic.jpg) prints at 61 ppi, below 150"
+ ],
  "needs": {
   "forcedPngDecode": false,
   "woff2Only": true,
@@ -1353,7 +1359,7 @@
    "tag": "Figure",
    "alt": "An arithmetic-coded JPEG, decoded by the browser",
    "effectiveDpi": 61,
-   "bytesIn": 1169,
+   "bytesIn": 0,
    "bytesOut": 1169,
    "icc": "none",
    "gammaOnly": false,
@@ -1361,7 +1367,7 @@
    "objectFit": "fill",
    "objectPosition": "50% 50%",
    "transform": "none",
-   "reason": "arithmetic coding, and no browser decoder: CasterError: canvasDecode: the browser could not decode image/jpeg: InvalidStateError: The source image could not be decoded.; the entropy-coded data goes to /DCTDecode unread"
+   "reason": "reduced by the image pass, carried as samples"
   }
  ],
  "xobjects": 1,

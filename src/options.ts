@@ -29,6 +29,14 @@ export type CasterOptions = {
   pngDecoder: 'fast-png'|'canvas';
   /** Default `true`. Basis: 3 826 435 B of PNG becomes 130 207 B of JPEG at 43.90 dB — 3.4%. */
   photoRule: boolean;
+  /** Default `true`, flipped on as `styledBorders` was: no image in the corpus prints above 450 ppi (its highest is 323.9), so no recorded byte moves (Egildo's ruling 2 of 2026-11-03). An image placed above `imageResolution × downsampleThreshold` is reduced to `imageResolution` before the list. Basis: a 36 MP photograph in a 6-inch box is a 953 365-byte JPEG today and 105 199 bytes reduced to 300 ppi first, at the same quality, with no visible change at print size. */
+  downsampleImages: boolean;
+  /** Default `300`, in pixels per inch, positive. Basis: print-ready practice (Ghostscript's `/printer` preset and Adobe's press presets) and the corpus's own highest placement, 323.9 ppi. */
+  imageResolution: number;
+  /** Default `1.5`, from 1 to 10, outside refused naming the flag (Distiller reverts it silently). Basis: Distiller's and Ghostscript's own default, so an image is reduced only above 450 ppi at the default resolution; reducing a 330 ppi image to 300 buys little and costs a resample. */
+  downsampleThreshold: number;
+  /** Default `'bicubic'`: Catmull-Rom, computed by Caster's own arithmetic (`images/resample.js`), whose bytes are the same in every engine. Basis: against a Lanczos-3 yardstick a JavaScript Catmull-Rom scored 54.35 dB and the canvas's smoothing 51.50 dB on the 36 MP photograph, and the canvas's bytes depend on whether it is accelerated. `'average'` is the area average and `'subsample'` the nearest pixel. */
+  downsampleType: 'bicubic'|'average'|'subsample';
   /** Default `300`. Basis: the emoji rasters land at 300 dpi to within 6; six of 108 vector paints use it. */
   rasterDpi: number;
   /** Default `'css'` since 2026-09-08. It was `'dom'` because `'css'` moves every block background before every word — a background at paint index 45 of 350 with its own text at 298 — so switching re-records every stream, and not re-recording the experiments' streams was worth more than an ordering nothing they measured exercised. It is not worth more here: a `<th>` with a shaded row and a `<code>` with a rounded box are ordinary, and under `'dom'` each background is emitted after the words it sits behind and paints them out — measured on a three-page report whose whole header row and every inline code span came out blank. `'dom'` stays, as the flag that reproduces a recorded stream. */
@@ -78,6 +86,10 @@ export const FLAGS = (({
   widthDecimals: { values: [0, 3], default: 3 },
   pngDecoder: { values: ['fast-png', 'canvas'], default: 'fast-png' },
   photoRule: { values: [true, false], default: true },
+  downsampleImages: { values: [true, false], default: true },
+  imageResolution: { values: null, default: 300 },
+  downsampleThreshold: { values: null, default: 1.5 },
+  downsampleType: { values: ['bicubic', 'average', 'subsample'], default: 'bicubic' },
   rasterDpi: { values: null, default: 300 },
   paintOrder: { values: ['css', 'dom'], default: 'css' },
   styledBorders: { values: [true, false], default: true },
@@ -107,7 +119,7 @@ export const DEFAULTS = (casterFlags.defaults as unknown) as CasterOptions;
  * Fill in the defaults and refuse anything the table does not name.
  *
  * @param given - An `undefined` member is absent, so a panel may pass every field it has.
- * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi`, or a value outside a flag's set — carrying `flag`.
+ * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi` or `imageResolution`, a `downsampleThreshold` outside 1 to 10, or a value outside a flag's set — carrying `flag`.
  */
 export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOptions {
   const { title, lang, ...flags } = given;
@@ -118,6 +130,9 @@ export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOption
     if (e instanceof FlagError) throw new CasterError(e.message, { flag: e.flag });
     throw e;
   }
+  // The table says a positive number; the range is this flag's own, and Distiller's: from 1 to 10, refused here where Adobe reverts silently.
+  const threshold = out['downsampleThreshold'] as number;
+  if (threshold < 1 || threshold > 10) throw new CasterError(`caster: 'downsampleThreshold' takes a number from 1 to 10; got ${JSON.stringify(threshold)}.`, { flag: 'downsampleThreshold' });
   if (title !== undefined) out['title'] = title;
   if (lang !== undefined) out['lang'] = lang;
   return (out as CasterOptions);

@@ -214,3 +214,45 @@ export function jpegColorSpaceName(components: number): 'DeviceGray'|'DeviceRGB'
   if (components === 4) return 'DeviceCMYK';
   throw new CasterError(`jpeg: a frame with ${components} components has no PDF colour space`);
 }
+
+/** The most profile bytes one APP2 marker holds: a 65 535-byte segment less its length field, the 12-byte signature and the two chunk numbers. */
+const ICC_CHUNK = 65519;
+
+/**
+ * A JPEG carrying exactly the ICC profile given, as APP2 markers after any JFIF segment, so a writer finds it as it finds any JPEG's.
+ *
+ * @remarks
+ * The browser's encoder writes a profile of its own (its sRGB, 456 bytes in Chromium 153, measured 2026-11-04 on the fixture `large.jpg`), and the image pass resamples a JPEG in its stored numbers, so the profile that described them replaces it: any APP2 `ICC_PROFILE` marker already present is removed first, or a reader would join two profiles into one. A profile whose data colour space is not RGB is not spliced and the JPEG comes back as it was, the same array, since the encoder writes three components whatever the source had. {@link parseJpeg} reads the result back to the profile given.
+ */
+export function withIccProfile(jpeg: Uint8Array, profile: Uint8Array | null): Uint8Array {
+  if (!profile || profile.length < 20 || String.fromCharCode(...profile.subarray(16, 20)) !== 'RGB ') return jpeg;
+  const markers: Uint8Array[] = [];
+  const total = Math.ceil(profile.length / ICC_CHUNK);
+  for (let n = 0; n < total; n++) {
+    const chunk = profile.subarray(n * ICC_CHUNK, (n + 1) * ICC_CHUNK);
+    const marker = new Uint8Array(4 + 14 + chunk.length);
+    const length = 2 + 14 + chunk.length;
+    marker.set([0xff, 0xe2, length >> 8, length & 0xff]);
+    marker.set([...'ICC_PROFILE'].map((c) => c.charCodeAt(0)), 4);
+    marker.set([0, n + 1, total], 15);
+    marker.set(chunk, 18);
+    markers.push(marker);
+  }
+  // The header segments up to the scan, without a profile of the encoder's, with ours after the leading APP0.
+  const parts: Uint8Array[] = [jpeg.subarray(0, 2)];
+  let at = 2;
+  let inserted = false;
+  while (jpeg[at] === 0xff && jpeg[at + 1] !== 0xda) {
+    const end = at + 2 + ((jpeg[at + 2] << 8) | jpeg[at + 3]);
+    const isIcc = jpeg[at + 1] === 0xe2 && matches(jpeg, at + 4, 'ICC_PROFILE\0');
+    if (jpeg[at + 1] !== 0xe0 && !inserted) { parts.push(...markers); inserted = true; }
+    if (!isIcc) parts.push(jpeg.subarray(at, end));
+    at = end;
+  }
+  if (!inserted) parts.push(...markers);
+  parts.push(jpeg.subarray(at));
+  const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+  let to = 0;
+  for (const part of parts) { out.set(part, to); to += part.length; }
+  return out;
+}
