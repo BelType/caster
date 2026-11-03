@@ -38,7 +38,7 @@ import {
   selectBestDashGap,
   strokeIsDashed,
 } from '../src/vectors/borderStyles.ts';
-import { bboxOf, boundaryPieces, borderSidePath, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
+import { bboxOf, boundaryPieces, borderSidePath, cssGradient, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
 import { blendName, emptyNodeCommon, parseCssColor } from '../src/vectors/vector.ts';
@@ -369,6 +369,11 @@ test('a hard stop stays two stops, and unrolling covers the shape', () => {
   assert.deepEqual(cut.stops.map((s) => [s.offset * cut.toT, s.rgb]), [[0, [1, 1, 0]], [0, [1, 1, 0]], [1, [0, 0, 1]], [1, [0, 0, 1]], [2, [1, 1, 0]], [2, [1, 1, 0]], [3, [0, 0, 1]]]);
   const mid = unrollGradient(ramp, 'repeat', 1, -0.25);
   assert.deepEqual(mid.stops[0], { offset: 0, rgb: [0.25, 0.25, 0.75], alpha: 1 }, 'a stop interpolated at a floor inside a period');
+
+  // Chromium keeps a gradient's absolute lengths as written in its computed value, so a stripe of 2mm is 2mm, 7.559 px, and not 2 px.
+  const striped = cssGradient('repeating-linear-gradient(90deg, rgb(0, 0, 0) 0px, rgb(0, 0, 0) 2mm, rgb(255, 221, 0) 2mm, rgb(255, 221, 0) 4mm)', { x: 0, y: 0, w: 100, h: 10 }, [1, 0, 0, 1, 0, 0]).shading as any;
+  const line = Math.hypot(striped.coords[2] - striped.coords[0], striped.coords[3] - striped.coords[1]);
+  near((striped.stops[2].offset - striped.stops[0].offset) * line, (2 * 96) / 25.4, 1e-6, 'a 2mm stripe');
 
   // periodsFor is how many stop-ranges fit across the shape, plus one so the edges are covered whatever the phase.
   assert.equal(periodsFor(1, 0.25), 5);

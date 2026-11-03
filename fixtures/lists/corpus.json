@@ -1,5 +1,5 @@
 {
- "caster": "1de9715",
+ "caster": "4729009",
  "cicero": "ef1da70",
  "documents": [
   {
@@ -201,10 +201,10 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "664b593f60be23cd366cd22634ba73f6fbcdf08501eeae9c8be4580474657445",
-   "bytes": 236375,
+   "sha256": "59ef3bfbccdd6cc4cca72ccfd5f0b99148b7ae4dc9adc62a904d93ca0bb6619e",
+   "bytes": 249994,
    "list": {
-    "bytes": 138832,
+    "bytes": 148463,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "4be46715b4724897f743dc134db048195705f1c2b82cd6ceb082e596d931d61b",

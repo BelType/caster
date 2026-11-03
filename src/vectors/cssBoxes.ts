@@ -63,6 +63,24 @@ const px = (value: string): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** CSS px per absolute unit (CSS Values 4 §6.2). */
+const UNIT_PX: Record<string, number> = { px: 1, pt: 96 / 72, pc: 16, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6 };
+
+/** The absolute length units {@link lengthPx} reads, as a pattern's alternation. */
+const UNITS = 'px|pt|pc|in|cm|mm|q|em|rem';
+
+/**
+ * A length in a gradient's computed value, in CSS px.
+ *
+ * @remarks
+ * Chromium resolves a gradient's font-relative lengths to px in its computed value but keeps an absolute one as written (`2mm`, `1in`, `3pt`; measured 2026-11-03), so `parseFloat` alone read `2mm` as 2 px: a repeating gradient of millimetre stripes printed as one ramp (the vector roads document's `repeating-gradient`). A unit outside the table is read as px, as before.
+ */
+const lengthPx = (token: string): number => {
+  const match = /^(-?[\d.]+(?:e-?\d+)?)([a-z]*)$/i.exec(token.trim());
+  if (!match) return px(token);
+  return Number.parseFloat(match[1]) * (UNIT_PX[match[2].toLowerCase()] ?? 1);
+};
+
 /** One corner's radius pair, as the computed style spells it (`10px` or `10px 20px`). */
 function cornerRadius(value: string, w: number, h: number): Radius {
   const parts = value.trim().split(/\s+/).filter((p) => p !== '');
@@ -256,7 +274,7 @@ function parseStops(args: string[]): RawStop[] {
   const stops: RawStop[] = [];
   for (const arg of args) {
     // A colour may itself contain spaces (`rgb(1 2 3)`), so the position is taken off the end rather than the colour off the front.
-    const match = /^(.*?)\s+((?:-?[\d.]+(?:px|%|em|rem|pt)?)(?:\s+-?[\d.]+(?:px|%|em|rem|pt)?)?)$/is.exec(arg.trim());
+    const match = new RegExp(`^(.*?)\\s+((?:-?[\\d.]+(?:${UNITS}|%)?)(?:\\s+-?[\\d.]+(?:${UNITS}|%)?)?)$`, 'is').exec(arg.trim());
     if (match) {
       for (const position of match[2].trim().split(/\s+/)) stops.push({ color: match[1].trim(), position });
       continue;
@@ -271,7 +289,7 @@ function stopOffset(position: string|null, lineLengthPx: number): number|null {
   if (position === null) return null;
   const text = position.trim();
   if (text.endsWith('%')) return Number.parseFloat(text) / 100;
-  const value = px(text);
+  const value = lengthPx(text);
   return lineLengthPx > 0 ? value / lineLengthPx : 0;
 }
 
@@ -362,13 +380,13 @@ function radialRadii(tokens: string[], shape: string, centre: Point, box: Box): 
     const scale = Math.SQRT2;
     return [sideX * scale, sideY * scale];
   }
-  const lengths = tokens.filter((t) => /^-?[\d.]+(px|%|em|rem|pt)$/i.test(t));
+  const lengths = tokens.filter((t) => new RegExp(`^-?[\\d.]+(${UNITS}|%)$`, 'i').test(t));
   if (lengths.length === 0) {
     const corners = dx.flatMap((x) => dy.map((y) => Math.hypot(x, y)));
     const r = Math.max(...corners);
     return shape === 'circle' ? [r, r] : [Math.max(...dx) * Math.SQRT2, Math.max(...dy) * Math.SQRT2];
   }
-  const one = (token: string, reference: number): number => (token.endsWith('%') ? (Number.parseFloat(token) / 100) * reference : px(token));
+  const one = (token: string, reference: number): number => (token.endsWith('%') ? (Number.parseFloat(token) / 100) * reference : lengthPx(token));
   const rx = one(lengths[0], box.w);
   const ry = lengths[1] !== undefined ? one(lengths[1], box.h) : rx;
   return [rx, ry];
@@ -384,7 +402,7 @@ function radialCentre(body: string, box: Box): Point {
     if (token === 'center') return start + size / 2;
     if (token === 'right' || token === 'bottom') return start + size;
     if (token.endsWith('%')) return start + (Number.parseFloat(token) / 100) * size;
-    return start + px(token);
+    return start + lengthPx(token);
   };
   return [one(parts[0] ?? 'center', box.w, box.x), one(parts[1] ?? 'center', box.h, box.y)];
 }
