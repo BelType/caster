@@ -6,8 +6,8 @@
  *
  * - **The content streams.** Each page's content, inflated by mupdf, tokenised as ISO 32000-2 §7.2 does and compared operator for operator, operands as written. A font's resource name is mapped through the page's resources to its `/BaseFont`, and a glyph string under it to the list's glyph ids: the oracle's CIDs are the glyph ids, and forme's are each glyph's place in its subset, `.notdef` first, read back through forme's `faces` record. `--only` keeps the operator families a stage has built: `tags` is `BDC`, `BMC`, `EMC`; `text` is every operator from `BT` to `ET`, and the `q`, `cm`, clip and `Q` of a `q … Q` that holds a text object; `images` is a `q … Q` that holds no text object and paints an image XObject with `Do`, whose name is mapped through the page's resources to what it names; `rects` is a `q … Q` that holds neither and paints a rectangle with `re`; `marks` is one that strokes in a colour space set with `CS` other than `/Pattern`, which only the print marks do. Every other resource name, a colour space (`cs`, `CS`), a graphics state (`gs`), a shading (`sh`), a pattern (`scn`, `SCN`) and an XObject (`Do`), is mapped through the stream's resources to what it names, and a Form XObject's content is read in its `Do`'s place, indented, through the form's own resources, so a form is compared operator for operator too. A `q … Q` that holds none of the families asked for is another family's and is dropped; every other operator is kept, so one no family names is a disagreement.
  * - **The records.** The oracle's records are its own, made by replaying the list through `emitStructure` in node and read through JSON, as forme's cross; `mcids` and `pens` must be equal exactly, and `kernAdjustments`, `actualTextSpans`, `xobjects` and each image use but its sizes and timings equal, and the report's image notes `recordsOf` derives from either; the paint rows equal but their resource names and `vectorResources` equal; the colour record equal but its resource names.
- * - **The images.** Per page, each image XObject its resources name, every dictionary entry but `/Length` resolved, each stream as the hash of its bytes (a `/DCTDecode` stream as written, any other inflated), so the colour space, an `/ICCBased` profile, an `/Indexed` lookup and the `/SMask` are compared with the samples (`describe`); under `--only`, only the XObjects a kept `Do` paints. Until stage 8 a facsimile, which forme leaves out, is left out of the oracle's records too.
- * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under any `--only`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its Form XObject, which stage 8 writes.
+ * - **The images.** Per page, each image XObject its resources name, every dictionary entry but `/Length` resolved, each stream as the hash of its bytes (a `/DCTDecode` stream as written, any other inflated), so the colour space, an `/ICCBased` profile, an `/Indexed` lookup and the `/SMask` are compared with the samples (`describe`); under `--only`, only the XObjects a kept `Do` paints.
+ * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under any `--only`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its Form XObject, which no family names.
  * - **The tree.** mupdf reads both files' structure trees element by element in allocation order and everything that points into them: every element's entries and `/K`, the ParentTree, the IDTree, `/MarkInfo`, each page's `/Tabs`, `/StructParents` and link annotations with their destinations, the outline item by item, `/PageLabels` (`treeOf`). Beside it, `recordsOf` over forme's records gives the `structure`, `links`, `outline` and `idTree` members of the committed report snapshot. The tree's families are not content, so `--only` does not restrict them.
  *
  * - **The pixels.** With no `--only`, mupdf renders each page of both files at 144 dpi, RGB, 8 bits; per page the largest channel difference and the share of pixels more than 8 of 255 apart are printed; a page with a pixel more than 64 apart, or more than 0.2 per cent of its pixels past 8, is a disagreement.
@@ -516,12 +516,11 @@ function unnamedPaint(paint: Record<string, any>[]): unknown {
 }
 
 /**
- * The records the two writers share by rule: `mcids` and `pens` exactly, `kernAdjustments`, `actualTextSpans`, each image use but its sizes and timings (`bytesOut` is the deflate's, `decodeMs` and `encodeMs` clocks), `xobjects`, the paint rows but their resource names (`unnamedPaint`), `vectorResources`, and the colour record but its resource names (`unnamed`). A facsimile forme left out (stage 8) is left out of the oracle's side too: its uses, and its XObjects from the count.
+ * The records the two writers share by rule: `mcids` and `pens` exactly, `kernAdjustments`, `actualTextSpans`, each image use but its sizes and timings (`bytesOut` is the deflate's, `decodeMs` and `encodeMs` clocks), `xobjects`, the paint rows but their resource names (`unnamedPaint`), `vectorResources`, and the colour record but its resource names (`unnamed`).
  */
-function compareRecords(oracle: Records, forme: Records, facsimiles: Set<number>): string | null {
-  const shared = (uses: ImageUse[]) => uses.filter((u) => !facsimiles.has(u.source)).map(({ info: { bytesOut, decodeMs, encodeMs, ...info }, ...use }) => ({ ...use, info }));
-  const formHashes = new Set(oracle.images.filter((u) => facsimiles.has(u.source)).map((u) => u.hash));
-  oracle = { ...oracle, images: shared(oracle.images), xobjects: oracle.xobjects - formHashes.size, paint: unnamedPaint(oracle.paint) as any, colour: unnamed(oracle.colour) };
+function compareRecords(oracle: Records, forme: Records): string | null {
+  const shared = (uses: ImageUse[]) => uses.map(({ info: { bytesOut, decodeMs, encodeMs, ...info }, ...use }) => ({ ...use, info }));
+  oracle = { ...oracle, images: shared(oracle.images), paint: unnamedPaint(oracle.paint) as any, colour: unnamed(oracle.colour) };
   forme = { ...forme, images: shared(forme.images), paint: unnamedPaint(forme.paint) as any, colour: unnamed(forme.colour) };
   for (const key of ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans', 'images', 'xobjects', 'paint', 'vectorResources', 'colour'] as const) {
     if (!isDeepStrictEqual(oracle[key], forme[key])) {
@@ -626,9 +625,8 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const formeRecords: Records = JSON.parse(fs.readFileSync(path.join(dir, `${entry.name}.records.json`), 'utf8'));
     const oracle = open(path.join(lists, `${entry.name}.pdf`));
     const streams = compareStreams(oracle, forme, [oracleRecords, formeRecords], families);
-    const facsimiles = new Set(Object.entries(list.resources.images).filter(([, source]: [string, any]) => source.kind === 'facsimile').map(([key]) => Number(key)));
-    const records = compareRecords(oracleRecords, formeRecords, facsimiles);
-    // A facsimile's words are drawn by its Form XObject, which stage 8 writes: under any `--only`, only the characters in a font the page's own resources name are read.
+    const records = compareRecords(oracleRecords, formeRecords);
+    // A facsimile's words are drawn by its Form XObject, which no family names: under any `--only`, only the characters in a font the page's own resources name are read.
     const text = compareWords(oracle, forme, families !== null);
     const images = compareImages(oracle, forme, [oracleRecords, formeRecords], families);
     const colour = list.writing.colour ? compareColour(oracle, forme, families) : null;
@@ -638,7 +636,7 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
     const members = compareTreeMembers(recordsOf(list, formeRecords as any), report);
     // The report's note on each image, which `recordsOf` derives from the list and the writer's road: forme's road gives the oracle's notes.
-    const notes = (r: Records) => recordsOf(list, { ...r, images: r.images.filter((u) => !facsimiles.has(u.source)) } as any).images;
+    const notes = (r: Records) => recordsOf(list, r as any).images;
     const imageNotes = isDeepStrictEqual(notes(oracleRecords), notes(formeRecords)) ? null : `oracle ${JSON.stringify(notes(oracleRecords)).slice(0, 300)}, forme ${JSON.stringify(notes(formeRecords)).slice(0, 300)}`;
     if (streams.first || records || text.first || tree.first || members.first || images.first || imageNotes || colour?.first || pixels.first) failed += 1;
     line([
