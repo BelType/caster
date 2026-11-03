@@ -151,6 +151,13 @@ export function toPdfMatrix(chain: Matrix, geometry: PageGeometry): Matrix {
     return (mul(mul(invert(s), chain), s).map(round3) as Matrix);
 }
 /**
+ * The device pixel ratio a print snaps at: one device pixel a CSS px, whatever screen the realm is on.
+ *
+ * @remarks
+ * Egildo's ruling of 2026-11-03 (the Rust writer's plan, after ruling 17): Blink snaps at the realm's own ratio, so a print made from a tab on a screen at two would snap to half CSS px; a print is not to depend on the screen it was made from, so the walk snaps as a print through the door does, at one.
+ */
+export const PRINT_DEVICE_PIXEL_RATIO = 1;
+/**
  * Blink's `LayoutUnit::Round()` on a length in CSS px at a device pixel ratio: the length on the 1/64 grid of device pixels, rounded half toward plus infinity, back in CSS px.
  *
  * @remarks
@@ -314,7 +321,7 @@ export function beginChains(container: HTMLElement, pageElementOf: (element: Ele
         const offset: [number, number] = rootRect
             ? [(box.left - rootRect.left) * scale + rootSubpixel[0], (box.top - rootRect.top) * scale + rootSubpixel[1]]
             : [(box.left + window.scrollX) * scale, (box.top + window.scrollY) * scale];
-        const snap = snapPaintOffset(offset, keepsSubpixel(element, cssMatrix), window.devicePixelRatio || 1);
+        const snap = snapPaintOffset(offset, keepsSubpixel(element, cssMatrix), PRINT_DEVICE_PIXEL_RATIO);
         const matrix: Matrix = mul(mul(mul([1, 0, 0, 1, -originPx[0], -originPx[1]], cssMatrix), [1, 0, 0, 1, originPx[0], originPx[1]]), [1, 0, 0, 1, snap.shift[0], snap.shift[1]]);
         const link: ChainLink = { path, transform: style.transform, originPx, matrix, subpixel: snap.subpixel };
         linkByElement.set(element, link);
