@@ -442,6 +442,13 @@ function localBoxOf(context: SvgContext, rect: DOMRect): Box {
 /** The rectangle an `<svg>` element clips its content to, in page points. */
 function viewportClip(context: SvgContext, element: Element, domPath: string): ClipSpec[] {
   if (getComputedStyle(element).overflow === 'visible') return [];
+  // A nested `<svg>`'s viewport is its `x`, `y`, `width` and `height` in its parent's user space; its client rectangle is the box around what it draws, which is no clip at all.
+  if (element !== context.svg && element.parentElement) {
+    const nested = element as SVGSVGElement;
+    const box: Box = { x: nested.x.baseVal.value, y: nested.y.baseVal.value, w: nested.width.baseVal.value, h: nested.height.baseVal.value };
+    if (box.w <= 0 || box.h <= 0) return [];
+    return [{ path: transformPath(roundedRectPath(box), context.toPageOf(element.parentElement)), evenOdd: false, reason: `the <svg> viewport at ${domPath}` }];
+  }
   const box = localBoxOf(context, element.getBoundingClientRect());
   if (box.w <= 0 || box.h <= 0) return [];
   return [{ path: transformPath(roundedRectPath(box), context.toPage), evenOdd: false, reason: `the <svg> viewport at ${domPath}` }];

@@ -2,6 +2,7 @@
 
 ## Unreleased (branch `round/rust-writer`)
 
+- **A nested `<svg>` clips to its own viewport** (the vector roads round). Its clip was read from its client rectangle, which for a nested `<svg>` is the box around what it draws, so its content was never cut; the viewport is now its `x`, `y`, `width` and `height` in its parent's user space.
 - **An SVG raster fallback is drawn at its drawing's scale and painted once** (the vector roads round). The isolated document took the `<svg>`'s children without the `<svg>`, so its `viewBox` was lost and a filtered element came out one user unit a px, small and in the drawing's corner; and it kept the ancestors' opacity and mask, which the vector group around the raster paints as well. The clone now goes in whole, and its ancestors' opacity, mask, filter and blend mode are neutralised.
 - **A marked SVG shape's mask, blend mode and opacity cover its markers** (the vector roads round). A marker is part of its element's rendering, and the walk put the element's mask and blend mode on the shape alone and its opacity on each node of the group, so a masked line kept its arrowheads unmasked; they now go on the shape-and-markers group, which becomes a transparency group and composites once.
 - **An SVG clip takes its children's `clip-rule`** (the vector roads round). The rule was read from the `<clipPath>` element, where SVG reads it from each child, so `<clipPath><path clip-rule="evenodd"/></clipPath>` clipped by nonzero; children that disagree are one path under nonzero, said in the report's deferred list.

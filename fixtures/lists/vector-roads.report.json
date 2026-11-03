@@ -21484,10 +21484,10 @@
    "paintIndex": 474,
    "artifact": false,
    "geometry": [
-    221.535,
-    723.285,
-    278.674,
-    780.424
+    212.012,
+    720.111,
+    259.628,
+    783.599
    ],
    "reason": "the <svg> viewport at div[7]/div[1]/svg[0]/svg[0]",
    "evenOdd": false
@@ -25089,5 +25089,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 291294
+ "bytes": 291302
 }
