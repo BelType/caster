@@ -33,10 +33,12 @@ scope.onconnect = ({ ports }) => {
       const { bytes, records } = writer.write(data.list);
       reply({ bytes, records }, [bytes.buffer]);
     } catch (error) {
+      // A trap (forme's panic aborts the module) leaves the instance unusable, so the next message instantiates afresh; a refusal is an ordinary error and keeps it.
+      if (error instanceof WebAssembly.RuntimeError) ready = null;
       const listItem = (error as { listItem?: [number, number] })?.listItem;
       reply({ refusal: { message: String((error as Error)?.message ?? error), ...(listItem ? { listItem } : {}) } });
     } finally {
-      writer.free();
+      try { writer.free(); } catch { /* a trapped instance cannot free; it is dropped above */ }
     }
   };
 };
