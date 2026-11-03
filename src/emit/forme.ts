@@ -35,7 +35,7 @@ export type FormeGlue = {
 export type FormeRequest = { glue: string, module: WebAssembly.Module, list: string, blobs: [string, Uint8Array][] };
 
 /** What the page posts to a shared writer worker: the glue's URL, the module's bytes (read on the first message only), the list's JSON and the blobs by key. */
-export type FormeSharedRequest = { glue: string, wasm: Uint8Array, list: string, blobs: [string, Uint8Array][] };
+export type FormeSharedRequest = { glueSource: string, wasm: Uint8Array, list: string, blobs: [string, Uint8Array][] };
 
 /** A refusal of forme's as it crosses a realm: its sentence, and the item it names as `[page, item]`. */
 export type FormeRefusal = { message: string, listItem?: [number, number] };
@@ -123,15 +123,24 @@ export const SHARED_WORKER = new URL('./formeShared.js', import.meta.url);
 const PORT_TIMEOUT_MS = 60_000;
 
 /** The write through a port to a shared worker the host keeps alive; the worker keeps the instance, never the list. */
+/** The glue's text, fetched once by the page: a shared worker's own requests reach no host route (Playwright serves none of them), so the worker imports the glue from a blob URL it makes itself. */
+let glueSource: Promise<string> | null = null;
+
 async function writeThroughPort(list: DisplayList, port: MessagePort): Promise<WriterResult> {
   const { wasm } = capability('forme');
+  let source: string;
+  try { source = await (glueSource ??= fetch(GLUE).then((response) => { if (!response.ok) throw new Error(`${GLUE.pathname} answered ${response.status}`); return response.text(); })); }
+  catch (error) {
+    glueSource = null;
+    throw cannotStartPort(`its glue could not be read: ${String(error)}`);
+  }
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const reply = await new Promise<FormeReply>((resolve, reject) => {
       port.onmessage = (event: MessageEvent<FormeReply>) => resolve(event.data);
       port.onmessageerror = () => reject(cannotStartPort('its answer could not be read'));
       timer = setTimeout(() => reject(new CapabilityError(`caster: the port to the 'forme' writer worker answered nothing within ${PORT_TIMEOUT_MS / 1000} s; the host's shared worker (${SHARED_WORKER.pathname}) is not running or is stuck, and there is no fallback to the main thread. The flag that asked for it is 'writer'.`, { capability: 'forme', flag: 'writer' })), PORT_TIMEOUT_MS);
-      const request: FormeSharedRequest = { glue: GLUE.href, wasm: wasm as Uint8Array, list: listJson(list), blobs: Object.entries(list.resources.blobs) };
+      const request: FormeSharedRequest = { glueSource: source, wasm: wasm as Uint8Array, list: listJson(list), blobs: Object.entries(list.resources.blobs) };
       port.postMessage(request);
     });
     if ('start' in reply) throw cannotStartPort(reply.start);

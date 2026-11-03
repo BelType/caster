@@ -21,7 +21,7 @@ scope.onconnect = ({ ports }) => {
     const reply = (message: FormeReply, transfer: Transferable[] = []) => port.postMessage(message, transfer);
     let glue: FormeGlue;
     try {
-      glue = await (ready ??= import(/* @vite-ignore */ data.glue).then((module: FormeGlue) => { module.initSync({ module: data.wasm }); return module; }));
+      glue = await (ready ??= import(/* @vite-ignore */ URL.createObjectURL(new Blob([data.glueSource], { type: 'text/javascript' }))).then((module: FormeGlue) => { module.initSync({ module: data.wasm }); return module; }));
     } catch (error) {
       ready = null;
       reply({ start: `forme's glue could not be instantiated in the shared worker: ${String(error)}` });
