@@ -2,7 +2,7 @@
  * `scripts/bundle-forme.js` — builds `vendor/forme.js` and `vendor/forme_bg.wasm`, the Rust writer, from a forme checkout, and copies its `NOTICE` beside them as `vendor/forme-NOTICE.txt`.
  *
  * @remarks
- * forme is `codeberg.org/BelType/forme`; the checkout is `FORME`, the sibling `../forme` by default, as `scripts/identity.ts` reads `BELTYPE_CLI`. The build is the recipe forme's README records, and it is load-bearing: cargo performs no LTO on a library whose crate types include `rlib`, so the module is built as a `cdylib` alone (`cargo rustc --lib --crate-type cdylib`, the `wasm` profile), or it is about 134 kB larger; the two `--remap-path-prefix` flags keep the builder's home directory out of the panic locations. Then wasm-bindgen writes the glue (`--target web`, which the capability registry imports and initialises with the bytes it fetched, `emit/forme.ts`), and `wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int` shrinks the module; without the two flags `wasm-opt` refuses it, because rustc 1.99 emits both features. wasm-bindgen's command line must be the version forme's `Cargo.lock` pins, or the glue and the module disagree; this refuses another.
+ * forme is `codeberg.org/BelType/forme`; the checkout is `FORME`, the sibling `../forme` by default, as `scripts/identity.ts` reads `BELTYPE_CLI`. The build is the recipe forme's README records, and it is load-bearing: cargo performs no LTO on a library whose crate types include `rlib`, so the module is built as a `cdylib` alone (`cargo rustc --lib --crate-type cdylib`, the `wasm` profile), or it is about 134 kB larger; the two `--remap-path-prefix` flags keep the builder's home directory out of the panic locations. Then wasm-bindgen writes the glue (`--target web`, which the capability registry imports, and which `emit/forme.ts` instantiates in a worker in a page and initialises with the bytes the registry read in node), and `wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int` shrinks the module; without the two flags `wasm-opt` refuses it, because rustc 1.99 emits both features. wasm-bindgen's command line must be the version forme's `Cargo.lock` pins, or the glue and the module disagree; this refuses another.
  *
  * Nothing is fetched at run time; the build fetches crates, as `pnpm install` fetches packages. It rewrites the forme rows of `vendor/README.md` and its section on forme, with the commit, the toolchain and the sizes; `scripts/bundle-vendor.js` keeps both as they are.
  *
@@ -32,8 +32,8 @@ export const SECTION = '## `forme.js` and `forme_bg.wasm` are built from forme, 
 
 /** The rows of `vendor/README.md`'s table this script owns, with what each buys. */
 export const FILES = [
-  { out: 'forme.js', note: 'the Rust writer\'s glue, wasm-bindgen `--target web`: the `Writer` class `emit/forme.js` calls under `writer: \'forme\'`, initialised with the bytes the registry fetched' },
-  { out: 'forme_bg.wasm', note: 'the Rust writer: the display list in, the file and the records out. Fetched by the registry and handed to the glue\'s `initSync`' },
+  { out: 'forme.js', note: 'the Rust writer\'s glue, wasm-bindgen `--target web`: the `Writer` class `emit/forme.js` calls under `writer: \'forme\'`: imported in a page by its worker, `emit/formeWorker.js`, and instantiated there from the module the page compiled, and initialised in node with the bytes the registry read' },
+  { out: 'forme_bg.wasm', note: 'the Rust writer: the display list in, the file and the records out. Fetched by the registry; compiled once in a page and posted to the worker, handed to the glue\'s `initSync` in node' },
   { out: 'forme-NOTICE.txt', note: 'forme\'s `NOTICE`: the notices of the code subsetter adapts, and what forme\'s copies of skrifa, write-fonts, hayro-write and hayro-syntax change, which travel with the module' }
 ];
 

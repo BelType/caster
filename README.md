@@ -195,7 +195,7 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 | `woff2` | `vendor/wawoff2.js` | some `@font-face` has only WOFF2 sources |
 | `profiles` | `profiles/srgb.icc`, `profiles/default_cmyk.icc` | the document has a colour story |
 | `lcms` | `vendor/lcms.js` and `lcms.wasm` | `convertRgb: 'wasm'` (a tier `print()` refuses today) |
-| `forme` | `vendor/forme.js` and `forme_bg.wasm` | `writer: 'forme'`; an absent module refuses by name, and the oracle is never taken in its place |
+| `forme` | `vendor/forme.js` and `forme_bg.wasm` | `writer: 'forme'`; an absent module refuses by name, and the oracle is never taken in its place. In a page it writes in a dedicated worker (`src/emit/formeWorker.js`), and a page whose policy forbids the worker or WebAssembly refuses by name, never writing on the main thread |
 | `localFonts` | none | never: a reserved door that refuses by name |
 
 `capability(name)` returns the loaded bundle or throws a `CapabilityError` naming the capability and the flag that would have loaded it.
@@ -308,7 +308,7 @@ sequenceDiagram
 | `skipInk` | `true`, `false` | `true` | 34.2% of a body-size underline is removed by the descenders it would strike |
 | `colour` | `auto`, `on`, `off` | `auto` | Caster's own: colour objects are written only when the document has a colour story |
 | `unknownElements` | `refuse`, `infer` | `infer` | Caster's own: `infer` prints a custom element by its layout, lists each guess and drops the PDF/UA-2 claim; `refuse` refuses it by name |
-| `writer` | `pdf-lib`, `forme` | `pdf-lib` | Caster's own: which writer turns the display list into the file, the TypeScript writer or forme, the Rust writer vendored as WebAssembly; both read the same list, and forme is held to the oracle's files by every reader of the gate, so the default stays the oracle's until the flip |
+| `writer` | `pdf-lib`, `forme` | `pdf-lib` | Caster's own: which writer turns the display list into the file, the TypeScript writer or forme, the Rust writer vendored as WebAssembly; both read the same list, and forme is held to the oracle's files by every reader of the gate, so the default stays the oracle's until the flip. In a page forme writes in a dedicated worker and holds no frame; the host must serve `src/emit/formeWorker.js` beside the other modules and allow a module worker from its origin (`worker-src`) and WebAssembly (`'wasm-unsafe-eval'`) |
 
 ## What Caster refuses and why refusing is the design
 

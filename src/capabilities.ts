@@ -42,7 +42,7 @@ export type CapabilityMap = {
   woff2: any;
   /** The ICC profiles by basename: `srgb.icc`, `default_cmyk.icc`. */
   profiles: Record<string, Uint8Array>;
-  /** forme's wasm-bindgen glue (`--target web`) and the module's bytes, which `emit/forme.ts` hands to the glue's `initSync`, so no realm fetches the module twice and node reads it through {@link fetchBytes}. */
+  /** forme's wasm-bindgen glue (`--target web`) and the module's bytes, fetched once per realm and node's read through {@link fetchBytes}: in a page `emit/forme.ts` compiles the bytes and its worker instantiates them, and in node it hands them to the glue's `initSync`. */
   forme: { module: FormeGlue, wasm: Uint8Array };
   /** Reserved, not built (PLAN.md D2). */
   localFonts: never;
