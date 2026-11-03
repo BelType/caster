@@ -441,7 +441,9 @@ export function unrollGradient(stops: GradientStop[], spread: 'reflect'|'repeat'
     fromT = floor;
   }
   const total = toT - fromT;
-  return { stops: unrolled.map((stop) => ({ ...stop, offset: (stop.offset - fromT) / total })), fromT, toT };
+  // A period's last stop and the next period's first are one offset in arithmetic and can come out an ulp apart, the later one first; the shading builder's stable sort then swapped them, and a stripe that should have been flat between two hard edges was drawn as a ramp (measured on the vector roads document's striped backdrop, 2026-11-03). The offsets are held non-decreasing in list order, so such a pair is one hard edge.
+  let previous = 0;
+  return { stops: unrolled.map((stop) => { previous = Math.max(previous, (stop.offset - fromT) / total); return { ...stop, offset: previous }; }), fromT, toT };
 }
 
 /**

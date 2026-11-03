@@ -374,6 +374,9 @@ test('a hard stop stays two stops, and unrolling covers the shape', () => {
   const striped = cssGradient('repeating-linear-gradient(90deg, rgb(0, 0, 0) 0px, rgb(0, 0, 0) 2mm, rgb(255, 221, 0) 2mm, rgb(255, 221, 0) 4mm)', { x: 0, y: 0, w: 100, h: 10 }, [1, 0, 0, 1, 0, 0]).shading as any;
   const line = Math.hypot(striped.coords[2] - striped.coords[0], striped.coords[3] - striped.coords[1]);
   near((striped.stops[2].offset - striped.stops[0].offset) * line, (2 * 96) / 25.4, 1e-6, 'a 2mm stripe');
+  // A period's last stop and the next one's first are one offset; in floats they can come out an ulp apart and in the wrong order, which the shading builder's sort turned into a ramp. Measured on the vector roads document's backdrop, a box 211.640625 px wide, as layout measured it.
+  const backdrop = cssGradient('repeating-linear-gradient(90deg, rgb(0, 0, 0) 0px, rgb(0, 0, 0) 4mm, rgb(255, 221, 0) 4mm, rgb(255, 221, 0) 8mm)', { x: 0, y: 0, w: 211.640625, h: 10 }, [1, 0, 0, 1, 0, 0]).shading as any;
+  assert.ok(backdrop.stops.every((stop: any, i: number) => i === 0 || stop.offset >= backdrop.stops[i - 1].offset), 'the unrolled offsets never decrease');
 
   // periodsFor is how many stop-ranges fit across the shape, plus one so the edges are covered whatever the phase.
   assert.equal(periodsFor(1, 0.25), 5);
