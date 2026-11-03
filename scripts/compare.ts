@@ -690,3 +690,135 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
   console.log(`${compared} compared with the oracle, ${failed} with a disagreement`);
   return failed === 0 ? 0 : 1;
 }
+
+/** One drawing as the browser presented it: its name, the page it is on, and its rectangle in CSS px from that page's top left. */
+export type Drawing = { name: string; page: number; rect: [number, number, number, number] };
+
+/** A page as the browser presented it, `scale` device pixels a CSS px, decoded to RGB or RGBA. */
+export type Shot = Raster & { scale: number };
+
+/** The two numbers of the pixels reader; the shift, in device pixels, that best registers the second raster on the first; and the two numbers again after that shift, with every pixel forgiven what an edge's antialiasing can make of it. */
+type Region = { max: number; share: number; shift: [number, number]; nearMax: number; nearShare: number };
+
+
+/**
+ * Two rasters of one page compared over one rectangle of device pixels.
+ *
+ * @remarks
+ * `max` and `share` are the pixels reader's: the largest channel difference, and the share of the region's pixels past {@link PIXEL_NEAR}. Then the second raster is registered on the first: of every shift up to `search` device pixels each way, the one with the least mean difference over the region, which says where the drawing landed apart from what it looks like. After that shift, `nearMax` and `nearShare` forgive antialiasing: a pixel's difference is how far each of its channels lies outside the range that channel takes over the 3 × 3 neighbourhood of the same place in the other raster, taken both ways and the larger kept. Where the neighbourhood is flat the range is one value and the number is the plain difference, so a wrong colour, alpha or blend in an area still counts in full; where an edge crosses it the range spans both sides, so a coverage that two rasterisers round differently is forgiven, while a shape out by more than a pixel is not.
+ */
+function region(a: Raster, b: Raster, [x0, y0, x1, y1]: [number, number, number, number], search = 0): Region {
+  const at = (r: Raster, x: number, y: number) => (Math.min(Math.max(y, 0), r.height - 1) * r.width + Math.min(Math.max(x, 0), r.width - 1)) * r.channels;
+  const plain = (i: number, j: number) => Math.max(Math.abs(a.pixels[i] - b.pixels[j]), Math.abs(a.pixels[i + 1] - b.pixels[j + 1]), Math.abs(a.pixels[i + 2] - b.pixels[j + 2]));
+  let max = 0;
+  let over = 0;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const d = plain(at(a, x, y), at(b, x, y)); if (d > max) max = d; if (d > PIXEL_NEAR) over++; }
+  let shift: [number, number] = [0, 0];
+  let least = Infinity;
+  for (let dy = -search; dy <= search; dy++) {
+    for (let dx = -search; dx <= search; dx++) {
+      let sum = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = at(a, x, y); const j = at(b, x + dx, y + dy); sum += Math.abs(a.pixels[i] - b.pixels[j]) + Math.abs(a.pixels[i + 1] - b.pixels[j + 1]) + Math.abs(a.pixels[i + 2] - b.pixels[j + 2]); }
+      // The nearer shift wins a tie, so two rasters that agree read as registered where they are.
+      if (sum < least || (sum === least && Math.abs(dx) + Math.abs(dy) < Math.abs(shift[0]) + Math.abs(shift[1]))) { least = sum; shift = [dx, dy]; }
+    }
+  }
+  const [sx, sy] = shift;
+  const outside = (p: Raster, px: number, py: number, q: Raster, qx: number, qy: number) => {
+    const i = at(p, px, py);
+    let worst = 0;
+    for (let c = 0; c < 3; c++) {
+      let low = 255;
+      let high = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const v = q.pixels[at(q, qx + dx, qy + dy) + c]; if (v < low) low = v; if (v > high) high = v; }
+      const v = p.pixels[i + c];
+      worst = Math.max(worst, v < low ? low - v : v > high ? v - high : 0);
+    }
+    return worst;
+  };
+  let nearMax = 0;
+  let nearOver = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      if (plain(at(a, x, y), at(b, x + sx, y + sy)) === 0) continue;
+      const n = Math.max(outside(a, x, y, b, x + sx, y + sy), outside(b, x + sx, y + sy, a, x, y));
+      if (n > nearMax) nearMax = n;
+      if (n > PIXEL_NEAR) nearOver++;
+    }
+  }
+  const count = Math.max(1, (x1 - x0) * (y1 - y0));
+  return { max, share: over / count, shift, nearMax, nearShare: nearOver / count };
+}
+
+/** The line a drawing is held to against the browser: registered within one CSS px each way, and on the forgiving numbers no pixel more than {@link PIXEL_MAX} apart and no more than {@link BROWSER_SHARE} of the region past {@link PIXEL_NEAR}. */
+const BROWSER_SHARE = 0.005;
+
+/**
+ * The browser's gate: each drawing of a document, as Chromium presented its page to the author, against the same region of both writers' files rendered by mupdf and by yapr at the browser's resolution, and the two writers against each other.
+ *
+ * @remarks
+ * Two writers can agree and both be wrong; the browser is the authority both answer to (Egildo's ruling 13 of the Rust writer). The page is rendered at the shot's own scale, so a region is the drawing's CSS rectangle times the scale, grown by two device pixels on each side and clipped to the page. A drawing past the line on any reader is a disagreement and is named; writer against writer is held to the pixels reader's own lines.
+ *
+ * @param out - Where to write each drawing's four crops as PNG (browser, oracle, forme, and yapr's of forme), for a reader to look at; nothing is written without it.
+ */
+export async function againstBrowser(name: string, shots: Shot[], drawings: Drawing[], oracleFile: string, formeFile: string, out: string | null): Promise<number> {
+  // Chromium writes a CSS or SVG colour's sRGB numbers into the page as they are; mupdf with ICC on maps a page's `/DefaultRGB` and its output intent through lcms, and black comes out 8, 7, 6. That is a colour-management question, not a drawing's, so mupdf renders device colour here, as yapr does.
+  mupdf.disableICC();
+  const docs = [open(oracleFile), open(formeFile)];
+  const viewers = await Promise.all([oracleFile, formeFile].map((file) => openYapr(fs.readFileSync(file))));
+  const { encode } = await import('fast-png');
+  const renders = new Map<string, Raster>();
+  const render = (who: 0 | 1, reader: 'mupdf' | 'yapr', p: number): Raster => {
+    const key = `${who} ${reader} ${p}`;
+    const held = renders.get(key);
+    if (held) return held;
+    // A CSS px is 72/96 of a point, so the browser's device pixels a CSS px are this many a point.
+    const perPoint = (shots[p].scale * 96) / 72;
+    let made: Raster;
+    if (reader === 'mupdf') {
+      const pixmap = docs[who].loadPage(p).toPixmap(mupdf.Matrix.scale(perPoint, perPoint), mupdf.ColorSpace.DeviceRGB, false);
+      // Copied out of the module's memory, which the next render reuses.
+      made = { pixels: pixmap.getPixels().slice(), width: pixmap.getWidth(), height: pixmap.getHeight(), channels: 3 };
+      pixmap.destroy();
+    } else {
+      const pixels = viewers[who].render(p, perPoint).slice();
+      made = { pixels, width: viewers[who].width(), height: viewers[who].height(), channels: 4 };
+    }
+    // Cicero's presented page is a CSS px short of the page box in height (measured on A4: 1121.52 px against 1122.52), so the sizes are held to a CSS px and one device pixel, and every region lies inside both.
+    const slack = shots[p].scale + 1;
+    if (Math.abs(made.width - shots[p].width) > slack || Math.abs(made.height - shots[p].height) > slack) throw new Error(`browser gate: ${name} page ${p + 1}: ${reader} renders ${made.width} by ${made.height} pixels, the browser's page is ${shots[p].width} by ${shots[p].height}`);
+    renders.set(key, made);
+    return made;
+  };
+  const crop = (r: Raster, [x0, y0, x1, y1]: [number, number, number, number]) => {
+    const data = new Uint8Array((x1 - x0) * (y1 - y0) * 3);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) for (let c = 0; c < 3; c++) data[((y - y0) * (x1 - x0) + (x - x0)) * 3 + c] = r.pixels[(y * r.width + x) * r.channels + c];
+    return encode({ width: x1 - x0, height: y1 - y0, data, channels: 3, depth: 8 });
+  };
+  const fmt = (r: Region) => `${String(r.max).padStart(3)} ${(r.share * 100).toFixed(2).padStart(6)} % | ${`${r.shift[0]},${r.shift[1]}`.padStart(5)} ${String(r.nearMax).padStart(3)} ${(r.nearShare * 100).toFixed(2).padStart(6)} %`;
+  // Chromium snaps an inline `<svg>`'s and a transformed box's paint offset to a whole CSS px, so on screen a drawing lands up to half a CSS px from where layout put it, and further under a chain of transforms, where a PDF renderer paints where the file says (measured at 4 device pixels a CSS px: up to 0.5 px for a plain SVG and 0.75 px under a transform). A drawing may be registered by one CSS px each way; the search looks twice as far, so that a drawing out by more is named with its shift.
+  const past = (r: Region, scale: number) => Math.abs(r.shift[0]) > scale || Math.abs(r.shift[1]) > scale || r.nearMax > PIXEL_MAX || r.nearShare > BROWSER_SHARE;
+  if (out) fs.mkdirSync(out, { recursive: true });
+  console.log(`${name}: ${drawings.length} drawings on ${shots.length} pages at ${shots[0]?.scale} device pixels a CSS px; per reader the largest channel difference and the share past ${PIXEL_NEAR} of 255, raw | the shift that registers the reader on the browser, then the two numbers forgiving a pixel's antialiasing; held to a shift of one CSS px and to ${PIXEL_MAX} and ${BROWSER_SHARE * 100} % on the forgiving numbers; writer against writer to ${PIXEL_MAX} and ${PIXEL_SHARE * 100} % raw`);
+  console.log(`${'drawing'.padEnd(24)} ${'oracle (mupdf)'.padEnd(32)} ${'forme (mupdf)'.padEnd(32)} ${'oracle (yapr)'.padEnd(32)} ${'forme (yapr)'.padEnd(32)} forme against oracle (mupdf, yapr)`);
+  let failed = 0;
+  for (const d of drawings) {
+    const shot = shots[d.page];
+    const s = shot.scale;
+    const inside = [shot, render(0, 'mupdf', d.page), render(1, 'mupdf', d.page), render(0, 'yapr', d.page), render(1, 'yapr', d.page)];
+    const box: [number, number, number, number] = [Math.max(0, Math.floor(d.rect[0] * s) - 2), Math.max(0, Math.floor(d.rect[1] * s) - 2), Math.min(...inside.map((r) => r.width), Math.ceil((d.rect[0] + d.rect[2]) * s) + 2), Math.min(...inside.map((r) => r.height), Math.ceil((d.rect[1] + d.rect[3]) * s) + 2)];
+    const rows = ([[0, 'mupdf'], [1, 'mupdf'], [0, 'yapr'], [1, 'yapr']] as const).map(([who, reader]) => region(shot, render(who, reader, d.page), box, 2 * s));
+    const writers = [region(render(0, 'mupdf', d.page), render(1, 'mupdf', d.page), box), region(render(0, 'yapr', d.page), render(1, 'yapr', d.page), box)];
+    const named = [...rows.map((r, i) => (past(r, s) ? ['oracle (mupdf)', 'forme (mupdf)', 'oracle (yapr)', 'forme (yapr)'][i] : null)), ...writers.map((w, i) => (w.max > PIXEL_MAX || w.share > PIXEL_SHARE ? `writers (${i ? 'yapr' : 'mupdf'})` : null))].filter(Boolean);
+    if (named.length) failed++;
+    console.log(`${d.name.padEnd(24)} ${rows.map(fmt).join('   ')}   ${writers.map((w) => `${w.max} ${(w.share * 100).toFixed(2)} %`).join(', ')}${named.length ? `  PAST THE LINE: ${named.join(', ')}` : ''}`);
+    if (out) {
+      const crops: [string, Raster][] = [['browser', shot], ['oracle', render(0, 'mupdf', d.page)], ['forme', render(1, 'mupdf', d.page)], ['forme-yapr', render(1, 'yapr', d.page)]];
+      for (const [who, r] of crops) fs.writeFileSync(path.join(out, `${name}.${d.name}.${who}.png`), crop(r, box));
+    }
+  }
+  for (const viewer of viewers) viewer.free();
+  mupdf.enableICC();
+  console.log(`${name}: ${drawings.length} drawings, ${failed} past the line`);
+  return failed;
+}
