@@ -50,6 +50,7 @@ import { BAND_INSET_PX, BLINK_SOURCE, MAX_DILATION_PX, glyphsOfRun, skipInkUnder
 import { collectTableBorders } from './vectors/tableBorders.ts';
 import { MARKS_PROPERTY, pageMarksOf, parseMarks } from './coordinates/printMarks.ts';
 import { collectSvg } from './vectors/svgGeometry.ts';
+import { isolateBlends } from './vectors/blendIsolation.ts';
 import { collectListMarkers } from './vectors/listMarkers.ts';
 import { registerHintProperties, elementColor } from './colour/colorHints.ts';
 import { parsePng } from './images/png.ts';
@@ -287,7 +288,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       paints: walk.paints,
       images: walk.images.map((i) => ({ path: i.path, element: i.element, box: i.box })),
       describe: walk.describe,
-      vectors: [...boxes.requests, ...grid.requests, ...svg.requests, ...markers.requests],
+      vectors: isolateBlends([...boxes.requests, ...grid.requests, ...svg.requests, ...markers.requests], { pageElementOf: strip.pageElementOf, transformOf: (chains as ChainContext).transformOf, domPathOf: (element) => domPathOf(element, container) }),
       svgTexts: svg.texts,
       paintIndexOf: (element, kind) => (kind === 'decoration' ? order.decoration.get(element) : order.content.get(element)),
       colorOf: (parent) => elementColor(parent, domPathOf(parent, container)),

@@ -36,8 +36,10 @@ export type ChainLink = {
   transform: string;
   /** `transform-origin` resolved to page-local px. */
   originPx: [number, number];
-  /** `T(-origin) . transform . T(+origin)`, in page-local px. */
+  /** `T(-origin) . transform . T(+origin)`, then the snap Blink gives the box's paint offset, in page-local px. */
   matrix: Matrix;
+  /** The leftover fraction of the box's paint offset its own painting and its descendants keep, per axis (`subpixel_accumulation`); zero on an axis the transform cannot carry it through. */
+  subpixel: [number, number];
 };
 
 /** A node's whole chain: the product, and the links it was folded from, outermost first. */
@@ -59,6 +61,8 @@ export type CapturedStyle = {
 export type ChainContext = {
   /** The chain for a node's nearest transformed ancestors; null when identity. */
   chainOf: (element: Element) => ChainResult|null;
+  /** The leftover fraction of a transformed element's snapped paint offset, which its own box is painted at (`snapBox`); null for an element with no transform. */
+  subpixelOf: (element: Element) => [number, number]|null;
   /** The element's own computed `transform`, as captured before neutralisation. */
   transformOf: (element: Element) => string;
   /** The page element a node belongs to, as the caller named it. */
@@ -147,6 +151,105 @@ export function toPdfMatrix(chain: Matrix, geometry: PageGeometry): Matrix {
     return (mul(mul(invert(s), chain), s).map(round3) as Matrix);
 }
 /**
+ * The device pixel ratio a print snaps at: one device pixel a CSS px, whatever screen the realm is on.
+ *
+ * @remarks
+ * Egildo's ruling of 2026-11-03 (the Rust writer's plan, after ruling 17): Blink snaps at the realm's own ratio, so a print made from a tab on a screen at two would snap to half CSS px; a print is not to depend on the screen it was made from, so the walk snaps as a print through the door does, at one.
+ */
+export const PRINT_DEVICE_PIXEL_RATIO = 1;
+/**
+ * Blink's `LayoutUnit::Round()` on a length in CSS px at a device pixel ratio: the length on the 1/64 grid of device pixels, rounded half toward plus infinity, back in CSS px.
+ *
+ * @remarks
+ * `FixedPoint::Round()` (`platform/geometry/layout_unit.h`, Chromium 153). Blink lays out in device pixels (zoom for the device scale factor), so a print at one device pixel a CSS px snaps to whole CSS px and a screen at two to half ones (measured 2026-11-03 in Caster's Chromium 153 at device scale factors 1, 2 and 4: a rotated box's painted centre within 0.04 CSS px of this rule at each).
+ */
+export function snapLength(v: number, devicePixelRatio: number): number {
+    return Math.floor(Math.round(v * devicePixelRatio * 64) / 64 + 0.5) / devicePixelRatio;
+}
+
+/**
+ * `UpdateForPaintOffsetTranslation` (`core/paint/paint_property_tree_builder.cc`, Chromium 153) for a transformed box: its accumulated paint offset rounded to a device pixel, the shift that rounding moves the box by, and the fraction it keeps on the axes it may.
+ *
+ * @remarks
+ * `paint_offset_translation = ToRoundedVector2d(paint_offset)`, and `subpixel_accumulation = paint_offset - rounded` is kept on an axis `CanPropagateSubpixelAccumulation` allows and zeroed on another. On a kept axis the box paints at the fraction inside the translated space, so it lands where it was laid out; on a zeroed one it lands on the rounded offset. The transform origin is not rounded.
+ *
+ * @param offset - The box's paint offset in its paint offset root's space, in CSS px.
+ * @param keep - Per axis, whether the fraction passes through the transform.
+ */
+export function snapPaintOffset(offset: [number, number], keep: [boolean, boolean], devicePixelRatio: number): { shift: [number, number]; subpixel: [number, number] } {
+    const rounded = offset.map((v) => snapLength(v, devicePixelRatio));
+    const fraction = [offset[0] - rounded[0], offset[1] - rounded[1]];
+    return {
+        shift: [keep[0] ? 0 : -fraction[0], keep[1] ? 0 : -fraction[1]],
+        subpixel: [keep[0] ? fraction[0] : 0, keep[1] ? fraction[1] : 0],
+    };
+}
+
+/**
+ * The box's own border box as Blink paints it, `ToPixelSnappedRect` at the fraction its paint offset kept: the corner rounded, each side `SnapSizeToPixel`.
+ *
+ * @remarks
+ * `core/layout/geometry/physical_rect.h` and `layout_unit.h`, Chromium 153: a side is `(fraction + size).Round() - fraction.Round()`. In page-local px, where the box's laid-out corner is where the kept fraction sits.
+ */
+export function snapBox(box: { x: number; y: number; w: number; h: number }, subpixel: [number, number], devicePixelRatio: number): { x: number; y: number; w: number; h: number } {
+    const side = (fraction: number, size: number) => snapLength(fraction + size, devicePixelRatio) - snapLength(fraction, devicePixelRatio);
+    return {
+        x: box.x - subpixel[0] + snapLength(subpixel[0], devicePixelRatio),
+        y: box.y - subpixel[1] + snapLength(subpixel[1], devicePixelRatio),
+        w: side(subpixel[0], box.w),
+        h: side(subpixel[1], box.h),
+    };
+}
+
+/** Paint containment, or style and layout containment together: `NeedsIsolationNodes`, which resets the paint offset and carries no fraction through. */
+function isolates(style: CSSStyleDeclaration): boolean {
+    const contain = style.contain.split(/\s+/);
+    return contain.includes('paint') || contain.includes('strict') || contain.includes('content') || (contain.includes('style') && contain.includes('layout'));
+}
+
+/** `will-change: transform`, `scale` or `rotate`: `kPreventingSubpixelAccumulationReasons`. */
+const preventsSubpixel = (style: CSSStyleDeclaration): boolean => /\b(transform|scale|rotate)\b/u.test(style.willChange);
+
+/** `CanPropagateSubpixelAccumulation` for a box with a transform: identity or translation keeps both axes, scale and translation an axis whose scale is 1, anything else neither. */
+function keepsSubpixel(element: Element, matrix: Matrix): [boolean, boolean] {
+    const style = getComputedStyle(element);
+    if (preventsSubpixel(style) || isolates(style))
+        return [false, false];
+    if (matrix[1] !== 0 || matrix[2] !== 0)
+        return [false, false];
+    return [matrix[0] === 1, matrix[3] === 1];
+}
+
+/**
+ * The nearest ancestor, in the flat tree, that owns a paint offset translation, which a box's paint offset is measured from; null for the document.
+ *
+ * @remarks
+ * `NeedsPaintOffsetTranslation`'s triggers that a page reaches: a transform, paint isolation (a Cicero page is `contain: layout size paint`) and `will-change` on a transform property.
+ * ponytail: scrollers, sticky and fixed boxes, reference filters, backdrop filters and `backface-visibility: hidden` also own one in Blink and are not looked for; add them when a document puts a transformed box inside one.
+ */
+function paintOffsetRoot(element: Element, captured: Map<Element, CapturedStyle>): Element|null {
+    for (let node = flatParent(element); node; node = flatParent(node)) {
+        if (node === document.documentElement || node === document.body)
+            return null;
+        const transform = captured.get(node)?.transform ?? getComputedStyle(node).transform;
+        if (transform !== 'none' && transform !== '')
+            return node;
+        const style = getComputedStyle(node);
+        if (style.display !== 'contents' && (isolates(style) || preventsSubpixel(style)))
+            return node;
+    }
+    return null;
+}
+
+/** An element's parent in the flat tree: its assigned slot, or its parent, crossing a shadow root to its host. */
+export function flatParent(node: Element): Element|null {
+    if (node.assignedSlot)
+        return node.assignedSlot;
+    const parent = node.parentNode;
+    return parent instanceof ShadowRoot ? parent.host : parent instanceof Element ? parent : null;
+}
+
+/**
  * Capture every transform in the container, neutralise them, and build each transformed ancestor's link in one burst of reads.
  *
  * @remarks
@@ -198,7 +301,10 @@ export function beginChains(container: HTMLElement, pageElementOf: (element: Ele
         element.style.transform = 'none';
     // One burst of reads, with the whole subtree untransformed: every link's border box and therefore every link's origin comes from one layout.
     const linkByElement: Map<Element,ChainLink> = new Map<any, any>();
-    for (const element of transformed) {
+    const linkOf = (element: Element): ChainLink => {
+        const done = linkByElement.get(element);
+        if (done)
+            return done;
         const style = (captured.get(element) as CapturedStyle);
         const path = describe(element);
         const pageElement = pageElementOf(element);
@@ -207,9 +313,23 @@ export function beginChains(container: HTMLElement, pageElementOf: (element: Ele
         const [originX, originY] = style.transformOrigin.trim().split(/\s+/).map(px);
         const originPx: [number,number] = [local.xPx + originX, local.yPx + originY];
         const cssMatrix = parseTransform(style.transform, path);
-        const matrix: Matrix = mul(mul([1, 0, 0, 1, -originPx[0], -originPx[1]], cssMatrix), [1, 0, 0, 1, originPx[0], originPx[1]]);
-        linkByElement.set(element, { path, transform: style.transform, originPx, matrix });
-    }
+        // The paint offset is snapped before the transform is applied, in the space of the nearest ancestor that owns a paint offset translation, and the snap moves everything the box paints: a translation after the link (Egildo's ruling 17 of the Rust writer).
+        const scale = box.width > 0 ? local.wPx / box.width : 1;
+        const root = paintOffsetRoot(element, captured);
+        const rootRect = root?.getBoundingClientRect();
+        const rootSubpixel: [number, number] = root && transformedSet.has(root) ? linkOf(root).subpixel : [0, 0];
+        const offset: [number, number] = rootRect
+            ? [(box.left - rootRect.left) * scale + rootSubpixel[0], (box.top - rootRect.top) * scale + rootSubpixel[1]]
+            : [(box.left + window.scrollX) * scale, (box.top + window.scrollY) * scale];
+        const snap = snapPaintOffset(offset, keepsSubpixel(element, cssMatrix), PRINT_DEVICE_PIXEL_RATIO);
+        const matrix: Matrix = mul(mul(mul([1, 0, 0, 1, -originPx[0], -originPx[1]], cssMatrix), [1, 0, 0, 1, originPx[0], originPx[1]]), [1, 0, 0, 1, snap.shift[0], snap.shift[1]]);
+        const link: ChainLink = { path, transform: style.transform, originPx, matrix, subpixel: snap.subpixel };
+        linkByElement.set(element, link);
+        return link;
+    };
+    const transformedSet = new Set<Element>(transformed);
+    for (const element of transformed)
+        linkOf(element);
     let ended = false;
     return {
         chainOf( element: Element) {
@@ -228,6 +348,9 @@ export function beginChains(container: HTMLElement, pageElementOf: (element: Ele
             for (const link of links)
                 matrix = mul(matrix, link.matrix);
             return { matrix, links: [...links].reverse() };
+        },
+        subpixelOf( element: Element) {
+            return linkByElement.get(element)?.subpixel ?? null;
         },
         transformOf( element: Element) {
             return captured.get(element)?.transform ?? 'none';

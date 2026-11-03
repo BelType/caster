@@ -14997,12 +14997,6 @@
     "type": "Layout",
     "page": 1,
     "kind": "text"
-   },
-   {
-    "path": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
    }
   ],
   "pages": [
@@ -19393,9 +19387,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.667,
-     0.4,
-     0.8
+     0.835,
+     0.498,
+     1
     ],
     "opacity": 1
    }
@@ -19417,9 +19411,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.8,
-     0.6,
-     0.2
+     1,
+     0.749,
+     0.247
     ],
     "opacity": 1
    }
@@ -19465,9 +19459,9 @@
    "evenOdd": false,
    "params": {
     "rgb": [
-     0.2,
-     0.6,
-     0.8
+     0.247,
+     0.749,
+     1
     ],
     "opacity": 1
    }
@@ -21597,8 +21591,8 @@
    "artifact": true,
    "geometry": [
     62.344,
-    628.316,
-    151.875,
+    628.246,
+    151.594,
     672.496
    ],
    "evenOdd": false,
@@ -21615,8 +21609,8 @@
     0.259,
     -0.259,
     0.966,
-    171.987,
-    -5.56
+    171.893,
+    -5.665
    ]
   },
   {
@@ -21630,7 +21624,7 @@
    "geometry": [
     62.344,
     670.246,
-    151.875,
+    151.594,
     672.496
    ],
    "evenOdd": false,
@@ -21647,8 +21641,8 @@
     0.259,
     -0.259,
     0.966,
-    171.987,
-    -5.56
+    171.893,
+    -5.665
    ]
   },
   {
@@ -21660,9 +21654,9 @@
    "paintIndex": 560,
    "artifact": true,
    "geometry": [
-    149.625,
-    628.316,
-    151.875,
+    149.344,
+    628.246,
+    151.594,
     672.496
    ],
    "evenOdd": false,
@@ -21679,8 +21673,8 @@
     0.259,
     -0.259,
     0.966,
-    171.987,
-    -5.56
+    171.893,
+    -5.665
    ]
   },
   {
@@ -21693,9 +21687,9 @@
    "artifact": true,
    "geometry": [
     62.344,
-    628.316,
-    151.875,
-    630.566
+    628.246,
+    151.594,
+    630.496
    ],
    "evenOdd": false,
    "params": {
@@ -21711,8 +21705,8 @@
     0.259,
     -0.259,
     0.966,
-    171.987,
-    -5.56
+    171.893,
+    -5.665
    ]
   },
   {
@@ -21725,7 +21719,7 @@
    "artifact": true,
    "geometry": [
     62.344,
-    628.316,
+    628.246,
     64.594,
     672.496
    ],
@@ -21743,8 +21737,8 @@
     0.259,
     -0.259,
     0.966,
-    171.987,
-    -5.56
+    171.893,
+    -5.665
    ]
   },
   {
@@ -21757,8 +21751,8 @@
    "artifact": true,
    "geometry": [
     238.078,
-    632.816,
-    323.109,
+    632.746,
+    322.828,
     672.496
    ],
    "ctm": [
@@ -21773,15 +21767,15 @@
     "type": 2,
     "coords": [
      317.438,
-     252.313,
-     430.813,
-     252.313
+     252.359,
+     430.438,
+     252.359
     ],
     "coordsPt": [
      238.078,
-     652.656,
-     323.109,
-     652.656
+     652.62,
+     322.828,
+     652.62
     ],
     "extend": [
      true,
@@ -21832,8 +21826,8 @@
     0,
     -0.466,
     1,
-    304.339,
-    0
+    304.01,
+    -0.105
    ]
   },
   {
@@ -21846,8 +21840,8 @@
    "artifact": true,
    "geometry": [
     413.813,
-    628.316,
-    503.344,
+    628.246,
+    503.063,
     672.496
    ],
    "evenOdd": false,
@@ -21864,8 +21858,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -21879,7 +21873,7 @@
    "geometry": [
     413.813,
     670.246,
-    503.344,
+    503.063,
     672.496
    ],
    "reason": "the dashed border-top is a stroke, so its corner mitre is a clip",
@@ -21889,8 +21883,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -21904,7 +21898,7 @@
    "geometry": [
     413.813,
     671.371,
-    503.344,
+    503.063,
     671.371
    ],
    "params": {
@@ -21914,7 +21908,7 @@
     "miterLimit": 10,
     "dashPt": [
      4.5,
-     2.041
+     2.019
     ],
     "nonScaling": false
    },
@@ -21923,8 +21917,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -21936,9 +21930,9 @@
    "paintIndex": 568,
    "artifact": true,
    "geometry": [
-    501.094,
-    628.316,
-    503.344,
+    500.813,
+    628.246,
+    503.063,
     672.496
    ],
    "reason": "the dashed border-right is a stroke, so its corner mitre is a clip",
@@ -21948,8 +21942,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -21961,9 +21955,9 @@
    "paintIndex": 568,
    "artifact": true,
    "geometry": [
-    502.219,
-    628.316,
-    502.219,
+    501.938,
+    628.246,
+    501.938,
     672.496
    ],
    "params": {
@@ -21973,7 +21967,7 @@
     "miterLimit": 10,
     "dashPt": [
      4.5,
-     2.113
+     2.125
     ],
     "nonScaling": false
    },
@@ -21982,8 +21976,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -21996,9 +21990,9 @@
    "artifact": true,
    "geometry": [
     413.813,
-    628.316,
-    503.344,
-    630.566
+    628.246,
+    503.063,
+    630.496
    ],
    "reason": "the dashed border-bottom is a stroke, so its corner mitre is a clip",
    "evenOdd": false,
@@ -22007,8 +22001,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -22021,9 +22015,9 @@
    "artifact": true,
    "geometry": [
     413.813,
-    629.441,
-    503.344,
-    629.441
+    629.371,
+    503.063,
+    629.371
    ],
    "params": {
     "widthPt": 2.25,
@@ -22032,7 +22026,7 @@
     "miterLimit": 10,
     "dashPt": [
      4.5,
-     2.041
+     2.019
     ],
     "nonScaling": false
    },
@@ -22041,8 +22035,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -22055,7 +22049,7 @@
    "artifact": true,
    "geometry": [
     413.813,
-    628.316,
+    628.246,
     416.063,
     672.496
    ],
@@ -22066,8 +22060,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -22080,7 +22074,7 @@
    "artifact": true,
    "geometry": [
     414.938,
-    628.316,
+    628.246,
     414.938,
     672.496
    ],
@@ -22091,7 +22085,7 @@
     "miterLimit": 10,
     "dashPt": [
      4.5,
-     2.113
+     2.125
     ],
     "nonScaling": false
    },
@@ -22100,8 +22094,8 @@
     0.032,
     0.156,
     0.886,
-    -56.182,
-    56.465
+    -56.715,
+    56.4
    ]
   },
   {
@@ -22125,8 +22119,8 @@
     -0.139,
     0.139,
     0.99,
-    -73.067,
-    20.172
+    -72.903,
+    19.844
    ]
   },
   {
@@ -22214,8 +22208,8 @@
     -0.139,
     0.139,
     0.99,
-    -73.067,
-    20.172
+    -72.903,
+    19.844
    ]
   },
   {
@@ -22245,8 +22239,8 @@
     -0.139,
     0.139,
     0.99,
-    -73.067,
-    20.172
+    -72.903,
+    19.844
    ]
   },
   {
@@ -22259,17 +22253,17 @@
    "artifact": true,
    "geometry": [
     225.157,
-    495.84,
-    110.874,
-    65.522
+    495.77,
+    110.593,
+    65.593
    ],
    "ctm": [
-    110.874,
+    110.593,
     0,
     0,
-    65.522,
+    65.593,
     225.157,
-    495.84
+    495.77
    ],
    "reason": "box-shadow rgba(0, 0, 0, 0.5) 3.77953px 5.66929px 7.55906px 0px on div[9]/div[1]/div[0]/div[0]: a blur PDF has no operator for",
    "feature": "box-shadow",
@@ -22281,8 +22275,8 @@
     -0.105,
     0.105,
     0.995,
-    -53.717,
-    32.226
+    -54.045,
+    32.425
    ]
   },
   {
@@ -22295,8 +22289,8 @@
    "artifact": true,
    "geometry": [
     238.078,
-    508.761,
-    323.109,
+    508.691,
+    322.828,
     548.441
    ],
    "evenOdd": false,
@@ -22313,8 +22307,8 @@
     -0.105,
     0.105,
     0.995,
-    -53.717,
-    32.226
+    -54.045,
+    32.425
    ]
   },
   {
@@ -23149,11 +23143,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "background",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23173,11 +23167,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-top",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23197,11 +23191,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-right",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     325.359,
@@ -23221,11 +23215,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-bottom",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23245,11 +23239,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "fill",
    "label": "border-left",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23269,11 +23263,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "group",
    "label": "box:state",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "extGState": "GT10",
    "params": {
@@ -23282,11 +23276,11 @@
   },
   {
    "path": "div[12]/div[1]/div[0]/div[0]",
-   "owner": "artifact:paint:div[12]/div[1]/div[0]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
    "kind": "group",
    "label": "box",
    "page": 1,
-   "paintIndex": 590,
+   "paintIndex": 588,
    "artifact": true,
    "geometry": [
     238.078,
@@ -23300,6 +23294,28 @@
     "opacity": 1,
     "blend": "Difference",
     "children": 5
+   }
+  },
+  {
+   "path": "div[12]/div[1]/div[0]",
+   "owner": "artifact:paint:div[12]/div[1]/div[0]",
+   "kind": "group",
+   "label": "isolation",
+   "page": 1,
+   "paintIndex": 588,
+   "artifact": true,
+   "geometry": [
+    204.07,
+    117.226,
+    362.801,
+    219.249
+   ],
+   "reason": "the stacking context a blend mode mixes with, isolated at div[12]/div[1]/div[0]",
+   "form": "Fm15",
+   "params": {
+    "opacity": 1,
+    "blend": "Normal",
+    "children": 2
    }
   }
  ],
@@ -24914,7 +24930,7 @@
    "shadings": 17,
    "patterns": 2,
    "extGStates": 11,
-   "forms": 15
+   "forms": 16
   },
   "streamOrder": [
    "div[0]/div[0]/svg[0]#svg",
@@ -24955,8 +24971,7 @@
    "div[9]/div[0]/div[0]/div[0]/svg[0]#svg",
    "div[9]/div[1]/div[0]/div[0]#box",
    "div[12]/div[0]/div[0]/div[0]#box",
-   "div[12]/div[1]/div[0]#background-image",
-   "div[12]/div[1]/div[0]/div[0]#box"
+   "div[12]/div[1]/div[0]#isolation"
   ],
   "figures": [
    {
@@ -25089,5 +25104,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 291300
+ "bytes": 291739
 }

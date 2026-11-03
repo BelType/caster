@@ -102,7 +102,20 @@ export type VectorEmitContext = {
   resources: Pick<Resources, 'forms' | 'rasters'>;
   /** Everything painted, recorded for the report. */
   records: ReportPaint[];
+  /** The document's sRGB profile as a colour space, for the group a blend mixes in; absent with no colour story, where `/DeviceRGB` stands. */
+  blendingSpace?: () => unknown;
 };
+
+/**
+ * Whether an item's blend mode reaches past it to a backdrop outside: its own blend mode, or one under a group that is no transparency group (Egildo's ruling 15a of the Rust writer).
+ *
+ * @remarks
+ * A blend composites into its parent group in the parent's blending colour space (ISO 32000-2, 11.3.4), and a non-isolated group has none of its own (11.7.2), so the isolated group or the page that holds such an item is where the blend happens: that group names the document's sRGB profile as its `/CS`, the page its `/Group`, so the blend is the one the author saw under a CMYK output intent.
+ */
+export function holdsOpenBlend(item: VectorItem): boolean {
+  if (item.blend) return true;
+  return item.kind === 'group' && !item.isolated && item.items.some(holdsOpenBlend);
+}
 
 /**
  * Every operator one vector item contributes to a page.
@@ -253,7 +266,7 @@ function softMaskForm(node: VectorItem, ctx: VectorEmitContext, info: EmitInfo):
  * The soft mask a gradient's alpha stops need.
  *
  * @remarks
- * The same geometry, painted as a `/DeviceGray` shading of the stop alphas, into a transparency-group form; the form is then the `/G` of an `/SMask <</S /Luminosity /BC [0]>>`. Grey 1 is opaque and grey 0 is not, and the backdrop is black so that anything outside the form's `/BBox` is masked out entirely rather than left at whatever the page's luminosity happened to be.
+ * The same geometry, painted as a `/DeviceGray` shading of the stop alphas, into a transparency-group form; the form is then the `/G` of an `/SMask <</S /Luminosity>>`. Grey 1 is opaque and grey 0 is not, and the backdrop is black, the default `/BC` left unwritten, so that anything outside the form's `/BBox` is masked out entirely rather than left at whatever the page's luminosity happened to be.
  */
 function alphaMaskForm(spec: ShadingSpec, path: Path, evenOdd: boolean, ctx: VectorEmitContext, info: EmitInfo, label: string, domPath: string): PDFRef {
   const { PDFName, PDFOperator, PDFOperatorNames: Ops } = capability('pdf');
@@ -354,7 +367,8 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
       const inner = new ResourceScope();
       const operators: PDFOperator[] = [];
       for (const child of node.items) emitItem(child, ctx, inner, operators, info);
-      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context));
+      const space = ctx.blendingSpace && node.items.some(holdsOpenBlend) ? ctx.blendingSpace() : undefined;
+      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), space);
       scope.xobjects.set(form.name, form.ref);
       out.push(
         ...stateFor(

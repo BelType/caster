@@ -25,7 +25,7 @@ import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { cssShapePath, domMatrix, roundedRectPath, shapePath, transformPath } from './pathData.ts';
 import { markerAttributes, markerPlacements, viewBoxMatrix } from './svgMarkers.ts';
 import { domPathOf } from '../measure/textMeasure.ts';
-import { blendName, clientToLocalMatrix, emptyNodeCommon, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
+import { blendName, clientToLocalMatrix, emptyNodeCommon, holdsOpenBlend, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
 import { CasterError } from '../errors.ts';
 
 import type { Matrix } from '../images/imagePlace.ts';
@@ -461,7 +461,9 @@ function groupNode(context: SvgContext, element: Element, style: CSSStyleDeclara
   const mask = maskOf(context, element, style, domPath);
   const painting = children.length;
   // Whenever the group is not fully opaque. `/ca` alone is the non-stroking alpha, so a group opacity never reached a stroke however few children it had, and it replaced a child's own alpha instead of multiplying it. A transparency group composites the whole result once, which is what `opacity` means on a `<g>`.
-  const wantsForm = (Number.isFinite(opacity) && opacity < 1) || blend !== 'Normal' || mask !== undefined;
+  // A container with a grouping property isolates the blends under it (`SVGLayoutSupport::IsIsolationRequired`, Chromium 153: `HasGroupingProperty` and `HasNonIsolatedBlendingDescendants`); opacity, a blend mode and a mask make a form already, and `isolation` and `clip-path` make one when a blend is there to isolate (Egildo's ruling 15a of the Rust writer).
+  const isolates = (style.isolation === 'isolate' || style.clipPath !== 'none') && children.some(holdsOpenBlend);
+  const wantsForm = (Number.isFinite(opacity) && opacity < 1) || blend !== 'Normal' || mask !== undefined || isolates;
   return {
     ...emptyNodeCommon(domPath, label),
     kind: 'group',
@@ -478,7 +480,9 @@ function groupNode(context: SvgContext, element: Element, style: CSSStyleDeclara
         ? `mask on ${domPath}`
         : blend !== 'Normal'
           ? `mix-blend-mode: ${style.mixBlendMode}`
-          : `group opacity ${style.opacity} over ${painting} painting ${painting === 1 ? 'child' : 'children'}`,
+          : isolates && !(opacity < 1)
+            ? `the blends under ${domPath}, isolated`
+            : `group opacity ${style.opacity} over ${painting} painting ${painting === 1 ? 'child' : 'children'}`,
   };
 }
 

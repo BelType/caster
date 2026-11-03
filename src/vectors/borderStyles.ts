@@ -21,7 +21,7 @@
  *
  * **Double.** `GetDoubleBorderStripeWidth` is `round(w/3)` for the outer stripe and `round(2w/3)` for where the inner stripe begins, per side; the flat path spells the same thing as `(w + 1) / 3` in integer arithmetic and the two agree at every integer width. The gap is whatever is left in the middle.
  *
- * **Groove, ridge, inset, outset.** `DarkenBoxSide(side, style)` is `(side is top or left) == (style is inset)`, so `inset` darkens the top and left and `outset` darkens the bottom and right. `CalculateInsetOutsetColor` darkens with `Color::Dark()` and otherwise leaves the colour alone unless it is dark enough that the two would not be told apart: below `r < 150/255` and `g < 92/255` it measures the WCAG contrast between the colour and its own dark, and lightens with `Color::Light()` when that is under 1.75. `Color::Dark()` is `v = max(r,g,b)`, `m = max(0, (v - 0.33)/v)`, every channel times m, quantised to 8 bits, with white special-cased to `rgb(171,171,171)`; `Color::Light()` is `m = min(1, v + 0.33)/v` with black special-cased to `rgb(84,84,84)`. `groove` paints its outer half as `inset` and its inner half as `outset`, `ridge` the other way round, split at the centre line.
+ * **Groove, ridge, inset, outset.** `DarkenBoxSide(side, style)` is `(side is top or left) == (style is inset)`, so `inset` darkens the top and left and `outset` darkens the bottom and right. `CalculateInsetOutsetColor` (`third_party/blink/renderer/core/paint/box_border_painter.cc`, Chromium 153) takes the branch of the runtime feature `TableDefaultBorderColorCurrentColor`, stable and on in the pinned build, which matches WebKit: with L the colour's relative luminance, a colour with L at or below 0.014443844 (rgb(32,32,32)) paints its shadowed half `Color::Light()` and its lit half `Color::Light().Light()`; any other paints its shadowed half `Color::Dark()`, and its lit half the colour itself when L is above 0.83077 (rgb(235,235,235)), else `Color::Light()`. The function's older branch, a 1.75 WCAG contrast rule, is the disabled path and is not transcribed (Egildo's ruling 16 of the Rust writer, 2026-11-03). `Color::Dark()` is `v = max(r,g,b)`, `m = max(0, (v - 0.33)/v)`, every channel times m, quantised to 8 bits, with white special-cased to `rgb(171,171,171)`; `Color::Light()` is `m = min(1, v + 0.33)/v` with black special-cased to `rgb(84,84,84)`. `groove` paints its outer half as `inset` and its inner half as `outset`, `ridge` the other way round, split at the centre line.
  *
  * What this module does *not* transcribe is `EnforceDotsAtEndpoints`, which nudges a thin dotted line by single device pixels so a whole dot lands on each end, and the 2.2× overdraw-and-clip trick the rounded path strokes with. Both are device-pixel arrangements for an antialiased raster; a PDF is drawn at the reader's resolution and neither has anything to say about it. They are recorded in the notes rather than implemented.
  *
@@ -141,28 +141,30 @@ export function lightColour(rgb: [number,number,number]): [number,number,number]
   return [quantise8(rgb[0] * m), quantise8(rgb[1] * m), quantise8(rgb[2] * m)];
 }
 
-/** `color_utils::Linearize`, the sRGB transfer function WCAG contrast uses. */
-const linearise = (c: number): number => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+/** `color_utils::Linearize` (`ui/gfx/color_utils.cc`), in single precision as Chromium computes it. */
+const f = Math.fround;
+const linearise = (c: number): number => (f(c) <= f(0.04045) ? f(f(c) / f(12.92)) : f(Math.pow(f(f(f(c) + f(0.055)) / f(1.055)), f(2.4))));
 
-/** WCAG's relative luminance of an sRGB colour. */
-const relativeLuminance = (rgb: readonly number[]): number => 0.2126 * linearise(rgb[0]) + 0.7152 * linearise(rgb[1]) + 0.0722 * linearise(rgb[2]);
+/** `color_utils::GetRelativeLuminance4f`, in single precision. */
+export const relativeLuminance = (rgb: readonly number[]): number => f(f(f(f(0.2126) * linearise(rgb[0])) + f(f(0.7152) * linearise(rgb[1]))) + f(f(0.0722) * linearise(rgb[2])));
 
-/** WCAG's contrast ratio between two colours, whichever is lighter. */
-export function contrastRatio(a: readonly number[], b: readonly number[]): number {
-  const la = relativeLuminance(a) + 0.05;
-  const lb = relativeLuminance(b) + 0.05;
-  return la > lb ? la / lb : lb / la;
-}
+/** `kBaseDarkColorLuminance`, the luminance of rgb(32,32,32): at or below it a colour is very dark. */
+export const BASE_DARK_COLOR_LUMINANCE = f(0.014443844);
+/** `kBaseLightColorLuminance`, the luminance of rgb(235,235,235): above it a colour's lit half is the colour itself. */
+export const BASE_LIGHT_COLOR_LUMINANCE = f(0.83077);
 
-/** The contrast below which the lighter edge is lightened rather than left alone. */
-export const MINIMUM_BORDER_EDGE_CONTRAST_RATIO = 1.75;
-
-/** `CalculateInsetOutsetColor`: the colour one shaded half of a groove, ridge, inset or outset border paints. */
+/**
+ * `CalculateInsetOutsetColor`: the colour one shaded half of a groove, ridge, inset or outset border paints.
+ *
+ * @remarks
+ * The branch of `TableDefaultBorderColorCurrentColor`, Chromium 153's `core/paint/box_border_painter.cc`, which is the one the pinned build prints with: `status: "stable"` in `platform/runtime_enabled_features.json5`. Read 2026-11-03, `.claude/plans/the-rust-writer/blink-snapping-and-shades.md` in the monorepo.
+ */
 export function insetOutsetColour(darken: boolean, rgb: [number,number,number]): [number,number,number] {
+  const luminance = relativeLuminance(rgb);
+  // Very dark colours are given extra contrast: both halves are lightened.
+  if (luminance <= BASE_DARK_COLOR_LUMINANCE) return darken ? lightColour(rgb) : lightColour(lightColour(rgb));
   if (darken) return darkColour(rgb);
-  // The brute-force bound Chromium records: above either of these the answer is always the colour itself, so the contrast is never measured.
-  if (rgb[0] >= 150 / 255 || rgb[1] >= 92 / 255) return rgb;
-  return contrastRatio(rgb, darkColour(rgb)) < MINIMUM_BORDER_EDGE_CONTRAST_RATIO ? lightColour(rgb) : rgb;
+  return luminance > BASE_LIGHT_COLOR_LUMINANCE ? rgb : lightColour(rgb);
 }
 
 /** `DarkenBoxSide`: inset darkens the top and left, outset the bottom and right. */

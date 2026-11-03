@@ -17,7 +17,7 @@
  */
 import { styledBorderNodes } from './borderStyles.ts';
 import { parseCmykGradientHint, readHint } from '../colour/colorHints.ts';
-import { invert, toPdfMatrix } from '../coordinates/ctm.ts';
+import { invert, PRINT_DEVICE_PIXEL_RATIO, snapBox, toPdfMatrix } from '../coordinates/ctm.ts';
 import { apply, mul } from '../coordinates/matrix.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
@@ -663,7 +663,9 @@ export function collectCssBoxes(options: CssBoxOptions): CssBoxResult {
     rects.forEach((rect, fragment) => {
       const placement = placeBox(rect, containerRect, pageOfElement(element, chains));
       const page = placement.page;
-      const border: Box = placement.box;
+      // A transformed box paints its own decorations on its pixel-snapped border box, at the fraction its paint offset kept (`ToPixelSnappedRect`; Egildo's ruling 17 of the Rust writer).
+      const subpixel = chains.subpixelOf(element);
+      const border: Box = subpixel ? snapBox(placement.box, subpixel, PRINT_DEVICE_PIXEL_RATIO) : placement.box;
       const toPage = placement.toPage;
       // The element's own transform is the innermost link of its chain, so it is no longer folded into the path coordinates here: the whole chain becomes one `cm` and every path under it stays in the untransformed space the rectangles were read in.
       const chain = chains.chainOf(element);

@@ -1,7 +1,7 @@
 /**
  * The pure arithmetic of the painting stage, checked against the source it came from rather than against the numbers a fixture happened to produce.
  *
- * `docs/guide/vector-painting.md` closes with exactly that instruction, and names the checks: `strokeIsDashed(3, 'dotted')` true and `strokeIsDashed(4, 'dotted')` false; a 4 px dash of 8 and a 2 px dash of 6; `selectBestDashGap(100, 10, 5, false)` equal to `(100 − 7·10)/6`; `darkColour([1,1,1])` equal to 171 and `lightColour([0,0,0])` equal to 84. Beside those sit the guide's frozen numbers — kappa `0.5523`, the one-factor radius clamp, the millionth-of-a-domain `/Bounds` nudge, the `1.75` contrast rule, the `13` px dilation cap and the `0.5` px band inset — and the two `d`-grammar rules a path cannot be waved through without.
+ * `docs/guide/vector-painting.md` closes with exactly that instruction, and names the checks: `strokeIsDashed(3, 'dotted')` true and `strokeIsDashed(4, 'dotted')` false; a 4 px dash of 8 and a 2 px dash of 6; `selectBestDashGap(100, 10, 5, false)` equal to `(100 − 7·10)/6`; `darkColour([1,1,1])` equal to 171 and `lightColour([0,0,0])` equal to 84. Beside those sit the guide's frozen numbers — kappa `0.5523`, the one-factor radius clamp, the millionth-of-a-domain `/Bounds` nudge, the `13` px dilation cap and the `0.5` px band inset — and the two `d`-grammar rules a path cannot be waved through without.
  *
  * Everything here runs in node. The DOM-reading halves of these modules — `collectCssBoxes`, `collectSvg`, `markerAttributes` — are exercised by the browser acceptance test; what is checked here is what they compute once the DOM has answered.
  */
@@ -22,11 +22,11 @@ import {
 } from '../src/vectors/pathData.ts';
 import {
   DOT_EPSILON,
-  MINIMUM_BORDER_EDGE_CONTRAST_RATIO,
+  BASE_DARK_COLOR_LUMINANCE,
+  BASE_LIGHT_COLOR_LUMINANCE,
   SIDE_NAMES,
   STYLED_BORDER_STYLES,
   chromiumDash,
-  contrastRatio,
   darkColour,
   darkenBoxSide,
   dashGapRatio,
@@ -35,9 +35,11 @@ import {
   insetOutsetColour,
   lightColour,
   pathLength,
+  relativeLuminance,
   selectBestDashGap,
   strokeIsDashed,
 } from '../src/vectors/borderStyles.ts';
+import { snapBox, snapLength, snapPaintOffset } from '../src/coordinates/ctm.ts';
 import { bboxOf, boundaryPieces, borderSidePath, cssGradient, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
@@ -303,7 +305,7 @@ test('the engine’s own downgrade: double below 3 px and groove/ridge at 1 px a
   assert.equal(STYLED_BORDER_STYLES.has('solid'), false, 'solid is E9’s, not this module’s');
 });
 
-test('Color::Dark, Color::Light and the 1.75 contrast rule', () => {
+test('Color::Dark, Color::Light and the luminance rule of CalculateInsetOutsetColor', () => {
   // White's hard-coded answer is rgb(171,171,171); black's is rgb(84,84,84).
   assert.deepEqual(darkColour([1, 1, 1]).map((c) => Math.round(c * 255)), [171, 171, 171]);
   assert.deepEqual(lightColour([0, 0, 0]).map((c) => Math.round(c * 255)), [84, 84, 84]);
@@ -312,21 +314,24 @@ test('Color::Dark, Color::Light and the 1.75 contrast rule', () => {
   near(grey[0], Math.trunc(0.5 * ((0.5 - 0.33) / 0.5) * 255.99998474121094) / 255, 1e-12);
   assert.deepEqual(darkColour([0, 0, 0]), [0, 0, 0], 'a zero maximum darkens to nothing');
 
-  assert.equal(MINIMUM_BORDER_EDGE_CONTRAST_RATIO, 1.75);
-  // Contrast is symmetric and is 21 between black and white.
-  near(contrastRatio([0, 0, 0], [1, 1, 1]), 21, 1e-9);
-  near(contrastRatio([1, 1, 1], [0, 0, 0]), 21, 1e-9);
-  near(contrastRatio([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]), 1, 1e-12);
-
-  // Darkening always returns the dark colour.
-  assert.deepEqual(insetOutsetColour(true, [1, 1, 1]), darkColour([1, 1, 1]));
-  // Above either brute-force bound the answer is the colour itself and the contrast is never measured.
-  assert.deepEqual(insetOutsetColour(false, [0.9, 0.1, 0.1]), [0.9, 0.1, 0.1], 'r >= 150/255');
-  assert.deepEqual(insetOutsetColour(false, [0.1, 0.9, 0.1]), [0.1, 0.9, 0.1], 'g >= 92/255');
-  // A colour dark enough that it and its own dark would not be told apart is lightened instead.
-  const veryDark = ([0.05, 0.05, 0.05] as [number, number, number]);
-  assert.ok(contrastRatio(veryDark, darkColour(veryDark)) < MINIMUM_BORDER_EDGE_CONTRAST_RATIO);
-  assert.deepEqual(insetOutsetColour(false, veryDark), lightColour(veryDark));
+  // The two constants are the luminances Chromium names them by.
+  const at = (v: number) => relativeLuminance([v / 255, v / 255, v / 255]);
+  near(at(32), BASE_DARK_COLOR_LUMINANCE, 1e-7);
+  near(at(235), BASE_LIGHT_COLOR_LUMINANCE, 1e-5);
+  // The darkened and the lit half of each colour, in 8 bits, as Chromium 153 paints them (probed in the vector roads round, exact on every sample).
+  const halves = (r: number, g: number, b: number) => [true, false].map((darken) => insetOutsetColour(darken, [r / 255, g / 255, b / 255]).map((c) => Math.round(c * 255)));
+  assert.deepEqual(halves(0x33, 0x99, 0xcc), [[0x1e, 0x5a, 0x78], [0x3f, 0xbf, 0xff]], 'the ordinary case: Dark and Light');
+  assert.deepEqual(halves(0, 0, 0), [[84, 84, 84], [168, 168, 168]], 'very dark: Light and Light of Light');
+  assert.deepEqual(halves(17, 17, 17), [[101, 101, 101], [185, 185, 185]]);
+  // The very-dark cutoff falls between the colours the probe put on either side of it.
+  for (const [dark, notDark] of [[[32, 32, 32], [33, 33, 33]], [[0, 38, 0], [0, 39, 0]], [[72, 0, 0], [74, 0, 0]], [[0, 0, 120], [0, 0, 125]]]) {
+    assert.deepEqual(halves(...(dark as [number, number, number]))[0], lightColour((dark.map((c) => c / 255) as [number, number, number])).map((c) => Math.round(c * 255)), `${dark} is very dark`);
+    assert.deepEqual(halves(...(notDark as [number, number, number]))[0], darkColour((notDark.map((c) => c / 255) as [number, number, number])).map((c) => Math.round(c * 255)), `${notDark} is not`);
+  }
+  // A very light colour's lit half is the colour itself; one just below it is lightened.
+  assert.deepEqual(halves(236, 236, 236)[1], [236, 236, 236]);
+  assert.deepEqual(halves(235, 235, 235)[1], [255, 255, 255]);
+  assert.deepEqual(halves(255, 255, 255), [[171, 171, 171], [255, 255, 255]]);
 });
 
 test('DarkenBoxSide: inset darkens the top and the left, outset the bottom and the right', () => {
@@ -565,4 +570,21 @@ test('a box shadow carries its inset keyword and its spread', () => {
   // Only the first layer is painted, and the split is on top-level commas so a colour function keeps its own.
   assert.equal(parseBoxShadow('rgba(0, 0, 0, 0.4) 1px 1px 2px, rgb(255, 0, 0) 9px 9px 9px')?.dx, 1);
   assert.equal(parseBoxShadow('none'), null);
+});
+
+test('a transformed box snaps its paint offset and its own rectangle as Blink does', () => {
+  // `LayoutUnit::Round()`: half toward plus infinity, on device pixels.
+  assert.equal(snapLength(2.5, 1), 3);
+  assert.equal(snapLength(-2.5, 1), -2);
+  assert.equal(snapLength(10.25, 1), 10);
+  assert.equal(snapLength(10.25, 2), 10.5);
+  // A rotation keeps no fraction: the box moves to the rounded offset.
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [false, false], 1), { shift: [-0.25, 0.25], subpixel: [0, 0] });
+  // A translation keeps it on both axes and does not move; scale(1, 2) on x alone.
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [true, true], 1), { shift: [0, 0], subpixel: [0.25, -0.25] });
+  assert.deepEqual(snapPaintOffset([10.25, 20.75], [true, false], 1), { shift: [0, 0.25], subpixel: [0.25, 0] });
+  // The box's own rectangle: (0, 0, round(w), round(h)) under a rotation, each side snapped from the kept fraction under a translation. Measured in Chromium 153: a translated 50.4 by 20.7 box at 10.25, 20.75 paints 51 by 20.
+  assert.deepEqual(snapBox({ x: 10.25, y: 20.75, w: 50.4, h: 20.7 }, [0, 0], 1), { x: 10.25, y: 20.75, w: 50, h: 21 });
+  const translated = snapBox({ x: 10.25, y: 20.75, w: 50.4, h: 20.7 }, [0.25, -0.25], 1);
+  assert.deepEqual([translated.x, translated.y, translated.w, translated.h], [10, 21, 51, 20]);
 });

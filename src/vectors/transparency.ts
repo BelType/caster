@@ -31,6 +31,17 @@ export type GraphicsStateParams = {
   smask?: { form: PDFRef, type: 'Luminosity' | 'Alpha', backdrop?: number[] };
 };
 
+/**
+ * A soft mask's `/BC` entry: none for a black backdrop, the default, and otherwise one number per component of the mask group's `/DeviceRGB`.
+ *
+ * @remarks
+ * ISO 32000-2, Table 142: the array "shall consist of n numbers", the components of the group's colour space, and black is the default. A grey backdrop of one number is spread over the three RGB components. Egildo's ruling 18 of the Rust writer, 2026-11-03.
+ */
+function backdropEntry(backdrop: number[] | undefined): { BC?: number[] } {
+  if (!backdrop || backdrop.every((v) => v === 0)) return {};
+  return { BC: backdrop.length === 1 ? [backdrop[0], backdrop[0], backdrop[0]] : backdrop };
+}
+
 /** One `/ExtGState` in the file, with the resource name every scope refers to it by. */
 export type EmittedState = {
   name: string;
@@ -96,7 +107,7 @@ export class TransparencyBuilder {
         Type: 'Mask',
         S: PDFName.of(params.smask.type),
         G: params.smask.form,
-        ...(params.smask.backdrop ? { BC: params.smask.backdrop } : {}),
+        ...backdropEntry(params.smask.backdrop),
       });
     } else if (params.ca !== undefined || params.CA !== undefined || params.BM !== undefined) {
       // A state that sets alpha or a blend mode but no mask says so, rather than inheriting whatever mask an enclosing state left behind.
@@ -147,9 +158,11 @@ export class TransparencyBuilder {
    * A transparency-group form XObject.
    *
    * @remarks
+   * `colourSpace` is the group's blending space, `/DeviceRGB` unless the caller names one: the isolation boundary of a blend names the document's sRGB profile (Egildo's ruling 15a of the Rust writer).
+   *
    * `/I true` — an isolated group — is what makes the group composite against a transparent backdrop rather than against whatever is already on the page, which is the difference between "these shapes, then faded" and "these shapes blended with the page, then faded". `/K false` is non-knockout, which is what a group of overlapping shapes means everywhere outside a print workflow.
    */
-  form(bbox: [number,number,number,number], content: string, resources: Record<string,unknown>): { ref: PDFRef; name: string; } {
+  form(bbox: [number,number,number,number], content: string, resources: Record<string,unknown>, colourSpace?: unknown): { ref: PDFRef; name: string; } {
     const { PDFName } = capability('pdf');
     const name = `Fm${this.forms++}`;
     const ref = this.context.register(
@@ -158,7 +171,7 @@ export class TransparencyBuilder {
         Subtype: 'Form',
         FormType: 1,
         BBox: bbox.map(round4),
-        Group: { S: 'Transparency', I: true, K: false, CS: PDFName.of('DeviceRGB') },
+        Group: { S: 'Transparency', I: true, K: false, CS: colourSpace ?? PDFName.of('DeviceRGB') },
         Resources: resources,
       }),
     );
