@@ -350,6 +350,14 @@ npm run identity -- check [dir]                       # print it again, compare 
 npm run identity -- replay [dir]                      # node, no browser: validate each saved list, write it, compare the bytes with the recorded file
 ```
 
+Two writers can agree and both be wrong, so one more verb holds the files to the browser:
+
+```bash
+npm run identity -- browser <dir> [--out <dir>]       # each drawing a corpus page names by data-drawing, Chromium's page against the oracle's file and forme's in <dir> under mupdf and yapr
+```
+
+`<dir>` is what `replay --writer forme --out <dir>` wrote. The method and the line are `againstBrowser`'s, in `scripts/compare.ts`: each drawing's region is registered on the browser's by up to two CSS px, then a pixel's difference is how far it lies outside its 3 × 3 neighbourhood in the other render, so antialiasing is forgiven and a wrong colour or shape is not; a drawing passes within one CSS px of registration, no pixel past 64 of 255 and no more than 0.5 % of its region past 8. `fixtures/roads/vector-roads.html` names its drawings.
+
 `dir` defaults to `fixtures/lists/`. `record` and `check` need the CLI's checkout (`BELTYPE_CLI`, the sibling `../cli` by default) and Chromium; `replay` needs neither. None of them runs in `npm test`, which replays the committed lists on its own (`test/displayList.test.ts`, `test/determinism.test.ts`).
 
 `fixtures/lists/` is the corpus, committed: for each of eight documents the file the page printed (`<name>.pdf`), its display list without blobs (`<name>.json`) and its report with the timings removed (`<name>.report.json`); `blobs/` holds each blob once under its SHA-256; `corpus.json` names every file's hash and the blobs each list uses. The documents are `@beltype/specimens`' paper, the cast fixture and its divided row, and five pages under `fixtures/roads/` that take the roads the paper does not (rotated text, gradients and soft masks, spot inks, print marks, a raster fallback, a facsimile, a WebP, an arithmetic JPEG, an opaque photo).
