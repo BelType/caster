@@ -1193,13 +1193,24 @@ function rasterOf(context: SvgContext, element: Element, style: CSSStyleDeclarat
     if (target.contains(candidate)) continue;
     candidate.remove();
   }
+  // The ancestors' opacity, mask, filter and blend mode are painted by the vector group the raster sits in (`groupNode`), so they are neutralised here, or a `<g mask>` or `<g opacity>` would be applied twice, once in the pixels and once around them. The element's own stay: nothing outside the raster paints them.
+  for (let node: Element | null = target.parentElement; node && node !== clone; node = node.parentElement) {
+    const own = (node as Element & ElementCSSInlineStyle).style;
+    own.setProperty('opacity', '1');
+    own.setProperty('mask', 'none');
+    own.setProperty('filter', 'none');
+    own.setProperty('mix-blend-mode', 'normal');
+  }
+  clone.setAttribute('x', '0');
+  clone.setAttribute('y', '0');
   clone.setAttribute('width', String(svgBox.w));
   clone.setAttribute('height', String(svgBox.h));
 
+  // The clone goes in whole, its `viewBox` with it: its content is in the drawing's user units, and only the `<svg>` maps them to the px the box is measured in. Its children alone were drawn one user unit a px, small and in the corner.
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${box.w}" height="${box.h}" viewBox="0 0 ${box.w} ${box.h}">`,
     `<g transform="translate(${offsetX - box.x} ${offsetY - box.y})">`,
-    clone.innerHTML,
+    new XMLSerializer().serializeToString(clone),
     '</g></svg>',
   ].join('');
 
