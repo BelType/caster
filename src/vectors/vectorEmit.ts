@@ -253,7 +253,7 @@ function softMaskForm(node: VectorItem, ctx: VectorEmitContext, info: EmitInfo):
  * The soft mask a gradient's alpha stops need.
  *
  * @remarks
- * The same geometry, painted as a `/DeviceGray` shading of the stop alphas, into a transparency-group form; the form is then the `/G` of an `/SMask <</S /Luminosity /BC [0]>>`. Grey 1 is opaque and grey 0 is not, and the backdrop is black so that anything outside the form's `/BBox` is masked out entirely rather than left at whatever the page's luminosity happened to be.
+ * The same geometry, painted as a `/DeviceGray` shading of the stop alphas, into a transparency-group form; the form is then the `/G` of an `/SMask <</S /Luminosity>>`. Grey 1 is opaque and grey 0 is not, and the backdrop is black, the default `/BC` left unwritten, so that anything outside the form's `/BBox` is masked out entirely rather than left at whatever the page's luminosity happened to be.
  */
 function alphaMaskForm(spec: ShadingSpec, path: Path, evenOdd: boolean, ctx: VectorEmitContext, info: EmitInfo, label: string, domPath: string): PDFRef {
   const { PDFName, PDFOperator, PDFOperatorNames: Ops } = capability('pdf');

@@ -47,8 +47,8 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "1acdfefdcf3e04e420a11f556da62518b71c14dd6a349dca1fc7db0321f888e7",
-   "bytes": 175657,
+   "sha256": "150fa41e4ba29135095229c2f7ffddc002d18bc26d9461221eb5562bb5508b9a",
+   "bytes": 175647,
    "options": {
     "blackText": "100k"
    },
@@ -177,8 +177,8 @@
   {
    "name": "vectors",
    "why": "an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)",
-   "sha256": "58ad8b00638a80e2187f57d6baf276486d825aa7a5383fe56da5f9dc0ae7cbdd",
-   "bytes": 8752,
+   "sha256": "fe658b42070784e592201b2d02410e73ef08f4296c87e9d6a74629097d85cd07",
+   "bytes": 8742,
    "list": {
     "bytes": 8027,
     "blobs": [
@@ -201,8 +201,8 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "2489eeae113942ed722a2ba83a4762f90b3ea8882b94621a8afa1aa0e253012f",
-   "bytes": 291300,
+   "sha256": "3811cabbc29f40248214002a4434a9233ac3198ee08a02472e821ddc5bd1b802",
+   "bytes": 291250,
    "list": {
     "bytes": 148560,
     "blobs": [
