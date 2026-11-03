@@ -1,14 +1,14 @@
 {
- "caster": "21677a5",
+ "caster": "5f9790e",
  "documents": [
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "ff2ec5eb2f9946ea737d880f787bf3837fba5828c52d1b70870c1a1783b20acd",
-   "bytes": 109746,
+   "sha256": "f5b5a47dd0f618b758dfa0fea21fb07b6e8b2407eafd69876197e4f80e02fd72",
+   "bytes": 109728,
    "cli": "same",
    "list": {
-    "bytes": 188354,
+    "bytes": 188320,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -19,11 +19,11 @@
   {
    "name": "cast",
    "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
-   "sha256": "c697ce772cefeb42ac2697edb7c1e7f3ba84370cbab4104da04e062358dc7cfb",
-   "bytes": 35152,
+   "sha256": "a1bb53f766281f7baa12dc44344e980537a83343c5c70471cbd77cea17ca9013",
+   "bytes": 35149,
    "cli": "same",
    "list": {
-    "bytes": 90465,
+    "bytes": 90464,
     "blobs": [
      "0d19fed95fab5835ad6e85c857b6ac150cffcfeb83b75436f972300de6160697",
      "16dae91cc8620c4870c3cf3beb61f263fe648976fd4b815dff7a29b08af17752",
@@ -46,16 +46,16 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "daee92e9f9ad220d9a3d61751cb366975056cdb565525ecb211269f7af6b8ea3",
-   "bytes": 175665,
+   "sha256": "1acdfefdcf3e04e420a11f556da62518b71c14dd6a349dca1fc7db0321f888e7",
+   "bytes": 175657,
    "options": {
     "blackText": "100k"
    },
    "list": {
-    "bytes": 33519,
+    "bytes": 33542,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "49b68686afe1136817d04232b95c955b878104b31128f7c3cba1b0c09e326f85",
+     "49a94c9cc47d57564a954f83d6932a1915048bcb77059734efad2c0e36c5029c",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]

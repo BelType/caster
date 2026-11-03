@@ -9,12 +9,12 @@ importers:
   .:
     dependencies:
       '@beltype/common':
-        specifier: 0.1.1
-        version: 0.1.1
+        specifier: 0.1.2
+        version: 0.1.2
     devDependencies:
       '@beltype/cicero':
-        specifier: 0.1.4
-        version: 0.1.4
+        specifier: 0.1.5
+        version: 0.1.5
       '@beltype/specimens':
         specifier: 0.1.0
         version: 0.1.0
@@ -54,12 +54,16 @@ importers:
 
 packages:
 
-  '@beltype/cicero@0.1.4':
-    resolution: {integrity: sha512-xk/yMCuDh/CNhMx97V6Rb+btTYPSROku0oSlieR0z51m3FE0KVkKa1A97HC6bnBDuUFmQnvVziOwH3DhR/ZZvA==}
+  '@beltype/cicero@0.1.5':
+    resolution: {integrity: sha512-nw1IrZpknmpzx3CisafHS7vhrFyMYVRhJvYNzM+tlaMwb2uajD4BxburNh2BfygQ/PJXNiSMvn+RAc2SG0t6XA==}
     engines: {node: '>=22'}
 
   '@beltype/common@0.1.1':
     resolution: {integrity: sha512-WXj/dcjx9DdwF8+cgIYEo0Bhfgun3BszBljccglTcP4+PV4gyXD1APxUo8jyRm+eWlg8XCM3ow6izutfq6yiGw==}
+    engines: {node: '>=22'}
+
+  '@beltype/common@0.1.2':
+    resolution: {integrity: sha512-F/2kwZq4kd17TFMQCdl2El4k5QPnrghFwy8dJCUgVQLDr6Z0VkuZICslfnz2ZthMhBHqbaZFYIrSkG142V7PVw==}
     engines: {node: '>=22'}
 
   '@beltype/specimens@0.1.0':
@@ -1024,13 +1028,15 @@ packages:
 
 snapshots:
 
-  '@beltype/cicero@0.1.4':
+  '@beltype/cicero@0.1.5':
     dependencies:
-      '@beltype/common': 0.1.1
+      '@beltype/common': 0.1.2
       css-tree: 3.2.1
       pdfjs-dist: 6.2.108
 
   '@beltype/common@0.1.1': {}
+
+  '@beltype/common@0.1.2': {}
 
   '@beltype/specimens@0.1.0':
     dependencies:

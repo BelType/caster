@@ -8862,8 +8862,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "The",
-    "xPt": 96.047,
-    "rightPt": 109.676,
+    "xPt": 96.059,
+    "rightPt": 109.688,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -8897,8 +8897,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "device",
-    "xPt": 111.457,
-    "rightPt": 134.777,
+    "xPt": 111.469,
+    "rightPt": 134.789,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -8941,8 +8941,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "stands",
-    "xPt": 136.57,
-    "rightPt": 160.992,
+    "xPt": 136.582,
+    "rightPt": 161.004,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -8985,8 +8985,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "in",
-    "xPt": 162.785,
-    "rightPt": 169.652,
+    "xPt": 162.797,
+    "rightPt": 169.664,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -9017,8 +9017,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "for",
-    "xPt": 171.445,
-    "rightPt": 181.605,
+    "xPt": 171.457,
+    "rightPt": 181.617,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -9052,8 +9052,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "a",
-    "xPt": 183.398,
-    "rightPt": 188.227,
+    "xPt": 183.41,
+    "rightPt": 188.238,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -9081,8 +9081,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "printer's",
-    "xPt": 190.02,
-    "rightPt": 220.605,
+    "xPt": 190.031,
+    "rightPt": 220.617,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -9126,7 +9126,7 @@
     "advanceWidthPt": 30.582,
     "spaceBefore": true,
     "spaceEmitted": true,
-    "emittedAdj": 0.223
+    "emittedAdj": 0.334
    },
    {
     "page": 1,
@@ -9134,8 +9134,8 @@
     "runIndex": 14,
     "block": "Caption",
     "text": "mark.",
-    "xPt": 222.398,
-    "rightPt": 244.066,
+    "xPt": 222.41,
+    "rightPt": 244.078,
     "topPt": 332.722,
     "baselineMeasureTextPt": 323.722,
     "baselineProbePt": null,
@@ -9167,7 +9167,7 @@
     "advanceWidthPt": 21.672,
     "spaceBefore": true,
     "spaceEmitted": true,
-    "emittedAdj": 0.444
+    "emittedAdj": 0.333
    },
    {
     "page": 1,
@@ -31634,7 +31634,7 @@
     32
    ],
    "paintedRectPt": [
-    102.023,
+    102.035,
     339.542,
     136.055,
     45.352
@@ -31644,7 +31644,7 @@
     0,
     0,
     45.352,
-    102.023,
+    102.035,
     339.542
    ],
    "xobjectHash": "2c95f5966c82863880b0d6b12bd77f3d43f313c2b0004c64070cdfb600d56665",
@@ -31673,5 +31673,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 35152
+ "bytes": 35149
 }

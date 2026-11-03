@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.1.6 — unreleased
+## 0.1.5 — 2026-11-03
+
+- **`@beltype/common` 0.1.2**, whose `flags` the option table is declared in, and Cicero 0.1.5 for the tests.
+- **The identity corpus is re-recorded** against Cicero 0.1.5 and the CLI at 0.1.4: paper, cast and roads, the three whose bytes moved, with their lists and reports. Roads moved with Cicero's page content area, which is now as wide as the container it was measured in; paper and cast had drifted after the corpus was recorded at the commit that made `styledBorders` default to `true`, and their cause was not traced. One blob of roads is replaced. `identity check` all identical, 8 documents; `replay` 8 of 8.
 
 The round *specimen findings*: faults the `delibera` and `trattato` specimens surfaced.
 
@@ -12,8 +15,6 @@ The round *specimen findings*: faults the `delibera` and `trattato` specimens su
 - **`pngDecoder: 'canvas'` refuses by name.** No canvas decoder is built; the registry only declined to load fast-png under it, so a PNG that needed decoding refused blaming the flag that had been set. It now refuses beside `shaper: 'fontkit'`, `subset: 'pdf-lib'` and `convertRgb`, which move with it from `print` into `refuseUnbuiltTiers` (`options.ts`), where `test/options.test.ts` covers all four. Found by printing every flag from the command line.
 - **A face that draws no `H` writes a finite `/CapHeight`.** With no cap height in OS/2, the descriptor took the top of `H`; a face with no `H` answered with `.notdef`, and a face that maps `H` to a glyph that draws nothing gave fontkit's empty box, so `/CapHeight -Infinity` reached the file, pdf.js refused the font (`FormatError: Invalid number: I`) and neither drew nor extracted its text. Such a face now takes its ascent, which is pdf-lib's fallback. Found by a tester's Matrice 2D (specimens, `cases/matrice-2d`), which maps every ASCII character to one empty glyph; printed through the CLI, pdf.js now extracts all five lines where it extracted two. `test/fonts.test.ts` is the red case, with the face in `fixtures/specimen/fonts/`.
 - **A face with no PostScript name is named `Family-Style`.** `cleanName(font.postscriptName)` threw `Cannot read properties of null (reading 'replace')` on a face whose name table has no ID 6. The name is now derived from IDs 1 and 2 with the spaces removed, as PDF says to derive a TrueType font's missing PostScript name (ISO 32000-1 9.6.3), and the report's `postScriptName` carries it; a face with no family name either refuses by name (Egildo's ruling, 2026-11-03). Found by a tester's Codice 128 (specimens, `cases/font-senza-nome-postscript`), now `Codice128-Regular`. `test/fonts.test.ts` is the red case, with the face in `fixtures/specimen/fonts/`.
-
-## 0.1.5 — unreleased (branch `round/close-the-list`)
 
 The round *close the display list*: a writer given the list and nothing else prints the same bytes, in the page and in node (DESIGN.md S102, *the same list prints the same bytes*).
 
