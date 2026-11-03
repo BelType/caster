@@ -4,7 +4,7 @@
  * @remarks
  * Ported from the monorepo's `packages/caster/scripts/compliance.js`, which prints Caster's specimen through the editing tools before it judges it. This one prints nothing: it reads the files it is given, as the gate of the Rust writer asks (*the same list prints the same bytes*, DESIGN.md S102; `.claude/plans/the-rust-writer/plan-rust-writer.md` in the BelType monorepo, stage 4). The checkers are a deliberate act, never part of `npm test`: veraPDF is Java and qpdf a C++ binary, and a suite that skipped itself where they are missing would be a green nobody can explain, so this script says plainly what it could not run.
  *
- * What each answers. **PdfCraft's checker** (`test/vendor/pdfcraft-a11y/`, loaded in node) runs Acrobat's full check, and its verdict on a file is the rules it fails, each with its count of findings. **qpdf `--check`** says whether the file is well formed and what version it declares, which must be 2.0. **veraPDF** runs the profiles `ua2` (PDF/UA-2 and Tagged PDF) and `wt1a` (Well-Tagged PDF, accessibility), one Java run per profile over every file at once, and its verdict on a file is the set of rules it fails, each with its clause, test number and failed checks. Where `fixtures/lists/` holds a file of the same name, the oracle's, its verdict is read too, and a file whose verdict differs from the oracle's is a failure: the claim is that the two writers fail exactly the same rules. A file with no oracle beside it (the CFF2 list, which the oracle refuses) fails when it fails any rule. Run on `fixtures/lists/` itself, it prints the oracle's verdicts. Prints verdicts and nothing else.
+ * What each answers. **PdfCraft's checker** (`test/vendor/pdfcraft-a11y/`, loaded in node) runs Acrobat's full check, and its verdict on a file is the rules it fails, each with its count of findings. **qpdf `--check`** says whether the file is well formed and what version it declares, which must be 2.0. **veraPDF** runs the profiles `ua2` (PDF/UA-2 and Tagged PDF), `wt1a` and `wt1r` (Well-Tagged PDF, accessibility and reuse), one Java run per profile over every file at once, and its verdict on a file is the set of rules it fails, each with its clause, test number and failed checks. Where `fixtures/lists/` holds a file of the same name, the oracle's, its verdict is read too, and a file whose verdict differs from the oracle's is a failure: the claim is that the two writers fail exactly the same rules. One difference is expected, and named: forme writes Well-Tagged PDF's two declarations in the XMP whenever it claims PDF/UA-2 and the oracle writes neither (Egildo's ruling of 2026-11-02, the plan's stage 10), so the oracle fails `6.1.3` under `wt1a` and `6.1.2` under `wt1r` where forme passes them. A verdict that differs from the oracle's by that rule alone is reported as the expected difference, not a failure; a forme file that still fails it is a failure. A file with no oracle beside it (the CFF2 list, which the oracle refuses) fails when it fails any rule. Run on `fixtures/lists/` itself, it prints the oracle's verdicts. Prints verdicts and nothing else.
  *
  * @packageDocumentation
  */
@@ -16,7 +16,9 @@ import { fileURLToPath } from 'node:url';
 import { checkAccessibility } from '../test/read-back-a11y.ts';
 
 const LISTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'lists');
-const PROFILES = ['ua2', 'wt1a'];
+const PROFILES = ['ua2', 'wt1a', 'wt1r'];
+/** The declaration rule each Well-Tagged profile asks, which forme passes and the oracle fails: the one expected difference. */
+const DECLARED: Record<string, string> = { 'veraPDF wt1a': 'WTPDF1.0 6.1.3 t1 ', 'veraPDF wt1r': 'WTPDF1.0 6.1.2 t1 ' };
 
 type Verdict = string[];
 
@@ -71,9 +73,11 @@ for (const file of mine) {
     const verdict = judge(file);
     if (verdict === null) { console.log(`${name.padEnd(18)} ${checker}: not installed, skipped`); continue; }
     const theirs = hasOracle ? judge(oracle) : null;
-    const same = theirs === null || JSON.stringify(theirs) === JSON.stringify(verdict);
+    const declared = DECLARED[checker];
+    const expected = declared !== undefined && theirs !== null && theirs.some((r) => r.startsWith(declared)) && !verdict.some((r) => r.startsWith(declared));
+    const same = theirs === null || JSON.stringify(expected ? theirs.filter((r) => !r.startsWith(declared)) : theirs) === JSON.stringify(verdict);
     if (!same || (!hasOracle && verdict.length > 0 && !isLists) || (checker === 'qpdf' && verdict.length > 0)) failures += 1;
-    const against = isLists ? '' : hasOracle ? (same ? ', as the oracle\'s' : `; the oracle's: ${said(theirs ?? [])}`) : ', no oracle file';
+    const against = isLists ? '' : hasOracle ? (same ? (expected ? `, as the oracle's but for its ${declared.trim()}, the expected difference (forme's declarations)` : ', as the oracle\'s') : `; the oracle's: ${said(theirs ?? [])}`) : ', no oracle file';
     console.log(`${name.padEnd(18)} ${checker}: ${said(verdict)}${against}`);
   }
 }
