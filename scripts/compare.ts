@@ -557,14 +557,15 @@ const PIXEL_SHARE = 0.002;
 function comparePixels(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument): { first: string | null; pages: { max: number; share: number; at: [number, number] }[] } {
   return pixelLines(oracle.countPages(), (p) => [oracle, forme].map((doc) => {
     const pixmap = doc.loadPage(p).toPixmap(mupdf.Matrix.scale(2, 2), mupdf.ColorSpace.DeviceRGB, false);
-    return { pixels: pixmap.getPixels(), width: pixmap.getWidth(), height: pixmap.getHeight(), channels: 3 };
+    // Copied out: `getPixels()` is a view of the module's memory, which the second render can grow, and a grown memory detaches the first view to length 0, which read as a page with no pixel apart.
+    return { pixels: pixmap.getPixels().slice(), width: pixmap.getWidth(), height: pixmap.getHeight(), channels: 3 };
   }) as [Raster, Raster]);
 }
 
 /** The same reader on yapr's renderer: each page of both files at 2 device pixels a point, 144 dpi, RGBA, its alpha left out, held to the same lines. */
 function compareYaprPixels(oracle: Yapr, forme: Yapr): { first: string | null; pages: { max: number; share: number; at: [number, number] }[] } {
   return pixelLines(oracle.page_count(), (p) => [oracle, forme].map((viewer) => {
-    const pixels = viewer.render(p, 2);
+    const pixels = viewer.render(p, 2).slice();
     return { pixels, width: viewer.width(), height: viewer.height(), channels: 4 };
   }) as [Raster, Raster]);
 }
@@ -577,7 +578,7 @@ function pixelLines(count: number, render: (page: number) => [Raster, Raster]): 
   let first: string | null = null;
   for (let p = 0; p < count; p += 1) {
     const [a, b] = render(p);
-    if (a.width !== b.width || a.height !== b.height) {
+    if (a.width !== b.width || a.height !== b.height || a.pixels.length === 0) {
       first ??= `page ${p + 1}: ${a.width} by ${a.height} pixels against ${b.width} by ${b.height}`;
       pages.push({ max: 255, share: 1, at: [0, 0] });
       continue;
