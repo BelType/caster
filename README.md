@@ -306,7 +306,7 @@ sequenceDiagram
 | `downsampleType` | `bicubic`, `average`, `subsample` | `bicubic` | Catmull-Rom computed by Caster's own arithmetic (`src/images/resample.js`), whose bytes are the same in every engine |
 | `rasterDpi` | a positive number | `300` | every raster fallback and every emoji cluster is drawn at this |
 | `paintOrder` | `css`, `dom` | `css` | CSS paint order is what Chromium paints; `dom` is wrong as soon as anything overlaps |
-| `styledBorders` | `true`, `false` | `false` | exact arithmetic, but it repaints every stream with a non-solid border |
+| `styledBorders` | `true`, `false` | `true` | a dotted or dashed border prints as written; `false` paints every border solid. Flipped on 2026-11-02, since no corpus document had a styled border |
 | `blackText` | `none`, `100k` | `none` | turn on for press: otherwise `0 0 0 rg` lands ink on all four plates |
 | `convertRgb` | `none`, `endpoint`, `wasm` | `none` | a compliant RIP lands within one 255th anyway; both other tiers refuse by name |
 | `skipInk` | `true`, `false` | `true` | 34.2% of a body-size underline is removed by the descenders it would strike |

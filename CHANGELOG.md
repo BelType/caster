@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.1.7 — 2026-11-04
 
+The first image-handling round: images that print far above their target are reduced before the list, and a `<canvas>` figure prints. Nothing a writer reads changes; the list stays at version 6, and every file of the corpus that existed before is byte for byte what 0.1.6 wrote.
+
+- **A `<canvas>` figure prints** (the image-handling round, closing the fix queue's entry of 2026-11-02). The image pass reads the canvas's pixels, through `getImageData` for a 2d context or a `drawImage` onto a `willReadFrequently` canvas for any other, so the builder no longer refuses the figure with "no bytes registered"; the pixels then go past downsampling and the photo rule as any decoded image's do. A canvas whose pixels the page may not read (a tainted canvas) is refused naming its element. The corpus gains `canvas`.
 - **Images are downsampled** (Egildo's rulings of 2026-11-03, `.claude/plans/image-handling/` in the BelType monorepo). Four flags in Distiller's words: `downsampleImages` (default `true`), `imageResolution` (`300`), `downsampleThreshold` (`1.5`, from 1 to 10) and `downsampleType` (`bicubic`, Catmull-Rom, the default; `average`; `subsample`). A file that prints above `imageResolution × downsampleThreshold` at its smallest resolution over all its uses is decoded in its own colour space, reduced by `src/images/resample.ts` (Caster's own arithmetic, premultiplied alpha, 8 or 16 bits), and then goes past the photo rule as any pixels do; a JPEG source stays a JPEG and keeps its ICC profile. A CMYK JPEG, an indexed or sub-byte PNG and a PNG with a colour key are left alone and named in the report (`notResampled`), a reduced file in `resampled` and `resampleMs`; an image placed below 150 ppi is a warning. Nothing a writer reads changes (display list version 6). The corpus holds a sixteenth document, `downsample`, and its fixtures are drawn by `scripts/make-test-photo.ts`.
 
 ## 0.1.6 — 2026-11-03
