@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (branch `round/rust-writer`)
+
+- **The display list is version 6: a PNG whose `IDAT` no predictor describes is decoded before the list** (DESIGN.md S102, amended 2026-11-03). fast-png runs in the image pass beside the browser's decoders, and the list carries the PNG's own samples (its depth, its colour space, its palette and profile, its alpha); the writer decodes nothing, and splits any samples' alpha into an `/SMask` only where some pixel is not opaque. Every PDF of the corpus is byte for byte what it was; the lists are re-recorded for their version, the images list for its four decoded PNGs, and the images report for their four dedupe hashes.
+
 ## 0.1.6 — unreleased
 
 The round *specimen findings*: faults the `delibera` and `trattato` specimens surfaced.

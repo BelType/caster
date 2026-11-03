@@ -34,7 +34,7 @@ import { mul } from '../coordinates/matrix.ts';
 import { addXmpMetadata, createDocument, serialize, setInfo } from './document.ts';
 import { emitRun, fontOf, fontsByKey, lineWrap, listSegments, round3, setupPages } from './textEmit.ts';
 import { buildToUnicode } from '../fonts/toUnicode.ts';
-import { samplesFromRgba } from '../images/samples.ts';
+import { samplesFromRgba, samplesOf } from '../images/samples.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
 import { buildOutline } from './outline.ts';
 import { ATTRIBUTE_KEYS, validateList } from '../displayList/validate.ts';
@@ -427,10 +427,10 @@ function embedSourceOf(list: DisplayList, source: ImageSource, interpolate: bool
     if (source.jpeg !== undefined)
         return { kind: 'jpeg', jpeg: blobOf(list, source.jpeg), interpolate, format, gammaOnly: source.original?.gammaOnly === true };
     if (source.samples !== undefined) {
-        const { blob, width, height, colorSpace, bitsPerComponent } = source.samples;
-        if (colorSpace !== 'DeviceRGB' || bitsPerComponent !== 8)
-            throw new CasterError(`caster: the samples of ${source.domPath} are ${String(colorSpace)} at ${String(bitsPerComponent)} bits, and the writer reads 8-bit DeviceRGB samples only`);
-        return { kind: 'samples', samples: samplesFromRgba(blobOf(list, blob), width, height), interpolate, label: format };
+        const { blob, width, height, colorSpace, bitsPerComponent, alpha, palette, icc } = source.samples;
+        const samples = samplesOf(blobOf(list, blob), width, height, colorSpace === 'DeviceRGB' ? 3 : 1, alpha, bitsPerComponent / 8);
+        const shape = { colorSpace, bitsPerComponent, ...(palette !== undefined ? { palette: blobOf(list, palette) } : {}), ...(icc !== undefined ? { icc: blobOf(list, icc) } : {}) };
+        return { kind: 'samples', samples, interpolate, label: format, shape, gammaOnly: source.original?.gammaOnly === true };
     }
     return { kind: 'bytes', bytes: blobOf(list, source.blob as string), mimeType: source.mime as string, interpolate };
 }

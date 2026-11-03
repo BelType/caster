@@ -9,7 +9,7 @@
  *
  * Image XObjects: the original bytes wherever PDF has a filter for them.
  *
- * The whole of this module is one decision made per image, and the decision is always the same shape: *is there a PDF filter that already reads this file?* When there is, the file's own bytes become the stream and nothing is decoded, nothing is re-compressed and nothing is lost. When there is not, the samples are decoded once and written as raw samples under Flate: by fast-png here, for a PNG whose alpha, interlacing or palette transparency the filter cannot describe, and by the browser in the image pass before the display list (`images/imagePass.js`) for a file no filter reads, which reaches this module as samples. The opaque-photo rule and its JPEG re-encode run in the same pass, so a JPEG it chose reaches this module as a JPEG, and its evidence stays in the list, where the report reads it (`displayList/records.js`); this module calls no decoder of the browser's and no canvas (stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
+ * The whole of this module is one decision made per image, and the decision is always the same shape: *is there a PDF filter that already reads this file?* When there is, the file's own bytes become the stream and nothing is decoded, nothing is re-compressed and nothing is lost. When there is not, the samples are decoded once, before the display list, and written as raw samples under Flate: by fast-png in the image pass (`images/imagePass.js`) for a PNG whose alpha, interlacing or palette transparency the filter cannot describe, at the file's own depth and in its own colour space, and by the browser in the same pass for a file no filter reads; both reach this module as samples, and it decodes nothing (version 6 of the list, Egildo's ruling of 2026-11-03 amending S102). The opaque-photo rule and its JPEG re-encode run in the same pass, so a JPEG it chose reaches this module as a JPEG, and its evidence stays in the list, where the report reads it (`displayList/records.js`); this module calls no decoder of the browser's and no canvas (stage 3 of `.claude/plans/the-rust-writer/plan-close-the-list.md`).
  *
  * Two of those filters are worth stating because they are easy to miss. `/DCTDecode` reads a JPEG's entropy-coded data verbatim, including a progressive one, so every JPEG a browser can display is a JPEG a PDF can carry — the component count is the colour space, the APP14 marker is the CMYK inversion, and the APP2 profile is the `/ICCBased` stream. `/FlateDecode` with `/Predictor 15` *is* the PNG filter set, and a PNG's concatenated `IDAT` is already a zlib stream, so a non-interlaced PNG with no alpha needs no decoder either — including a 16-bit one, which no canvas could have given back.
  *
@@ -19,7 +19,7 @@
  */
 import { capability } from '../capabilities.ts';
 import { jpegColorSpaceName, parseJpeg } from './jpeg.ts';
-import { canPassThroughIdat, colourKeyMask, decodePng, inflate, parsePng, PngColorType } from './png.ts';
+import { canPassThroughIdat, colourKeyMask, inflate, parsePng, PngColorType } from './png.ts';
 import { CasterError } from '../errors.ts';
 
 import type { DecodedSamples } from './samples.ts';
@@ -63,12 +63,22 @@ export function createImageContext(pdf: PDFContext): ImageContext {
  * What the caller hands over: a file, decoded samples, or the JPEG the opaque-photo rule chose for them.
  *
  * @remarks
- * Each member is one the dedupe key or a byte reads: `label` names samples in the key, `format` names the JPEG's source in it (the file's MIME type, or `canvas` for a raster fallback), and `gammaOnly` is recorded for a JPEG whose source PNG the list no longer holds. What the report says of a source beyond that (its format, its length, why the road was taken) is `recordsOf`'s (`displayList/records.js`).
+ * Each member is one the dedupe key or a byte reads: `label` names samples in the key, `format` names the JPEG's source in it (the file's MIME type, or `canvas` for a raster fallback), and `gammaOnly` is recorded for a JPEG or samples whose source PNG the list no longer holds. Samples are 8-bit `DeviceRGB` unless `shape` says otherwise (a PNG's own, version 6), and `samples.rgb` is then the colour plane in that shape. What the report says of a source beyond that (its format, its length, why the road was taken) is `recordsOf`'s (`displayList/records.js`).
  */
 export type EmbedSource =
   | { kind: 'bytes', bytes: Uint8Array, mimeType: string, interpolate: boolean }
-  | { kind: 'samples', samples: DecodedSamples, interpolate: boolean, label: string }
+  | { kind: 'samples', samples: DecodedSamples, interpolate: boolean, label: string, shape?: SampleShape, gammaOnly?: boolean }
   | { kind: 'jpeg', jpeg: Uint8Array, interpolate: boolean, format: string, gammaOnly: boolean };
+
+/** What samples are other than 8-bit `DeviceRGB`: a decoded PNG's own depth and colour space, its palette and its profile. */
+export type SampleShape = {
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
+  bitsPerComponent: 8 | 16;
+  /** The `PLTE`'s RGB triples, with `Indexed`. */
+  palette?: Uint8Array;
+  /** The ICC profile the colour components are in. */
+  icc?: Uint8Array;
+};
 
 const hex = (bytes: Uint8Array): string => {
   let out = '';
@@ -97,16 +107,6 @@ async function sha256(...parts: (Uint8Array|string)[]): Promise<string> {
  */
 export function deflate(context: PDFContext, bytes: Uint8Array): Uint8Array {
   return context.flateStream(bytes).getContents();
-}
-
-/** 16-bit samples as big-endian bytes, which is the only order a PDF stream has. */
-function toBigEndian(samples: Uint16Array): Uint8Array {
-  const out = new Uint8Array(samples.length * 2);
-  for (let i = 0; i < samples.length; i++) {
-    out[i * 2] = samples[i] >> 8;
-    out[i * 2 + 1] = samples[i] & 0xff;
-  }
-  return out;
 }
 
 /** An `/ICCBased` colour-space array over a Flate-compressed profile. */
@@ -165,39 +165,6 @@ async function pngColorSpace(context: PDFContext, info: PngInfo): Promise<{ valu
 }
 
 /**
- * One sample per byte, from a PNG's packed sub-byte rows.
- *
- * @remarks
- * A PNG scanline of depth 1, 2 or 4 is packed most-significant bit first and padded to a whole byte at the end of each row, so the stride is `ceil(width * depth / 8)` and the last bits of a row are not the first pixels of the next. fast-png hands the packed buffer over as it stands; every caller in this file wants indices.
- *
- * @param depth - 1, 2 or 4.
- */
-export function unpackSubByte(packed: Uint8Array, depth: number, width: number, height: number): Uint8Array {
-  const perByte = 8 / depth;
-  const mask = (1 << depth) - 1;
-  const stride = Math.ceil((width * depth) / 8);
-  const out = new Uint8Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const byte = packed[y * stride + Math.floor(x / perByte)] ?? 0;
-      const shift = (perByte - 1 - (x % perByte)) * depth;
-      out[y * width + x] = (byte >> shift) & mask;
-    }
-  }
-  return out;
-}
-
-/** The alpha plane a palettised PNG's `tRNS` implies, one byte per pixel. */
-function paletteAlpha(indices: Uint8Array, palette: number[][]): Uint8Array {
-  const alpha = new Uint8Array(indices.length);
-  for (let i = 0; i < indices.length; i++) {
-    const entry = palette[indices[i]];
-    alpha[i] = entry && entry.length > 3 ? entry[3] : 255;
-  }
-  return alpha;
-}
-
-/**
  * Embed one image, deduplicating by content.
  *
  * @remarks
@@ -211,10 +178,12 @@ export async function embedImage(context: ImageContext, source: EmbedSource): Pr
       ? `bytes|${source.mimeType}|interpolate=${source.interpolate}`
       : source.kind === 'jpeg'
         ? `jpeg|${source.format}|interpolate=${source.interpolate}`
-        : `samples|${source.label}|${source.samples.width}x${source.samples.height}|interpolate=${source.interpolate}`;
+        : `samples|${source.label}|${source.samples.width}x${source.samples.height}|interpolate=${source.interpolate}${shapeKey(source.shape)}`;
   const payload = source.kind === 'bytes' ? source.bytes : source.kind === 'jpeg' ? source.jpeg : source.samples.rgb;
   const alphaPayload = source.kind === 'samples' && source.samples.alpha ? source.samples.alpha : new Uint8Array(0);
-  const hash = await sha256(payload, alphaPayload, parameters);
+  const none = new Uint8Array(0);
+  const shape = source.kind === 'samples' ? source.shape : undefined;
+  const hash = await sha256(payload, alphaPayload, shape?.palette ?? none, shape?.icc ?? none, parameters);
 
   const hit = context.byHash.get(hash);
   if (hit) return hit;
@@ -222,6 +191,12 @@ export async function embedImage(context: ImageContext, source: EmbedSource): Pr
   const embedded = await build(context, source, hash);
   context.byHash.set(hash, embedded);
   return embedded;
+}
+
+/** What the dedupe key adds for samples that are not 8-bit `DeviceRGB`: nothing for those, so their key is what it was before version 6. */
+function shapeKey(shape: SampleShape | undefined): string {
+  if (!shape || (shape.colorSpace === 'DeviceRGB' && shape.bitsPerComponent === 8 && !shape.palette && !shape.icc)) return '';
+  return `|${shape.colorSpace}|${shape.bitsPerComponent}${shape.palette ? '|palette' : ''}${shape.icc ? '|icc' : ''}`;
 }
 
 /**
@@ -357,90 +332,8 @@ async function fromPng(context: ImageContext, bytes: Uint8Array, interpolate: bo
     };
   }
 
-  // Alpha, interlacing or a palette with tRNS: the samples have to be rearranged, which means decoding them, which the JS decoder does at the file's own bit depth rather than a canvas's eight.
-  const started = performance.now();
-  const decoded = decodePng(bytes);
-  const decodeMs = performance.now() - started;
-  const pixels = info.width * info.height;
-
-  let colour: Uint8Array;
-  let alpha: Uint8Array|null = null;
-  let bitsPerComponent = decoded.depth;
-  let space: { value: any; name: string; components: number; icc: boolean; };
-
-  if (info.colorType === PngColorType.Palette) {
-    // fast-png keeps a sub-byte depth packed — a 4-bit palette comes back as one byte per two pixels, a 1-bit one as one byte per eight — and every byte was being read as a palette index. The image was garbage and the tRNS `/SMask` was width×height/2 bytes long for a stream that declared width×height. Unpacked to one index per byte, everything below works on the same shape whatever the file's depth, which is why `bitsPerComponent` is 8 here.
-    colour = decoded.depth < 8 ? unpackSubByte((decoded.data as Uint8Array), decoded.depth, info.width, info.height) : (decoded.data as Uint8Array);
-    alpha = decoded.palette ? paletteAlpha(colour, decoded.palette) : null;
-    space = await pngColorSpace(pdf, info);
-    bitsPerComponent = 8;
-  } else if (decoded.depth < 8) {
-    // The same unpacking for a sub-byte gray image, and for the same reason: `/BitsPerComponent 8` with one sample per byte is a shape everything downstream already handles, and the alternative is a `/Decode` array and a stride nobody else in this file knows about.
-    colour = unpackSubByte((decoded.data as Uint8Array), decoded.depth, info.width, info.height);
-    bitsPerComponent = 8;
-    space = await pngColorSpace(pdf, info);
-  } else if (decoded.depth === 16) {
-    const samples = (decoded.data as Uint16Array);
-    const channels = decoded.channels;
-    const colourChannels = channels === 4 ? 3 : channels === 2 ? 1 : channels;
-    const colour16 = new Uint16Array(pixels * colourChannels);
-    const alpha16 = channels === 4 || channels === 2 ? new Uint16Array(pixels) : null;
-    for (let i = 0; i < pixels; i++) {
-      for (let c = 0; c < colourChannels; c++) colour16[i * colourChannels + c] = samples[i * channels + c];
-      if (alpha16) alpha16[i] = samples[i * channels + colourChannels];
-    }
-    colour = toBigEndian(colour16);
-    alpha = alpha16 ? toBigEndian(alpha16) : null;
-    space = await pngColorSpace(pdf, info);
-  } else {
-    const samples = (decoded.data as Uint8Array);
-    const channels = decoded.channels;
-    const colourChannels = channels === 4 ? 3 : channels === 2 ? 1 : channels;
-    const colour8 = new Uint8Array(pixels * colourChannels);
-    const alpha8 = channels === 4 || channels === 2 ? new Uint8Array(pixels) : null;
-    for (let i = 0; i < pixels; i++) {
-      for (let c = 0; c < colourChannels; c++) colour8[i * colourChannels + c] = samples[i * channels + c];
-      if (alpha8) alpha8[i] = samples[i * channels + colourChannels];
-    }
-    colour = colour8;
-    alpha = alpha8;
-    space = await pngColorSpace(pdf, info);
-  }
-
-  const compressed = deflate(pdf, colour);
-  const mask = alpha ? await smaskRef(pdf, info.width, info.height, bitsPerComponent, alpha) : null;
-  const ref = pdf.register(
-    pdf.stream(compressed, {
-      Type: 'XObject',
-      Subtype: 'Image',
-      Width: info.width,
-      Height: info.height,
-      ColorSpace: space.value,
-      BitsPerComponent: bitsPerComponent,
-      Filter: 'FlateDecode',
-      Interpolate: interpolate,
-      ...(mask ? { SMask: mask.ref } : {}),
-      Length: compressed.length,
-    }),
-  );
-  return {
-    ref,
-    info: {
-      path: 'decode-flate',
-      filter: 'FlateDecode',
-      bitsPerComponent,
-      colorSpace: space.name,
-      hasSMask: mask !== null,
-      width: info.width,
-      height: info.height,
-      interpolate,
-      bytesOut: compressed.length + (mask?.bytes ?? 0),
-      decodeMs,
-      encodeMs: 0,
-      icc: space.icc ? 'embedded' : 'none',
-      gammaOnly,
-    },
-  };
+  // Alpha, interlacing or a palette with tRNS: the image pass decodes such a file before the list (version 6), so it reaches here only in a list the builder did not write.
+  throw new CasterError('imageEmbed: a PNG whose IDAT /Predictor 15 cannot describe (an alpha channel, Adam7 interlace, a palette with tRNS) reaches the display list as samples; the image pass decodes it before the list');
 }
 
 /** The JPEG the opaque-photo rule chose in the image pass, under `/DCTDecode`. */
@@ -480,20 +373,28 @@ function photoJpeg(pdf: PDFContext, source: Extract<EmbedSource, { kind: 'jpeg' 
   };
 }
 
-/** Decoded RGB(+alpha) samples, into a stream and its `/SMask`. */
+/**
+ * Decoded samples, into a stream and its `/SMask`: 8-bit `DeviceRGB` unless the source's `shape` says otherwise.
+ *
+ * @remarks
+ * The colour space is made before the streams, so an `/ICCBased` profile is registered first, as it was when this module decoded PNGs itself.
+ */
 async function fromSamples(context: ImageContext, source: Extract<EmbedSource, { kind: 'samples' }>): Promise<Built> {
   const pdf = context.pdf;
   const { samples, interpolate } = source;
+  const shape: SampleShape = source.shape ?? { colorSpace: 'DeviceRGB', bitsPerComponent: 8 };
+  const bitsPerComponent = shape.bitsPerComponent;
+  const space = await samplesColorSpace(pdf, shape);
   const compressed = deflate(pdf, samples.rgb);
-  const mask = samples.alpha ? await smaskRef(pdf, samples.width, samples.height, 8, samples.alpha) : null;
+  const mask = samples.alpha ? await smaskRef(pdf, samples.width, samples.height, bitsPerComponent, samples.alpha) : null;
   const ref = pdf.register(
     pdf.stream(compressed, {
       Type: 'XObject',
       Subtype: 'Image',
       Width: samples.width,
       Height: samples.height,
-      ColorSpace: 'DeviceRGB',
-      BitsPerComponent: 8,
+      ColorSpace: space.value,
+      BitsPerComponent: bitsPerComponent,
       Filter: 'FlateDecode',
       Interpolate: interpolate,
       ...(mask ? { SMask: mask.ref } : {}),
@@ -505,8 +406,8 @@ async function fromSamples(context: ImageContext, source: Extract<EmbedSource, {
     info: {
       path: 'decode-flate',
       filter: 'FlateDecode',
-      bitsPerComponent: 8,
-      colorSpace: 'DeviceRGB',
+      bitsPerComponent,
+      colorSpace: space.name,
       hasSMask: mask !== null,
       width: samples.width,
       height: samples.height,
@@ -514,8 +415,19 @@ async function fromSamples(context: ImageContext, source: Extract<EmbedSource, {
       bytesOut: compressed.length + (mask?.bytes ?? 0),
       decodeMs: samples.decodeMs,
       encodeMs: 0,
-      icc: 'none',
-      gammaOnly: false,
+      icc: space.icc ? 'embedded' : 'none',
+      gammaOnly: source.gammaOnly === true,
     },
   };
+}
+
+/** The colour space of samples: the device space, a palette's `/Indexed` over `DeviceRGB`, or the profile's `/ICCBased`. */
+async function samplesColorSpace(context: PDFContext, shape: SampleShape): Promise<{ value: any; name: string; icc: boolean; }> {
+  const { PDFHexString } = capability('pdf');
+  if (shape.colorSpace === 'Indexed') {
+    const palette = shape.palette as Uint8Array;
+    return { value: context.obj(['Indexed', 'DeviceRGB', palette.length / 3 - 1, PDFHexString.of(hex(palette))]), name: 'Indexed', icc: false };
+  }
+  if (shape.icc) return { value: await iccColorSpace(context, shape.icc, shape.colorSpace === 'DeviceRGB' ? 3 : 1), name: 'ICCBased', icc: true };
+  return { value: shape.colorSpace, name: shape.colorSpace, icc: false };
 }

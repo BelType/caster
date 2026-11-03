@@ -69,7 +69,7 @@ test('the same list prints the same bytes: every committed list gives the commit
   assert.ok(corpus.length >= 8 && ['webp', 'photo', 'arithmetic'].every((name) => corpus.some((e) => e.name === name)), 'the whole corpus, the image roads among it');
   for (const { name } of corpus) {
     const list = listOf(name);
-    assert.equal(list.version, 5, `${name}: a version 5 list`);
+    assert.equal(list.version, 6, `${name}: a version 6 list`);
     const emitted = await emitStructure(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
@@ -416,7 +416,7 @@ test('validateList refuses, with a sentence each, a list the writer could not wr
   };
   const firstText = (list: DisplayList) => list.pages[0].items.find((i): i is TextItem => i.kind === 'text')!;
   const tags = (list: DisplayList) => list.pages[0].items.map((item, at) => ({ item, at })).filter(({ item }) => item.kind === 'tag');
-  refused(/reads a display list of version 5, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
+  refused(/reads a display list of version 6, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
   refused(/the font instance .* names the blob 0+, and the display list holds no bytes/, (list) => { list.resources.fonts[0].blob = '0'.repeat(64); });
   refused(/image \d+'s photo JPEG names the blob/, (list) => { Object.values(list.resources.images)[0].jpeg = 'f'.repeat(64); });
   refused(/two font instances under the key/, (list) => { list.resources.fonts.push({ ...list.resources.fonts[0] }); });
@@ -434,6 +434,9 @@ test('validateList refuses, with a sentence each, a list the writer could not wr
   refused(/is in no element's children/, (list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object' && 'page' in c))!; e.children = e.children.filter((c) => !(typeof c === 'object' && 'page' in c)); });
   refused(/carries an attribute object with the key Placement, which the schema does not name/, (list) => { const e = list.structure.elements.find((x) => x.attributes)!; (e.attributes![0] as any).Placement = 'Block'; }, 'paper');
   refused(/the link at place \d+ among the document.s links has order \d+; the orders run 0, 1, 2/, (list) => { list.pages.flatMap((p) => p.items).filter((i): i is LinkItem => i.kind === 'link').at(-1)!.order += 1; }, 'paper');
+  const pngSamples = (list: DisplayList) => Object.values(list.resources.images).find((i) => i.samples?.colorSpace === 'Indexed')!.samples!;
+  refused(/image \d+'s samples are Indexed at 16 bits with a palette of \d+ bytes, a shape the schema does not name/, (list) => { pngSamples(list).bitsPerComponent = 16; }, 'images');
+  refused(/image \d+'s samples hold 3072 bytes, and 48 by 32 Indexed at 8 bits is 1536/, (list) => { pngSamples(list).alpha = false; }, 'images');
   refused(/has neither a destination in the file nor a URI/, (list) => { const link = list.pages.flatMap((p) => p.items).find((i): i is LinkItem => i.kind === 'link' && !i.target.dest)!; delete link.target.uri; }, 'roads');
 });
 
@@ -483,6 +486,25 @@ test('a WebP reaches the list as the browser\'s pixels, and the writer writes th
   assert.equal(image.get('SMask').isNull(), opaque, 'an /SMask exactly where a pixel is not opaque');
   if (!opaque) assert.ok(bytesOf(image.get('SMask').readStream()).equals(Buffer.from(alpha)), 'and it inflates to the alpha');
   assert.equal(source.photo?.chosenQuality, null, 'the rule was consulted and declined');
+});
+
+test('a PNG no predictor describes reaches the list as its own samples, decoded in the pass, and the writer writes them as the decode road wrote them', async () => {
+  const list = listOf('images');
+  const sources = Object.values(list.resources.images).filter((source) => source.original?.why !== undefined);
+  assert.deepEqual(sources.map((s) => [s.src.split('/').at(-1), s.original!.why, s.samples!.colorSpace, s.samples!.bitsPerComponent, s.samples!.alpha]), [
+    ['alpha.png', 'alpha', 'DeviceRGB', 8, true], ['interlaced.png', 'interlace', 'DeviceRGB', 8, false], ['palette-trns.png', 'palette-trns', 'Indexed', 8, true], ['deep-alpha.png', 'alpha', 'DeviceRGB', 16, true]]);
+  for (const source of sources) {
+    const name = source.src.split('/').at(-1)!;
+    const prepared = await prepareImage({ bytes: new Uint8Array(fs.readFileSync(path.join(ROADS, name))), mimeType: 'image/png' }, true);
+    assert.ok(Buffer.from(prepared.png!.data).equals(Buffer.from(list.resources.blobs[source.samples!.blob])), `${name}: node's decode is the page's, byte for byte`);
+    assert.equal(source.blob, undefined, `${name}: the list does not hold the PNG`);
+  }
+  const doc = mupdf.Document.openDocument(Buffer.from((await emitStructure(list)).bytes), 'application/pdf') as mupdf.PDFDocument;
+  const images: mupdf.PDFObject[] = [];
+  for (let page = 0; page < doc.countPages(); page++) doc.loadPage(page).getObject().get('Resources').get('XObject')?.forEach((obj) => { if (obj.get('Subtype').asName() === 'Image') images.push(obj); });
+  const indexed = images.filter((image) => image.get('ColorSpace').isArray() && image.get('ColorSpace').get(0).asName() === 'Indexed');
+  assert.equal(indexed.length, 1, 'the palette is an /Indexed space');
+  assert.equal(images.filter((image) => !image.get('SMask').isNull()).length, 3, 'an /SMask on the three with a pixel not opaque');
 });
 
 test('the photo rule\'s choice and quality are the pass\'s: the list holds its JPEG and evidence, the file carries that JPEG, and the flag off keeps the PNG', async () => {
@@ -604,7 +626,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
     });
-    assert.equal(seen.version, 5);
+    assert.equal(seen.version, 6);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
     for (const { font, gids } of seen.used) {

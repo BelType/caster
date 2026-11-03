@@ -49,6 +49,28 @@ export function rgbaOf(samples: DecodedSamples): Uint8Array {
   return out;
 }
 
+/**
+ * Samples from interleaved bytes as the display list carries them (version 6): `components` colour samples a pixel, then an alpha sample where `alpha` is set, each `bytesPerSample` bytes. The colour plane is `rgb` whatever its components; the alpha plane is kept only where some pixel is not opaque, which is every alpha byte `0xff` at either depth.
+ */
+export function samplesOf(bytes: Uint8Array, width: number, height: number, components: number, alpha: boolean, bytesPerSample: number): DecodedSamples {
+  if (!alpha) return { width, height, rgb: bytes, alpha: null, hasAlpha: false, decodeMs: 0 };
+  const pixels = width * height;
+  const colourBytes = components * bytesPerSample;
+  const stride = colourBytes + bytesPerSample;
+  const colour = new Uint8Array(pixels * colourBytes);
+  const plane = new Uint8Array(pixels * bytesPerSample);
+  let opaque = true;
+  for (let i = 0; i < pixels; i++) {
+    colour.set(bytes.subarray(i * stride, i * stride + colourBytes), i * colourBytes);
+    for (let b = 0; b < bytesPerSample; b++) {
+      const a = bytes[i * stride + colourBytes + b];
+      plane[i * bytesPerSample + b] = a;
+      if (a !== 0xff) opaque = false;
+    }
+  }
+  return { width, height, rgb: colour, alpha: opaque ? null : plane, hasAlpha: !opaque, decodeMs: 0 };
+}
+
 /** Samples from RGBA bytes. The decode time is not carried: it is a measurement of a decode that happened elsewhere, and the writer's report has no use for it on a raster. */
 export function samplesFromRgba(rgba: Uint8Array, width: number, height: number): DecodedSamples {
   const { rgb, alpha, hasAlpha } = splitImageData((({ width, height, data: rgba } as unknown) as ImageData));

@@ -35,7 +35,6 @@ const ALLOWED = new Set([
 const EXCUSED: Record<string, { line: RegExp, reason: string }[]> = {
   'capabilities.ts': [{ line: /performance\.now\(\) : Date\.now\(\)/u, reason: 'a capability\'s load time, which the report prints and no byte reads' }],
   'fonts/fontEmbed.ts': [{ line: /const clock = \(\) => performance\.now\(\);/u, reason: 'an instance\'s embed timing (`CidFontStats.ms`), a record the snapshot drops' }],
-  'images/imageEmbed.ts': [{ line: /= performance\.now\(\)/u, reason: 'a decoded PNG\'s `decodeMs`, a record the snapshot drops' }],
   'images/facsimile.ts': [{ line: /performance\.now\(\)/u, reason: 'a facsimile\'s `decodeMs`, a record the snapshot drops' }],
   'emit/pdf20-writer.ts': [{ line: /performance\.now\(\);/u, reason: 'when the writer yields to the page, every 50 ms, never what it writes' }],
 };
