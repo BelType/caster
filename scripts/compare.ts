@@ -1,12 +1,13 @@
 /**
- * `npm run identity -- compare <dir> [--only text,tags]`: the readers of the Rust writer's gate, holding forme's files to the oracle's on the committed lists.
+ * `npm run identity -- compare <dir> [--only text,tags,images]`: the readers of the Rust writer's gate, holding forme's files to the oracle's on the committed lists.
  *
  * @remarks
- * `<dir>` holds what forme wrote from each list of `fixtures/lists/`: `<name>.pdf` and `<name>.records.json` (`forme write <list> --blobs <blobs> -o <name>.pdf --records <name>.records.json`). For every corpus document with a file there, four readers ask both files the same question and print the first disagreement of each (*the same list prints the same bytes*, DESIGN.md S102; the gate of `.claude/plans/the-rust-writer/plan-rust-writer.md` in the BelType monorepo):
+ * `<dir>` holds what forme wrote from each list of `fixtures/lists/`: `<name>.pdf` and `<name>.records.json` (`forme write <list> --blobs <blobs> -o <name>.pdf --records <name>.records.json`). For every corpus document with a file there, five readers ask both files the same question and print the first disagreement of each (*the same list prints the same bytes*, DESIGN.md S102; the gate of `.claude/plans/the-rust-writer/plan-rust-writer.md` in the BelType monorepo):
  *
- * - **The content streams.** Each page's content, inflated by mupdf, tokenised as ISO 32000-2 §7.2 does and compared operator for operator, operands as written. A font's resource name is mapped through the page's resources to its `/BaseFont`, and a glyph string under it to the list's glyph ids: the oracle's CIDs are the glyph ids, and forme's are each glyph's place in its subset, `.notdef` first, read back through forme's `faces` record. `--only` keeps the operator families a stage has built: `tags` is `BDC`, `BMC`, `EMC`; `text` is every operator from `BT` to `ET`, and the `q`, `cm`, clip and `Q` of a `q … Q` that holds a text object. A `q … Q` that holds none is another family's and is dropped; every other operator is kept, so one no family names is a disagreement.
- * - **The records.** The oracle's records are its own, made by replaying the list through `emitStructure` in node and read through JSON, as forme's cross; `mcids` and `pens` must be equal exactly, and `kernAdjustments` and `actualTextSpans` equal.
- * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under an `--only` without `images`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its image.
+ * - **The content streams.** Each page's content, inflated by mupdf, tokenised as ISO 32000-2 §7.2 does and compared operator for operator, operands as written. A font's resource name is mapped through the page's resources to its `/BaseFont`, and a glyph string under it to the list's glyph ids: the oracle's CIDs are the glyph ids, and forme's are each glyph's place in its subset, `.notdef` first, read back through forme's `faces` record. `--only` keeps the operator families a stage has built: `tags` is `BDC`, `BMC`, `EMC`; `text` is every operator from `BT` to `ET`, and the `q`, `cm`, clip and `Q` of a `q … Q` that holds a text object; `images` is a `q … Q` that holds no text object and paints an image XObject with `Do`, whose name is mapped through the page's resources to what it names. A `q … Q` that holds neither is another family's and is dropped; every other operator is kept, so one no family names is a disagreement.
+ * - **The records.** The oracle's records are its own, made by replaying the list through `emitStructure` in node and read through JSON, as forme's cross; `mcids` and `pens` must be equal exactly, and `kernAdjustments`, `actualTextSpans`, `xobjects` and each image use but its sizes and timings equal, and the report's image notes `recordsOf` derives from either.
+ * - **The images.** Per page, each image XObject its resources name, every dictionary entry but `/Length` resolved, each stream as the hash of its bytes (a `/DCTDecode` stream as written, any other inflated), so the colour space, an `/ICCBased` profile, an `/Indexed` lookup and the `/SMask` are compared with the samples (`describeImage`). Until stage 8 a facsimile, which forme leaves out, is left out of the oracle's records too.
+ * - **The words.** mupdf's structured text of each page: the same characters, in order, at origins within 0.01 pt. Under any `--only`, only the characters shown in a font the page's own resources name are read, since a facsimile's words are drawn by its Form XObject, which stage 8 writes.
  * - **The tree.** mupdf reads both files' structure trees element by element in allocation order and everything that points into them: every element's entries and `/K`, the ParentTree, the IDTree, `/MarkInfo`, each page's `/Tabs`, `/StructParents` and link annotations with their destinations, the outline item by item, `/PageLabels` (`treeOf`). Beside it, `recordsOf` over forme's records gives the `structure`, `links`, `outline` and `idTree` members of the committed report snapshot. The tree's families are not content, so `--only` does not restrict them.
  *
  * A list with a colour story has its content, records and words skipped by name until stage 6 writes it, and its tree read, and a list the oracle refuses (the CFF2 face) has no oracle file: its words are held to the list instead, each segment's first glyph at the segment's `x` on the run's baseline, within 0.01 pt. Reads only.
@@ -23,12 +24,13 @@ import * as mupdf from 'mupdf';
 type Token = { t: 'num' | 'name' | 'op' | 'bool' | 'null'; v: string } | { t: 'hex' | 'str'; v: Uint8Array } | { t: 'array'; v: Token[] } | { t: 'dict'; v: [string, Token][] };
 type Op = { op: string; args: Token[] };
 type Face = { subsetTag: string; glyphsUsed: number[] };
-type Records = { mcids: number[][]; pens: unknown[]; kernAdjustments: number; actualTextSpans: number; faces: Face[] };
+type ImageUse = { page: number; item: number; source: number; name: string; hash: string; info: Record<string, unknown> };
+type Records = { mcids: number[][]; pens: unknown[]; kernAdjustments: number; actualTextSpans: number; faces: Face[]; images: ImageUse[]; xobjects: number };
 
 const WHITE = new Set([0, 9, 10, 12, 13, 32]);
 const DELIM = new Set([...'()<>[]{}/%'].map((c) => c.charCodeAt(0)));
 const NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)$/u;
-const FAMILIES = ['text', 'tags'];
+const FAMILIES = ['text', 'tags', 'images'];
 
 /** One decoded content stream as operators, each with its operands. */
 function tokenise(bytes: Uint8Array): Op[] {
@@ -102,17 +104,19 @@ function tokenise(bytes: Uint8Array): Op[] {
   return ops;
 }
 
-/** The operators of the families asked for; with none asked, all of them. */
-function only(ops: Op[], families: Set<string> | null): Op[] {
+/** The operators of the families asked for; with none asked, all of them. `images` names the page's image XObjects, so a `q … Q` that paints one with `Do` is the `images` family's. */
+function only(ops: Op[], families: Set<string> | null, images: Set<string> = new Set()): Op[] {
   if (!families) return ops;
-  // Each `q`'s block, and whether it holds a text object.
+  // Each `q`'s block, whether it holds a text object, and whether it paints an image.
   const holdsText = new Map<number, boolean>();
+  const holdsImage = new Map<number, boolean>();
   const blockOf: number[] = [];
   const stack: number[] = [];
   ops.forEach((o, i) => {
-    if (o.op === 'q') { stack.push(i); holdsText.set(i, false); }
+    if (o.op === 'q') { stack.push(i); holdsText.set(i, false); holdsImage.set(i, false); }
     blockOf[i] = stack.length ? stack[stack.length - 1] : -1;
     if (o.op === 'BT') for (const q of stack) holdsText.set(q, true);
+    if (o.op === 'Do' && o.args[0]?.t === 'name' && images.has(o.args[0].v)) for (const q of stack) holdsImage.set(q, true);
     if (o.op === 'Q') stack.pop();
   });
   let inText = false;
@@ -123,7 +127,7 @@ function only(ops: Op[], families: Set<string> | null): Op[] {
     if (['BDC', 'BMC', 'EMC'].includes(o.op)) return families.has('tags');
     if (text) return families.has('text');
     const block = blockOf[i];
-    if (block >= 0) return holdsText.get(block) === true ? families.has('text') : false;
+    if (block >= 0) return holdsText.get(block) === true ? families.has('text') : holdsImage.get(block) === true ? families.has('images') : false;
     return true;
   });
 }
@@ -148,8 +152,61 @@ function pageFonts(page: mupdf.PDFObject, faces: Face[] | null): FontMap {
   return map;
 }
 
-/** Glyph strings as the list's glyph ids, font names as their `/BaseFont`, and every token as text a reader can compare. */
-function mapped(ops: Op[], fonts: FontMap): string[] {
+/** A page's image XObjects, each named by what it is: the hash of its description (`describeImage`), so two files' names agree when their images do. */
+function pageImages(page: mupdf.PDFObject): Map<string, string> {
+  const map = new Map<string, string>();
+  const xobjects = page.get('Resources').get('XObject');
+  if (!xobjects.isDictionary()) return map;
+  xobjects.forEach((obj, key) => { if (obj.get('Subtype').asName() === 'Image') map.set(String(key), `image(${sha(describeImage(obj)).slice(0, 12)})`); });
+  return map;
+}
+
+const sha = (data: Uint8Array | string) => crypto.createHash('sha256').update(data).digest('hex');
+
+/**
+ * One image XObject as a reader sees it: every dictionary entry but `/Length`, resolved, with each stream as the hash of its bytes: a `/DCTDecode` stream's as written (a passthrough is the file itself), any other's inflated, and the `/SMask`, an `/ICCBased` profile and an `/Indexed` lookup the same way.
+ */
+function describeImage(obj: mupdf.PDFObject): string {
+  const plain = (o: mupdf.PDFObject): unknown => {
+    if (o.isNull()) return null;
+    if (o.isStream()) {
+      const raw = o.get('Filter').isName() && o.get('Filter').asName() === 'DCTDecode';
+      const entries: [string, unknown][] = [];
+      o.forEach((value, key) => { if (String(key) !== 'Length') entries.push([String(key), plain(value)]); });
+      return { ...Object.fromEntries(entries.sort(([a], [b]) => (a < b ? -1 : 1))), bytes: sha(new Uint8Array((raw ? o.readRawStream() : o.readStream()).asUint8Array())) };
+    }
+    if (o.isName()) return `/${o.asName()}`;
+    if (o.isNumber()) return o.asNumber();
+    if (o.isBoolean()) return o.asBoolean();
+    if (o.isString()) return `<${Buffer.from(o.asByteString()).toString('hex')}>`;
+    if (o.isArray()) return Array.from({ length: o.length }, (_, i) => plain(o.get(i)));
+    const entries: [string, unknown][] = [];
+    o.forEach((value, key) => { entries.push([String(key), plain(value)]); });
+    return Object.fromEntries(entries.sort(([a], [b]) => (a < b ? -1 : 1)));
+  };
+  return JSON.stringify(plain(obj));
+}
+
+/** The first disagreement of the images reader, or null; and how many XObjects were compared: per page, each image XObject its resources name, described by `describeImage`, the two files' descriptions sorted and compared. */
+function compareImages(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument): { first: string | null; images: number } {
+  let count = 0;
+  for (let p = 0; p < oracle.countPages(); p += 1) {
+    const [a, b] = [oracle, forme].map((doc) => {
+      const out: string[] = [];
+      const xobjects = doc.findPage(p).get('Resources').get('XObject');
+      if (xobjects.isDictionary()) xobjects.forEach((obj) => { if (obj.get('Subtype').asName() === 'Image') out.push(describeImage(obj)); });
+      return out.sort();
+    });
+    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+      if (a[i] !== b[i]) return { first: `page ${p + 1}, image ${i}: oracle ${a[i]?.slice(0, 400) ?? '(none)'}, forme ${b[i]?.slice(0, 400) ?? '(none)'}`, images: count };
+      count += 1;
+    }
+  }
+  return { first: null, images: count };
+}
+
+/** Glyph strings as the list's glyph ids, font names as their `/BaseFont`, image names as what they name, and every token as text a reader can compare. */
+function mapped(ops: Op[], fonts: FontMap, images: Map<string, string> = new Map()): string[] {
   let font: { base: string; gidOf: (cid: number) => number } | undefined;
   const show = (t: Token, glyphs: boolean): string => {
     if (t.t === 'hex' || t.t === 'str') {
@@ -168,6 +225,7 @@ function mapped(ops: Op[], fonts: FontMap): string[] {
       font = fonts.get(o.args[0].v);
       return `/${font?.base ?? `?${o.args[0].v}`} ${o.args.slice(1).map((a) => show(a, false)).join(' ')} Tf`;
     }
+    if (o.op === 'Do' && o.args[0]?.t === 'name' && images.has(o.args[0].v)) return `${images.get(o.args[0].v)} Do`;
     const glyphs = o.op === 'TJ' || o.op === 'Tj' || o.op === "'" || o.op === '"';
     return [...o.args.map((a) => show(a, glyphs)), o.op].join(' ');
   });
@@ -193,7 +251,8 @@ function compareStreams(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument, fac
     const sides = [[oracle, null], [forme, faces]] as const;
     const [a, b] = sides.map(([doc, f]) => {
       const page = doc.findPage(p);
-      return mapped(only(tokenise(contentOf(page)), families), pageFonts(page, f));
+      const images = pageImages(page);
+      return mapped(only(tokenise(contentOf(page)), families, new Set(images.keys())), pageFonts(page, f), images);
     });
     for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
       if (a[i] !== b[i]) return { first: `page ${p + 1}, operator ${i}: oracle ${JSON.stringify(a[i] ?? '(end)')}, forme ${JSON.stringify(b[i] ?? '(end)')}`, ops: count };
@@ -357,8 +416,15 @@ function compareTrees(oracle: mupdf.PDFDocument, forme: mupdf.PDFDocument): { fi
   return { first: null, elements: a.filter((l) => l.startsWith('element ')).length, lines: a.length };
 }
 
-function compareRecords(oracle: Records, forme: Records): string | null {
-  for (const key of ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans'] as const) {
+/**
+ * The records the two writers share by rule: `mcids` and `pens` exactly, `kernAdjustments`, `actualTextSpans`, and each image use but its sizes and timings (`bytesOut` is the deflate's, `decodeMs` and `encodeMs` clocks), and `xobjects`. A facsimile forme left out (stage 8) is left out of the oracle's side too: its uses, and its XObjects from the count.
+ */
+function compareRecords(oracle: Records, forme: Records, facsimiles: Set<number>): string | null {
+  const shared = (uses: ImageUse[]) => uses.filter((u) => !facsimiles.has(u.source)).map(({ info: { bytesOut, decodeMs, encodeMs, ...info }, ...use }) => ({ ...use, info }));
+  const formHashes = new Set(oracle.images.filter((u) => facsimiles.has(u.source)).map((u) => u.hash));
+  oracle = { ...oracle, images: shared(oracle.images), xobjects: oracle.xobjects - formHashes.size };
+  forme = { ...forme, images: shared(forme.images) };
+  for (const key of ['mcids', 'pens', 'kernAdjustments', 'actualTextSpans', 'images', 'xobjects'] as const) {
     if (!isDeepStrictEqual(oracle[key], forme[key])) {
       if (Array.isArray(oracle[key])) {
         const [a, b] = [oracle[key] as unknown[], forme[key] as unknown[]];
@@ -411,7 +477,7 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
       const tree = compareTrees(open(path.join(lists, `${entry.name}.pdf`)), open(mine));
       const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
       const formeRecords = JSON.parse(fs.readFileSync(path.join(dir, `${entry.name}.records.json`), 'utf8'));
-      const members = compareTreeMembers(recordsOf(list, { images: [], ...formeRecords }), report);
+      const members = compareTreeMembers(recordsOf(list, formeRecords), report);
       if (tree.first || members.first) failed += 1;
       line([
         'content, records and words skipped: a colour story, which stage 6 writes',
@@ -439,16 +505,22 @@ export async function compare(lists: string, dir: string, onlyArg: string | null
     const formeRecords: Records = JSON.parse(fs.readFileSync(path.join(dir, `${entry.name}.records.json`), 'utf8'));
     const oracle = open(path.join(lists, `${entry.name}.pdf`));
     const streams = compareStreams(oracle, forme, formeRecords.faces, families);
-    const records = compareRecords(oracleRecords, formeRecords);
-    const text = compareWords(oracle, forme, families !== null && !families.has('images'));
+    const facsimiles = new Set(Object.entries(list.resources.images).filter(([, source]: [string, any]) => source.kind === 'facsimile').map(([key]) => Number(key)));
+    const records = compareRecords(oracleRecords, formeRecords, facsimiles);
+    // A facsimile's words are drawn by its Form XObject, which stage 8 writes: under any `--only`, only the characters in a font the page's own resources name are read.
+    const text = compareWords(oracle, forme, families !== null);
+    const images = compareImages(oracle, forme);
     const tree = compareTrees(oracle, forme);
-    // forme's records have no `images` before stage 5 writes images; `recordsOf` reads it only for the report's image notes, which the tree's members do not hold.
     const report = JSON.parse(fs.readFileSync(path.join(lists, `${entry.name}.report.json`), 'utf8'));
-    const members = compareTreeMembers(recordsOf(list, { images: [], ...formeRecords } as any), report);
-    if (streams.first || records || text.first || tree.first || members.first) failed += 1;
+    const members = compareTreeMembers(recordsOf(list, formeRecords as any), report);
+    // The report's note on each image, which `recordsOf` derives from the list and the writer's road: forme's road gives the oracle's notes.
+    const notes = (r: Records) => recordsOf(list, { ...r, images: r.images.filter((u) => !facsimiles.has(u.source)) } as any).images;
+    const imageNotes = isDeepStrictEqual(notes(oracleRecords), notes(formeRecords)) ? null : `oracle ${JSON.stringify(notes(oracleRecords)).slice(0, 300)}, forme ${JSON.stringify(notes(formeRecords)).slice(0, 300)}`;
+    if (streams.first || records || text.first || tree.first || members.first || images.first || imageNotes) failed += 1;
     line([
       `content${families ? ` (${[...families].join(',')})` : ''}: ${streams.first ?? `equal, ${streams.ops} operators`}`,
-      `records: ${records ?? `equal, ${oracleRecords.pens.length} pens, ${oracleRecords.kernAdjustments} kerns, ${oracleRecords.actualTextSpans} spans`}`,
+      `records: ${records ?? `equal, ${oracleRecords.pens.length} pens, ${oracleRecords.kernAdjustments} kerns, ${oracleRecords.actualTextSpans} spans, ${formeRecords.images.length} image uses, ${formeRecords.xobjects} XObjects`}`,
+      `images: ${images.first ?? `equal, ${images.images} XObjects page by page`}; notes: ${imageNotes ?? 'equal'}`,
       `words: ${text.first ?? `equal, ${text.chars} characters, worst ${text.worst.toFixed(4)} pt`}`,
       `tree: ${tree.first ?? `equal, ${tree.elements} elements, ${tree.lines} lines`}`,
       `records of the tree: ${members.first ?? `equal to the report snapshot, ${members.compared}`}`,

@@ -419,7 +419,7 @@ if (all[0] === 'compare') {
   const onlyAt = all.indexOf('--only');
   const rest = all.filter((_, i) => i > 0 && (onlyAt < 0 || (i !== onlyAt && i !== onlyAt + 1)));
   if (rest.length !== 1) {
-    console.error('usage: npm run identity -- compare <dir> [--only text,tags]');
+    console.error('usage: npm run identity -- compare <dir> [--only text,tags,images]');
     process.exit(2);
   }
   const { compare } = await import('./compare.ts');
@@ -434,7 +434,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- compare <dir> [--only text,tags]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- compare <dir> [--only text,tags,images]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));
