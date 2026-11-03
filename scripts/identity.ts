@@ -1,5 +1,5 @@
 /**
- * `npm run identity -- record|check|replay [dir]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list.
+ * `npm run identity -- record|check|replay [dir]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list; `npm run identity -- compare <dir> [--only <families>]` holds forme's files in `<dir>` to the oracle's with the readers of `scripts/compare.ts`.
  *
  * @remarks
  * Ported from the monorepo's `packages/caster/scripts/identity.js` (Caster 0.32.0), which is a model and not a dependency: its corpus and doors (the editing tools, the CLI's `Orchestrator`, Paged.js) are not this repository's. The shape is kept: `record` prints the corpus and writes each file, `check` prints it again and compares bytes. **No byte is masked.** The door hands every print the same `created` (2000-01-01T00:00:00Z), which the display list carries as `info.created` and the writer writes into `/CreationDate` and `/ModDate`, so the gate compares the files exactly; a file that does not carry that date in both entries is a failure, so a writer that went back to a clock cannot turn the gate into a quiet pass.
@@ -415,6 +415,16 @@ async function replay(dir: string, without: Set<string>) {
 }
 
 const all = process.argv.slice(2);
+if (all[0] === 'compare') {
+  const onlyAt = all.indexOf('--only');
+  const rest = all.filter((_, i) => i > 0 && (onlyAt < 0 || (i !== onlyAt && i !== onlyAt + 1)));
+  if (rest.length !== 1) {
+    console.error('usage: npm run identity -- compare <dir> [--only text,tags]');
+    process.exit(2);
+  }
+  const { compare } = await import('./compare.ts');
+  process.exit(await compare(LISTS, path.resolve(rest[0]), onlyAt >= 0 ? all[onlyAt + 1] ?? '' : null));
+}
 const withoutAt = all.indexOf('--without');
 const without = new Set(withoutAt >= 0 ? (all[withoutAt + 1] ?? '').split(',').filter(Boolean) : []);
 const args = withoutAt >= 0 ? all.filter((_, i) => i !== withoutAt && i !== withoutAt + 1) : all;
@@ -424,7 +434,7 @@ const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- compare <dir> [--only text,tags]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
 process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));
