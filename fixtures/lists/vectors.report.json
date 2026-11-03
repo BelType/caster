@@ -46,7 +46,8 @@
   "convertRgb": "none",
   "skipInk": true,
   "colour": "auto",
-  "unknownElements": "infer"
+  "unknownElements": "infer",
+  "writer": "pdf-lib"
  },
  "errors": [],
  "warnings": [],

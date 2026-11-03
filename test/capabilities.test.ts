@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CAPABILITIES, neededCapabilities, capability, clearCapabilities } from '../src/capabilities.ts';
+import { CAPABILITIES, neededCapabilities, capability, clearCapabilities, load } from '../src/capabilities.ts';
 import { resolveOptions } from '../src/options.ts';
 import type { ReportNeeds } from '../src/report.ts';
 
@@ -46,4 +46,23 @@ test('every url, wasm and file a capability names exists in the committed vendor
       assert.ok(fs.existsSync(file), `${name} names ${rel}, which is not in the tree`);
     }
   }
+});
+
+test('the Rust writer is loaded only under writer: forme, and then the oracle\'s subsetter is not', () => {
+  assert.ok(!neededCapabilities(NOTHING, resolveOptions()).includes('forme'));
+  assert.deepEqual(neededCapabilities(NOTHING, resolveOptions({ writer: 'forme' })), ['pdf', 'fontkit', 'harfbuzz', 'forme']);
+});
+
+test('an absent forme module refuses by name, naming the writer flag, and the oracle is never taken in its place', async () => {
+  clearCapabilities();
+  assert.throws(() => capability('forme'), (e: any) => e.name === 'CapabilityError' && e.capability === 'forme' && e.flag === 'writer');
+  const spec = CAPABILITIES.forme;
+  const url = spec.url;
+  spec.url = '../vendor/no-forme.js';
+  try {
+    await assert.rejects(load(['forme']), (e: any) => e.name === 'CapabilityError' && e.capability === 'forme' && e.flag === 'writer' && /could not be imported/.test(e.message) && /no fallback/.test(e.message));
+  } finally {
+    spec.url = url;
+  }
+  assert.throws(() => capability('forme'), (e: any) => e.name === 'CapabilityError' && e.capability === 'forme');
 });

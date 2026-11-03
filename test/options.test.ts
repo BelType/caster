@@ -14,7 +14,7 @@ test('every flag of the guide\'s table is present with the guide\'s default', ()
     shaper: 'harfbuzz', subset: 'hb', cffContainer: 'bare', widthDecimals: 3,
     pngDecoder: 'fast-png', photoRule: true, rasterDpi: 300, paintOrder: 'css',
     styledBorders: true, blackText: 'none', convertRgb: 'none', skipInk: true,
-    colour: 'auto', unknownElements: 'infer'
+    colour: 'auto', unknownElements: 'infer', writer: 'pdf-lib'
   });
 });
 
@@ -59,4 +59,9 @@ test('a tier this port does not build refuses by its own flag, and the defaults 
   for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['convertRgb', 'wasm'], ['pngDecoder', 'canvas']] as const) {
     assert.throws(() => refuseUnbuiltTiers(resolveOptions({ [flag]: value })), (e: any) => e instanceof CasterError && e.flag === flag, `${flag}: ${value}`);
   }
+});
+
+test('the writer flag takes the oracle or forme, and refuses anything else by name', () => {
+  assert.equal(resolveOptions({ writer: 'forme' }).writer, 'forme');
+  assert.throws(() => resolveOptions({ writer: 'pdfkit' as never }), (e: any) => e instanceof CasterError && e.flag === 'writer');
 });

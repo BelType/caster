@@ -48,7 +48,7 @@ test('every committed bundle is the size its own README declares', () => {
     const match = /^\|\s*`([^`]+)`\s*\|[^|]*\|\s*(\d+)\s*\|/.exec(row);
     if (match) declared.push([match[1], Number(match[2])]);
   }
-  assert.equal(declared.length, 9, `the table lists every artifact: ${JSON.stringify(declared.map(([name]) => name))}`);
+  assert.equal(declared.length, 12, `the table lists every artifact: ${JSON.stringify(declared.map(([name]) => name))}`);
   for (const [name, bytes] of declared) {
     assert.equal(fs.statSync(path.join(PACKAGE, 'vendor', name)).size, bytes, `${name} is the size the table declares`);
   }
@@ -101,6 +101,12 @@ test('every committed bundle imports in a tab and its entry point answers', asyn
         timeout
       ]);
       out.wawoff2 = { decompress: typeof wawoff2.decompress, settled };
+      // forme: the glue initialises from the module's bytes, as `emit/forme.js` hands them over, and a write answers; a list that is not one is refused with the validator's sentence, which only a module that ran can give.
+      const forme = (await load('/vendor/forme.js') as any);
+      forme.initSync({ module: new Uint8Array(await (await fetch('/vendor/forme_bg.wasm')).arrayBuffer()) });
+      const writer = new forme.Writer();
+      try { writer.write('{"version":1}'); out.forme = 'wrote'; } catch (error) { out.forme = String((error as Error).message); }
+      writer.free();
       return out;
     });
     assert.deepEqual(errors, [], 'the bundles evaluated with no page error');
@@ -129,6 +135,9 @@ test('every committed bundle imports in a tab and its entry point answers', asyn
     // wawoff2: the whole point of the export patch in `scripts/bundle-vendor.js`.
     assert.equal((found.wawoff2 as any).decompress, 'function');
     assert.equal((found.wawoff2 as any).settled, 'rejected', 'the WOFF2 decoder initialised and answered — an unpatched bundle returns NEVER SETTLED here');
+
+    // forme: the Rust writer ran in the tab and refused a list of another version by name.
+    assert.match(found.forme as string, /version/, `forme answered in the tab: ${found.forme}`);
   } finally {
     await browser.close();
     server.close();

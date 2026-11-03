@@ -190,11 +190,12 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 | `pdf` | `vendor/pdf-lib.js` | always (the object layer and the writer) |
 | `fontkit` | `vendor/fontkit.js` | always (table parsing, metrics, glyph outlines) |
 | `harfbuzz` | `vendor/harfbuzz.js` and `harfbuzz.wasm` | `shaper: 'harfbuzz'`, the default |
-| `hbSubset` | `vendor/harfbuzz-subset.wasm` | `subset: 'hb'`, the default |
+| `hbSubset` | `vendor/harfbuzz-subset.wasm` | `subset: 'hb'`, the default, under `writer: 'pdf-lib'` |
 | `fastPng` | `vendor/fast-png.js` | an `<img>` points at a `.png` and `pngDecoder` is `fast-png` |
 | `woff2` | `vendor/wawoff2.js` | some `@font-face` has only WOFF2 sources |
 | `profiles` | `profiles/srgb.icc`, `profiles/default_cmyk.icc` | the document has a colour story |
 | `lcms` | `vendor/lcms.js` and `lcms.wasm` | `convertRgb: 'wasm'` (a tier `print()` refuses today) |
+| `forme` | `vendor/forme.js` and `forme_bg.wasm` | `writer: 'forme'`; an absent module refuses by name, and the oracle is never taken in its place |
 | `localFonts` | none | never: a reserved door that refuses by name |
 
 `capability(name)` returns the loaded bundle or throws a `CapabilityError` naming the capability and the flag that would have loaded it.
@@ -307,6 +308,7 @@ sequenceDiagram
 | `skipInk` | `true`, `false` | `true` | 34.2% of a body-size underline is removed by the descenders it would strike |
 | `colour` | `auto`, `on`, `off` | `auto` | Caster's own: colour objects are written only when the document has a colour story |
 | `unknownElements` | `refuse`, `infer` | `infer` | Caster's own: `infer` prints a custom element by its layout, lists each guess and drops the PDF/UA-2 claim; `refuse` refuses it by name |
+| `writer` | `pdf-lib`, `forme` | `pdf-lib` | Caster's own: which writer turns the display list into the file, the TypeScript writer or forme, the Rust writer vendored as WebAssembly; both read the same list, and forme is held to the oracle's files by every reader of the gate, so the default stays the oracle's until the flip |
 
 ## What Caster refuses and why refusing is the design
 

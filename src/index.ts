@@ -38,6 +38,7 @@ import { registerBytes as registerVarBytes } from './fonts/varShaper.ts';
 import { loadSubsetter } from './fonts/hbSubset.ts';
 import { SUBSET_FONT_PROFILE } from './fonts/fontEmbed.ts';
 import { emitStructure } from './emit/structureEmit.ts';
+import { writeWithForme } from './emit/forme.ts';
 import { buildDisplayList, tableSidecar } from './displayList/build.ts';
 import { colourWith, paragraphMcidsOf, recordsOf, runsWith } from './displayList/records.ts';
 import { pageLabelRuns } from './emit/pageLabels.ts';
@@ -210,7 +211,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       if (load) load.shaperMs = Math.round((now() - shaperStarted) * 1000) / 1000;
     }
     const subsetterStarted = now();
-    if (options.subset === 'hb') await loadSubsetter();
+    if (options.subset === 'hb' && options.writer === 'pdf-lib') await loadSubsetter();
     report.fontTiming = { declareMs: table.declareMs, declared: table.declared.length, fontFaces: table.fontFaces, fontFaceStatuses: table.fontFaceStatuses, unmatched: table.unmatched, ...(table.unmatched.length ? { faceKeys: table.faceKeys } : {}), unloaded: table.unloaded.length, faces: [...table.loads.values()], subsetterMs: Math.round((now() - subsetterStarted) * 1000) / 1000 };
     refuseUnbuiltTiers(options);
     if (table.descriptors.length === 0) {
@@ -417,8 +418,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       }
     });
     const displayListMs = now() - listStart;
-    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it.
-    const emitted = await emitStructure(displayList).catch((error) => {
+    // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it. Either writer is handed the same list and returns the same `WriterResult` (the `writer` flag).
+    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList) : emitStructure(displayList)).catch((error) => {
       if (error instanceof CasterError && error.listItem && error.element === undefined) {
         const origin = origins[error.listItem.page]?.[error.listItem.item];
         if (origin) error.element = origin.path;

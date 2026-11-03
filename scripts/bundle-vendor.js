@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
 import { BUILD } from './rebuild-harfbuzz.js';
+import { FILES as FORME_FILES, SECTION as FORME_SECTION } from './bundle-forme.js';
 import { CasterError } from '../src/errors.ts';
 
 /** @import { PluginBuild } from 'esbuild' */
@@ -80,6 +81,11 @@ const HELD = [
   { out: 'harfbuzz.wasm', source: 'harfbuzzjs 1.6.1, rebuilt', note: 'located by harfbuzz.js through import.meta.url' }
 ];
 
+/** The Rust writer's three files, which `scripts/bundle-forme.js` builds from a forme checkout: their rows and their section are kept as that script last wrote them. */
+const readmeBefore = fs.existsSync(path.join(vendorDir, 'README.md')) ? fs.readFileSync(path.join(vendorDir, 'README.md'), 'utf8').split('\n') : [];
+const formeRows = readmeBefore.filter((line) => FORME_FILES.some((f) => line.startsWith(`| \`${f.out}\` |`)));
+const formeSection = readmeBefore.includes(FORME_SECTION) ? readmeBefore.slice(readmeBefore.indexOf(FORME_SECTION)) : [];
+
 /** Plain file copies — a wasm nothing bundles, or a wasm an Emscripten bundle locates through `import.meta.url`. */
 const COPIES = [
   { out: 'harfbuzz-subset.wasm', from: 'harfbuzzjs/dist/harfbuzz-subset.wasm', note: 'fetched and instantiated directly by fonts/hbSubset.js — no glue' },
@@ -138,6 +144,7 @@ const readme = [
   '| file | source | bytes | what it buys |',
   '| :--- | :--- | ---: | :--- |',
   ...rows.map((r) => `| \`${r.file}\` | ${r.source} | ${r.bytes} | ${r.note} |`),
+  ...formeRows,
   '',
   '## `harfbuzz.js` and `harfbuzz.wasm` are rebuilt, not copied',
   '',
@@ -147,7 +154,7 @@ const readme = [
   `- harfbuzzjs ${BUILD.harfbuzzjs} (tag \`v${BUILD.harfbuzzjs}\`) with HarfBuzz 14.4.0 at commit \`${BUILD.harfbuzz}\`, the submodule commit that tag pins.`,
   `- The override: \`${BUILD.override}\`, appended to \`config-override.h\`. Nothing else in harfbuzzjs or HarfBuzz is edited. \`harfbuzz-subset.wasm\` is untouched: it has its own override file and shapes nothing.`,
   '- To rebuild: `docker pull emscripten/emsdk@' + BUILD.digest + '`, then `node scripts/rebuild-harfbuzz.js <harfbuzzjs v1.6.1 checkout> <harfbuzz checkout at the commit above>` (the script runs `docker run --rm -v <work>:/src -w /src emscripten/emsdk@' + BUILD.digest + ' make harfbuzz`), then `docker rmi` the image.',
-  ''
+  ...(formeSection.length ? ['', ...formeSection] : ['']),
 ].join('\n');
 fs.writeFileSync(path.join(vendorDir, 'README.md'), readme);
 console.log(`vendor/README.md: ${rows.length} rows`);
