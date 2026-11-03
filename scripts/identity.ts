@@ -1,5 +1,5 @@
 /**
- * `npm run identity -- record|check|replay [dir]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list; `npm run identity -- compare <dir> [--only <families>]` holds forme's files in `<dir>` to the oracle's with the readers of `scripts/compare.ts`.
+ * `npm run identity -- record|check|replay [dir] [--writer forme]`: the byte-identity gate of the round that closes the display list, and the replay that measures how far the writer is from a function of the list; `npm run identity -- compare <dir> [--only <families>]` holds forme's files in `<dir>` to the oracle's with the readers of `scripts/compare.ts`.
  *
  * @remarks
  * Ported from the monorepo's `packages/caster/scripts/identity.js` (Caster 0.32.0), which is a model and not a dependency: its corpus and doors (the editing tools, the CLI's `Orchestrator`, Paged.js) are not this repository's. The shape is kept: `record` prints the corpus and writes each file, `check` prints it again and compares bytes. **No byte is masked.** The door hands every print the same `created` (2000-01-01T00:00:00Z), which the display list carries as `info.created` and the writer writes into `/CreationDate` and `/ModDate`, so the gate compares the files exactly; a file that does not carry that date in both entries is a failure, so a writer that went back to a clock cannot turn the gate into a quiet pass.
@@ -9,6 +9,8 @@
  * **`--list-out`** on `record` also writes, for every document, the display list without its blobs (`<name>.json`), each blob once under its SHA-256 in `blobs/`, and the report with what varies by run removed (`<name>.report.json`). Nothing the writer reads is recorded beside the list: the list is all it is handed. `check` compares the report snapshot as well as the bytes wherever one was recorded.
  *
  * **`replay`** runs in node with no browser: it reads each saved list, checks every blob against its hash, holds it to `validateList`, hands it to `emitStructure` with nothing beside it, and compares the bytes with the recorded file. What differs or throws is a writer that is no longer a function of the list; nothing here fixes it.
+ *
+ * **`--writer forme`** prints with the Rust writer (Caster's `writer` flag). `replay --writer forme --out <dir>` writes every saved list with the vendored module in node, each twice, into `<dir>`: the files and records `compare` reads, and a `corpus.json` naming them by their SHA-256. `check <dir> --writer forme` then prints the corpus in the page with forme and holds each file to those bytes, so the page and node agree. Under forme no document refuses in the writer, and no file is held to `beltype print`'s, which prints with the default; `record` stays the oracle's.
  *
  * **A document that `refuses`** is one the oracle refuses in its writer (the CFF2 face, whose pinned `hmtx` is not the instance's): its page loads the writer through a wrapper that keeps the list it was handed, and `corpus.json` records the refusal's message with no file and no report; `check` asks for the same refusal and the same list, and `replay` for the same refusal from the saved list.
  *
@@ -44,6 +46,9 @@ const FIXED_DATE = 'D:20000101000000Z';
 /** The display list's `info.created` the door hands every print, which the writer writes as {@link FIXED_DATE}. */
 const FIXED_CREATED = '2000-01-01T00:00:00.000Z';
 const DATE_PATTERN = /(\/(?:CreationDate|ModDate) \()D:[^)]*\)/gu;
+
+/** The writer the page prints with, `--writer` on the command line: the oracle's by default. Under `forme` no document refuses in the writer, since forme writes the CFF2 face, and no file is held to `beltype print`'s, which prints with the default. */
+let WRITER: 'pdf-lib' | 'forme' = 'pdf-lib';
 
 /**
  * One document of the corpus.
@@ -230,19 +235,20 @@ async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => vo
       const started = Date.now();
       const root = doc.root ?? path.dirname(doc.file);
       const docPath = `/${path.relative(root, doc.file).split(path.sep).map(encodeURIComponent).join('/')}`;
-      const capture = doc.refuses ? { '/_beltype/caster/src/emit/structureEmit.js': '/_beltype/identity/capture-emit.js' } : {};
+      const refuses = doc.refuses && WRITER === 'pdf-lib';
+      const capture = refuses ? { '/_beltype/caster/src/emit/structureEmit.js': '/_beltype/identity/capture-emit.js' } : {};
       const served = parts.spliceHead(fs.readFileSync(doc.file, 'utf8'), `<script type="importmap">${JSON.stringify({ imports: { ...imports, ...capture } })}</script>\n  ${parts.ciceroEngine.headHtml('/')}`);
       const context = await browser.newContext({ viewport: VIEWPORT, serviceWorkers: 'block' });
       try {
         const missing = new Set<string>();
-        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files, ...(doc.refuses ? { bodies: { '/_beltype/identity/capture-emit.js': CAPTURE_EMIT } } : {}) });
+        await answerFromDisk(context, missing, { root, docPath, served, dirs, files: cicero.files, ...(refuses ? { bodies: { '/_beltype/identity/capture-emit.js': CAPTURE_EMIT } } : {}) });
         const page = await context.newPage();
         await page.goto(ORIGIN + docPath, { waitUntil: 'load' });
         const cut: { refused?: string; at?: string } = await page.evaluate(parts.cutInPage, { cicero: {}, measures: false });
         if (cut.refused !== undefined) throw new CasterError(`identity: ${doc.name}: the ${cut.at} step refused: ${cut.refused}`);
-        const answer = await page.evaluate(printInPage, { options: doc.options ?? {}, created: FIXED_CREATED });
-        if ('refused' in answer && !(doc.refuses && answer.list)) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
-        if (doc.refuses && !('refused' in answer)) throw new CasterError(`identity: ${doc.name}: the print was expected to refuse in the writer, and printed`);
+        const answer = await page.evaluate(printInPage, { options: { ...doc.options, ...(WRITER === 'forme' ? { writer: 'forme' } : {}) }, created: FIXED_CREATED });
+        if ('refused' in answer && !(refuses && answer.list)) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
+        if (refuses && !('refused' in answer)) throw new CasterError(`identity: ${doc.name}: the print was expected to refuse in the writer, and printed`);
         if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);
         const blobs = Object.fromEntries(Object.entries(answer.blobs ?? {}).map(([hash, b64]) => [hash, Buffer.from(b64, 'base64')]));
         if ('refused' in answer) await each(doc, { bytes: Buffer.alloc(0), list: answer.list as string, blobs, report: null, ms: Date.now() - started, refused: answer.message });
@@ -345,7 +351,7 @@ async function check(dir: string) {
       const differs = firstDifference(JSON.parse(fs.readFileSync(reportFile, 'utf8')), snapshot(printed.report));
       if (differs) problems.push(`the report differs first at ${differs}`);
     }
-    if (doc.cli && entry.cli === 'same') {
+    if (doc.cli && entry.cli === 'same' && WRITER === 'pdf-lib') {
       const verdict = cliVerdict(doc, now);
       if (verdict !== 'same') problems.push(`beltype print ${verdict}`);
     }
@@ -367,7 +373,8 @@ type Gap = { name: string; stubs: string[]; result: string; ms: number };
  *
  * @param without - Stubs to leave out, to measure what each one stands in for; kept for the stubs a later stage may need, and none is installed now.
  */
-async function replay(dir: string, without: Set<string>) {
+async function replay(dir: string, without: Set<string>, out: string | null) {
+  if (out) return replayForme(dir, out);
   const { load } = await import('../src/capabilities.ts');
   const { loadSubsetter } = await import('../src/fonts/hbSubset.ts');
   const { emitStructure } = await import('../src/emit/structureEmit.ts');
@@ -414,6 +421,58 @@ async function replay(dir: string, without: Set<string>) {
   return gaps.every((g) => g.result.startsWith('identical') || g.result === 'refused as recorded') ? 0 : 1;
 }
 
+/**
+ * Write every saved list with forme's vendored module in node, into `out`: `<name>.pdf` and `<name>.records.json` for `compare`, and a `corpus.json` naming forme's files by their SHA-256 for `check --writer forme <out>`.
+ *
+ * @remarks
+ * The list is handed as `print()` hands it, through `emit/forme.ts`, its blobs checked against their names first. A list the oracle refuses (`refuses`) is one forme writes, so its entry here is a file. Each list is written twice and the two files must be one, and the time of each write is printed: the second, with the module compiled and the glue initialised, is the write's own.
+ */
+async function replayForme(dir: string, out: string) {
+  const { load } = await import('../src/capabilities.ts');
+  const { writeWithForme } = await import('../src/emit/forme.ts');
+  const recorded: { documents: Entry[] } = JSON.parse(fs.readFileSync(path.join(dir, 'corpus.json'), 'utf8'));
+  await load(['forme']);
+  fs.mkdirSync(out, { recursive: true });
+  const entries: Entry[] = [];
+  let failures = 0;
+  for (const entry of recorded.documents) {
+    const listFile = path.join(dir, `${entry.name}.json`);
+    if (!fs.existsSync(listFile)) { failures++; console.log(`${entry.name.padEnd(18)} no saved list (record with --list-out)`); continue; }
+    try {
+      const list = JSON.parse(fs.readFileSync(listFile, 'utf8'));
+      list.resources.blobs = {};
+      for (const hash of entry.list?.blobs ?? []) {
+        const bytes = new Uint8Array(fs.readFileSync(path.join(dir, 'blobs', hash)));
+        if (sha256(bytes) !== hash) throw new CasterError(`replay: the blob ${hash} is not what its name says`);
+        list.resources.blobs[hash] = bytes;
+      }
+      const times: number[] = [];
+      const files: Buffer[] = [];
+      let records: unknown = null;
+      for (let i = 0; i < 2; i++) {
+        const started = performance.now();
+        const written = await writeWithForme(list);
+        times.push(performance.now() - started);
+        files.push(Buffer.from(written.bytes));
+        records = written.records;
+      }
+      const file = fixedDated(files[0]);
+      fs.writeFileSync(path.join(out, `${entry.name}.pdf`), file);
+      fs.writeFileSync(path.join(out, `${entry.name}.records.json`), `${JSON.stringify(records)}\n`);
+      entries.push({ name: entry.name, why: entry.why, sha256: sha256(file), bytes: file.length, ...(entry.options ? { options: entry.options } : {}) });
+      const twice = files[0].equals(files[1]);
+      if (!twice) failures++;
+      console.log(`${entry.name.padEnd(18)} ${String(file.length).padStart(9)} bytes  ${sha256(file).slice(0, 12)}  ${times.map((t) => `${t.toFixed(1)} ms`).join(', ')}${twice ? '' : '  DIFFERS: written twice, two files'}`);
+    } catch (error) {
+      failures++;
+      console.log(`${entry.name.padEnd(18)} THROWS: ${String((error as Error)?.message ?? error).split('\n')[0]}`);
+    }
+  }
+  fs.writeFileSync(path.join(out, 'corpus.json'), `${JSON.stringify({ ...heads(), writer: 'forme', documents: entries }, null, 1)}\n`);
+  console.log(`${failures ? `${failures} FAILED` : `wrote ${entries.length} files with forme`} into ${out}`);
+  return failures ? 1 : 0;
+}
+
 const all = process.argv.slice(2);
 if (all[0] === 'compare') {
   const onlyAt = all.indexOf('--only');
@@ -425,16 +484,32 @@ if (all[0] === 'compare') {
   const { compare } = await import('./compare.ts');
   process.exit(await compare(LISTS, path.resolve(rest[0]), onlyAt >= 0 ? all[onlyAt + 1] ?? '' : null));
 }
-const withoutAt = all.indexOf('--without');
-const without = new Set(withoutAt >= 0 ? (all[withoutAt + 1] ?? '').split(',').filter(Boolean) : []);
-const args = withoutAt >= 0 ? all.filter((_, i) => i !== withoutAt && i !== withoutAt + 1) : all;
+/** A flag with a value, taken out of `from`: its value, or null where it is absent. */
+const take = (from: string[], name: string): string | null => {
+  const at = from.indexOf(name);
+  if (at < 0) return null;
+  const [, value] = from.splice(at, 2);
+  return value ?? '';
+};
+const rest = [...all];
+const withoutArg = take(rest, '--without');
+const without = new Set((withoutArg ?? '').split(',').filter(Boolean));
+const writerArg = take(rest, '--writer');
+if (writerArg !== null && writerArg !== 'forme' && writerArg !== 'pdf-lib') { console.error(`identity: --writer takes forme or pdf-lib, not ${JSON.stringify(writerArg)}`); process.exit(2); }
+const writer = (writerArg ?? 'pdf-lib') as 'pdf-lib' | 'forme';
+WRITER = writer;
+const outArg = take(rest, '--out');
+const args = rest;
 const flag = args.indexOf('--list-out');
 const flagValue = flag >= 0 && args[flag + 1] && !args[flag + 1].startsWith('--') ? args[flag + 1] : null;
 const listOut = flag >= 0 ? path.resolve(flagValue ?? LISTS) : null;
 const [verb, dirArg] = args.filter((_, i) => flag < 0 || (i !== flag && !(flagValue && i === flag + 1)));
 const dir = path.resolve(dirArg ?? LISTS);
 if (verb !== 'record' && verb !== 'check' && verb !== 'replay') {
-  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- compare <dir> [--only text,tags,images]\n(dir defaults to fixtures/lists)');
+  console.error('usage: npm run identity -- record [dir] [--list-out [dir]]\n       npm run identity -- check [dir] [--writer forme]\n       npm run identity -- replay [dir] [--without <stub>]\n       npm run identity -- replay [dir] --writer forme --out <dir>\n       npm run identity -- compare <dir> [--only text,tags,images]\n(dir defaults to fixtures/lists)');
   process.exit(2);
 }
-process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without)));
+if (outArg !== null && (verb !== 'replay' || writer !== 'forme')) { console.error('identity: --out is replay --writer forme\'s'); process.exit(2); }
+if (writer === 'forme' && verb === 'replay' && outArg === null) { console.error('identity: replay --writer forme needs --out <dir>'); process.exit(2); }
+if (writer === 'forme' && verb === 'record') { console.error('identity: record is the oracle\'s until the flip; write forme\'s files with replay --writer forme --out <dir>'); process.exit(2); }
+process.exit(await (verb === 'record' ? record(dir, listOut) : verb === 'check' ? check(dir) : replay(dir, without, outArg === null ? null : path.resolve(outArg))));
