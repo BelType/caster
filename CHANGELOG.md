@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A slash inside a string in `content` is text** (codeberg.org/BelType/caster issue 4). `counter(page) " / " counter(pages)` in a margin box was refused, because the alternative text was split off at any ` / ` followed by a string, the one inside `" / "` included. The value is now read as tokens, and only a bare `/` between them starts the alternative text.
 - **A large drawing prints** (codeberg.org/BelType/caster issue 2). A page's operators reached pdf-lib as the arguments of one call, and a path's operators reached the page's list the same way, so a map of 408 paths and about 34 000 coordinate pairs overflowed the stack with a bare `RangeError`, as did one path of 150 000 segments. The writer now appends a drawing's operators one by one and hands a page's to pdf-lib in slices of 10 000; an SVG clip path's segments are appended the same way. Every file of the corpus is byte-identical. `test/largeDrawing.test.ts` writes both shapes of the fault.
 
 ## 0.2.0 — 2026-11-04

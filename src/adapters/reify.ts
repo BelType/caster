@@ -414,11 +414,9 @@ function domPathish( element: Element) {
  * @throws {CasterError} An image, a quote pair, `element()`, an unresolved `var()`, or any other value that is not a string, `counter()`, `counters()` or `attr()`.
  */
 export function resolveGenerated(content: string, element: Element, scopes: Scope[], domPath: string, which: string): string {
-  // A computed `content` may carry an alt text after a `/`; the alt is the accessible name, and the painted text is what comes before it.
-  const painted = content.split(/\s+\/\s+(?=("|counter|counters|attr|url|none))/)[0] ?? content;
   let out = '';
   const pattern = /"((?:[^"\\]|\\.)*)"|([a-zA-Z-]+)\(([^()]*)\)|(\S+)/g;
-  for (const match of painted.matchAll(pattern)) {
+  for (const match of content.matchAll(pattern)) {
     if (match[1] !== undefined) { out += match[1].replace(/\\(.)/g, '$1'); continue; }
     if (match[2] !== undefined) {
       const fn = match[2].toLowerCase();
@@ -438,6 +436,8 @@ export function resolveGenerated(content: string, element: Element, scopes: Scop
       throw new CasterError(`caster: content: ${fn}() on ${domPath}${which} is not one this printer can express. Strings, counter(), counters() and attr() are; an image or a quote pair is not, and a marker silently dropped leaves a page that still looks deliberate.`, { element: domPath });
     }
     const bare = match[4];
+    // A computed `content` may carry an alt text after a `/` between values; the alt is the accessible name, and the painted text is what comes before it. A slash inside a string was read as a string above.
+    if (bare === '/') break;
     if (bare === 'none' || bare === 'normal' || bare === '') continue;
     throw new CasterError(`caster: content: ${bare} on ${domPath}${which} is not one this printer can express. Strings, counter(), counters() and attr() are.`, { element: domPath });
   }
