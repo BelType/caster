@@ -994,7 +994,7 @@ function elementClips(context: SvgContext, element: Element, style: CSSStyleDecl
     const local = shapePath(child);
     if (!local || local.length === 0) continue;
     rules.add(getComputedStyle(child).clipRule);
-    path.push(...transformPath(local, mul(mul(localMatrix(child), unitsMatrix), toPage)));
+    for (const segment of transformPath(local, mul(mul(localMatrix(child), unitsMatrix), toPage))) path.push(segment);
   }
   if (path.length === 0) return [];
   if (rules.size > 1) context.out.deferred.push({ path: domPath, feature: `clip-rule differing between the children of <clipPath id="${id}">`, paintedAs: 'one path clipped by nonzero' });

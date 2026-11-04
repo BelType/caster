@@ -345,7 +345,7 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
   // The in-page CTM chain goes down before the clips, not after: an element's own `clip-path`, an `<svg>`'s viewport and every path under the item were all measured with the HTML ancestors' transforms neutralised, so they are in the untransformed page space and the transform lives entirely in these six numbers, exactly as it does for a line of text.
   if (node.transform) out.push(PDFOperator.of(Ops.ConcatTransformationMatrix, node.transform.map(num)));
   for (const [at, clip] of (node.clips ?? []).entries()) {
-    out.push(...clipOperators(clip));
+    for (const op of clipOperators(clip)) out.push(op);
     ctx.records.push({
       path: origin.domPath,
       owner: info.item.owner,
@@ -574,17 +574,17 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
   }
 
   if (flatFill || strokes) {
-    out.push(...pathOperators(node.path));
+    for (const op of pathOperators(node.path)) out.push(op);
     if (flatFill && strokes && node.strokeFirst) {
       // `B` fills and then strokes, and there is no operator that does it the other way round. `paint-order: stroke` writes the path twice — stroke, then fill — which is exactly what the browser draws and what the marker case below already does with two nodes.
       out.push(PDFOperator.of(Ops.StrokePath));
-      out.push(...pathOperators(node.path));
+      for (const op of pathOperators(node.path)) out.push(op);
       out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOdd : Ops.FillNonZero));
     }
     else if (flatFill && strokes && node.strokeOpacity !== undefined) {
       // `B` paints its fill and its stroke as one non-isolated knockout group (ISO 32000-2, 11.7.4.4), so a stroke that is not opaque composites with the backdrop under the fill and not with the fill, where SVG and CSS composite a stroke over its own fill. With a stroke alpha below one the path is written twice, filled and then stroked, which is what the browser draws.
       out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOdd : Ops.FillNonZero));
-      out.push(...pathOperators(node.path));
+      for (const op of pathOperators(node.path)) out.push(op);
       out.push(PDFOperator.of(Ops.StrokePath));
     }
     else if (flatFill && strokes) out.push(PDFOperator.of(evenOdd ? Ops.FillEvenOddAndStroke : Ops.FillNonZeroAndStroke));

@@ -322,14 +322,16 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             // A vector item: a shape, a group or a form of the node's own, or a raster fallback.
             const vector = (item as PlacedVector);
             // A BDC/EMC pair may sit inside a text object but a path may not, so the open line was closed before the geometry, above — and if that line was wrapped in the `q <cm>` of E10 (`coordinates-and-pages.md`), the `Q` went with it. Nesting rather than interleaving: every `q` the emitter opens is closed before the next one is opened, whether it came from `lineWrap` or from a vector item's own chain.
-            operators.push(...vectorOperators(vector, vectorContext, pageScopes[page], artifact));
+            // One by one, as the slices below: a drawing's operators can outnumber the call arguments the engine's stack holds.
+            for (const op of vectorOperators(vector, vectorContext, pageScopes[page], artifact)) operators.push(op);
         }
         closeLine();
         // A blend no group isolates mixes with the page, so the page's group is its blending space (Egildo's ruling 15a of the Rust writer): the document's sRGB profile, as Chromium's page is an RGB stacking context.
         if (vectorContext.blendingSpace && items.some((item) => (item.kind === 'shape' || item.kind === 'group' || item.kind === 'form' || (item.kind === 'raster' && 'table' in item)) && holdsOpenBlend(item as PlacedVector)))
             pages[page].node.set(pdf().PDFName.of('Group'), context.obj({ Type: 'Group', S: 'Transparency', CS: vectorContext.blendingSpace() }));
         pageScopes[page].applyToPage(context, pages[page]);
-        pages[page].pushOperators(...operators);
+        // pdf-lib takes the operators as call arguments, and a page of a large drawing holds tens of thousands, so they go in slices.
+        for (let at = 0; at < operators.length; at += 10_000) pages[page].pushOperators(...operators.slice(at, at + 10_000));
         pageStreams.push(`${operators.map((op) => op.toString()).join('\n')}\n`);
     }
     const built = buildStructure(context, pages, list, mcidAt, linkItems.sort((a, b) => a.item.order - b.item.order));

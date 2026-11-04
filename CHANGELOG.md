@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A large drawing prints** (codeberg.org/BelType/caster issue 2). A page's operators reached pdf-lib as the arguments of one call, and a path's operators reached the page's list the same way, so a map of 408 paths and about 34 000 coordinate pairs overflowed the stack with a bare `RangeError`, as did one path of 150 000 segments. The writer now appends a drawing's operators one by one and hands a page's to pdf-lib in slices of 10 000; an SVG clip path's segments are appended the same way. Every file of the corpus is byte-identical. `test/largeDrawing.test.ts` writes both shapes of the fault.
+
 ## 0.2.0 — 2026-11-04
 
 The second image-handling round: text and images can be converted to CMYK in the tab, through the vendored lcms-wasm, and the display list moves to version 7 to carry CMYK samples. A list of version 6 is now refused, which is why the minor version moves. Both conversions are off by default, and every file of the corpus that existed before prints byte for byte what 0.1.7 wrote; each list differs from 0.1.7's only by its version.
