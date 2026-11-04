@@ -7,7 +7,7 @@
  *
  * `convertRgb: 'wasm'` is built (2026-11-04, `.claude/plans/image-handling/`): {@link textWorklist} reads the work list off the measured runs, {@link lcmsTransform} is the transform over the vendored lcms-wasm, and `print()` gives each converted run's `colorHint` the CMYK before the list is built, so the list carries the result as a text item's `ink` and no writer reads the flag. The transform reads sRGB 8-bit and writes CMYK 16-bit, rounded to the four decimals a content stream writes, so that no downstream writer rounds a tie of its own.
  *
- * `convertImages: 'cmyk'` is built too (2026-11-04, brief 4 of the same round): {@link lcmsImageConverter} is the transform over the same module and the same two profiles for an image's pixels, at eight or sixteen bits, and the list carries the result as `DeviceCMYK` samples (version 7).
+ * `convertImages: 'cmyk'` is built too (2026-11-04, brief 4 of the same round): {@link lcmsImageConverter} is the transform over the same module and the same two profiles for an image's pixels (optimised, where the text's is exact), at eight or sixteen bits, and the list carries the result as `DeviceCMYK` samples (version 7). Images take lcms's default optimisation because it is about 12 times faster on pixels for a mean difference of 0.26 of an eight-bit level and at worst 7 (about 1 in 800 samples is off by more than 2; measured on `convert-images`'s two photographs); text keeps the exact transform because a few colours cost nothing (Egildo's ruling of 2026-11-04).
  *
  * The harness's own header follows.
  *
@@ -309,9 +309,11 @@ export type ImageConverter = { convert: (plane: ColourPlane) => ConvertedPlane }
 const CHUNK_PIXELS = 1 << 18;
 
 /**
- * The image converter over lcms-wasm: an image's own profile (else sRGB) to Caster's CMYK profile, with the intent and the flags of {@link lcmsTransform}.
+ * The image converter over lcms-wasm: an image's own profile (else sRGB) to Caster's CMYK profile, with the intent of {@link lcmsTransform} and lcms's default optimisation.
  *
  * @remarks
+ * Images are optimised and text is exact (Egildo's ruling of 2026-11-04). The text's transform is built with `cmsFLAGS_NOOPTIMIZE` because a work list of a few colours costs nothing to evaluate exactly; an image's millions of pixels do, and the default optimisation, which resamples the profile onto an eight-bit lookup grid, is about 12 times faster (measured 2026-11-04: a million RGB pixels in 22 to 24 ms against 267 to 282 ms unoptimised) for a mean difference of 0.26 of an eight-bit level and at worst 7 (about 1 in 800 samples is off by more than 2; measured on `convert-images`'s two photographs) from the exact answer. Black-point compensation stays on.
+ *
  * Eight-bit samples are converted at eight bits and sixteen-bit samples at sixteen, and the alpha plane never enters lcms: it is split off and put back beside the CMYK. A grey image with no profile is read as the grey of sRGB, by repeating it across three channels; a grey profile reads `TYPE_GRAY`. A profile of the wrong colour space for the pixels is refused, and so is one lcms cannot open: Caster does not guess a profile. The transform is built once per profile and format and kept for the print, like the text's. This instance is its own, so a print that converts text and images instantiates the module twice (3 to 11 ms, measured in the image-handling survey); ponytail: share the instance if that ever shows in a report.
  *
  * @param lcms - The `lcms` capability.
@@ -344,7 +346,7 @@ export async function lcmsImageConverter(lcms: { module: any, wasm: Uint8Array }
     let held = transforms.get(key);
     if (!held) {
       const input = grey && icc ? module[`TYPE_GRAY_${bits}`] : module[`TYPE_RGB_${bits}`];
-      held = instance.cmsCreateTransform(from, input, to, module[`TYPE_CMYK_${bits}`], module.INTENT_RELATIVE_COLORIMETRIC, module.cmsFLAGS_BLACKPOINTCOMPENSATION | module.cmsFLAGS_NOOPTIMIZE);
+      held = instance.cmsCreateTransform(from, input, to, module[`TYPE_CMYK_${bits}`], module.INTENT_RELATIVE_COLORIMETRIC, module.cmsFLAGS_BLACKPOINTCOMPENSATION);
       if (!held) throw new CasterError(`rgbToCmyk: lcms-wasm could not build the ${icc ? "image's profile" : 'sRGB'} to CMYK transform at ${bits} bits`);
       transforms.set(key, held);
     }

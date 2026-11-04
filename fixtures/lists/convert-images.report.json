@@ -3359,14 +3359,14 @@
     34.008,
     84.36
    ],
-   "xobjectHash": "98e58468026596312bc0197d26dda8e819075f1d7d1db136d366bbf374c9f90b",
+   "xobjectHash": "d533bfa58332158d0f55dd66f732e2c56d374815b96281a7f32d466bf52194f1",
    "xobjectName": "Im0",
    "page": 0,
    "tag": "Figure",
    "alt": "A synthetic photograph, 4000 by 3000 pixels, in a box three inches wide",
    "effectiveDpi": 1333.3,
    "bytesIn": 192240,
-   "bytesOut": 494892,
+   "bytesOut": 502064,
    "resampled": {
     "from": [
      4000,
@@ -3423,14 +3423,14 @@
     34.008,
     230.563
    ],
-   "xobjectHash": "ad66aa60b84c04d294f0bccdb1bdc63c12e50b2eb886c610b98d52152cd74d31",
+   "xobjectHash": "c2b32e0c5002c3ad1d2fcd693daece8164b13783151c6bc690a680df33267330",
    "xobjectName": "Im1",
    "page": 1,
    "tag": "Figure",
    "alt": "A synthetic photograph, 2400 by 1600 pixels, in a box 40 mm wide",
    "effectiveDpi": 1524.1,
    "bytesIn": 1831914,
-   "bytesOut": 181859,
+   "bytesOut": 183989,
    "resampled": {
     "from": [
      2400,
@@ -3487,14 +3487,14 @@
     34.008,
     166.356
    ],
-   "xobjectHash": "ccc6217f82f1b42ec9cae343301e799459a28f908ad6bd6aac54b7c3fbd12a0e",
+   "xobjectHash": "b81a0064195fbdaad270a7144fb68a63ed31d4d7ecc9b9e0d61c03dcf886f47e",
    "xobjectName": "Im2",
    "page": 1,
    "tag": "Figure",
    "alt": "A PNG with alpha",
    "effectiveDpi": 50.8,
    "bytesIn": 179,
-   "bytesOut": 275,
+   "bytesOut": 276,
    "converted": {
     "from": "DeviceRGB",
     "bitsPerComponent": 8,
@@ -3539,14 +3539,14 @@
     34.008,
     102.149
    ],
-   "xobjectHash": "aec676f26dc336409f6558cfb009b86afa15128a2ab3116e0229810f06e6543f",
+   "xobjectHash": "4af240a3f770c6235ff7beb8f9964840f306884e5b2c204d93bb7fd35c9197e6",
    "xobjectName": "Im3",
    "page": 1,
    "tag": "Figure",
    "alt": "A 16-bit PNG with alpha",
    "effectiveDpi": 50.8,
    "bytesIn": 281,
-   "bytesOut": 450,
+   "bytesOut": 455,
    "converted": {
     "from": "DeviceRGB",
     "bitsPerComponent": 16,
@@ -3591,14 +3591,14 @@
     34.008,
     260.798
    ],
-   "xobjectHash": "850ffe711f6e409f73072e9ff2c80cc2248481d5d5590373f116a7ca55165aa8",
+   "xobjectHash": "766f88c5733dc83e59fef925509a32c2e9da424e2037be1e3ac711dba53b1fa8",
    "xobjectName": "Im4",
    "page": 2,
    "tag": "Figure",
    "alt": "A grey PNG",
    "effectiveDpi": 50.8,
    "bytesIn": 101,
-   "bytesOut": 198,
+   "bytesOut": 199,
    "converted": {
     "from": "DeviceGray",
     "bitsPerComponent": 8,
@@ -3695,14 +3695,14 @@
     34.008,
     132.384
    ],
-   "xobjectHash": "deee151aced81eeed67c6cfda93c0b27819fe5d8df0f0cac812ac64a7931bc29",
+   "xobjectHash": "e831ac9a347b5221a26c23632ef98a1496297606b73219db8790f43542c3c60f",
    "xobjectName": "Im6",
    "page": 2,
    "tag": "Figure",
    "alt": "A JPEG with an ICC profile",
    "effectiveDpi": 50.8,
    "bytesIn": 2935,
-   "bytesOut": 219,
+   "bytesOut": 227,
    "converted": {
     "from": "DeviceRGB",
     "bitsPerComponent": 8,
@@ -3784,5 +3784,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 841329
+ "bytes": 850646
 }
