@@ -19,6 +19,8 @@ import { CasterError } from '../errors.ts';
 import { canvasFromRgb } from './canvasDecode.ts';
 import { rgbaOf, samplesFromRgba } from './samples.ts';
 
+import type { ColourPlane, ImageConverter } from '../colour/rgbToCmyk.ts';
+
 import type { ResampleFilter } from './resample.ts';
 import type { DecodedSamples } from './samples.ts';
 import type { PhotoDecision } from './photoRule.ts';
@@ -52,6 +54,12 @@ export type PreparedImage = {
   carried?: Uint8Array;
   /** Why a file that qualified for reduction was left as it was: a CMYK JPEG, a one-bit image, an indexed PNG, a frame the browser cannot decode. Report only. */
   notResampled?: string;
+  /** Where the pass converted the pixels to `DeviceCMYK` (`convertImages: 'cmyk'`; they are then the `png` member): the colour space and depth they were in, which profile read them, and the milliseconds in lcms. Report only. */
+  converted?: { from: 'DeviceRGB' | 'DeviceGray', bitsPerComponent: 8 | 16, profile: 'embedded' | 'sRGB', ms: number };
+  /** Why a file was left in its own colour under `convertImages: 'cmyk'`: a CMYK JPEG, a one-bit image, a colour-keyed PNG, a frame the browser cannot decode. Report only. */
+  notConverted?: string;
+  /** The profile the pixels are in, kept with pixels that were not encoded so that a conversion can read them. */
+  profile?: Uint8Array | null;
   decodeMs: number;
   encodeMs: number;
   /** Milliseconds spent in the resampler, `0` where nothing was reduced. */
@@ -122,9 +130,10 @@ function jpegOf(encoded: Uint8Array, profile: Uint8Array | null): { jpeg: Uint8A
  *
  * ponytail: this runs on the page's main thread, and a 36 MP photograph costs about 0.8 s of Catmull-Rom there (the image-handling survey, section 2). The upgrade is a dedicated worker, as the write has; a document of a few photographs does not need it.
  *
+ * @param keep - The pixels are to be converted next (`convertImages`), so they are returned as they are resampled, past no photo rule and in no JPEG; a JPEG source's profile rides in `profile`.
  * @returns The prepared file, or the reason a file that qualified was left as it was, or `null` where the format is not one this reduces.
  */
-async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction): Promise<PreparedImage | string | null> {
+async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction, keep = false): Promise<PreparedImage | string | null> {
   const { bytes, mimeType } = file;
   const { ppi, resolution, type } = reduction;
   if (mimeType === 'image/png') {
@@ -145,7 +154,7 @@ async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction)
     const data = reduced instanceof Uint16Array ? bytes16(reduced) : reduced;
     const resampled = { from: [info.width, info.height] as [number, number], to: [width, height] as [number, number], ppi, type };
     const carried = { file, format: mimeType, ...(gammaOnly ? { gammaOnly } : {}), resampled, decodeMs, resampleMs };
-    if (png.colorSpace === 'DeviceRGB' && png.bitsPerComponent === 8 && !png.alpha) {
+    if (!keep && png.colorSpace === 'DeviceRGB' && png.bitsPerComponent === 8 && !png.alpha) {
       const photo = photoRule ? await applyPhotoRule({ width, height, rgb: data, hasAlpha: false }) : photoRuleOff(width * height);
       if (photo.jpeg) return { ...carried, photo, ...jpegOf(photo.jpeg, png.icc ?? null), encodeMs: photo.encodeMs };
       return { ...carried, photo, png: { width, height, data, colorSpace: png.colorSpace, bitsPerComponent: 8, alpha: false, ...(png.icc ? { icc: png.icc } : {}) }, encodeMs: photo.encodeMs };
@@ -158,7 +167,7 @@ async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction)
   if (jpeg && (jpeg.unsupportedFrame || jpeg.precision !== 8)) return 'a JPEG frame the browser cannot decode is left alone';
   if (jpeg && jpeg.arithmetic) return 'an arithmetic-coded JPEG has no browser decoder';
   const decoded = await decodeThroughCanvas(bytes, mimeType, { colorSpaceConversion: jpeg ? 'none' : 'default' });
-  return reduceDecoded(file, mimeType, decoded, photoRule, reduction, jpeg !== null, jpeg?.iccProfile ?? null);
+  return reduceDecoded(file, mimeType, decoded, photoRule, reduction, jpeg !== null, jpeg?.iccProfile ?? null, keep);
 }
 
 /**
@@ -166,9 +175,10 @@ async function reduce(file: ImageFile, photoRule: boolean, reduction: Reduction)
  *
  * @param asJpeg - The source was a JPEG, so the result is a JPEG again even where the photo rule declines.
  * @param profile - The source's ICC profile, spliced back into the encoded JPEG.
+ * @param keep - Return the resampled pixels and encode nothing, for a conversion.
  * @returns The prepared file, or the reason the pixels were left as they are.
  */
-async function reduceDecoded(file: ImageFile, format: string, decoded: DecodedSamples, photoRule: boolean, reduction: Reduction, asJpeg: boolean, profile: Uint8Array | null): Promise<PreparedImage | string> {
+async function reduceDecoded(file: ImageFile, format: string, decoded: DecodedSamples, photoRule: boolean, reduction: Reduction, asJpeg: boolean, profile: Uint8Array | null, keep = false): Promise<PreparedImage | string> {
   const { ppi, resolution, type } = reduction;
   const [width, height] = reducedSize(decoded.width, decoded.height, ppi, resolution);
   if (width >= decoded.width && height >= decoded.height) return 'already at or below the target size';
@@ -180,6 +190,7 @@ async function reduceDecoded(file: ImageFile, format: string, decoded: DecodedSa
     samples = { width, height, rgb: resample(decoded.rgb, decoded.width, decoded.height, 3, false, width, height, type) as Uint8Array, alpha: null, hasAlpha: false, decodeMs: 0 };
   }
   const resampleMs = performance.now() - resampleStarted;
+  if (keep) return { file, format, decodeMs: decoded.decodeMs, encodeMs: 0, resampleMs, resampled: { from: [decoded.width, decoded.height], to: [width, height], ppi, type }, samples, profile };
   const photo = await photoOf(samples, photoRule);
   let encoded = photo.jpeg;
   let encodeMs = photo.encodeMs;
@@ -195,14 +206,98 @@ async function reduceDecoded(file: ImageFile, format: string, decoded: DecodedSa
   };
 }
 
+/** An indexed PNG's pixels as RGB, with its alpha beside them where it has a `tRNS`. */
+function expandIndexed(png: PngPixels): PngPixels {
+  if (png.colorSpace !== 'Indexed') return png;
+  const palette = png.palette as Uint8Array;
+  const pixels = png.width * png.height;
+  const stride = png.alpha ? 4 : 3;
+  const data = new Uint8Array(pixels * stride);
+  for (let i = 0; i < pixels; i++) {
+    const index = png.alpha ? png.data[i * 2] : png.data[i];
+    data[i * stride] = palette[index * 3];
+    data[i * stride + 1] = palette[index * 3 + 1];
+    data[i * stride + 2] = palette[index * 3 + 2];
+    if (png.alpha) data[i * stride + 3] = png.data[i * 2 + 1];
+  }
+  return { width: png.width, height: png.height, data, colorSpace: 'DeviceRGB', bitsPerComponent: 8, alpha: png.alpha };
+}
+
+/**
+ * A file's pixels at their stored size, in their own colour, for a conversion that was not preceded by a reduction.
+ *
+ * @returns The pixels (as `png` or `samples`, with `profile` for a JPEG), or the reason the file is left in its own colour.
+ */
+async function pixelsOf(file: ImageFile): Promise<PreparedImage | string> {
+  const { bytes, mimeType } = file;
+  if (mimeType === 'image/png') {
+    const info = parsePng(bytes);
+    if (info.colorType !== PngColorType.Palette && info.bitDepth < 8) return 'a PNG under eight bits a sample is not converted';
+    if (info.colorType !== PngColorType.Palette && info.trns !== null && !info.hasAlphaChannel) return 'a PNG with a transparent colour key is not converted';
+    const gammaOnly = info.gama !== null && info.iccpDeflated === null && info.srgbIntent === null;
+    const started = performance.now();
+    const png = expandIndexed(await pngPixels(bytes, info));
+    return { file, format: mimeType, ...(gammaOnly ? { gammaOnly } : {}), png: { ...png, why: undefined }, decodeMs: performance.now() - started, encodeMs: 0 };
+  }
+  if (mimeType === 'image/jpeg') {
+    const info = parseJpeg(bytes);
+    if (info.components === 4) return 'a CMYK JPEG is left alone';
+    if (info.unsupportedFrame || info.precision !== 8) return 'a JPEG frame the browser cannot decode is left alone';
+    try {
+      return { file, format: mimeType, samples: await decodeThroughCanvas(bytes, mimeType, { colorSpaceConversion: 'none' }), profile: info.iccProfile, decodeMs: 0, encodeMs: 0 };
+    } catch (error) {
+      if (info.arithmetic) return 'an arithmetic-coded JPEG has no browser decoder';
+      throw error;
+    }
+  }
+  return { file, format: mimeType, samples: await decodeThroughCanvas(bytes, mimeType), profile: null, decodeMs: 0, encodeMs: 0 };
+}
+
+/**
+ * Convert the pixels of a prepared file to `DeviceCMYK`, in the plane the pass holds them in.
+ *
+ * @remarks
+ * What leaves is a `png` member (the list's samples, here in four components) and no `samples`, `jpeg` or `carried`: a converted image travels as Flate samples, since the browser writes no CMYK JPEG and the photo rule is not asked. The alpha plane, where some pixel is not opaque, rides beside the colour.
+ */
+function convertPlane(prepared: PreparedImage, converter: ImageConverter): PreparedImage {
+  const { samples, png, profile, ...rest } = prepared;
+  let plane: ColourPlane;
+  if (png) {
+    if (png.colorSpace === 'Indexed' || png.colorSpace === 'DeviceCMYK') throw new CasterError(`caster: the image pass was asked to convert ${png.colorSpace} pixels, which it expands or leaves alone before this point`);
+    plane = { width: png.width, height: png.height, data: png.data, colorSpace: png.colorSpace, bitsPerComponent: png.bitsPerComponent, alpha: png.alpha, ...(png.icc ? { icc: png.icc } : {}) };
+  } else if (samples) {
+    plane = { width: samples.width, height: samples.height, data: samples.hasAlpha ? rgbaOf(samples) : samples.rgb, colorSpace: 'DeviceRGB', bitsPerComponent: 8, alpha: samples.hasAlpha, ...(profile ? { icc: profile } : {}) };
+  } else throw new CasterError('caster: the image pass was asked to convert a file that has no pixels');
+  const out = converter.convert(plane);
+  const converted = { from: plane.colorSpace, bitsPerComponent: plane.bitsPerComponent, profile: out.profile, ms: out.ms };
+  return { ...rest, png: { width: plane.width, height: plane.height, data: out.data, colorSpace: 'DeviceCMYK', bitsPerComponent: plane.bitsPerComponent, alpha: plane.alpha }, converted };
+}
+
+/** A file under `convertImages: 'cmyk'`: reduced where it qualifies, then converted, or left in its own colour with the reason. */
+async function prepareConverted(file: ImageFile, photoRule: boolean, reduction: Reduction | undefined, converter: ImageConverter): Promise<PreparedImage> {
+  let note: string | undefined;
+  let pixels: PreparedImage | string | null = null;
+  if (reduction) {
+    const reduced = await reduce(file, photoRule, reduction, true);
+    if (typeof reduced === 'string') note = reduced;
+    else pixels = reduced;
+  }
+  pixels ??= await pixelsOf(file);
+  const kept = note === undefined ? {} : { notResampled: note };
+  if (typeof pixels === 'string') return { ...(await prepareImage(file, photoRule)), ...kept, notConverted: pixels };
+  return { ...convertPlane(pixels, converter), ...kept };
+}
+
 /**
  * Prepare one file for the list.
  *
  * @param reduction - Set where the file qualifies for downsampling; a file it cannot reduce is prepared as it would be without, naming why in `notResampled`.
+ * @param converter - Set under `convertImages: 'cmyk'`: the pixels, reduced or not, go through it and the photo rule is not asked; a file it cannot convert is prepared as it would be without, naming why in `notConverted`.
  * @throws {CasterError} The browser cannot decode a file no PDF filter reads (`canvasDecode.js`), and whatever `png.js` refuses.
  * @throws {CapabilityError} A PNG to decode with no `fastPng` loaded.
  */
-export async function prepareImage(file: ImageFile, photoRule: boolean, reduction?: Reduction): Promise<PreparedImage> {
+export async function prepareImage(file: ImageFile, photoRule: boolean, reduction?: Reduction, converter?: ImageConverter): Promise<PreparedImage> {
+  if (converter) return prepareConverted(file, photoRule, reduction, converter);
   if (reduction) {
     const reduced = await reduce(file, photoRule, reduction);
     if (reduced !== null && typeof reduced !== 'string') return reduced;
@@ -253,12 +348,13 @@ const CANVAS_FILE: ImageFile = { bytes: new Uint8Array(0), mimeType: 'canvas' };
  *
  * @throws {CasterError} The canvas cannot be read (`canvasDecode.js`).
  */
-async function prepareCanvas(canvas: HTMLCanvasElement, photoRule: boolean, reduction?: Reduction): Promise<PreparedImage> {
+async function prepareCanvas(canvas: HTMLCanvasElement, photoRule: boolean, reduction?: Reduction, converter?: ImageConverter): Promise<PreparedImage> {
   const decoded = decodeCanvasElement(canvas);
   if (reduction) {
-    const reduced = await reduceDecoded(CANVAS_FILE, 'canvas', decoded, photoRule, reduction, false, null);
-    if (typeof reduced !== 'string') return reduced;
+    const reduced = await reduceDecoded(CANVAS_FILE, 'canvas', decoded, photoRule, reduction, false, null, converter !== undefined);
+    if (typeof reduced !== 'string') return converter ? convertPlane(reduced, converter) : reduced;
   }
+  if (converter) return convertPlane({ file: CANVAS_FILE, format: 'canvas', samples: decoded, profile: null, decodeMs: decoded.decodeMs, encodeMs: 0 }, converter);
   return fromPixels(CANVAS_FILE, decoded, 'canvas', photoRule);
 }
 
@@ -270,7 +366,7 @@ async function prepareCanvas(canvas: HTMLCanvasElement, photoRule: boolean, redu
  *
  * @throws {CasterError} An image no tier could prepare, naming its element.
  */
-export async function prepareImages(painted: PaintedImage[], fileOf: (src: string) => ImageFile | undefined, photoRule: boolean, downsample?: DownsamplePlan): Promise<Map<string, PreparedImage>> {
+export async function prepareImages(painted: PaintedImage[], fileOf: (src: string) => ImageFile | undefined, photoRule: boolean, downsample?: DownsamplePlan, converter?: ImageConverter): Promise<Map<string, PreparedImage>> {
   const prepared = new Map<string, PreparedImage>();
   // The smallest resolution each file prints at over all its uses: `ppi` is the effective resolution of one placement, as `imagePlace.js` records it.
   const smallest = new Map<string, number>();
@@ -284,7 +380,7 @@ export async function prepareImages(painted: PaintedImage[], fileOf: (src: strin
     const ppi = smallest.get(image.src);
     const reduction = downsample?.on && ppi !== undefined && ppi > downsample.resolution * downsample.threshold ? { ...downsample, ppi } : undefined;
     try {
-      prepared.set(image.src, canvas ? await prepareCanvas(canvas, photoRule, reduction) : await prepareImage(file, photoRule, reduction));
+      prepared.set(image.src, canvas ? await prepareCanvas(canvas, photoRule, reduction, converter) : await prepareImage(file, photoRule, reduction, converter));
     } catch (error) {
       if (error instanceof CasterError && error.element) throw error;
       throw new CasterError(`caster: the ${canvas ? '<canvas>' : file.mimeType} at ${image.domPath} (${image.src}) could not be carried into the file: ${error instanceof Error ? error.message : String(error)}`, { element: image.domPath });

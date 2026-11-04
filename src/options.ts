@@ -45,7 +45,7 @@ export type CasterOptions = {
   styledBorders: boolean;
   /** Default `'none'`. Basis: on for print — without it, `0 0 0 rg` lands ink on all four process plates. */
   blackText: 'none'|'100k';
-  /** Default `'none'`. Basis: a compliant RIP handed `/DefaultRGB` and an output intent lands within one 255th of the conversion anyway. `'endpoint'` refuses here: BelType serves no colour endpoint (§10.2). */
+  /** Default `'none'`. Basis: a compliant RIP handed `/DefaultRGB` and an output intent lands within one 255th of the conversion anyway. `'wasm'` converts the fill of every run the author declared no ink for, and the black-text policy has not claimed, through the vendored lcms-wasm (Caster's two profiles, relative colorimetric with black-point compensation) before the list is built; the list then carries each as the CMYK ink it already says, so no writer reads the flag. Backgrounds, borders and vectors are not converted. `'endpoint'` refuses here: BelType serves no colour endpoint (§10.2). */
   convertRgb: 'none'|'endpoint'|'wasm';
   /** Default `true`. Basis: 34.2% of a body-size underline is removed; a continuous line strikes through every descender. */
   skipInk: boolean;
@@ -53,6 +53,8 @@ export type CasterOptions = {
   colour: 'auto'|'on'|'off';
   /** Caster's own (*the printer guesses, says so, and withdraws the claim*, S90). Default `'infer'` (the decision chose `'refuse'`; flipped the same day at Egildo's call, so a document the other engines print prints here too): a custom element the walk's table does not name is walked as CSS laid it out, the way a `<span>` or a `<div>` is, every guess is listed in `report.inferred` and the warnings, and the file no longer claims PDF/UA-2 in its XMP, since a tag the printer guessed is not a claim it can stand behind. Measured on the bench's determina specimen: four `<dm-variable>` elements, each with no meaning a tag could name, refused the whole document. Under `'refuse'` it refuses the print by name, as every element the walk cannot name always has. A `bt-` or `beltype-` element is refused under both. */
   unknownElements: 'refuse'|'infer';
+  /** Default `'none'`, so an image keeps its own colour and late binding stays the default (Egildo's ruling 4 of 2026-11-03). `'cmyk'` converts every RGB or grey image to `DeviceCMYK` in the image pass, after the reduction, through the vendored lcms-wasm from the image's own profile (else sRGB) to the output intent's CMYK, relative colorimetric with black-point compensation, and the list carries the CMYK samples (version 7). A CMYK JPEG is left alone, and a converted image travels as Flate samples, since the browser writes no CMYK JPEG. Needs the colour objects: it is refused with `colour: 'off'`, and turns `colour: 'auto'` on. Basis: 8.3 MP converts in about 220 ms with the default optimisation, so it runs after the reduction and not before. */
+  convertImages: 'none'|'cmyk';
   /** Caster's own (*PDF/UA-2 is a flag, not a given*, S103; Egildo's ruling of 2026-11-03, after Typst's `--pdf-standard`, WeasyPrint's `--pdf-variant` and Prince's `--pdf-profile`). Default `'ua-2'`: the file claims PDF/UA-2 in its XMP, and forme adds both Well-Tagged PDF declarations beside it, and a word gap in a face with no space glyph is refused by name, since it would be glyph 0, `.notdef`, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9). Basis: the Rust writer's cff2 fixture, HarfBuzz's test subset of Source Serif 4 Variable, has no space glyph, and forme's file showed `.notdef` in every gap under a claim veraPDF's `ua2`, `wt1a` and `wt1r` all failed. Under `'none'` the file is tagged as ever and claims nothing, and such a gap is written as positioning with no glyph. A guess under `unknownElements: 'infer'` still withdraws a `'ua-2'` claim (S90), the one road on which the claim asked for is softened. */
   standard: 'ua-2'|'none';
   /** Default `'pdf-lib'`. Which writer turns the display list into the file: `'pdf-lib'`, the TypeScript writer (`emit/structureEmit.ts`, through pdf-lib and HarfBuzz's subsetter), or `'forme'`, the Rust writer vendored as a WebAssembly module (`vendor/forme_bg.wasm`, loaded only under this value), which in a page writes in a dedicated worker (`emit/forme.ts`). Both read the same list and return the same `WriterResult`; forme is held to the oracle's files by every reader of *the same list prints the same bytes* (S102). The default stays the oracle's until Egildo has read the Rust writer's stage 9 gate. */
@@ -90,6 +92,7 @@ export const FLAGS = (({
   imageResolution: { values: null, default: 300 },
   downsampleThreshold: { values: null, default: 1.5 },
   downsampleType: { values: ['bicubic', 'average', 'subsample'], default: 'bicubic' },
+  convertImages: { values: ['none', 'cmyk'], default: 'none' },
   rasterDpi: { values: null, default: 300 },
   paintOrder: { values: ['css', 'dom'], default: 'css' },
   styledBorders: { values: [true, false], default: true },
@@ -133,6 +136,7 @@ export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOption
   // The table says a positive number; the range is this flag's own, and Distiller's: from 1 to 10, refused here where Adobe reverts silently.
   const threshold = out['downsampleThreshold'] as number;
   if (threshold < 1 || threshold > 10) throw new CasterError(`caster: 'downsampleThreshold' takes a number from 1 to 10; got ${JSON.stringify(threshold)}.`, { flag: 'downsampleThreshold' });
+  if (out['convertImages'] === 'cmyk' && out['colour'] === 'off') throw new CasterError("caster: `convertImages: 'cmyk'` writes DeviceCMYK samples under the output intent, which `colour: 'off'` does not write; set `colour` to 'auto' or 'on', or `convertImages` to 'none'.", { flag: 'convertImages' });
   if (title !== undefined) out['title'] = title;
   if (lang !== undefined) out['lang'] = lang;
   return (out as CasterOptions);
@@ -142,21 +146,21 @@ export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOption
  * Whether this run writes the colour objects — PLAN.md D8's `colour` flag, with `auto` resolved.
  *
  * @remarks
- * `auto` is on when the document declares a `--pdf-*` colour hint, or when a policy that produces device colour (`blackText`, `convertRgb`) is on.
+ * `auto` is on when the document declares a `--pdf-*` colour hint, or when a policy that produces device colour (`blackText`, `convertRgb`, `convertImages`) is on.
  *
  * @param needs - What the walk found; only `colourHints` is read.
  */
 export function colourOn(needs: { colourHints?: boolean; }, options: CasterOptions) {
   if (options.colour === 'on') return true;
   if (options.colour === 'off') return false;
-  return Boolean(needs?.colourHints) || options.blackText !== 'none' || options.convertRgb !== 'none';
+  return Boolean(needs?.colourHints) || options.blackText !== 'none' || options.convertRgb !== 'none' || options.convertImages !== 'none';
 }
 
 /**
  * Refuse a flag value whose tier this port does not build, by name, before any module fails on it later.
  *
  * @remarks
- * Each names the flag, and the modules behind the first three stay: they are what a host that grows the tier would call, and their own suites keep them honest. `pngDecoder: 'canvas'` has no module at all: the registry only declined to load fast-png under it, so a PNG that needed its samples decoded refused by blaming the flag that had been set (found 2026-11-02 by printing every flag from the command line).
+ * Each names the flag, and the modules behind the endpoint tier and the fontkit shaper stay: they are what a host that grows the tier would call, and their own suites keep them honest. `convertRgb: 'wasm'` is built (2026-11-04); `'endpoint'` is the one value of that flag still refused. `pngDecoder: 'canvas'` has no module at all: the registry only declined to load fast-png under it, so a PNG that needed its samples decoded refused by blaming the flag that had been set (found 2026-11-02 by printing every flag from the command line).
  *
  * @throws {CasterError} carrying `flag`.
  */
@@ -164,8 +168,8 @@ export function refuseUnbuiltTiers(options: CasterOptions): void {
   if (options.shaper === 'fontkit') {
     throw new CasterError("caster: `shaper: 'fontkit'` is not composed in this port. `measure/textMeasure.js` imports HarfBuzz's shaper directly, so under this flag the registry skips the harfbuzz load and the first word throws \"never handed bytes\" — and the tier itself is a documented wrong-glyph route (S6, `docs/guide/shaping.md` §\"The two tiers\"): fontkit gets 97% and 82% of two test blocks' glyph sequences wrong at zero width error, so a printer that fell back to it would pass every width assertion and show the wrong letters.", { flag: 'shaper' });
   }
-  if (options.convertRgb !== 'none') {
-    throw new CasterError(`caster: \`convertRgb: '${options.convertRgb}'\` is not composed in this port. \`colorResources.js\` expects a transform — a \`{ mode, cmykOf }\` pair — and the flag is a string; no transform is built here, and the endpoint tier is a service BelType does not serve. \`colour/rgbToCmyk.js\` holds both routes and its own suite; nothing in the pipeline reaches them this round.`, { flag: 'convertRgb' });
+  if (options.convertRgb === 'endpoint') {
+    throw new CasterError("caster: `convertRgb: 'endpoint'` needs a gateway with a `convertColors` method, and BelType serves no colour endpoint. Use `convertRgb: 'wasm'` (lcms-wasm, measured at 0.000000 against the endpoint) or `'none'` (a compliant RIP lands within one 255th anyway).", { flag: 'convertRgb' });
   }
   if (options.subset === 'pdf-lib') {
     throw new CasterError("caster: `subset: 'pdf-lib'` is a documented refusal in this port (docs/guide/font-embedding.md §\"The two tiers\"). pdf-lib's own embedder re-lays-out the string with fontkit, so it cannot show a glyph the shaper chose, cannot instance a variable face, cannot read WOFF2, has no /ActualText mechanism and writes no subset tag. It pairs only with `shaper: 'fontkit'` and inherits all three of that tier's pre-checks.", { flag: 'subset' });

@@ -14,7 +14,7 @@ test('every flag of the guide\'s table is present with the guide\'s default', ()
     shaper: 'harfbuzz', subset: 'hb', cffContainer: 'bare', widthDecimals: 3,
     pngDecoder: 'fast-png', photoRule: true,
     downsampleImages: true, imageResolution: 300, downsampleThreshold: 1.5, downsampleType: 'bicubic',
-    rasterDpi: 300, paintOrder: 'css',
+    convertImages: 'none', rasterDpi: 300, paintOrder: 'css',
     styledBorders: true, blackText: 'none', convertRgb: 'none', skipInk: true,
     colour: 'auto', unknownElements: 'infer', standard: 'ua-2', writer: 'pdf-lib'
   });
@@ -58,9 +58,14 @@ test('casterFlags is the table in common\'s shape: the same rows, the same defau
 
 test('a tier this port does not build refuses by its own flag, and the defaults pass', () => {
   assert.doesNotThrow(() => refuseUnbuiltTiers(DEFAULTS));
-  for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['convertRgb', 'wasm'], ['pngDecoder', 'canvas']] as const) {
+  for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['pngDecoder', 'canvas']] as const) {
     assert.throws(() => refuseUnbuiltTiers(resolveOptions({ [flag]: value })), (e: any) => e instanceof CasterError && e.flag === flag, `${flag}: ${value}`);
   }
+});
+
+test("`convertRgb: 'wasm'` is built and no longer refused; `'endpoint'` is the one value still refused, by its own sentence", () => {
+  assert.doesNotThrow(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'wasm' })));
+  assert.throws(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'endpoint' })), (e: any) => e.flag === 'convertRgb' && /needs a gateway with a `convertColors` method/u.test(e.message));
 });
 
 test('the writer flag takes the oracle or forme, and refuses anything else by name', () => {

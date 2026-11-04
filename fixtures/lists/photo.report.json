@@ -48,6 +48,7 @@
   "imageResolution": 300,
   "downsampleThreshold": 1.5,
   "downsampleType": "bicubic",
+  "convertImages": "none",
   "rasterDpi": 300,
   "paintOrder": "css",
   "styledBorders": true,

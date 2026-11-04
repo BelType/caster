@@ -353,6 +353,12 @@ export type ReportImage = {
   resampleMs?: number;
   /** Why a file that qualified for reduction was left as it was (a CMYK JPEG, a one-bit image, an indexed PNG). */
   notResampled?: string;
+  /** Where the image pass converted the pixels to `DeviceCMYK` under `convertImages: 'cmyk'`: the colour space and depth they were in, which profile read them, and the milliseconds in lcms (`convertMs`, beside it). */
+  converted?: { from: 'DeviceRGB' | 'DeviceGray', bitsPerComponent: 8 | 16, profile: 'embedded' | 'sRGB' };
+  /** Milliseconds in lcms, with `converted`. */
+  convertMs?: number;
+  /** Why a file was left in its own colour under `convertImages: 'cmyk'` (a CMYK JPEG, a one-bit PNG, a colour-keyed PNG, a frame the browser cannot decode). */
+  notConverted?: string;
   exifOrientation?: number;
   imageOrientation?: string;
   declaredExifOrientation?: number;
@@ -697,7 +703,7 @@ export type Report = {
   /** The `<img>` elements whose file was an SVG and which were seated as drawings rather than decoded to pixels (*an SVG that arrives through an `<img>` is a drawing*, S44). An empty list is the ordinary answer; a non-empty one says which pictures in this file are vectors that arrived through an `<img>`. */
   svgImages?: { domPath: string, src: string }[];
   xobjects?: number;
-  color?: ReportColor;
+  color?: ReportColor & { conversion?: ReportConversion };
   paint?: ReportPaint[];
   paintOrder?: string[];
   deferred?: ReportDeferred[];

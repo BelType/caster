@@ -67,7 +67,7 @@ test('the same list prints the same bytes: every committed list gives the commit
   assert.ok(corpus.length >= 8 && ['webp', 'photo', 'arithmetic'].every((name) => corpus.some((e) => e.name === name)), 'the whole corpus, the image roads among it');
   for (const { name } of corpus) {
     const list = listOf(name);
-    assert.equal(list.version, 6, `${name}: a version 6 list`);
+    assert.equal(list.version, 7, `${name}: a version 7 list`);
     const emitted = await writeList(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
@@ -83,6 +83,9 @@ test('a list the oracle refuses is refused again: every committed list recorded 
 
 /** A value as the identity harness snapshots a report: every timing gone (`scripts/identity.ts`, `snapshot`). */
 const snapshotOf = (value: unknown): any => JSON.parse(JSON.stringify(value, (key, v) => (key === 'timing' || key === 'ms' || key === 'fontTiming' || /Ms$/u.test(key) ? undefined : v)));
+
+/** A colour record without what `print()` composes beside the writer's, which only a document under `convertRgb: 'wasm'` has (*the list carries the result*: the writer never sees the flag). A record without `conversion` is returned whole, so nothing of an earlier document is hidden. */
+const printOnly = (color: any) => (color.conversion ? (({ conversion, convertRgb, convertedElements, ...rest }) => rest)(color) : color);
 
 /** The members of a report snapshot the list and the writer's records decide, as `recordsOf` and the writer give them; the measurement's members are left out on both sides. */
 function recordMembers(list: DisplayList, written: WriterRecords, report?: any) {
@@ -101,7 +104,7 @@ function recordMembers(list: DisplayList, written: WriterRecords, report?: any) 
     structure: (({ headings, ...rest }) => rest)(report.structure),
     outline: report.outline, links: report.links, idTree: report.idTree, paint: report.paint, vectorResources: report.vectorNotes.resources, streamOrder: report.vectorNotes.streamOrder, xobjects: report.xobjects,
     images: report.images?.map((i: any) => ({ format: i.format, path: i.path, filter: i.filter, bpc: i.bpc, colorSpace: i.colorSpace, hasSMask: i.hasSMask, intrinsic: i.intrinsic, xobjectHash: i.xobjectHash, xobjectName: i.xobjectName, bytesIn: i.bytesIn, bytesOut: i.bytesOut, icc: i.icc, gammaOnly: i.gammaOnly, interpolate: i.interpolate, reason: i.reason })),
-    colour: report.color?.elements && { ...report.color, elements: own(report.color.elements), worklist: report.color.worklist.map(({ css, ...rest }: any) => rest) },
+    colour: report.color?.elements && { ...printOnly(report.color), elements: own(report.color.elements).map((row: any) => (report.color.conversion ? (({ converted, ...rest }) => rest)(row) : row)), worklist: report.color.worklist.map(({ css, ...rest }: any) => rest) },
   };
   const fromRecords = {
     emission: derived.emission,
@@ -414,7 +417,7 @@ test('validateList refuses, with a sentence each, a list the writer could not wr
   };
   const firstText = (list: DisplayList) => list.pages[0].items.find((i): i is TextItem => i.kind === 'text')!;
   const tags = (list: DisplayList) => list.pages[0].items.map((item, at) => ({ item, at })).filter(({ item }) => item.kind === 'tag');
-  refused(/reads a display list of version 6, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
+  refused(/reads a display list of version 7, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
   refused(/the font instance .* names the blob 0+, and the display list holds no bytes/, (list) => { list.resources.fonts[0].blob = '0'.repeat(64); });
   refused(/image \d+'s photo JPEG names the blob/, (list) => { Object.values(list.resources.images)[0].jpeg = 'f'.repeat(64); });
   refused(/two font instances under the key/, (list) => { list.resources.fonts.push({ ...list.resources.fonts[0] }); });
@@ -624,7 +627,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
     }, WRITER);
-    assert.equal(seen.version, 6);
+    assert.equal(seen.version, 7);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
     for (const { font, gids } of seen.used) {
