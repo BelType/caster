@@ -45,7 +45,7 @@ export type CasterOptions = {
   styledBorders: boolean;
   /** Default `'none'`. Basis: on for print — without it, `0 0 0 rg` lands ink on all four process plates. */
   blackText: 'none'|'100k';
-  /** Default `'none'`. Basis: a compliant RIP handed `/DefaultRGB` and an output intent lands within one 255th of the conversion anyway. `'endpoint'` refuses here: BelType serves no colour endpoint (§10.2). */
+  /** Default `'none'`. Basis: a compliant RIP handed `/DefaultRGB` and an output intent lands within one 255th of the conversion anyway. `'wasm'` converts the fill of every run the author declared no ink for, and the black-text policy has not claimed, through the vendored lcms-wasm (Caster's two profiles, relative colorimetric with black-point compensation) before the list is built; the list then carries each as the CMYK ink it already says, so no writer reads the flag. Backgrounds, borders and vectors are not converted. `'endpoint'` refuses here: BelType serves no colour endpoint (§10.2). */
   convertRgb: 'none'|'endpoint'|'wasm';
   /** Default `true`. Basis: 34.2% of a body-size underline is removed; a continuous line strikes through every descender. */
   skipInk: boolean;
@@ -156,7 +156,7 @@ export function colourOn(needs: { colourHints?: boolean; }, options: CasterOptio
  * Refuse a flag value whose tier this port does not build, by name, before any module fails on it later.
  *
  * @remarks
- * Each names the flag, and the modules behind the first three stay: they are what a host that grows the tier would call, and their own suites keep them honest. `pngDecoder: 'canvas'` has no module at all: the registry only declined to load fast-png under it, so a PNG that needed its samples decoded refused by blaming the flag that had been set (found 2026-11-02 by printing every flag from the command line).
+ * Each names the flag, and the modules behind the endpoint tier and the fontkit shaper stay: they are what a host that grows the tier would call, and their own suites keep them honest. `convertRgb: 'wasm'` is built (2026-11-04); `'endpoint'` is the one value of that flag still refused. `pngDecoder: 'canvas'` has no module at all: the registry only declined to load fast-png under it, so a PNG that needed its samples decoded refused by blaming the flag that had been set (found 2026-11-02 by printing every flag from the command line).
  *
  * @throws {CasterError} carrying `flag`.
  */
@@ -164,8 +164,8 @@ export function refuseUnbuiltTiers(options: CasterOptions): void {
   if (options.shaper === 'fontkit') {
     throw new CasterError("caster: `shaper: 'fontkit'` is not composed in this port. `measure/textMeasure.js` imports HarfBuzz's shaper directly, so under this flag the registry skips the harfbuzz load and the first word throws \"never handed bytes\" — and the tier itself is a documented wrong-glyph route (S6, `docs/guide/shaping.md` §\"The two tiers\"): fontkit gets 97% and 82% of two test blocks' glyph sequences wrong at zero width error, so a printer that fell back to it would pass every width assertion and show the wrong letters.", { flag: 'shaper' });
   }
-  if (options.convertRgb !== 'none') {
-    throw new CasterError(`caster: \`convertRgb: '${options.convertRgb}'\` is not composed in this port. \`colorResources.js\` expects a transform — a \`{ mode, cmykOf }\` pair — and the flag is a string; no transform is built here, and the endpoint tier is a service BelType does not serve. \`colour/rgbToCmyk.js\` holds both routes and its own suite; nothing in the pipeline reaches them this round.`, { flag: 'convertRgb' });
+  if (options.convertRgb === 'endpoint') {
+    throw new CasterError("caster: `convertRgb: 'endpoint'` needs a gateway with a `convertColors` method, and BelType serves no colour endpoint. Use `convertRgb: 'wasm'` (lcms-wasm, measured at 0.000000 against the endpoint) or `'none'` (a compliant RIP lands within one 255th anyway).", { flag: 'convertRgb' });
   }
   if (options.subset === 'pdf-lib') {
     throw new CasterError("caster: `subset: 'pdf-lib'` is a documented refusal in this port (docs/guide/font-embedding.md §\"The two tiers\"). pdf-lib's own embedder re-lays-out the string with fontkit, so it cannot show a glyph the shaper chose, cannot instance a variable face, cannot read WOFF2, has no /ActualText mechanism and writes no subset tag. It pairs only with `shaper: 'fontkit'` and inherits all three of that tier's pre-checks.", { flag: 'subset' });

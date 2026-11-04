@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **`convertRgb: 'wasm'` is built** (the image-handling round, second round, brief 3). The fill of every text run with no declared ink, and not claimed by `blackText: '100k'`, is converted by the vendored lcms-wasm (Caster's two profiles, relative colorimetric with black-point compensation, unoptimised so the answer is the profile's own arithmetic) before the list is built, and reaches the list as the CMYK ink a text item already carries, so no writer reads the flag and the list stays at version 6. The report's `color.conversion` keeps the record: the colours, the wasm's version, its load and transform times. `convertRgb: 'endpoint'` still refuses by name. The corpus gains `convert-text`; every earlier document's file, list and report snapshot is byte-identical.
+
 ## 0.1.7 — 2026-11-04
 
 The first image-handling round: images that print far above their target are reduced before the list, and a `<canvas>` figure prints. Nothing a writer reads changes; the list stays at version 6, and every file of the corpus that existed before is byte for byte what 0.1.6 wrote.

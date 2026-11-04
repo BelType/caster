@@ -5,6 +5,8 @@
  *
  * WHAT THE PORT CHANGED (PLAN.md §10.2, P5). `convertRgb: 'endpoint'` refuses at the options layer, because BelType serves no colour endpoint. `endpointConversion` and `mockConvertColors` are ported anyway and are exactly what a host that grows one would call; nothing in the pipeline reaches them, and the pure suite is what keeps them honest. `UnknownColorError` is a `CasterError`.
  *
+ * `convertRgb: 'wasm'` is built (2026-11-04, `.claude/plans/image-handling/`): {@link textWorklist} reads the work list off the measured runs, {@link lcmsTransform} is the transform over the vendored lcms-wasm, and `print()` gives each converted run's `colorHint` the CMYK before the list is built, so the list carries the result as a text item's `ink` and no writer reads the flag. The transform reads sRGB 8-bit and writes CMYK 16-bit, rounded to the four decimals a content stream writes, so that no downstream writer rounds a tie of its own.
+ *
  * The harness's own header follows.
  *
  * E12E (`colour.md`): the RGB→CMYK conversion tier that E8 (`colour.md`) parked.
@@ -26,6 +28,7 @@ import { CasterError } from '../errors.ts';
 
 import type { Cmyk } from './colorHints.ts';
 import type { ReportWorklistEntry, ReportConversionEntry, ReportConversion } from '../report.ts';
+import type { MeasuredRun } from '../measure/textMeasure.ts';
 
 /** The exporter option. `none` is the default and is E8 (`colour.md`) unchanged. */
 export type ConvertRgbMode = 'none' | 'endpoint' | 'wasm';
@@ -210,4 +213,67 @@ export function conversionRecord(conversion: Conversion, condition: string, entr
 /** A millisecond clock, `performance.now()` where the realm has one. */
 function now(): number {
   return typeof performance === 'object' ? performance.now() : Date.now();
+}
+
+/** The package version the vendored `vendor/lcms.js` was bundled from; a test reads the bundle's first line against it. */
+export const LCMS_WASM_VERSION = '1.0.5';
+
+/** The runs the policy converts: those with no declared ink that the black-text policy has not claimed. */
+export function convertibleRuns(lines: readonly { runs: MeasuredRun[] }[], blackText: 'none' | '100k'): MeasuredRun[] {
+  const out = new Set<MeasuredRun>();
+  for (const line of lines) for (const run of line.runs) {
+    if (run.colorHint) continue;
+    if (blackText === '100k' && run.rgb[0] === 0 && run.rgb[1] === 0 && run.rgb[2] === 0) continue;
+    out.add(run);
+  }
+  return [...out];
+}
+
+/**
+ * The colours the conversion tier is asked about: the distinct fills of the runs the author declared no ink for and the black-text policy has not claimed.
+ *
+ * @remarks
+ * The work list of E8 (`colour.md`), read off the measurement rather than off the writer, because the conversion has to be known before the list is built; it takes the runs {@link convertibleRuns} chose. A run's fill is the only paint the policy converts. The entry is the first run's, counted once per run.
+ */
+export function textWorklist(runs: readonly MeasuredRun[]): ReportWorklistEntry[] {
+  const byKey = new Map<string, ReportWorklistEntry>();
+  for (const run of runs) {
+    const key = rgbKey(run.rgb);
+    const held = byKey.get(key);
+    if (held) held.uses += 1;
+    else byKey.set(key, { path: run.segments[0].blockPath, target: 'fill', rgb: [...run.rgb], css: run.color, uses: 1 });
+  }
+  return [...byKey.values()];
+}
+
+/**
+ * The transform over lcms-wasm: Caster's sRGB profile to its CMYK profile, relative colorimetric with black-point compensation.
+ *
+ * @remarks
+ * The transform is built unoptimised (`cmsFLAGS_NOOPTIMIZE`): the default optimisation resamples the profile onto an eight-bit lookup grid and moves a channel by up to 0.0034 from the profile's own arithmetic (measured 2026-11-04 against Little-CMS 2.19's `transicc` on rgb(20 90 200): cyan 0.8665 optimised, 0.8699 by `transicc` and 0.8699 unoptimised), and a work list of a few colours costs nothing to evaluate exactly. `loadMs` is the setup alone (instantiating the module, opening the profiles, building the transform); the caller adds what the capability registry took to import the bundle. The transform is built for one `convert` call, and the instance is the print's own, so nothing is closed.
+ *
+ * @param lcms - The `lcms` capability.
+ * @param srgb - The bytes of `srgb.icc`.
+ * @param cmyk - The bytes of `default_cmyk.icc`.
+ * @throws {CasterError} A profile lcms refuses to open, or a transform it cannot build.
+ */
+export async function lcmsTransform(lcms: { module: any, wasm: Uint8Array }, srgb: Uint8Array, cmyk: Uint8Array): Promise<WasmTransform> {
+  const started = now();
+  const { module } = lcms;
+  const instance = await module.instantiate({ wasmBinary: lcms.wasm });
+  const from = instance.cmsOpenProfileFromMem(srgb, srgb.byteLength);
+  const to = instance.cmsOpenProfileFromMem(cmyk, cmyk.byteLength);
+  if (!from || !to) throw new CasterError(`rgbToCmyk: lcms-wasm could not open the ${from ? 'CMYK' : 'sRGB'} profile`);
+  const transform = instance.cmsCreateTransform(from, module.TYPE_RGB_8, to, module.TYPE_CMYK_16, module.INTENT_RELATIVE_COLORIMETRIC, module.cmsFLAGS_BLACKPOINTCOMPENSATION | module.cmsFLAGS_NOOPTIMIZE);
+  if (!transform) throw new CasterError('rgbToCmyk: lcms-wasm could not build the sRGB to CMYK transform');
+  return {
+    convert: (colors) => {
+      const out: Uint16Array = instance.cmsDoTransform(transform, Uint8Array.from(colors.flat()), colors.length);
+      return colors.map((_, i) => [0, 1, 2, 3].map((c) => Math.round(out[i * 4 + c] / 65535 * 1e4) / 1e4) as Cmyk);
+    },
+    wasmBytes: lcms.wasm.byteLength,
+    loadMs: now() - started,
+    packageName: 'lcms-wasm',
+    version: LCMS_WASM_VERSION,
+  };
 }

@@ -84,6 +84,9 @@ test('a list the oracle refuses is refused again: every committed list recorded 
 /** A value as the identity harness snapshots a report: every timing gone (`scripts/identity.ts`, `snapshot`). */
 const snapshotOf = (value: unknown): any => JSON.parse(JSON.stringify(value, (key, v) => (key === 'timing' || key === 'ms' || key === 'fontTiming' || /Ms$/u.test(key) ? undefined : v)));
 
+/** A colour record without what `print()` composes beside the writer's, which only a document under `convertRgb: 'wasm'` has (*the list carries the result*: the writer never sees the flag). A record without `conversion` is returned whole, so nothing of an earlier document is hidden. */
+const printOnly = (color: any) => (color.conversion ? (({ conversion, convertRgb, convertedElements, ...rest }) => rest)(color) : color);
+
 /** The members of a report snapshot the list and the writer's records decide, as `recordsOf` and the writer give them; the measurement's members are left out on both sides. */
 function recordMembers(list: DisplayList, written: WriterRecords, report?: any) {
   const derived = recordsOf(list, written);
@@ -101,7 +104,7 @@ function recordMembers(list: DisplayList, written: WriterRecords, report?: any) 
     structure: (({ headings, ...rest }) => rest)(report.structure),
     outline: report.outline, links: report.links, idTree: report.idTree, paint: report.paint, vectorResources: report.vectorNotes.resources, streamOrder: report.vectorNotes.streamOrder, xobjects: report.xobjects,
     images: report.images?.map((i: any) => ({ format: i.format, path: i.path, filter: i.filter, bpc: i.bpc, colorSpace: i.colorSpace, hasSMask: i.hasSMask, intrinsic: i.intrinsic, xobjectHash: i.xobjectHash, xobjectName: i.xobjectName, bytesIn: i.bytesIn, bytesOut: i.bytesOut, icc: i.icc, gammaOnly: i.gammaOnly, interpolate: i.interpolate, reason: i.reason })),
-    colour: report.color?.elements && { ...report.color, elements: own(report.color.elements), worklist: report.color.worklist.map(({ css, ...rest }: any) => rest) },
+    colour: report.color?.elements && { ...printOnly(report.color), elements: own(report.color.elements).map((row: any) => (report.color.conversion ? (({ converted, ...rest }) => rest)(row) : row)), worklist: report.color.worklist.map(({ css, ...rest }: any) => rest) },
   };
   const fromRecords = {
     emission: derived.emission,

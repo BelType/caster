@@ -697,7 +697,7 @@ export type Report = {
   /** The `<img>` elements whose file was an SVG and which were seated as drawings rather than decoded to pixels (*an SVG that arrives through an `<img>` is a drawing*, S44). An empty list is the ordinary answer; a non-empty one says which pictures in this file are vectors that arrived through an `<img>`. */
   svgImages?: { domPath: string, src: string }[];
   xobjects?: number;
-  color?: ReportColor;
+  color?: ReportColor & { conversion?: ReportConversion };
   paint?: ReportPaint[];
   paintOrder?: string[];
   deferred?: ReportDeferred[];

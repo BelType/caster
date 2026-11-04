@@ -242,6 +242,23 @@
      "f00b3a5d87956d59f7087d62a135fb033e04952adfa2d7806172e1159639204f"
     ]
    }
+  },
+  {
+   "name": "convert-text",
+   "why": "a page of coloured text under `convertRgb: 'wasm'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted",
+   "sha256": "e9d32cfa0c34e352c4ad8dc7750f80376301c09fc1f3f4c9f1f3f2af735145ee",
+   "bytes": 155205,
+   "options": {
+    "convertRgb": "wasm"
+   },
+   "list": {
+    "bytes": 15781,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
+    ]
+   }
   }
  ]
 }

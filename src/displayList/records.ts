@@ -15,7 +15,7 @@ import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { CasterError } from '../errors.ts';
 
 import type { DisplayList, ImageSource, ImageUse, PngDecodeReason, LinkItem, ListPlace, StructElement, TextItem, TextOrigin, WriterPen, WriterRecords, WrittenColour } from '../displayList.ts';
-import type { ReportColor, ReportColorElement, ReportEmission, ReportLink, ReportOutlineItem, ReportRun, ReportStructure, ReportStructureAnnot, ReportStructureArtifact, ReportStructureNode, ReportWorklistEntry } from '../report.ts';
+import type { ReportColor, ReportColorElement, ReportConversion, ReportEmission, ReportLink, ReportOutlineItem, ReportRun, ReportStructure, ReportStructureAnnot, ReportStructureArtifact, ReportStructureNode, ReportWorklistEntry } from '../report.ts';
 
 /** The members of the report's `emission` that the measurement holds or joins, which `print()` adds. */
 export type MeasuredEmissionKeys = 'runs' | 'trailingLetterSpacing' | 'trailingSamples' | 'baselineAgreementPt' | 'usableProbes' | 'probeMoved' | 'probeOffLine' | 'probeBeforeOffLine' | 'containerScrollWidthPx' | 'paragraphs' | 'words' | 'marginPt' | 'pageWidthPt' | 'pageHeightPt';
@@ -218,23 +218,28 @@ export function paragraphMcidsOf(runs: RunNote[], originAt: (at: ListPlace) => T
  * The report's colour record: the writer's, with each text run's row and work-list entry completed from the list and the item's origin.
  *
  * @remarks
- * The path is the item's owner, or the paragraph's where it has none; the hint, the ink box and the computed colour are the origin's; the text is the item's segments.
+ * The path is the item's owner, or the paragraph's where it has none; the hint, the ink box and the computed colour are the origin's; the text is the item's segments. A run `converted` says it took its ink from the conversion tier (*the list carries the result*, brief 3 of the image round), and `conversion` is that tier's record, which the writer never sees.
  */
-export function colourWith(list: DisplayList, colour: WrittenColour, originAt: (at: ListPlace) => TextOrigin): ReportColor {
+export function colourWith(list: DisplayList, colour: WrittenColour, originAt: (at: ListPlace) => TextOrigin, converted?: (at: ListPlace) => boolean, conversion?: ReportConversion): ReportColor & { conversion?: ReportConversion } {
   const itemAt = (at: ListPlace) => list.pages[at.page].items[at.item] as TextItem;
   const elements: ReportColorElement[] = colour.elements.map((row) => {
     if (!('at' in row)) return row;
     const { at, target, resolved, overprint, operator, ...extra } = row;
     const item = itemAt(at);
     const origin = originAt(at);
-    return { path: item.owner || origin.path, target, ...(origin.hint ? { hint: origin.hint } : {}), resolved, ...(overprint ? { overprint } : {}), operator, text: segmentTexts(item).join(' '), rectPt: origin.rectPt, page: at.page, ...extra };
+    return { path: item.owner || origin.path, target, ...(origin.hint ? { hint: origin.hint } : {}), resolved, ...(overprint ? { overprint } : {}), operator, text: segmentTexts(item).join(' '), rectPt: origin.rectPt, page: at.page, ...extra, ...(converted?.(at) ? { converted: true } : {}) };
   });
   const worklist: ReportWorklistEntry[] = colour.worklist.map((entry) => {
     if (!('at' in entry)) return entry;
     const origin = originAt(entry.at);
     return { path: itemAt(entry.at).owner || origin.path, target: entry.target, rgb: entry.rgb, css: origin.color, uses: entry.uses };
   });
-  return { ...colour, elements, worklist };
+  return {
+    ...colour,
+    elements,
+    worklist,
+    ...(conversion ? { convertRgb: conversion.mode, convertedElements: elements.filter((row) => row.converted).length, conversion } : {})
+  };
 }
 
 /** What the report says of one painted image's source: derivable from the list and the writer's road. */

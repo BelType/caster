@@ -58,9 +58,14 @@ test('casterFlags is the table in common\'s shape: the same rows, the same defau
 
 test('a tier this port does not build refuses by its own flag, and the defaults pass', () => {
   assert.doesNotThrow(() => refuseUnbuiltTiers(DEFAULTS));
-  for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['convertRgb', 'wasm'], ['pngDecoder', 'canvas']] as const) {
+  for (const [flag, value] of [['shaper', 'fontkit'], ['subset', 'pdf-lib'], ['convertRgb', 'endpoint'], ['pngDecoder', 'canvas']] as const) {
     assert.throws(() => refuseUnbuiltTiers(resolveOptions({ [flag]: value })), (e: any) => e instanceof CasterError && e.flag === flag, `${flag}: ${value}`);
   }
+});
+
+test("`convertRgb: 'wasm'` is built and no longer refused; `'endpoint'` is the one value still refused, by its own sentence", () => {
+  assert.doesNotThrow(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'wasm' })));
+  assert.throws(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'endpoint' })), (e: any) => e.flag === 'convertRgb' && /needs a gateway with a `convertColors` method/u.test(e.message));
 });
 
 test('the writer flag takes the oracle or forme, and refuses anything else by name', () => {

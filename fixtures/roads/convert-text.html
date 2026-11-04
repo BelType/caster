@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The conversion tier: a page of coloured text</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    h1 { color: #1f4e9c; }
+    .blue { color: rgb(20, 90, 200); }
+    .red { color: #c82020; }
+    .green { color: #2a7f3b; }
+    .grey { color: #777777; }
+    .twice { color: #c82020; }
+    .ink { color: #ff00ff; --pdf-color: device-cmyk(0 1 0 0); }
+    .box { background: #f0e6d2; border: 1px solid #1f4e9c; padding: 2mm; }
+  </style>
+</head>
+<body>
+  <h1>Coloured text under the conversion tier</h1>
+  <p>Black body text, <span class="blue">a blue run</span>, <span class="red">a red run</span>, <span class="green">a green one</span> and <span class="grey">a grey one</span>; the red recurs here in <span class="twice">a second run</span>.</p>
+  <p class="ink">A run whose author declared the ink: it is written as declared and never reaches the table.</p>
+  <p class="box">A tinted box with a blue border. Only the words are converted; the ground and the border stay as the browser computed them.</p>
+</body>
+</html>
