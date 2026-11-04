@@ -493,6 +493,13 @@ function groupNode(context: SvgContext, element: Element, style: CSSStyleDeclara
  */
 function shapeNode(context: SvgContext, element: Element, style: CSSStyleDeclaration, local: Path, toPage: Matrix, clips: ClipSpec[], domPath: string, label: string, paints?: { fill: string; stroke: string; }): VectorNode|null {
   const path = transformPath(local, toPage);
+  // A `<pattern>` is a PDF tiling pattern, which this printer does not build; the shape is drawn by the browser, as a filter is, rather than printed as nothing (issue 1). A `<use>` instance's shape stands in `<defs>`, where there is nothing to draw, and keeps the deferral `paintOf` lists.
+  const pattern = paints ? null : [style.fill, style.stroke].map(referenceId).find((id) => id !== null && context.svg.querySelector(`#${CSS.escape(id)}`)?.localName === 'pattern');
+  if (pattern) {
+    const raster = rasterOf(context, element, style, 'pattern', `the <pattern> #${pattern} on ${domPath}: PDF tiling patterns are not built`);
+    context.out.deferred.push({ path: domPath, feature: '<pattern> paint server', paintedAs: `raster at ${RASTER_DPI} dpi` });
+    return { ...emptyNodeCommon(domPath, label), kind: 'raster', raster, clips };
+  }
   const fill = paintOf(context, element, style, paints?.fill ?? style.fill, toPage, domPath, 'fill');
   const stroke = paintOf(context, element, style, paints?.stroke ?? style.stroke, toPage, domPath, 'stroke');
   if (fill.kind === 'none' && stroke.kind === 'none') return null;
