@@ -46,8 +46,6 @@ export type ColorOptions = {
   /** `/Info`; a human-readable description of the condition. */
   info: string;
   blackText: BlackTextPolicy;
-  /** E12E (`colour.md`): the RGB→CMYK conversion tier. Absent — which is the default — every unhinted colour stays `rg` under `/DefaultRGB` and goes on the work list, which is E8 to the byte. Present, a colour the table has an answer for is written as `k` instead and recorded as converted; a colour it has no answer for still stays `rg`, because a tier that silently dropped a colour would be worse than one that converted none. The table is resolved before emission on purpose: both routes are asynchronous and this emitter is not, and a colour that had to be awaited in the middle of a content stream would be a colour the stream's order depended on. */
-  convertRgb?: { mode: 'endpoint' | 'wasm', cmykOf: (rgb: readonly number[]) => Cmyk | undefined };
   /** What `CSS.registerProperty` did, recorded by the browser side. */
   registrations?: ReportHintRegistration[];
 };
@@ -396,7 +394,6 @@ export class ColorEmitter {
   declare elements: (ReportColorElement|WrittenRunColour)[];
   declare worklist: Map<string, ReportWorklistEntry|WrittenRunWorklistEntry>;
   declare blackTextRuns: number;
-  declare converted: number;
   /**
    * @throws {CasterError} As the {@link ColorResources} constructor, for profiles it refuses.
    */
@@ -406,19 +403,6 @@ export class ColorEmitter {
     this.elements = [];
     this.worklist = new Map<any, any>();
     this.blackTextRuns = 0;
-    /** E12E (`colour.md`): how many painted things the conversion tier claimed. */
-    this.converted = 0;
-  }
-
-  /**
-   * The CMYK the conversion tier has for one RGB colour, or null.
-   *
-   * @remarks
-   * A colour with no entry stays `rg` and goes on the work list, which is the honest answer: the tier converted what it was given answers for and said so for the rest, rather than inventing a transform of its own.
-   */
-  convert(rgb: readonly number[]): Cmyk|null {
-    if (!this.options.convertRgb) return null;
-    return this.options.convertRgb.cmykOf(rgb) ?? null;
   }
 
   /**
@@ -435,7 +419,7 @@ export class ColorEmitter {
     const { PDFOperator, PDFOperatorNames: Ops } = capability('pdf');
     const overprint = item.fill.overprint ? this.resources.overprintOperators(item.fill.overprint) : null;
     const hinted = item.fill.ink ? colorOf(item.fill.ink) : undefined;
-    const record = (resolved: ReportColorElement['resolved'], operator: string, extra: Pick<ReportColorElement, 'resource' | 'blackTextPolicy' | 'converted'> = {}) => {
+    const record = (resolved: ReportColorElement['resolved'], operator: string, extra: Pick<ReportColorElement, 'resource' | 'blackTextPolicy'> = {}) => {
       this.elements.push({
         at,
         target: 'fill',
@@ -466,14 +450,6 @@ export class ColorEmitter {
       this.blackTextRuns += 1;
       record({ kind: 'cmyk', values: [0, 0, 0, 1] }, 'k', { blackTextPolicy: true });
       return wrap([PDFOperator.of(Ops.NonStrokingColorCmyk, [0, 0, 0, 1].map(num))]);
-    }
-
-    // E12E (`colour.md`): the conversion tier is asked last, after the two decisions the author made — a declared ink and the black-text policy — because both of those outrank a profile.
-    const converted = this.convert(rgb);
-    if (converted) {
-      this.converted += 1;
-      record({ kind: 'cmyk', values: converted }, 'k', { converted: true });
-      return wrap([PDFOperator.of(Ops.NonStrokingColorCmyk, converted.map(num))]);
     }
 
     record({ kind: 'rgb', values: rgb }, 'rg');
@@ -527,13 +503,6 @@ export class ColorEmitter {
       return wrap(operators);
     }
 
-    const converted = this.convert(fill.rgb);
-    if (converted) {
-      record({ kind: 'cmyk', values: converted }, 'k');
-      this.converted += 1;
-      return wrap([PDFOperator.of(Ops.NonStrokingColorCmyk, converted.map(num))]);
-    }
-
     record({ kind: 'rgb', values: fill.rgb }, 'rg');
     this.note(paint.path, target, fill.rgb, paint.color);
     return wrap([PDFOperator.of(Ops.NonStrokingColorRgb, fill.rgb.map(num))]);
@@ -574,7 +543,6 @@ export class ColorEmitter {
       defaultRgbSha256: await sha256Hex(this.options.srgbBytes),
       blackTextPolicy: this.options.blackText,
       blackTextRuns: this.blackTextRuns,
-      ...(this.options.convertRgb ? { convertRgb: this.options.convertRgb.mode, convertedElements: this.converted } : {}),
       worklist: [...this.worklist.values()],
       registrations: this.options.registrations ?? [],
     };
