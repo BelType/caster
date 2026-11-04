@@ -39,7 +39,13 @@ export const GENERATED_CLASS = 'caster-generated';
  * One class killing both was a real loss: materialising `h2::before` added a class whose rule read `::before, ::after { content: none !important }`, so a decorative `h2::after` the author also wrote vanished from the page with nothing to say so. A pseudo is suppressed only where it was replaced.
  */
 export const SUPPRESS_CLASS = { before: 'caster-no-before', after: 'caster-no-after' };
-/** The id of the one `<style>` that holds the two suppress rules. */
+/** The class on a block whose `::first-letter` was made a real span, and the class of that span. */
+export const FIRST_LETTER_CLASS = { block: 'caster-no-first-letter', letter: 'caster-first-letter' };
+
+/** The `::first-letter` properties whose difference from the block's own says an author styled it. */
+const FIRST_LETTER_SIGNS = ['font-size', 'font-family', 'font-weight', 'font-style', 'color', 'float', 'text-transform', 'vertical-align', 'background-color', 'letter-spacing', 'font-variant-caps', 'text-decoration-line'];
+
+/** The id of the one `<style>` that holds the suppress rules. */
 const SUPPRESS_ID = 'caster-generated-style';
 
 /**
@@ -91,7 +97,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   if (!doc.getElementById(SUPPRESS_ID)) {
     const style = doc.createElement('style');
     style.id = SUPPRESS_ID;
-    style.textContent = `.${SUPPRESS_CLASS.before}::before { content: none !important; }\n.${SUPPRESS_CLASS.after}::after { content: none !important; }`;
+    style.textContent = `.${SUPPRESS_CLASS.before}::before { content: none !important; }\n.${SUPPRESS_CLASS.after}::after { content: none !important; }\n.${FIRST_LETTER_CLASS.block}::first-letter { all: unset !important; }`;
     doc.head.append(style);
   }
 
@@ -137,6 +143,8 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     const before = pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes);
     if (before) writes.push(() => element.insertBefore(before, element.firstChild));
     if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
+    // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
+    if (!before && !marker) firstLetterSpan(view, element, style, writes);
     for (const child of [...element.children]) {
       if (child.classList.contains(GENERATED_CLASS) || child.classList.contains(MARKER_CLASS)) continue;
       walk(child, depth + 1);
@@ -323,6 +331,43 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   writes.push(() => element.classList.add(which === '::before' ? SUPPRESS_CLASS.before : SUPPRESS_CLASS.after));
   out.generated.push({ element: domPathish(element), pseudo: which, text });
   return span;
+}
+
+/**
+ * A block's `::first-letter`, styled by its author, made a real span around the letter (issue 9).
+ *
+ * @remarks
+ * The walk measures text and reads its style off the element that holds it, so a drop capital, `::first-letter` floated with its own size and colour, printed at the paragraph's size and colour where the float stood. The letter is the block's first typographic letter with the punctuation around it (CSS Pseudo-Elements 4, §2.2), taken only where the block's own inline text holds it: one inside a block child, an inline-block or a `::before` stays native, as it was. The span carries the pseudo's computed style, and the pseudo is reset on the block.
+ *
+ * @param writes - Where the block's own write is queued.
+ */
+function firstLetterSpan(view: Window, element: Element, style: CSSStyleDeclaration, writes: (() => void)[]) {
+  if (!/^(block|list-item|flow-root|inline-block|table-cell|table-caption)$/.test(style.display) || element.classList.contains(FIRST_LETTER_CLASS.block)) return;
+  const letter = view.getComputedStyle(element, '::first-letter');
+  if (!FIRST_LETTER_SIGNS.some((property) => letter.getPropertyValue(property) !== style.getPropertyValue(property))) return;
+  const doc = element.ownerDocument;
+  const walker = doc.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  let text: Text|null = null;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      if (!view.getComputedStyle(node as Element).display.startsWith('inline') || view.getComputedStyle(node as Element).display === 'inline-block') return;
+      continue;
+    }
+    if (/\S/.test((node as Text).data)) { text = node as Text; break; }
+  }
+  const match = text ? /^(\s*)(\p{P}*\s*[\p{L}\p{N}\p{S}]\p{M}*\p{P}*)/u.exec(text.data) : null;
+  if (!text || !match) return;
+  const span = doc.createElement('span');
+  span.className = FIRST_LETTER_CLASS.letter;
+  for (const property of letter) span.style.setProperty(property, letter.getPropertyValue(property));
+  const at = text;
+  writes.push(() => {
+    const rest = at.splitText(match[1].length);
+    rest.splitText(match[2].length);
+    rest.replaceWith(span);
+    span.append(rest);
+    element.classList.add(FIRST_LETTER_CLASS.block);
+  });
 }
 
 /**
