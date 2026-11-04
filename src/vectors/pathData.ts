@@ -476,9 +476,15 @@ export function shapePath(element: Element): Path|null {
 
 // --- CSS basic shapes -------------------------------------------------------
 
+/** The space-separated tokens of a shape's argument, each `calc()` kept whole: `calc(100% - 10px) 0` is two tokens and not four. */
+const shapeTokens = (text: string): string[] => text.match(/calc\([^)]*\)|\S+/g) ?? [];
+
 /** One `<length-percentage>` against a reference length. */
 function lengthPercentage(token: string, reference: number): number {
   const text = token.trim();
+  // A computed mixed value is a `calc()` of a percentage and pixels, `calc(100% - 37.7953px)`, which read as a plain number gave NaN (issue 5).
+  const calc = /^calc\((.*)\)$/is.exec(text);
+  if (calc) return [...calc[1].matchAll(/([+-]?)\s*(-?[\d.]+(?:e[+-]?\d+)?)(%|px)?/gi)].reduce((sum, [, sign, n, unit]) => sum + (sign === '-' ? -1 : 1) * (unit === '%' ? (Number(n) / 100) * reference : Number(n)), 0);
   if (text.endsWith('%')) return (Number.parseFloat(text) / 100) * reference;
   const value = Number.parseFloat(text);
   return Number.isFinite(value) ? value : 0;
@@ -508,7 +514,7 @@ function shapeRadius(token: string, cx: number, cy: number, box: Box, axis: 'x'|
 
 /** The `at <position>` tail of `circle()`/`ellipse()`, as a point in the box. */
 function shapePosition(text: string, box: Box): Point {
-  const parts = text.trim().split(/\s+/).filter((p) => p !== '');
+  const parts = shapeTokens(text);
   const keyword = (token: string, size: number, start: number): number|null => {
     if (token === 'left' || token === 'top') return start;
     if (token === 'center') return start + size / 2;
@@ -541,7 +547,7 @@ export function cssShapePath(value: string, box: Box): { path: Path; evenOdd: bo
 
   if (name === 'inset') {
     const [insetPart, roundPart] = body.split(/\bround\b/i);
-    const edges = insetPart.trim().split(/\s+/).filter((p) => p !== '');
+    const edges = shapeTokens(insetPart);
     const at = (i: number, fallback: number, reference: number): number => (edges[i] !== undefined ? lengthPercentage(edges[i], reference) : fallback);
     const top = at(0, 0, box.h);
     const right = at(1, top, box.w);
@@ -569,7 +575,7 @@ export function cssShapePath(value: string, box: Box): { path: Path; evenOdd: bo
 
   if (name === 'circle' || name === 'ellipse') {
     const [radiusPart, positionPart] = body.split(/\bat\b/i);
-    const radiusTokens = (radiusPart ?? '').trim().split(/\s+/).filter((p) => p !== '');
+    const radiusTokens = shapeTokens(radiusPart ?? '');
     const [cx, cy] = shapePosition(positionPart ?? '', box);
     if (name === 'circle') {
       const r = shapeRadius(radiusTokens[0] ?? 'closest-side', cx, cy, box, 'both');
@@ -588,7 +594,7 @@ export function cssShapePath(value: string, box: Box): { path: Path; evenOdd: bo
       args.shift();
     }
     const points = args.map((arg) => {
-      const pair = arg.split(/\s+/);
+      const pair = shapeTokens(arg);
       return ([box.x + lengthPercentage(pair[0], box.w), box.y + lengthPercentage(pair[1] ?? pair[0], box.h)] as Point);
     });
     if (points.length < 3) return null;

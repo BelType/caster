@@ -222,6 +222,11 @@ test('a CSS basic shape resolves against its reference box', () => {
   const polygon = cssShapePath('polygon(evenodd, 0% 0%, 100% 0%, 50% 100%)', box);
   assert.equal((polygon as any).evenOdd, true);
   assert.deepEqual(pathBounds((polygon as any).path), { x: 0, y: 0, w: 100, h: 60 });
+  // A point in `calc()`, as Chromium computes `calc(100% - 10mm)`, is one coordinate (issue 5).
+  const arrow = cssShapePath('polygon(0px 0px, calc(100% - 30px) 0px, 100% 50%, calc(100% - 30px) 100%, 0px 100%)', box);
+  assert.deepEqual((arrow as any).path.map((s: any) => s.to), [[0, 0], [70, 0], [100, 30], [70, 60], [0, 60], undefined]);
+  assert.deepEqual(pathBounds((cssShapePath('inset(calc(10% + 4px) 20px)', box) as any).path), { x: 20, y: 10, w: 60, h: 40 });
+  assert.deepEqual(pathBounds((cssShapePath('circle(10px at calc(-10px + 50%) 30px)', box) as any).path), { x: 30, y: 20, w: 20, h: 20 });
   // `circle()` with no radius is `closest-side`, which on a 100x60 box centred is 30.
   const circle = cssShapePath('circle()', box);
   assert.deepEqual(pathBounds((circle as any).path), { x: 20, y: 0, w: 60, h: 60 });
