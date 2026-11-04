@@ -92,6 +92,10 @@ function seat(img: HTMLImageElement, bytes: Uint8Array, domPath: string): SVGSVG
     throw new CasterError(`caster: the file behind the <img> at ${domPath} (${img.currentSrc || img.src}) is served as image/svg+xml and does not parse as an SVG document; its root is <${root ? root.localName : 'nothing'}>`, { element: domPath });
   }
   const svg = ((doc.importNode(root, true) as unknown) as SVGSVGElement);
+  // An `<img>` scales a file with no `viewBox` to its box, as if the viewBox were the file's own width and height (SVG 2, the synthesized viewBox of an image), where an inline `<svg>` crops it; so the seated drawing is given that viewBox, as long as both lengths are absolute (issue 3).
+  const [w, h] = [svg.width.baseVal, svg.height.baseVal];
+  if (!svg.hasAttribute('viewBox') && svg.hasAttribute('width') && svg.hasAttribute('height') && w.unitType !== w.SVG_LENGTHTYPE_PERCENTAGE && h.unitType !== h.SVG_LENGTHTYPE_PERCENTAGE)
+    svg.setAttribute('viewBox', `0 0 ${w.value} ${h.value}`);
 
   const before = img.getBoundingClientRect();
   for (const property of BOX_PROPERTIES) svg.style.setProperty(property, style.getPropertyValue(property));
@@ -102,7 +106,11 @@ function seat(img: HTMLImageElement, bytes: Uint8Array, domPath: string): SVGSVG
   svg.style.setProperty('max-height', 'none');
   svg.style.setProperty('min-width', '0');
   svg.style.setProperty('min-height', '0');
+  // An engine that presents by slots (Cicero's `<beltype-root>`) shows a top-level node on its page only while a slot holds it, and a slot assigned by hand does not take the node that replaces one it held: the seated `<svg>` was connected, unstyled and 0 × 0 (issue 3). So the drawing takes the `<img>`'s place in that slot too.
+  const slot = img.assignedSlot;
+  const held = (slot?.assignedNodes() ?? []) as (Element | Text)[];
   img.replaceWith(svg);
+  if (slot && (slot.getRootNode() as ShadowRoot).slotAssignment === 'manual') slot.assign(...held.map((node) => (node === img ? svg : node)));
 
   const after = svg.getBoundingClientRect();
   const off = Math.max(Math.abs(after.left - before.left), Math.abs(after.top - before.top), Math.abs(after.width - before.width), Math.abs(after.height - before.height));

@@ -66,6 +66,10 @@ test('content resolves strings, counter(), counters() and attr(), and refuses ev
   assert.equal(at('attr(data-tag) ": "'), 'NOTE: ');
   // An escaped quote inside the string survives, which is how an author writes one.
   assert.equal(at('"a \\"b\\" c"'), 'a "b" c');
+  // A slash inside a string is text; only a slash between values starts the alt text (issue 4).
+  assert.equal(at('counter(h2) " / " counter(sec)'), '3 / 7');
+  assert.equal(at('counter(h2) " / " counter(sec) / "page 3 of 7"'), '3 / 7');
+  assert.equal(at('"→ " / "see"'), '→ ');
 
   assert.throws(() => at('url("mark.png")'), ( e: any) => e instanceof CasterError && /url\(\) on h2::before/.test(e.message));
   assert.throws(() => at('open-quote'), ( e: any) => e instanceof CasterError && /open-quote/.test(e.message));

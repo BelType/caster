@@ -40,7 +40,7 @@ import {
   strokeIsDashed,
 } from '../src/vectors/borderStyles.ts';
 import { snapBox, snapLength, snapPaintOffset } from '../src/coordinates/ctm.ts';
-import { bboxOf, boundaryPieces, borderSidePath, cssGradient, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
+import { bboxOf, boundaryPieces, borderSidePath, cssGradient, gradientTile, insetBox, parseBoxShadow, pathToSvg, periodsFor, unrollGradient } from '../src/vectors/cssBoxes.ts';
 import { BAND_INSET_PX, MAX_DILATION_PX, blinkThicknessPx, complementOf } from '../src/vectors/skipInk.ts';
 import { markerAngle, markerVertices, placementMatrix, positionOf, viewBoxMatrix } from '../src/vectors/svgMarkers.ts';
 import { blendName, emptyNodeCommon, parseCssColor } from '../src/vectors/vector.ts';
@@ -222,9 +222,28 @@ test('a CSS basic shape resolves against its reference box', () => {
   const polygon = cssShapePath('polygon(evenodd, 0% 0%, 100% 0%, 50% 100%)', box);
   assert.equal((polygon as any).evenOdd, true);
   assert.deepEqual(pathBounds((polygon as any).path), { x: 0, y: 0, w: 100, h: 60 });
+  // A point in `calc()`, as Chromium computes `calc(100% - 10mm)`, is one coordinate (issue 5).
+  const arrow = cssShapePath('polygon(0px 0px, calc(100% - 30px) 0px, 100% 50%, calc(100% - 30px) 100%, 0px 100%)', box);
+  assert.deepEqual((arrow as any).path.map((s: any) => s.to), [[0, 0], [70, 0], [100, 30], [70, 60], [0, 60], undefined]);
+  assert.deepEqual(pathBounds((cssShapePath('inset(calc(10% + 4px) 20px)', box) as any).path), { x: 20, y: 10, w: 60, h: 40 });
+  assert.deepEqual(pathBounds((cssShapePath('circle(10px at calc(-10px + 50%) 30px)', box) as any).path), { x: 30, y: 20, w: 20, h: 20 });
   // `circle()` with no radius is `closest-side`, which on a 100x60 box centred is 30.
   const circle = cssShapePath('circle()', box);
   assert.deepEqual(pathBounds((circle as any).path), { x: 20, y: 0, w: 60, h: 60 });
+});
+
+test('a gradient layer is drawn against its own tile, and a tile that repeats inside the box is no single tile', () => {
+  const area = { x: 10, y: 10, w: 200, h: 100 };
+  const paint = { x: 9, y: 9, w: 202, h: 102 };
+  const tile = (size: string, position: string, repeat: string) => gradientTile({ backgroundSize: size, backgroundPosition: position, backgroundRepeat: repeat } as CSSStyleDeclaration, 0, area, paint);
+  // The default: the area itself, and a repeat that reaches the whole painting area.
+  assert.deepEqual(tile('auto', '0% 0%', 'repeat'), { tile: area, within: paint });
+  // `top / 100% 1mm no-repeat`, the hairline along one edge (issue 6), as Chromium computes it.
+  assert.deepEqual(tile('100% 3.77953px', '50% 0%', 'no-repeat'), { tile: { x: 10, y: 10, w: 200, h: 3.77953 }, within: { x: 10, y: 10, w: 200, h: 3.77953 } });
+  // `bottom`, through a calc() position, and a list read at its own layer.
+  assert.deepEqual(gradientTile({ backgroundSize: 'auto, 100% 4px', backgroundPosition: '0% 0%, calc(100% - 0px) 100%', backgroundRepeat: 'repeat, repeat-x' } as CSSStyleDeclaration, 1, area, paint), { tile: { x: 10, y: 106, w: 200, h: 4 }, within: { x: 9, y: 106, w: 202, h: 4 } });
+  // A stripe that repeats down the box is a tiling, which one shading cannot draw.
+  assert.equal(tile('100% 4px', '0% 0%', 'repeat'), null);
 });
 
 test('parseMatrix reads a computed transform, and refuses one it cannot', () => {

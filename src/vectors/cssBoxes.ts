@@ -21,7 +21,7 @@ import { invert, PRINT_DEVICE_PIXEL_RATIO, snapBox, toPdfMatrix } from '../coord
 import { apply, mul } from '../coordinates/matrix.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
-import { clampRadii, cssShapePath, pathBounds, roundedRectPath, transformPath } from './pathData.ts';
+import { clampRadii, cssShapePath, lengthPercentage, pathBounds, roundedRectPath, shapeTokens, transformPath } from './pathData.ts';
 import { domPathOf } from '../measure/textMeasure.ts';
 import { IDENTITY, blendName, emptyNodeCommon, pageOfElement, placeBox, parseCssColor } from './vector.ts';
 
@@ -723,7 +723,7 @@ export function collectCssBoxes(options: CssBoxOptions): CssBoxResult {
         });
       }
 
-      // The positioning area is the background-origin box; nothing here honours background-size, -position or -repeat, which the deferred list names.
+      // The positioning area is the background-origin box, and each gradient layer is drawn against its own tile in it (`gradientTile`).
       const originName = style.backgroundOrigin;
       const originBox = originName === 'border-box' ? border : originName === 'content-box' ? content : padding;
       const hint = readHint(element, '--pdf-background');
@@ -732,20 +732,26 @@ export function collectCssBoxes(options: CssBoxOptions): CssBoxResult {
       if (gradientSource !== 'none' && gradientSource !== '') {
         // `background-image` is a list, and the list is split before anything looks for a function call: `functionCall`'s pattern anchors on the first `(` and the last `)`, so `linear-gradient(a, b), linear-gradient(c, d)` came back as one call whose body ran from `a` to `d` and whose stops parsed with whatever alpha the garbage produced — silently, because a stop this reader cannot parse is transparent rather than an error. Layers paint last to first (CSS Backgrounds 3 §3.10): the first layer is the one nearest the reader.
         const layers = splitTopLevel(gradientSource);
-        const results = layers.map((layer) => (hinted ? cssGradient(layer, originBox, toPage, hinted.colorOf, 'DeviceCMYK') : cssGradient(layer, originBox, toPage)));
-        const rasterised = results.find((result) => result.raster);
-        if (rasterised && rasterised.raster) {
-          // One raster for the element, not one per layer: the isolated document draws the whole background, every layer of it, in the browser's own order.
-          const raster = elementRaster(element, style, border, toPage, rasterised.raster.feature, rasterised.raster.reason);
+        const tiles = layers.map((_, index) => gradientTile(style, index, originBox, backgroundBox));
+        const results = layers.map((layer, index) => (hinted ? cssGradient(layer, tiles[index]?.tile ?? originBox, toPage, hinted.colorOf, 'DeviceCMYK') : cssGradient(layer, tiles[index]?.tile ?? originBox, toPage)));
+        const tiled = tiles.findIndex((tile, index) => tile === null && /gradient$/.test(functionCall(layers[index])?.name ?? ''));
+        const rasterised = results.find((result) => result.raster)?.raster ?? (tiled >= 0 ? { feature: 'background-repeat', reason: `a gradient tile repeating inside the box (${style.backgroundSize}), which one shading cannot draw` } : undefined);
+        if (rasterised) {
+          // One raster for the element, not one per layer: the isolated document draws the whole background, every layer of it, in the browser's own order, inside the background's own rounded clip.
+          const raster = elementRaster(element, style, border, toPage, rasterised.feature, rasterised.reason);
           rasters.push(raster);
-          children.push({ ...emptyNodeCommon(domPath, 'background-image'), kind: 'raster', raster });
-          deferred.push({ path: domPath, feature: rasterised.raster.feature, paintedAs: `raster at ${RASTER_DPI} dpi` });
+          children.push({ ...emptyNodeCommon(domPath, 'background-image'), kind: 'raster', raster, clips: [{ path: backgroundPath, evenOdd: false, reason: `the background clip of ${domPath}` }] });
+          deferred.push({ path: domPath, feature: rasterised.feature, paintedAs: `raster at ${RASTER_DPI} dpi` });
         } else {
           for (let index = layers.length - 1; index >= 0; index--) {
             const result = results[index];
             if (result.shading) {
+              // A single tile smaller than the painting area is the layer's own clip; a tile that reaches it adds none, which keeps every page that sets no size the bytes it was.
+              const within = (tiles[index] as { within: Box; }).within;
+              const reaches = within.x <= backgroundBox.x + 0.01 && within.y <= backgroundBox.y + 0.01 && within.x + within.w >= backgroundBox.x + backgroundBox.w - 0.01 && within.y + within.h >= backgroundBox.y + backgroundBox.h - 0.01;
               children.push({
                 ...emptyNodeCommon(domPath, layers.length > 1 ? `background-image[${index}]` : 'background-image'),
+                ...(reaches ? {} : { clips: [{ path: transformPath(roundedRectPath(within), toPage), evenOdd: false, reason: `the background tile of ${domPath}` }] }),
                 kind: 'path',
                 path: backgroundPath,
                 fill: { kind: 'shading', shading: result.shading },
@@ -1031,12 +1037,41 @@ function shadowRaster(style: CSSStyleDeclaration, border: Box, radii: Radii, toP
   };
 }
 
+/**
+ * One background layer's tile for a gradient, which has no size of its own, and the box a single tile paints within (CSS Backgrounds 3, §3.7 to §3.9).
+ *
+ * @returns `null` when the tile repeats inside the area, which one shading cannot draw.
+ */
+export function gradientTile(style: CSSStyleDeclaration, index: number, area: Box, paint: Box): { tile: Box; within: Box; }|null {
+  const at = (list: string) => { const layers = splitTopLevel(list); return layers[index % layers.length] ?? ''; };
+  const sizes = shapeTokens(at(style.backgroundSize));
+  const extent = (token: string|undefined, of: number) => (token === undefined || /^(auto|cover|contain)$/.test(token) ? of : lengthPercentage(token, of));
+  const w = extent(sizes[0], area.w);
+  const h = extent(/^(cover|contain)$/.test(sizes[0] ?? '') ? undefined : sizes[1], area.h);
+  const positions = shapeTokens(at(style.backgroundPosition));
+  const x = area.x + lengthPercentage(positions[0] ?? '0%', area.w - w);
+  const y = area.y + lengthPercentage(positions[1] ?? '0%', area.h - h);
+  const repeats = shapeTokens(at(style.backgroundRepeat));
+  const [rx, ry] = repeats[0] === 'repeat-x' ? ['repeat', 'no-repeat'] : repeats[0] === 'repeat-y' ? ['no-repeat', 'repeat'] : [repeats[0] ?? 'repeat', repeats[1] ?? repeats[0] ?? 'repeat'];
+  // A repeating axis is one tile only where that tile already covers the area; it then reaches the whole painting area, as its repeats would.
+  const covers = (start: number, size: number, from: number, to: number) => start <= from + 0.01 && start + size >= to - 0.01;
+  if (rx !== 'no-repeat' && !covers(x, w, area.x, area.x + area.w)) return null;
+  if (ry !== 'no-repeat' && !covers(y, h, area.y, area.y + area.h)) return null;
+  const [wx, ww] = rx === 'no-repeat' ? [x, w] : [paint.x, paint.w];
+  const [wy, wh] = ry === 'no-repeat' ? [y, h] : [paint.y, paint.h];
+  return { tile: { x, y, w, h }, within: { x: wx, y: wy, w: ww, h: wh } };
+}
+
+/** A value for a double-quoted XML attribute. */
+const escapeAttribute = (text: string) => text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+
 /** Whatever cannot be painted as vector, drawn from the element's own markup. */
 function elementRaster(element: Element, style: CSSStyleDeclaration, border: Box, toPage: Matrix, feature: string, reason: string): RasterSpec {
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${border.w}" height="${border.h}" viewBox="0 0 ${border.w} ${border.h}">`,
     `<foreignObject width="${border.w}" height="${border.h}">`,
-    `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${border.w}px;height:${border.h}px;background-image:${style.backgroundImage}"></div>`,
+    // The element's own border and padding widths, transparent, so its origin and clip boxes and every layer's size, position and repeat land where the browser put them.
+    `<div xmlns="http://www.w3.org/1999/xhtml" style="${escapeAttribute(`box-sizing:border-box;width:${border.w}px;height:${border.h}px;border:solid transparent;border-width:${borderWidths(style).map((w) => `${w}px`).join(' ')};padding:${style.paddingTop} ${style.paddingRight} ${style.paddingBottom} ${style.paddingLeft};${['image', 'size', 'position', 'repeat', 'origin', 'clip'].map((p) => `background-${p}:${style.getPropertyValue(`background-${p}`)}`).join(';')}`)}"></div>`,
     '</foreignObject></svg>',
   ].join('');
   const corners: Point[] = [
