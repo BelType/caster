@@ -477,10 +477,10 @@ export function shapePath(element: Element): Path|null {
 // --- CSS basic shapes -------------------------------------------------------
 
 /** The space-separated tokens of a shape's argument, each `calc()` kept whole: `calc(100% - 10px) 0` is two tokens and not four. */
-const shapeTokens = (text: string): string[] => text.match(/calc\([^)]*\)|\S+/g) ?? [];
+export const shapeTokens = (text: string): string[] => text.match(/calc\([^)]*\)|\S+/g) ?? [];
 
 /** One `<length-percentage>` against a reference length. */
-function lengthPercentage(token: string, reference: number): number {
+export function lengthPercentage(token: string, reference: number): number {
   const text = token.trim();
   // A computed mixed value is a `calc()` of a percentage and pixels, `calc(100% - 37.7953px)`, which read as a plain number gave NaN (issue 5).
   const calc = /^calc\((.*)\)$/is.exec(text);
