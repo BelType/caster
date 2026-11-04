@@ -194,7 +194,7 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 | `fastPng` | `vendor/fast-png.js` | an `<img>` points at a `.png` and `pngDecoder` is `fast-png` |
 | `woff2` | `vendor/wawoff2.js` | some `@font-face` has only WOFF2 sources |
 | `profiles` | `profiles/srgb.icc`, `profiles/default_cmyk.icc` | the document has a colour story |
-| `lcms` | `vendor/lcms.js` and `lcms.wasm` | `convertRgb: 'wasm'` |
+| `lcms` | `vendor/lcms.js` and `lcms.wasm` | `convertRgb: 'wasm'` or `convertImages: 'cmyk'` |
 | `forme` | `vendor/forme.js` and `forme_bg.wasm` | `writer: 'forme'`; an absent module refuses by name, and the oracle is never taken in its place. In a page it writes in a dedicated worker (`src/emit/formeWorker.js`), and a page whose policy forbids the worker or WebAssembly refuses by name, never writing on the main thread |
 | `localFonts` | none | never: a reserved door that refuses by name |
 
@@ -206,7 +206,7 @@ The heavy libraries are never static imports. `src/capabilities.js` surveys the 
 
 **Images as their own bytes.** The pixels on an element are what the compositor chose to show: colour-managed, 8-bit, possibly downsampled. The file is better, so `src/host/gateway.js` fetches the bytes behind `img.currentSrc` and sniffs the type from them. `src/images/imageEmbed.js` then asks one question per image: does PDF already have a filter that reads this file? A JPEG goes in verbatim under `/DCTDecode`, progressive and CMYK ones included. A non-interlaced PNG without alpha goes in as its own `IDAT` stream under `/FlateDecode` with the PNG predictor, 16-bit samples intact.
 
-Only what PDF cannot read is decoded, and an opaque photograph stored as PNG may be re-encoded as JPEG once a measured 40 dB PSNR is cleared (`src/images/photoRule.js`). An image that prints far above its target resolution is reduced first (`downsampleImages`, `src/images/imagePass.js`), at the smallest resolution over every place the file is used. Stored size and EXIF orientation come from the file header, not from `naturalWidth`, which reports the size after the browser rotated the image.
+Only what PDF cannot read is decoded, and an opaque photograph stored as PNG may be re-encoded as JPEG once a measured 40 dB PSNR is cleared (`src/images/photoRule.js`). An image that prints far above its target resolution is reduced first (`downsampleImages`, `src/images/imagePass.js`), at the smallest resolution over every place the file is used, and under `convertImages: 'cmyk'` it is then converted to `DeviceCMYK` and travels as Flate samples. Stored size and EXIF orientation come from the file header, not from `naturalWidth`, which reports the size after the browser rotated the image.
 
 **Vectors as paths.** Backgrounds, borders, rounded corners, shadows and gradients are collected from computed styles by `src/vectors/cssBoxes.js` and written as paths and shadings. Collapsed table borders are resolved on the grid lines by `src/vectors/tableBorders.js`. Inline SVG is walked by `src/vectors/svgGeometry.js` into PDF paths, its `<text>` measured character by character; an SVG served through an `<img>` is parsed and seated as a drawing too, never rasterised (`src/images/svgInline.js`).
 
@@ -304,6 +304,7 @@ sequenceDiagram
 | `imageResolution` | a positive number | `300` | the resolution an image is reduced to, in pixels per inch |
 | `downsampleThreshold` | a number from 1 to 10 | `1.5` | the ratio above which it is reduced; outside 1 to 10 refused naming the flag |
 | `downsampleType` | `bicubic`, `average`, `subsample` | `bicubic` | Catmull-Rom computed by Caster's own arithmetic (`src/images/resample.js`), whose bytes are the same in every engine |
+| `convertImages` | `none`, `cmyk` | `none` | an image keeps its own colour and late binding stays the default. `cmyk` converts every RGB or grey image after its reduction, through the vendored lcms-wasm from its own profile (else sRGB) to the output intent's CMYK, relative colorimetric with black-point compensation, at eight or sixteen bits with its alpha beside it; the list carries `DeviceCMYK` samples (version 7). A CMYK JPEG is left alone and named in the report. Needs the colour objects: refused with `colour: 'off'`, and turns `colour: 'auto'` on. About 0.18 s a megapixel in the page |
 | `rasterDpi` | a positive number | `300` | every raster fallback and every emoji cluster is drawn at this |
 | `paintOrder` | `css`, `dom` | `css` | CSS paint order is what Chromium paints; `dom` is wrong as soon as anything overlaps |
 | `styledBorders` | `true`, `false` | `true` | a dotted or dashed border prints as written; `false` paints every border solid. Flipped on 2026-11-02, since no corpus document had a styled border |

@@ -245,13 +245,13 @@ export function unpackSubByte(packed: Uint8Array, depth: number, width: number, 
   return out;
 }
 
-/** A decoded PNG as the display list carries it: an `ImageSamples` with its bytes in place of its blob keys. */
+/** A decoded PNG as the display list carries it: an `ImageSamples` with its bytes in place of its blob keys. `DeviceCMYK` is the image pass's own conversion of one (version 7), never a PNG's decode. */
 export type PngPixels = {
   width: number;
   height: number;
   /** Interleaved, row-major from the top: each pixel's colour components, then its alpha where `alpha` is set; big-endian at 16 bits. */
   data: Uint8Array;
-  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed' | 'DeviceCMYK';
   bitsPerComponent: 8 | 16;
   alpha: boolean;
   /** The `PLTE`, with `Indexed`. */

@@ -53,7 +53,8 @@ import { collectSvg } from './vectors/svgGeometry.ts';
 import { isolateBlends } from './vectors/blendIsolation.ts';
 import { collectListMarkers } from './vectors/listMarkers.ts';
 import { registerHintProperties, elementColor } from './colour/colorHints.ts';
-import { convertibleRuns, conversionRecord, lcmsTransform, textWorklist, wasmConversion } from './colour/rgbToCmyk.ts';
+import { convertibleRuns, conversionRecord, lcmsImageConverter, lcmsTransform, textWorklist, wasmConversion } from './colour/rgbToCmyk.ts';
+import type { ImageConverter } from './colour/rgbToCmyk.ts';
 import { parsePng } from './images/png.ts';
 import { parseJpeg } from './images/jpeg.ts';
 import { rasterizeSvg } from './images/canvasDecode.ts';
@@ -389,7 +390,13 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     }
     step('rasters');
     // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
-    const prepared = await prepareImages(measurement.images.map((image) => ({ ...walk.images[image.index], ppi: image.placement.effectiveDpi })), (src) => imageBytes.get(src), options.photoRule, { on: options.downsampleImages, resolution: options.imageResolution, threshold: options.downsampleThreshold, type: options.downsampleType });
+    // `convertImages: 'cmyk'`: the images' pixels are converted in the pass, after the reduction, through the same lcms-wasm and the same two profiles as the text's (the list carries the result, not the flag; version 7).
+    let imageConverter: ImageConverter | undefined;
+    if (options.convertImages === 'cmyk') {
+      const files = capability('profiles');
+      imageConverter = await lcmsImageConverter(capability('lcms'), files['srgb.icc'], files['default_cmyk.icc']);
+    }
+    const prepared = await prepareImages(measurement.images.map((image) => ({ ...walk.images[image.index], ppi: image.placement.effectiveDpi })), (src) => imageBytes.get(src), options.photoRule, { on: options.downsampleImages, resolution: options.imageResolution, threshold: options.downsampleThreshold, type: options.downsampleType }, imageConverter);
     const rasterPhotos = new Map<any, any>();
     for (const [spec, samples] of rasterSamples) rasterPhotos.set(spec, await photoOf(samples, options.photoRule));
     // *The list carries the result, not the flag*: under `convertRgb: 'wasm'` the fill of every run the author declared no ink for becomes the CMYK lcms answers, as the `colorHint` the builder already writes as a text item's `ink`. The tab converts and no writer reads the flag.
@@ -409,7 +416,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       }
       conversion = conversionRecord(table, colourOptions(options).condition, table.entries, [
         { path: 'backgrounds, borders and vectors', reason: 'only a run\'s fill is converted; a rectangle or a drawing writes the colour the browser computed' },
-        { path: 'images', reason: 'an image keeps its own colour (brief 4 of the image round adds convertImages)' }
+        { path: 'images', reason: options.convertImages === 'cmyk' ? 'converted by the image pass (convertImages)' : 'an image keeps its own colour unless `convertImages: \'cmyk\'` asks' }
       ], 'lcms-wasm is the only tier BelType builds: the endpoint refuses by name');
     }
     step('images');
@@ -589,6 +596,8 @@ function imageRecord(image: MeasuredImage, walk: Pick<ImageSource,'src'|'domPath
     encodeMs: Math.round((pass?.encodeMs ?? info.encodeMs) * 100) / 100,
     ...(pass?.resampled ? { resampled: pass.resampled, resampleMs: Math.round((pass.resampleMs ?? 0) * 100) / 100 } : {}),
     ...(pass?.notResampled ? { notResampled: pass.notResampled } : {}),
+    ...(pass?.converted ? { converted: { from: pass.converted.from, bitsPerComponent: pass.converted.bitsPerComponent, profile: pass.converted.profile }, convertMs: Math.round(pass.converted.ms * 100) / 100 } : {}),
+    ...(pass?.notConverted ? { notConverted: pass.notConverted } : {}),
     ...(placement.exifOrientation !== 1 ? { exifOrientation: placement.exifOrientation } : {}),
     ...(placement.imageOrientation ? { imageOrientation: placement.imageOrientation } : {}),
     ...(placement.declaredExifOrientation !== undefined ? { declaredExifOrientation: placement.declaredExifOrientation } : {}),

@@ -18,6 +18,8 @@
 
  * THE SCHEMA IN ONE FILE (stage 5 of the same plan). Every type the list is written in is defined here, the matrix, the path, the shading, the print marks, the font profile and the black-text policy among them, and the modules that compute them re-export them; what a writer returns for the list is `displayList/contract.js`, re-exported from here. A foreign writer reads those two files and no other. Order is data in every array and in no object: the writer reads no object's key order (the attribute objects are written in their schema's key order, whatever order a reader kept), and the arrays that carry an order of their own say so (`resources.fonts`, `structure.elements`, an element's `children`, a page's `items`).
  *
+ * VERSION 7 (brief 4 of the image round, `.claude/plans/image-handling/`, Egildo's rulings 4, 9 and 10 of 2026-11-03 and the amendment of *the same list prints the same bytes* in `codeberg.org/BelType/decisions`). `ImageSamples.colorSpace` gains `DeviceCMYK`: under `convertImages: 'cmyk'` the image pass converts an RGB or grey image through lcms-wasm to the output intent's CMYK, after the reduction, and the list carries the result as four components a pixel, with the alpha beside them, never with a `palette` or an `icc` (the output intent is the profile). A writer of version 6 must refuse such a list, so the definition is cut at 7; the report says that an image was converted, which the list does not (`original` gains no member). Nothing else in the list moved.
+ *
  * @packageDocumentation
  */
 
@@ -27,7 +29,7 @@ export { recordsOf } from './displayList/records.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 6;
+  version: 7;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;
@@ -165,9 +167,9 @@ export type ImageSamples = {
   blob: string;
   width: number;
   height: number;
-  /** `Indexed` is over `DeviceRGB`, with `palette`. Version 6 adds `DeviceGray` and `Indexed`. */
-  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
-  /** 16 only from a 16-bit PNG, never with `Indexed`. Version 6. */
+  /** `Indexed` is over `DeviceRGB`, with `palette`. Version 6 adds `DeviceGray` and `Indexed`; version 7 adds `DeviceCMYK`, four components, never with `palette` or `icc`. */
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed' | 'DeviceCMYK';
+  /** 16 only from a 16-bit PNG, or from a 16-bit image converted to `DeviceCMYK`, never with `Indexed`. Version 6. */
   bitsPerComponent: 8 | 16;
   /** Each pixel carries an alpha sample after its colour. Version 6. */
   alpha: boolean;

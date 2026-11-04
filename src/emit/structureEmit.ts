@@ -430,7 +430,7 @@ function embedSourceOf(list: DisplayList, source: ImageSource, interpolate: bool
         return { kind: 'jpeg', jpeg: blobOf(list, source.jpeg), interpolate, format, gammaOnly: source.original?.gammaOnly === true };
     if (source.samples !== undefined) {
         const { blob, width, height, colorSpace, bitsPerComponent, alpha, palette, icc } = source.samples;
-        const samples = samplesOf(blobOf(list, blob), width, height, colorSpace === 'DeviceRGB' ? 3 : 1, alpha, bitsPerComponent / 8);
+        const samples = samplesOf(blobOf(list, blob), width, height, colorSpace === 'DeviceRGB' ? 3 : colorSpace === 'DeviceCMYK' ? 4 : 1, alpha, bitsPerComponent / 8);
         const shape = { colorSpace, bitsPerComponent, ...(palette !== undefined ? { palette: blobOf(list, palette) } : {}), ...(icc !== undefined ? { icc: blobOf(list, icc) } : {}) };
         return { kind: 'samples', samples, interpolate, label: format, shape, gammaOnly: source.original?.gammaOnly === true };
     }

@@ -75,7 +75,7 @@ export const CAPABILITIES: Record<keyof CapabilityMap,CapabilitySpec> = {
   harfbuzz: { url: '../vendor/harfbuzz.js', when: (needs, o) => o.shaper === 'harfbuzz', flag: 'shaper' },
   hbSubset: { wasm: '../vendor/harfbuzz-subset.wasm', when: (needs, o) => o.subset === 'hb' && o.writer === 'pdf-lib', flag: 'subset' },
   fastPng: { url: '../vendor/fast-png.js', when: (needs, o) => Boolean(needs.forcedPngDecode) && o.pngDecoder === 'fast-png', flag: 'pngDecoder' },
-  lcms: { url: '../vendor/lcms.js', wasm: '../vendor/lcms.wasm', when: (needs, o) => o.convertRgb === 'wasm', flag: 'convertRgb' },
+  lcms: { url: '../vendor/lcms.js', wasm: '../vendor/lcms.wasm', when: (needs, o) => o.convertRgb === 'wasm' || o.convertImages === 'cmyk', flag: 'convertRgb' },
   // *BelType ships faces of its own, and WOFF2 is decoded* (DESIGN.md S46). Loaded only for a descriptor whose only source is a WOFF2 — a CSSOM read, no byte fetched, the same shape as `forcedPngDecode`. `src: url(x.woff2), url(x.woff)` still takes the WOFF and never loads this, which is what keeps KaTeX's twenty-odd faces from paying 307 kB for a decode nobody needed. There is no flag: nothing the operator can set selects it, so a WOFF2 that reaches `decodeWoff2` without it still refuses by name through `capability()`, the way every other capability does.
   woff2: { url: '../vendor/wawoff2.js', when: (needs) => Boolean(needs.woff2Only) },
   profiles: { files: ['../profiles/srgb.icc', '../profiles/default_cmyk.icc'], when: (needs, o) => colourOn(needs, o), flag: 'colour' },

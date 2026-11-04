@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The conversion tier for images: converted to CMYK after the reduction</title>
+  <link rel="stylesheet" href="roads.css">
+  <style>
+    figure { margin: 0 0 2mm; break-inside: avoid; }
+    figcaption { font-size: 8pt; }
+    .small img { width: 24mm; }
+  </style>
+</head>
+<body>
+  <h1>Converted images</h1>
+  <figure><img src="large.jpg" alt="A synthetic photograph, 4000 by 3000 pixels, in a box three inches wide" style="width: 76.2mm"><figcaption>large.jpg, reduced to 300 ppi and then converted.</figcaption></figure>
+  <figure><img src="large.png" alt="A synthetic photograph, 2400 by 1600 pixels, in a box 40 mm wide" style="width: 40mm"><figcaption>large.png, reduced and then converted.</figcaption></figure>
+  <div class="small">
+    <figure><img src="alpha.png" alt="A PNG with alpha"><figcaption>alpha.png, 8-bit RGB with alpha.</figcaption></figure>
+    <figure><img src="deep-alpha.png" alt="A 16-bit PNG with alpha"><figcaption>deep-alpha.png, 16 bits with alpha.</figcaption></figure>
+    <figure><img src="grey.png" alt="A grey PNG"><figcaption>grey.png, one grey channel.</figcaption></figure>
+    <figure><img src="palette-trns.png" alt="A palette PNG with transparency"><figcaption>palette-trns.png, expanded to its colours.</figcaption></figure>
+    <figure><img src="icc.jpg" alt="A JPEG with an ICC profile"><figcaption>icc.jpg, read through its own profile.</figcaption></figure>
+    <figure><img src="cmyk-adobe.jpg" alt="A CMYK JPEG with the Adobe marker"><figcaption>cmyk-adobe.jpg, left alone.</figcaption></figure>
+  </div>
+</body>
+</html>

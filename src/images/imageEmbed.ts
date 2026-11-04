@@ -72,7 +72,7 @@ export type EmbedSource =
 
 /** What samples are other than 8-bit `DeviceRGB`: a decoded PNG's own depth and colour space, its palette and its profile. */
 export type SampleShape = {
-  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed';
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'Indexed' | 'DeviceCMYK';
   bitsPerComponent: 8 | 16;
   /** The `PLTE`'s RGB triples, with `Indexed`. */
   palette?: Uint8Array;

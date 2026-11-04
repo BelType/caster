@@ -67,7 +67,7 @@ test('the same list prints the same bytes: every committed list gives the commit
   assert.ok(corpus.length >= 8 && ['webp', 'photo', 'arithmetic'].every((name) => corpus.some((e) => e.name === name)), 'the whole corpus, the image roads among it');
   for (const { name } of corpus) {
     const list = listOf(name);
-    assert.equal(list.version, 6, `${name}: a version 6 list`);
+    assert.equal(list.version, 7, `${name}: a version 7 list`);
     const emitted = await writeList(list);
     assert.ok(Buffer.from(emitted.bytes).equals(fs.readFileSync(path.join(LISTS, `${name}.pdf`))), `${name}: the file is byte for byte the committed one`);
   }
@@ -417,7 +417,7 @@ test('validateList refuses, with a sentence each, a list the writer could not wr
   };
   const firstText = (list: DisplayList) => list.pages[0].items.find((i): i is TextItem => i.kind === 'text')!;
   const tags = (list: DisplayList) => list.pages[0].items.map((item, at) => ({ item, at })).filter(({ item }) => item.kind === 'tag');
-  refused(/reads a display list of version 6, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
+  refused(/reads a display list of version 7, and this one is version 4/, (list) => { (list as { version: number }).version = 4; });
   refused(/the font instance .* names the blob 0+, and the display list holds no bytes/, (list) => { list.resources.fonts[0].blob = '0'.repeat(64); });
   refused(/image \d+'s photo JPEG names the blob/, (list) => { Object.values(list.resources.images)[0].jpeg = 'f'.repeat(64); });
   refused(/two font instances under the key/, (list) => { list.resources.fonts.push({ ...list.resources.fonts[0] }); });
@@ -627,7 +627,7 @@ test('in the page: the list\'s widths are HarfBuzz\'s for every glyph it holds, 
         file: new TextDecoder('latin1').decode(printed.bytes),
       };
     }, WRITER);
-    assert.equal(seen.version, 6);
+    assert.equal(seen.version, 7);
     assert.ok(seen.fonts.length >= 2 && seen.fonts.every((f) => Object.keys(f.coords).length > 0), `two instances of the variable face, each pinned: ${JSON.stringify(seen.fonts.map((f) => f.key))}`);
     for (const font of seen.fonts) assert.deepEqual(font.units, font.harfbuzz, `${font.key}: the list's widths are HarfBuzz's at the instance's coordinates`);
     for (const { font, gids } of seen.used) {

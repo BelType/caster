@@ -277,6 +277,8 @@ function imageNote(list: DisplayList, source: ImageSource, path: ImageUse['info'
   const bytesIn = source.original?.bytes ?? 0;
   // A JPEG or PNG whose pixels the image pass reduced to `imageResolution` (the report's `resampled` says from what to what, which the list does not hold): it has an `original` and, unlike a PNG the pass decoded for a reason, no `why`. A JPEG source reaches the list as a JPEG of the pass's making or as a file carrying its profile, a PNG as samples or as the photo rule's JPEG.
   const reduced = source.original !== undefined && source.original.why === undefined && (format === 'image/jpeg' || format === 'image/png') && (source.jpeg !== undefined || source.samples !== undefined || source.mime === 'image/jpeg');
+  // Pixels the image pass converted to CMYK (version 7, `convertImages: 'cmyk'`): the report's `converted` says from which space and profile, which the list does not hold.
+  if (source.samples?.colorSpace === 'DeviceCMYK') return { format, bytesIn, reason: `${format === 'canvas' ? 'a <canvas>, read as pixels by the image pass; ' : ''}converted to DeviceCMYK by the image pass, as flate samples` };
   // A `<canvas>` has no file: the image pass read its pixels off the element, and the photo rule chose between a JPEG and the samples (the report's `resampled` says whether it was reduced first).
   if (format === 'canvas') {
     if (source.jpeg !== undefined || source.mime === 'image/jpeg') return { format, bytesIn, reason: `a <canvas>, read as pixels by the image pass; the photo rule chose JPEG at quality ${source.photo?.chosenQuality ?? null}` };

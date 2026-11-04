@@ -259,6 +259,31 @@
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
    }
+  },
+  {
+   "name": "convert-images",
+   "why": "images under `convertImages: 'cmyk'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone",
+   "sha256": "27eb8a1b7515b0cd8725d756ca3255a0e174cd3cfd02fd14b316d06ca15f8249",
+   "bytes": 841329,
+   "options": {
+    "convertImages": "cmyk"
+   },
+   "list": {
+    "bytes": 16299,
+    "blobs": [
+     "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "7ba9916498112f1178341bdfa70ab6e6a6a2a199519d4d0e47f0343025cf6207",
+     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+     "87e04c2210b8b6bbe52340250002d95b32aeeeb8a166b240dcda744a54f0d5b0",
+     "c97bf31e09fde9b2540c7befd544f8038ea27d3ca7a44ba97e36677bfedea667",
+     "d038c1b5e0e100d850a72891275faa8cc658b0595dbb7ad0fa55ccb53c44eab2",
+     "d9973326aa9b91ab6659fa943f873fac8614134dd65954c704dbb1a5f1811808",
+     "eaf98d9c521d03dd3bf10d62e3880b517a60712f4bb32a8ba77098f79cc38657",
+     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5",
+     "f182f3eb96a2ae850d1b2aa5a3b85d4a6f2960e8a238f5d6cf8b012579c1de54",
+     "ff3849a1582e4e1b384700e85b51753a95e3002ab23f5b61c58934dec57b3feb"
+    ]
+   }
   }
  ]
 }

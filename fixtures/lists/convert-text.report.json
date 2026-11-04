@@ -53,6 +53,7 @@
   "imageResolution": 300,
   "downsampleThreshold": 1.5,
   "downsampleType": "bicubic",
+  "convertImages": "none",
   "rasterDpi": 300,
   "paintOrder": "css",
   "styledBorders": true,
@@ -659,7 +660,7 @@
     },
     {
      "path": "images",
-     "reason": "an image keeps its own colour (brief 4 of the image round adds convertImages)"
+     "reason": "an image keeps its own colour unless `convertImages: 'cmyk'` asks"
     }
    ],
    "wasm": {
