@@ -23,6 +23,7 @@
  */
 
 import { CasterError } from '../errors.ts';
+import { paintsDecoration } from '../vectors/cssBoxes.ts';
 import { ASCENT_ATTRIBUTE, SHAPE_ATTRIBUTE, SHAPE_MARKERS, markerBox } from '../vectors/listMarkers.ts';
 
 /** The class the guide's engine contract names, and `walk/structure.js`'s `LI` and `FENote` branches look for. */
@@ -304,7 +305,13 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   }
   apply(style, depth);
   const text = resolveGenerated(content, element, scopes, domPathish(element), which);
-  if (text === '') return null;
+  // An empty `content` still generates a box, and one that paints, the frame `content: ""` and a border draw, is made real like any other so the box painter sees it (issue 8).
+  if (text === '' && !paintsDecoration(style)) return null;
+  // Such a box is sized by its used width and height, which before the run are the unpaginated page's, so it waits for the second moment as a pseudo that reads a delivered value does.
+  if (text === '' && reads) {
+    out.deferred.push(`${domPathish(element)}${which}`);
+    return null;
+  }
   const span = element.ownerDocument.createElement('span');
   span.className = GENERATED_CLASS;
   span.textContent = text;
