@@ -24,7 +24,7 @@ import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { cssShapePath, domMatrix, parsePath, roundedRectPath, shapePath, transformPath } from './pathData.ts';
 import { markerAttributes, markerPlacements, viewBoxMatrix } from './svgMarkers.ts';
-import { domPathOf, featureTagsFor } from '../measure/textMeasure.ts';
+import { domPathOf, featureTagsFor, svgWords } from '../measure/textMeasure.ts';
 import { glyphOutline, shapeWord, upemOf } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';
 import { blendName, clientToLocalMatrix, emptyNodeCommon, holdsOpenBlend, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
@@ -1118,15 +1118,15 @@ function textOutline(context: SvgContext, element: SVGTextElement): Path {
   const variations = shaperVariations(coords);
   const scale = parseFloat(style.fontSize) / upemOf(url);
   const features = featureTagsFor(style, style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing), { element: domPath });
-  for (const word of rendered.matchAll(/\S+/gu)) {
-    const shaped = shapeWord(url, word[0], parseFloat(style.fontSize), features, undefined, variations);
+  for (const word of svgWords(element, rendered)) {
+    const shaped = shapeWord(url, word.text, parseFloat(style.fontSize), features, undefined, variations);
     if (shaped.direction === 'rtl') throw new CasterError(`svgGeometry: the <text> at ${domPath} runs right to left, which its outlines are not yet placed for`, { element: domPath });
     let cluster = -1;
     let pen = 0;
     shaped.gids.forEach((gid, i) => {
       // A cluster's glyphs follow each other from its character's origin; the next cluster starts at its own.
       if (shaped.clusters[i] !== cluster) [cluster, pen] = [shaped.clusters[i], 0];
-      const char = (word.index as number) + cluster;
+      const char = word.start + cluster;
       const origin = element.getStartPositionOfChar(char);
       const angle = (element.getRotationOfChar(char) * Math.PI) / 180;
       const [, , xOffset, yOffset] = shaped.positions[i];
