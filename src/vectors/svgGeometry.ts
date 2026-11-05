@@ -22,9 +22,11 @@ import { RASTER_DPI, bboxOf, periodsFor, unrollGradient } from './cssBoxes.ts';
 import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
-import { cssShapePath, domMatrix, roundedRectPath, shapePath, transformPath } from './pathData.ts';
+import { cssShapePath, domMatrix, parsePath, roundedRectPath, shapePath, transformPath } from './pathData.ts';
 import { markerAttributes, markerPlacements, viewBoxMatrix } from './svgMarkers.ts';
-import { domPathOf } from '../measure/textMeasure.ts';
+import { domPathOf, featureTagsFor } from '../measure/textMeasure.ts';
+import { glyphOutline, shapeWord, upemOf } from '../fonts/hbShaper.ts';
+import { shaperVariations } from '../fonts/axisMap.ts';
 import { blendName, clientToLocalMatrix, emptyNodeCommon, holdsOpenBlend, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
 import { CasterError } from '../errors.ts';
 
@@ -35,6 +37,7 @@ import type { PaintOrder } from '../walk/paintOrder.ts';
 import type { Box, Path, Point } from './pathData.ts';
 import type { MarkerAttributes, MarkerPlacement } from './svgMarkers.ts';
 import type { ArtifactDescriptor } from '../walk/structure.ts';
+import type { Coords } from '../fonts/axisMap.ts';
 import type { ClipSpec, GradientStop, PaintSpec, RasterSpec, ShadingSpec, SoftMaskSpec, StrokeStyle, VectorNode, VectorRequest } from './vector.ts';
 
 /** One inline `<svg>` the walker found, with the structure element that owns it. */
@@ -119,6 +122,8 @@ export type SvgResult = {
   markerDefinitions: MarkerDefinitionRecord[];
   /** E12c (`vector-painting.md`): every placement, in emission order. */
   markerPlacements: MarkerPlacementRecord[];
+  /** The text nodes of a `<mask>`'s or a `<clipPath>`'s `<text>`, drawn as outlines: paint, and no word of the page, so the census counts them claimed. */
+  outlined: Text[];
 };
 
 /** Elements that define rather than paint. */
@@ -181,7 +186,7 @@ function localMatrix(element: Element): Matrix {
  * @param options - `clipToPage` is R5's clip, the same one `measureText` takes: a drawing the engine laid out and then clipped belongs to the continuation clone that carries it, and the clone is what paints it (*a drawing inside a continuation was painted on no page*, DESIGN.md S40). `chains` is the chain builder of `coordinates-and-pages.md` (E10). The transforms of every HTML ancestor between the page element and the `<svg>` are neutralised inside it, so `getScreenCTM()` answers with the SVG's own transform chain and the element's untransformed position and nothing else; the HTML chain becomes the `cm` the whole figure is painted under. SVG-internal transforms stay here, where the browser already composed them.
  * @throws {CasterError} The drawing names a marker, paint server, clip path or mask that is not in the `<svg>` or is not the element it should be, a gradient has no stops, or a raster fallback would have to set text.
  */
-export function collectSvg(options: { container: HTMLElement; order: PaintOrder; roots: SvgRoot[]; chains: ChainContext; clipToPage?: (page: number,element: Element) => { topPx: number; bottomPx: number; }|null; }): SvgResult {
+export function collectSvg(options: { container: HTMLElement; order: PaintOrder; roots: SvgRoot[]; chains: ChainContext; clipToPage?: (page: number,element: Element) => { topPx: number; bottomPx: number; }|null; faceOf?: FaceOf; }): SvgResult {
   const { container, order, roots, chains } = options;
   const containerRect = container.getBoundingClientRect();
   const out: SvgResult = {
@@ -193,6 +198,7 @@ export function collectSvg(options: { container: HTMLElement; order: PaintOrder;
     readings: [],
     markerDefinitions: [],
     markerPlacements: [],
+    outlined: [],
   };
 
   for (const root of roots) {
@@ -228,6 +234,7 @@ export function collectSvg(options: { container: HTMLElement; order: PaintOrder;
       out,
       markers: new Map<any, any>(),
       markerScope: root.domPath,
+      faceOf: options.faceOf,
     };
 
     // The verify items: what the two CTM calls answer for the root, for a nested `<svg>`, and for an element reached through `<use>`.
@@ -292,7 +299,11 @@ export type SvgContext = {
   markers: Map<Element, MarkerDefinition>;
   /** A stable prefix for the form keys of this `<svg>`, so two figures never collide. */
   markerScope: string;
+  faceOf?: FaceOf;
 };
+
+/** The face a `<text>` is set in, as the measurement matches it: the font's key and the instance's coordinates. */
+export type FaceOf = (element: Element) => { url: string; coords: Coords; };
 
 /** Record what `getCTM()`, `getScreenCTM()`, `getBBox()` and the client rectangle answer for one element, into `context.out.readings`. */
 function record(context: SvgContext, element: Element, description: string) {
@@ -998,7 +1009,7 @@ function elementClips(context: SvgContext, element: Element, style: CSSStyleDecl
   const path: Path = [];
   const rules = new Set<string>();
   for (const child of clipPath.children) {
-    const local = shapePath(child);
+    const local = child.localName === 'text' ? textOutline(context, child as SVGTextElement) : shapePath(child);
     if (!local || local.length === 0) continue;
     rules.add(getComputedStyle(child).clipRule);
     for (const segment of transformPath(local, mul(mul(localMatrix(child), unitsMatrix), toPage))) path.push(segment);
@@ -1064,10 +1075,11 @@ function maskChild(context: SvgContext, element: Element, toPage: Matrix): Vecto
     return { ...emptyNodeCommon(domPath, 'mask-g'), kind: 'group', children, bboxPt: bboxOf(children), forceForm: false, formReason: '' };
   }
 
-  const local = shapePath(element);
+  const local = tag === 'text' ? textOutline(context, element as SVGTextElement) : shapePath(element);
   if (!local || local.length === 0) return null;
   const fill = paintOf(context, element, style, style.fill, own, domPath, 'fill');
   if (fill.kind === 'none') return null;
+  if (tag === 'text' && style.stroke !== 'none') context.out.deferred.push({ path: domPath, feature: 'stroke on a <text> inside a <mask>', paintedAs: 'the fill alone' });
   return {
     ...emptyNodeCommon(domPath, `mask-${tag}`),
     kind: 'path',
@@ -1078,6 +1090,55 @@ function maskChild(context: SvgContext, element: Element, toPage: Matrix): Vecto
     strokeStyle: null,
     opacity: numberOf(style.fillOpacity, 1),
   };
+}
+
+/**
+ * A `<text>` that is paint rather than words, a `<mask>`'s or a `<clipPath>`'s, as the outlines of its glyphs, in its own user space.
+ *
+ * @remarks
+ * The glyphs are the ones the page's words are shaped into (HarfBuzz, at the face and instance the measurement matches), each placed at the origin the browser gives its character, which already carries `text-anchor`, every `x`, `y`, `dx` and `dy`, the kerning and the letter spacing, and turned by its `rotate`. The outline is HarfBuzz's own, at the same instance (codeberg.org/BelType/caster issue 10). The text nodes are recorded in `outlined`, so *the conservation of words* (DESIGN.md S61) counts them claimed: a mask's word is no word a reader reads, and the drawing's own `aria-label` is.
+ *
+ * @throws {CasterError} No faces were given to the pass, the collapsed text disagrees with `getNumberOfChars()`, a `<tspan>` changes the face, or the text runs right to left.
+ */
+function textOutline(context: SvgContext, element: SVGTextElement): Path {
+  const domPath = domPathOf(element, context.container);
+  const rendered = (element.textContent ?? '').replace(/\s+/gu, ' ').trim();
+  const path: Path = [];
+  if (rendered === '') return path;
+  if (!context.faceOf) throw new CasterError(`svgGeometry: the <text> at ${domPath} is drawn as outlines, and this pass was given no faces to draw it in`, { element: domPath });
+  if (element.getNumberOfChars() !== rendered.length) {
+    throw new CasterError(`svgGeometry: the <text> at ${domPath} renders ${element.getNumberOfChars()} characters but its collapsed text has ${rendered.length}, so its glyphs cannot be placed at their characters`, { element: domPath });
+  }
+  const style = getComputedStyle(element);
+  const font = (s: CSSStyleDeclaration) => [s.fontFamily, s.fontSize, s.fontWeight, s.fontStyle, s.fontStretch].join('|');
+  for (const tspan of element.querySelectorAll('*')) {
+    if (font(getComputedStyle(tspan)) !== font(style)) throw new CasterError(`svgGeometry: a <${tspan.localName}> inside the <text> at ${domPath} changes the face, and the outlines are drawn in one`, { element: domPath });
+  }
+  const { url, coords } = context.faceOf(element);
+  const variations = shaperVariations(coords);
+  const scale = parseFloat(style.fontSize) / upemOf(url);
+  const features = featureTagsFor(style, style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing), { element: domPath });
+  for (const word of rendered.matchAll(/\S+/gu)) {
+    const shaped = shapeWord(url, word[0], parseFloat(style.fontSize), features, undefined, variations);
+    if (shaped.direction === 'rtl') throw new CasterError(`svgGeometry: the <text> at ${domPath} runs right to left, which its outlines are not yet placed for`, { element: domPath });
+    let cluster = -1;
+    let pen = 0;
+    shaped.gids.forEach((gid, i) => {
+      // A cluster's glyphs follow each other from its character's origin; the next cluster starts at its own.
+      if (shaped.clusters[i] !== cluster) [cluster, pen] = [shaped.clusters[i], 0];
+      const char = (word.index as number) + cluster;
+      const origin = element.getStartPositionOfChar(char);
+      const angle = (element.getRotationOfChar(char) * Math.PI) / 180;
+      const [, , xOffset, yOffset] = shaped.positions[i];
+      // Font units with y up, to the text's user space: scale and flip, turn by the character's rotation, move to its origin.
+      const toUser = mul([scale, 0, 0, -scale, (pen + xOffset) * scale, -yOffset * scale], [Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), origin.x, origin.y]);
+      for (const segment of transformPath(parsePath(glyphOutline(url, gid, variations)), toUser)) path.push(segment);
+      pen += shaped.advances[i];
+    });
+  }
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) context.out.outlined.push(node as Text);
+  return path;
 }
 
 /**

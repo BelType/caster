@@ -50,6 +50,7 @@ import { BAND_INSET_PX, BLINK_SOURCE, MAX_DILATION_PX, glyphsOfRun, skipInkUnder
 import { collectTableBorders } from './vectors/tableBorders.ts';
 import { MARKS_PROPERTY, pageMarksOf, parseMarks } from './coordinates/printMarks.ts';
 import { collectSvg } from './vectors/svgGeometry.ts';
+import { matchFace, requestFor } from './fonts/fontResolve.ts';
 import { isolateBlends } from './vectors/blendIsolation.ts';
 import { collectListMarkers } from './vectors/listMarkers.ts';
 import { registerHintProperties, elementColor } from './colour/colorHints.ts';
@@ -73,6 +74,7 @@ import type { ImageNote, WordNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
 import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
 import type { FaceRequest } from './fonts/fontResolve.ts';
+import type { FaceOf } from './vectors/svgGeometry.ts';
 import type { FontTable } from './host/fonts.ts';
 import type { Gateway } from './host/gateway.ts';
 import type { WalkImage } from './walk/structure.ts';
@@ -279,7 +281,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       rectsOf: (element) => (grid.gridBoxes.has(element) ? [(grid.gridBoxes.get(element) as DOMRect)] : null)
     });
     // `clipToPage` is the same R5 clip the measurement takes: a drawing inside a straddling block's clipped tail is painted by the continuation clone that carries it, not by the source (*a drawing inside a continuation was painted on no page*, S40).
-    const svg = collectSvg({ container, order, roots: walk.svgs, chains, clipToPage });
+    // The face a `<mask>`'s or a `<clipPath>`'s `<text>` is outlined in, matched as the measurement matches a word's.
+    const faceOf: FaceOf = (element) => {
+      const request = requestFor(element);
+      const match = matchFace(table.descriptors, familyFor(element, request, table, container), request);
+      if (!match || match.synthesis.bold || match.synthesis.italic) throw new CasterError(`caster: no face matched the <text> at ${domPathOf(element, container)} without synthesis, which the engine forbids`, { element: domPathOf(element, container) });
+      return { url: match.face.url, coords: instanceCoords(getComputedStyle(element), match.face.axes ?? {}) };
+    };
+    const svg = collectSvg({ container, order, roots: walk.svgs, chains, clipToPage, faceOf });
     // Blink paints the disc, circle and square markers as shapes, not glyphs; each is drawn under the `Lbl` the walk gave it (`vectors/listMarkers.js`).
     const markers = collectListMarkers(walk.markerShapes, { order, chains, container });
     walk.artifacts.push(...boxes.artifacts, ...svg.artifacts, ...grid.artifacts);
@@ -318,6 +327,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     chains.end();
     // THE CONSERVATION OF WORDS (S61). Ink is a by-product of tagging here, so a text node the walk never classified is simply absent; the census asks the DOM rather than the tagger, and refuses the file that would show a cell's border around the hole where its words were.
+    for (const node of svg.outlined) measurement.claimed.add(node);
     assertConserved(measurement.claimed, strip);
     // And the words a pseudo-element paints, which no text node holds (*a pseudo that reads a value the engine delivers is made real after the run*, S79).
     assertGeneratedConserved(strip);
