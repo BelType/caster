@@ -20,6 +20,7 @@
  * @packageDocumentation
  */
 
+import { loadImageFaces } from '../images/svgInline.ts';
 import { CasterError } from '../errors.ts';
 import { reify } from './reify.ts';
 
@@ -72,6 +73,8 @@ export type Preparation = {
   deferred: string[];
   /** How many task-list checkboxes became text (M3). */
   tasks: number;
+  /** Settles once the faces the document's SVG images set text in are loaded: a host awaits it before the cut, so no face arrives during the print (`loadImageFaces`, codeberg.org/BelType/caster issue 11). Never rejects. */
+  ready: Promise<string[]>;
 };
 
 /**
@@ -107,7 +110,7 @@ export function prepare(doc: Document): Preparation {
   for (const element of doc.body.querySelectorAll('*')) element.setAttribute(SOURCE_ATTRIBUTE, String(n++));
   SNAPSHOTS.set(doc, (doc.body.cloneNode(true) as HTMLElement));
 
-  return { registrations, ...reified, tasks };
+  return { registrations, ...reified, tasks, ready: loadImageFaces(doc) };
 }
 
 /**

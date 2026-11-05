@@ -350,7 +350,13 @@ function firstLetterSpan(view: Window, element: Element, style: CSSStyleDeclarat
   let text: Text|null = null;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (node.nodeType === Node.ELEMENT_NODE) {
-      if (!view.getComputedStyle(node as Element).display.startsWith('inline') || view.getComputedStyle(node as Element).display === 'inline-block') return;
+      const child = view.getComputedStyle(node as Element);
+      if (child.display.startsWith('inline') && child.display !== 'inline-block') continue;
+      // The first letter of a block's first formatted line may sit in its first in-flow block child, as Blink finds it (codeberg.org/BelType/caster issue 13). A child that styles a first letter of its own makes its own span, and this one stands aside rather than split the same text twice.
+      const inFlow = child.display === 'block' && child.cssFloat === 'none' && (child.position === 'static' || child.position === 'relative');
+      if (!inFlow) return;
+      const own = view.getComputedStyle(node as Element, '::first-letter');
+      if (FIRST_LETTER_SIGNS.some((property) => own.getPropertyValue(property) !== child.getPropertyValue(property))) return;
       continue;
     }
     if (/\S/.test((node as Text).data)) { text = node as Text; break; }

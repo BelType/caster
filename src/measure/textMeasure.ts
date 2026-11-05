@@ -1340,6 +1340,33 @@ function groupLines(segments: MeasuredSegment[]): MeasuredLine[] {
     return lines;
 }
 /**
+ * The words of an SVG `<text>` as the browser placed them: every run of non-space characters, divided again wherever a character does not follow the one before it.
+ *
+ * @remarks
+ * The text's characters are its collapsed `textContent`, and two `<tspan>`s of one `<text>` join with no space between them, so the last word of one line and the first of the next are one run, "romanoAnno" (codeberg.org/BelType/caster issue 12). A run is placed from its first character, so such a run printed on the first line. A character starts a new piece when its start is neither where the previous character ends nor where it starts (a character of the previous one's cluster shares its start), which is what an absolute `x` or `y`, a `dx` or a `dy` does. The low half of a surrogate pair is never a start. A tolerance of a twentieth of the font size absorbs the layout's own rounding: Blink answers in 1/64 px, and two neighbours of a kerned face differ by 0.016 (measured 2026-11-05), while a line or a `dx` moves by whole units.
+ *
+ * @param rendered - The collapsed text, whose length the caller has checked against `getNumberOfChars()`.
+ */
+export function svgWords(element: SVGTextContentElement, rendered: string): { start: number; end: number; text: string; }[] {
+    const out: { start: number; end: number; text: string; }[] = [];
+    const tolerance = parseFloat(getComputedStyle(element).fontSize) / 20;
+    const near = (a: DOMPoint, b: DOMPoint) => Math.abs(a.x - b.x) < tolerance && Math.abs(a.y - b.y) < tolerance;
+    for (const match of rendered.matchAll(/\S+/gu)) {
+        let start = match.index as number;
+        const end = start + match[0].length;
+        for (let i = start + 1; i < end; i++) {
+            const code = rendered.charCodeAt(i);
+            if (code >= 0xdc00 && code <= 0xdfff) continue;
+            const here = element.getStartPositionOfChar(i);
+            if (near(here, element.getEndPositionOfChar(i - 1)) || near(here, element.getStartPositionOfChar(i - 1))) continue;
+            out.push({ start, end: i, text: rendered.slice(start, i) });
+            start = i;
+        }
+        out.push({ start, end, text: rendered.slice(start, end) });
+    }
+    return out;
+}
+/**
  * `<text>` inside an inline `<svg>`, measured into the same words every other line of the page is made of.
  *
  * @remarks
@@ -1386,15 +1413,14 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
     });
     // The column offset is the harness's page model — pages laid out side by side one `COLUMN_WIDTH_PX` apart — and it is the fallback road, exactly as it is for an ordinary segment (`local ? local.xPx : rect.left - containerRect.left - page * COLUMN_WIDTH_PX`). Under a frame `request.toContainer` was composed with `clientToLocalMatrix`, which already expresses the point against the page's own origin, so subtracting the offset a second time moved every `<text>` on page N one page-width to the left and off the page. Latent until a drawing was collected on a page other than the first (*a drawing inside a continuation was painted on no page*, S40); load-bearing the moment one was.
     const columnOffset = activeFrame() ? 0 : request.page * COLUMN_WIDTH_PX;
-    const words = [...rendered.matchAll(/\S+/gu)];
-    words.forEach((match2, wordIndex) => {
-        const start = match2.index;
-        const end = start + match2[0].length;
+    const words = svgWords(element, rendered);
+    words.forEach((match2) => {
+        const { start, end } = match2;
         const first = element.getStartPositionOfChar(start);
         const last = element.getEndPositionOfChar(end - 1);
         const [startX, startY] = apply(request.toContainer, first.x, first.y);
         const [endX] = apply(request.toContainer, last.x, last.y);
-        const shaped = shapeWord(match.face.url, match2[0], sizePx, features, undefined, shaperVariations(coords));
+        const shaped = shapeWord(match.face.url, match2.text, sizePx, features, undefined, shaperVariations(coords));
         ctx.segments.push({
             index: ctx.segments.length,
             paragraph,
@@ -1402,9 +1428,9 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
             blockPath: request.domPath,
             owner: request.owner,
             page: request.page,
-            text: match2[0],
-            spaceBefore: wordIndex > 0,
-            spaceAfter: wordIndex < words.length - 1,
+            text: match2.text,
+            spaceBefore: rendered[start - 1] === ' ',
+            spaceAfter: rendered[end] === ' ',
             faceId: match.face.id,
             features,
             coords,

@@ -24,7 +24,7 @@ import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { cssShapePath, domMatrix, parsePath, roundedRectPath, shapePath, transformPath } from './pathData.ts';
 import { markerAttributes, markerPlacements, viewBoxMatrix } from './svgMarkers.ts';
-import { domPathOf, featureTagsFor } from '../measure/textMeasure.ts';
+import { domPathOf, featureTagsFor, svgWords } from '../measure/textMeasure.ts';
 import { glyphOutline, shapeWord, upemOf } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';
 import { blendName, clientToLocalMatrix, emptyNodeCommon, holdsOpenBlend, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
@@ -504,7 +504,7 @@ function groupNode(context: SvgContext, element: Element, style: CSSStyleDeclara
  */
 function shapeNode(context: SvgContext, element: Element, style: CSSStyleDeclaration, local: Path, toPage: Matrix, clips: ClipSpec[], domPath: string, label: string, paints?: { fill: string; stroke: string; }): VectorNode|null {
   const path = transformPath(local, toPage);
-  // A `<pattern>` is a PDF tiling pattern, which this printer does not build; the shape is drawn by the browser, as a filter is, rather than printed as nothing (issue 1). A `<use>` instance's shape stands in `<defs>`, where there is nothing to draw, and keeps the deferral `paintOf` lists.
+  // A `<pattern>` is a PDF tiling pattern, which this printer does not build; the shape is drawn by the browser, as a filter is, rather than printed as nothing (issue 1). A `<use>` instance's shape stands in `<defs>`, where there is nothing to draw: `paintUse` rasterises the `<use>` itself before it gets here (issue 14).
   const pattern = paints ? null : [style.fill, style.stroke].map(referenceId).find((id) => id !== null && context.svg.querySelector(`#${CSS.escape(id)}`)?.localName === 'pattern');
   if (pattern) {
     const raster = rasterOf(context, element, style, 'pattern', `the <pattern> #${pattern} on ${domPath}: PDF tiling patterns are not built`);
@@ -1118,15 +1118,15 @@ function textOutline(context: SvgContext, element: SVGTextElement): Path {
   const variations = shaperVariations(coords);
   const scale = parseFloat(style.fontSize) / upemOf(url);
   const features = featureTagsFor(style, style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing), { element: domPath });
-  for (const word of rendered.matchAll(/\S+/gu)) {
-    const shaped = shapeWord(url, word[0], parseFloat(style.fontSize), features, undefined, variations);
+  for (const word of svgWords(element, rendered)) {
+    const shaped = shapeWord(url, word.text, parseFloat(style.fontSize), features, undefined, variations);
     if (shaped.direction === 'rtl') throw new CasterError(`svgGeometry: the <text> at ${domPath} runs right to left, which its outlines are not yet placed for`, { element: domPath });
     let cluster = -1;
     let pen = 0;
     shaped.gids.forEach((gid, i) => {
       // A cluster's glyphs follow each other from its character's origin; the next cluster starts at its own.
       if (shaped.clusters[i] !== cluster) [cluster, pen] = [shaped.clusters[i], 0];
-      const char = (word.index as number) + cluster;
+      const char = word.start + cluster;
       const origin = element.getStartPositionOfChar(char);
       const angle = (element.getRotationOfChar(char) * Math.PI) / 180;
       const [, , xOffset, yOffset] = shaped.positions[i];
@@ -1154,6 +1154,19 @@ function paintUse(context: SvgContext, use: SVGUseElement, style: CSSStyleDeclar
   if (!target) {
     const raster = rasterOf(context, use, style, 'use', `<use href="${href}"> could not be resolved`);
     context.out.deferred.push({ path: domPath, feature: '<use> the resolver cannot handle', paintedAs: `raster at ${RASTER_DPI} dpi` });
+    return { ...emptyNodeCommon(domPath, 'use'), kind: 'raster', raster, clips };
+  }
+
+  // A pattern fill anywhere in what the `<use>` draws: the instance is drawn by the browser, as a pattern-filled shape is (issue 1). Its shapes stand in `<defs>`, where the browser draws nothing, so the raster is of the `<use>` itself (codeberg.org/BelType/caster issue 14).
+  const pattern = [target, ...target.querySelectorAll('*')]
+    .flatMap((node) => (['fill', 'stroke'] as const).map((property) => referenceId(referencedPaint(node, getComputedStyle(node), style, property))))
+    .find((id) => id !== null && context.svg.querySelector(`#${CSS.escape(id)}`)?.localName === 'pattern');
+  if (pattern) {
+    if ((target.textContent ?? '').trim() !== '') {
+      throw new CasterError(`svgGeometry: ${domPath} would be rasterised for the <pattern> #${pattern}, but what it draws contains text; a serialised fragment cannot reach the page’s fonts, so the raster would be set in a system font and the words would be wrong`, { element: domPath });
+    }
+    const raster = rasterOf(context, use, style, 'pattern', `the <pattern> #${pattern} drawn through ${domPath}: PDF tiling patterns are not built`);
+    context.out.deferred.push({ path: domPath, feature: '<pattern> paint server', paintedAs: `raster at ${RASTER_DPI} dpi` });
     return { ...emptyNodeCommon(domPath, 'use'), kind: 'raster', raster, clips };
   }
 

@@ -1,7 +1,7 @@
 /**
  * An authored `::first-letter` is made a real span carrying its style, and the page does not move.
  *
- * The walk reads a text's style off the element that holds it, so a drop capital, `::first-letter` floated with its own size and colour, printed at the paragraph's size and colour (codeberg.org/BelType/caster issue 9). `prepare` now wraps the letter in a span with the pseudo's computed style; preparation must not change layout, so the letter's and the lines' rectangles are compared with the native ones.
+ * The first letter of a block whose text sits in a block child is made real too (issue 13), and every glyph of the page is compared. The walk reads a text's style off the element that holds it, so a drop capital, `::first-letter` floated with its own size and colour, printed at the paragraph's size and colour (codeberg.org/BelType/caster issue 9). `prepare` now wraps the letter in a span with the pseudo's computed style; preparation must not change layout, so the letter's and the lines' rectangles are compared with the native ones.
  */
 
 import { test } from 'node:test';
@@ -48,7 +48,7 @@ test('an authored ::first-letter becomes a span with its style, and no rectangle
       // Every glyph's rectangle, read through a range over each character: the same before and after, or the page moved.
       const glyphs = () => {
         const out: number[][] = [];
-        const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
           for (let i = 0; i < node.length; i++) {
             const range = document.createRange();
@@ -68,7 +68,7 @@ test('an authored ::first-letter becomes a span with its style, and no rectangle
       const style = span ? getComputedStyle(span) : null;
       return {
         letter: span?.textContent, fontSize: style?.fontSize, color: style?.color, float: style?.cssFloat, drift, count: [before.length, after.length],
-        plain: document.querySelectorAll('p.plain .caster-first-letter').length, nested: document.querySelectorAll('div.drop .caster-first-letter').length,
+        plain: document.querySelectorAll('p.plain .caster-first-letter').length, nested: [...document.querySelectorAll('div.drop .caster-first-letter')].map((s) => [s.textContent, getComputedStyle(s).fontSize, getComputedStyle(s).color]),
       };
     });
     assert.equal(seen.letter, '«N', 'the first letter with the punctuation before it');
@@ -76,7 +76,7 @@ test('an authored ::first-letter becomes a span with its style, and no rectangle
     assert.deepEqual(seen.count[0], seen.count[1]);
     assert.ok(seen.drift < 0.05, `no glyph moved (largest drift ${seen.drift} px)`);
     assert.equal(seen.plain, 0, 'a paragraph whose first letter nobody styled is left alone');
-    assert.equal(seen.nested, 0, 'a first letter inside a block child stays native');
+    assert.deepEqual(seen.nested, [['D', '40px', 'rgb(184, 137, 43)']], 'a first letter held by a block child is made real with the outer block\'s style (issue 13)');
   } finally {
     await browser.close();
     server.close();
