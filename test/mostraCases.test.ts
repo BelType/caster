@@ -83,3 +83,14 @@ test('two positioned <tspan> lines of one <text> print each on its own line', as
   const lines = linesOf(doc);
   assert.ok(lines.includes('Province dell’Impero romano') && lines.includes('Anno 117'), `each tspan is its own line: ${JSON.stringify(lines)}`);
 });
+
+test('a pattern-filled shape drawn through <use> prints', async () => {
+  const { doc } = await printCase('p { height: 0; overflow: hidden }', '<p>Sopra.</p><svg viewBox="0 0 100 60" width="300" height="180" role="img" aria-label="A checked pattern"><defs><pattern id="p" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#eee"/><rect width="5" height="5" fill="#4a1528"/></pattern><rect id="r" width="100" height="60" fill="url(#p)"/></defs><use href="#r"/></svg>');
+  const pixmap = doc.loadPage(0).toPixmap(mupdf.Matrix.scale(1, 1), mupdf.ColorSpace.DeviceGray, false, true);
+  const [width, samples] = [pixmap.getWidth(), pixmap.getPixels()];
+  let ink = 0;
+  // 300 × 180 px is 225 × 135 pt; a quarter of every cell is dark.
+  for (let y = 0; y < 135; y++) for (let x = 0; x < 225; x++) if (samples[y * width + x] < 128) ink++;
+  const share = ink / (225 * 135);
+  assert.ok(share > 0.15 && share < 0.35, `the checks are drawn (${share.toFixed(3)} of the drawing is dark)`);
+});

@@ -504,7 +504,7 @@ function groupNode(context: SvgContext, element: Element, style: CSSStyleDeclara
  */
 function shapeNode(context: SvgContext, element: Element, style: CSSStyleDeclaration, local: Path, toPage: Matrix, clips: ClipSpec[], domPath: string, label: string, paints?: { fill: string; stroke: string; }): VectorNode|null {
   const path = transformPath(local, toPage);
-  // A `<pattern>` is a PDF tiling pattern, which this printer does not build; the shape is drawn by the browser, as a filter is, rather than printed as nothing (issue 1). A `<use>` instance's shape stands in `<defs>`, where there is nothing to draw, and keeps the deferral `paintOf` lists.
+  // A `<pattern>` is a PDF tiling pattern, which this printer does not build; the shape is drawn by the browser, as a filter is, rather than printed as nothing (issue 1). A `<use>` instance's shape stands in `<defs>`, where there is nothing to draw: `paintUse` rasterises the `<use>` itself before it gets here (issue 14).
   const pattern = paints ? null : [style.fill, style.stroke].map(referenceId).find((id) => id !== null && context.svg.querySelector(`#${CSS.escape(id)}`)?.localName === 'pattern');
   if (pattern) {
     const raster = rasterOf(context, element, style, 'pattern', `the <pattern> #${pattern} on ${domPath}: PDF tiling patterns are not built`);
@@ -1154,6 +1154,19 @@ function paintUse(context: SvgContext, use: SVGUseElement, style: CSSStyleDeclar
   if (!target) {
     const raster = rasterOf(context, use, style, 'use', `<use href="${href}"> could not be resolved`);
     context.out.deferred.push({ path: domPath, feature: '<use> the resolver cannot handle', paintedAs: `raster at ${RASTER_DPI} dpi` });
+    return { ...emptyNodeCommon(domPath, 'use'), kind: 'raster', raster, clips };
+  }
+
+  // A pattern fill anywhere in what the `<use>` draws: the instance is drawn by the browser, as a pattern-filled shape is (issue 1). Its shapes stand in `<defs>`, where the browser draws nothing, so the raster is of the `<use>` itself (codeberg.org/BelType/caster issue 14).
+  const pattern = [target, ...target.querySelectorAll('*')]
+    .flatMap((node) => (['fill', 'stroke'] as const).map((property) => referenceId(referencedPaint(node, getComputedStyle(node), style, property))))
+    .find((id) => id !== null && context.svg.querySelector(`#${CSS.escape(id)}`)?.localName === 'pattern');
+  if (pattern) {
+    if ((target.textContent ?? '').trim() !== '') {
+      throw new CasterError(`svgGeometry: ${domPath} would be rasterised for the <pattern> #${pattern}, but what it draws contains text; a serialised fragment cannot reach the page’s fonts, so the raster would be set in a system font and the words would be wrong`, { element: domPath });
+    }
+    const raster = rasterOf(context, use, style, 'pattern', `the <pattern> #${pattern} drawn through ${domPath}: PDF tiling patterns are not built`);
+    context.out.deferred.push({ path: domPath, feature: '<pattern> paint server', paintedAs: `raster at ${RASTER_DPI} dpi` });
     return { ...emptyNodeCommon(domPath, 'use'), kind: 'raster', raster, clips };
   }
 
