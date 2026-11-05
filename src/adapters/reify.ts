@@ -173,8 +173,8 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   const parent = item.parentElement;
   // The list's items are taken before this item changes `display` on any path, so an item whose marker is hidden still counts, as Blink counts it (the seventh review of the Press round: `none, 2., 3.` printed `none, 1., 2.`).
   if (parent) itemsOf(parent);
-  // An `<li>` in a `<ul>`/`<ol>` reads `list-style-type` off the list, as D9 wrote it; anything else reads its own.
-  const list = item.tagName === 'LI' && parent && (parent.tagName === 'UL' || parent.tagName === 'OL') ? parent : null;
+  // An `<li>` in a `<ul>`, `<ol>` or `<menu>` reads `list-style-type` off the list, as D9 wrote it; anything else reads its own.
+  const list = item.tagName === 'LI' && parent && (parent.tagName === 'UL' || parent.tagName === 'OL' || parent.tagName === 'MENU') ? parent : null;
   const listStyle = list ? view.getComputedStyle(list).listStyleType : style.listStyleType;
   const content = view.getComputedStyle(item, '::marker').content;
   let text;

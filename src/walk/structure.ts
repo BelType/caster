@@ -331,11 +331,11 @@ function isBlockLevel(element: Element): boolean {
  */
 const ARIA_TAGS: Record<string,'P'|'H'|'L'|'LI'|'Figure'|'transparent'> = { paragraph: 'P', heading: 'H', list: 'L', listitem: 'LI', figure: 'Figure', img: 'Figure', presentation: 'transparent', none: 'transparent' };
 /** The role each element already has natively; a role that restates it changes nothing. */
-const NATIVE_ROLE: Record<string,string> = { P: 'paragraph', H1: 'heading', H2: 'heading', H3: 'heading', H4: 'heading', H5: 'heading', H6: 'heading', UL: 'list', OL: 'list', LI: 'listitem', FIGURE: 'figure' };
+const NATIVE_ROLE: Record<string,string> = { P: 'paragraph', H1: 'heading', H2: 'heading', H3: 'heading', H4: 'heading', H5: 'heading', H6: 'heading', UL: 'list', OL: 'list', MENU: 'list', LI: 'listitem', FIGURE: 'figure' };
 /** Elements whose own branch decides what they are and reads the attributes it needs, so the role table is not asked: a picture's description is its `alt`, `<title>` or label. */
 const ROLE_NOT_ASKED = new Set(['IMG', 'svg', 'SVG', 'CANVAS', 'PICTURE', 'SOURCE', 'HR', 'BR']);
 /** Lists whose items would be stranded outside any list if the list went transparent, so `presentation` and `none` on them are a warning. */
-const LIST_TAGS = new Set(['UL', 'OL', 'DL']);
+const LIST_TAGS = new Set(['UL', 'OL', 'MENU', 'DL']);
 /** The engine's and the editing tools' own custom elements: inside a printed document they are a defect of the host, never a vocabulary gap, and are refused under both modes (*the printer guesses, says so, and withdraws the claim*, S90). */
 const OWN_ELEMENT = /^(BT|BELTYPE)-/u;
 /** A heading tag, its level captured. */
@@ -1277,7 +1277,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visitAsOwner(element, parent, 'P');
             return;
         }
-        if (tag === 'UL' || tag === 'OL') {
+        // `<menu>` is HTML's other unordered list.
+        if (tag === 'UL' || tag === 'OL' || tag === 'MENU') {
             const listStyle = getComputedStyle(element).listStyleType;
             const listNumbering = LIST_NUMBERING[listStyle];
             if (!listNumbering) {
@@ -1403,7 +1404,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         }
 
         // The belt's `@toc` emits a `<nav>` of nested lists, and so does the site chrome. `Div` groups them; each `<ul>` inside becomes an `L` by its own branch. Tagging the `nav` itself an `L` would claim the wrapper is the list, which it is not when there are two.
-        if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER' || tag === 'ASIDE' || tag === 'MAIN' || tag === 'BODY') {
+        // `<address>`, `<hgroup>` and `<search>` are grouping elements of the same kind (codeberg.org/BelType/caster issue 19).
+        if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER' || tag === 'ASIDE' || tag === 'MAIN' || tag === 'BODY' || tag === 'ADDRESS' || tag === 'HGROUP' || tag === 'SEARCH') {
             const self = noteLang(element, node('Div', parent, langAttrs(element)));
             visitGrouped(element, self);
             return;
