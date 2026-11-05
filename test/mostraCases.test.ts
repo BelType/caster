@@ -1,8 +1,8 @@
 /**
- * Two cases from printing the `mostra` specimen (codeberg.org/BelType/specimens), each printed whole and read back with mupdf.
+ * Three cases from printing the `mostra` specimen (codeberg.org/BelType/specimens), each printed whole and read back with mupdf.
  *
  * @remarks
- * Two positioned `<tspan>` lines of one SVG `<text>` print on their own lines (issue 12); a pattern-filled shape drawn through `<use>` prints (issue 14). Each page is a host strip of one box, so no engine is involved. The third case of the round, a drop capital held by a block child (issue 13), is in `reifyFirstLetter.test.ts`.
+ * Two positioned `<tspan>` lines of one SVG `<text>` print on their own lines (issue 12); a pattern-filled shape drawn through `<use>` prints (issue 14); a face that only an SVG placed with `<img>` uses is loaded by `prepare(doc).ready`, before the cut, and embedded (issue 11). Each page is a host strip of one box, so no engine is involved. The fourth case of the round, a drop capital held by a block child (issue 13), is in `reifyFirstLetter.test.ts`.
  *
  * @packageDocumentation
  */
@@ -52,7 +52,9 @@ ${css}
     await tab.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map((i) => i.decode())); });
     const { base64, faces } = await tab.evaluate(async (writer: string) => {
       const caster = await import('/src/index.js' as string);
-      caster.prepare(document);
+      // The face an SVG image's text needs is loaded before anything is cut, as a host awaits it (issue 11); and the box it was read in is gone.
+      await caster.prepare(document).ready;
+      if (document.querySelector('span > svg')) throw new Error('loadImageFaces left its box in the document');
       const strip = document.querySelector('.s') as HTMLElement;
       const box = strip.getBoundingClientRect();
       const pt = (px: number) => Math.round(((px * 72) / 96) * 1000) / 1000;
@@ -93,4 +95,14 @@ test('a pattern-filled shape drawn through <use> prints', async () => {
   for (let y = 0; y < 135; y++) for (let x = 0; x < 225; x++) if (samples[y * width + x] < 128) ink++;
   const share = ink / (225 * 135);
   assert.ok(share > 0.15 && share < 0.35, `the checks are drawn (${share.toFixed(3)} of the drawing is dark)`);
+});
+
+test('a face only an SVG placed with <img> uses is loaded before the cut and embedded', async () => {
+  const { doc, faces } = await printCase(
+    '@font-face { font-family: Label; src: url("/fonts/JetBrainsMono-Regular.ttf"); } img { width: 200px; height: 60px }',
+    '<p>Una etichetta.</p><img src="/label.svg" alt="Una etichetta">',
+    { '/label.svg': '<svg viewBox="0 0 200 60" width="200" height="60" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="60" fill="#eee"/><text x="100" y="38" font-family="Label,Arial" font-size="20" text-anchor="middle">Roma</text></svg>' },
+  );
+  assert.ok(linesOf(doc).some((l) => /Roma/.test(l)), 'the label is printed');
+  assert.ok(faces.some((id) => id.startsWith('Label')), `the label's face is embedded: ${faces.join(', ')}`);
 });

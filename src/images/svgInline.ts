@@ -120,6 +120,45 @@ function seat(img: HTMLImageElement, bytes: Uint8Array, domPath: string): SVGSVG
   return svg;
 }
 
+/**
+ * Ask the browser for the faces the text of every SVG `<img>` is set in, so they are loaded before the pages are cut.
+ *
+ * @remarks
+ * The browser draws an SVG image in a context of its own, with none of the document's faces, so a face only the drawing names is one the document never loads, and the font table reads only the faces the browser loaded (*the table reads the faces the browser loaded*, DESIGN.md S88). The drawing is seated at print time and needs the face then; but a face that loads during the print is news Cicero answers by cutting the document again, under the printer's feet (codeberg.org/BelType/caster issue 11). So the faces are asked for here, before the cut: each file is fetched (the image already brought it into the cache), parsed, and set for a moment in a hidden, empty box beside its `<img>`, where its text inherits what the seated drawing will inherit, so each `<text>`'s computed font names the face the drawing will ask for; the box is gone before anything awaits. A file that cannot be fetched or parsed is left to the print, which refuses it by name.
+ *
+ * @returns The `FontFaceSet.load()` requests, once every one has settled.
+ */
+export async function loadImageFaces(doc: Document): Promise<string[]> {
+  const view = doc.defaultView;
+  if (!view) return [];
+  const requests: { font: string; text: string; }[] = [];
+  for (const img of [...doc.querySelectorAll('img')]) {
+    const src = isImageElement(img) ? img.currentSrc || img.src : '';
+    if (!src) continue;
+    let text;
+    try {
+      const response = await view.fetch(src);
+      if (!response.ok || !/svg/i.test(response.headers.get('content-type') ?? '')) continue;
+      text = await response.text();
+    } catch {
+      continue;
+    }
+    const root = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+    if (!img.isConnected || root?.localName !== 'svg' || !root.querySelector('text')) continue;
+    const box = doc.createElement('span');
+    box.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;visibility:hidden';
+    box.append(doc.importNode(root, true));
+    img.before(box);
+    for (const element of box.querySelectorAll('text, tspan')) {
+      const style = view.getComputedStyle(element);
+      requests.push({ font: `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`, text: element.textContent ?? '' });
+    }
+    box.remove();
+  }
+  await Promise.all(requests.map(({ font, text }) => doc.fonts.load(font, text).catch(() => [])));
+  return requests.map(({ font }) => font);
+}
+
 /** A rectangle as `w×h at (x, y)`, for a refusal's message. */
 function rectText(rect: DOMRect) {
   return `${rect.width.toFixed(2)}×${rect.height.toFixed(2)} at (${rect.left.toFixed(2)}, ${rect.top.toFixed(2)})`;
