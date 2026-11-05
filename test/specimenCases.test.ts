@@ -100,3 +100,16 @@ test('an outer box-shadow is painted outside the box and not under it', async ()
   assert.ok(at([75.5, 25]) < 200, `the band right of the box is the shadow (${at([75.5, 25])})`);
   assert.ok(at([50, 35.5]) < 200, `the band under the box is the shadow (${at([50, 35.5])})`);
 });
+
+test('<address>, <hgroup> and <search> are grouped as a Div, and <menu> is a list', async () => {
+  const { doc, tree } = await printCase('', [
+    '<hgroup><h1>Avviso</h1><p>di accertamento</p></hgroup>',
+    '<address>Via dei Tigli 8<br>00010 Borgo Esempio</address>',
+    '<search><p>Cerca</p></search>',
+    '<menu><li>Uno</li><li>Due</li></menu>',
+  ].join(''));
+  assert.match(textOf(doc), /Via dei Tigli 8/);
+  const tags = tagsOf(tree);
+  assert.ok(tags.includes('L') && tags.filter((t) => t === 'LI').length === 2, `the menu is a list of two items: ${tags.join(' ')}`);
+  assert.ok(tags.filter((t) => t === 'Div').length >= 3, `hgroup, address and search are each a Div: ${tags.join(' ')}`);
+});
