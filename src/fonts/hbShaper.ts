@@ -95,6 +95,10 @@ export function glyphAdvance(key: string, gid: number, variations?: Coords): num
     return fontFor(key, variations).font.glyphHAdvance(gid);
 }
 /** The harfbuzzjs version string, as the loaded bundle reports it. */
+/** A glyph's outline as SVG path data, in font units with y up, at the instance `variations` name. */
+export function glyphOutline(key: string, gid: number, variations?: Coords): string {
+    return fontFor(key, variations).font.glyphToPath(gid);
+}
 export function versionString() {
     return hb().versionString();
 }
