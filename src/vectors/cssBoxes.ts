@@ -1011,11 +1011,14 @@ function shadowRaster(style: CSSStyleDeclaration, border: Box, radii: Radii, toP
   // A spread grows every corner radius by the same amount, floored at zero (CSS Backgrounds 3 §7.1.1).
   const grown = (radii.map((r) => ([Math.max(0, r[0] + shadow.spread), Math.max(0, r[1] + shadow.spread)] as Radius)) as Radii);
   const d = pathToSvg(roundedRectPath(local, grown));
+  // An outer shadow is drawn only outside the border edge (CSS Backgrounds 3 §7.1.1): the box's own border box, with its own radii, is cut out of it, so a transparent box shows the page and not its shadow (codeberg.org/BelType/caster issue 18).
+  const outside = `M0 0H${area.w}V${area.h}H0Z ${pathToSvg(roundedRectPath({ x: pad, y: pad, w: border.w, h: border.h }, radii))}`;
   // A CSS blur radius is twice the Gaussian standard deviation, which is the one number that has to be right for a shadow to be the same shadow.
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${area.w}" height="${area.h}" viewBox="0 0 ${area.w} ${area.h}">`,
     `<filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${shadow.blur / 2}"/></filter>`,
-    `<path d="${d}" fill="${shadow.color}" filter="url(#b)"/>`,
+    `<clipPath id="o"><path d="${outside}" clip-rule="evenodd"/></clipPath>`,
+    `<g clip-path="url(#o)"><path d="${d}" fill="${shadow.color}" filter="url(#b)"/></g>`,
     '</svg>',
   ].join('');
   const corners: Point[] = [

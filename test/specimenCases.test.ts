@@ -88,3 +88,15 @@ test('a word that is not shown is neither drawn nor counted, and a shown word in
   for (const word of ['Uno', 'due', 'Riga', 'fine.', 'Prima', 'vista', 'dopo.']) assert.match(text, new RegExp(word), `${word} is drawn`);
   for (const word of ['Nascosto', 'nascosta', 'invisibile']) assert.doesNotMatch(text, new RegExp(word), `${word} is not drawn`);
 });
+
+test('an outer box-shadow is painted outside the box and not under it', async () => {
+  const { doc } = await printCase('.box { width: 60mm; height: 20mm; padding: 4mm; border: 0.5pt solid #000; box-shadow: 3mm 3mm 0 #999 }', '<div class="box">Testo nel riquadro.</div>');
+  const scale = 2;
+  const pixmap = doc.loadPage(0).toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceGray, false, true);
+  const [width, samples] = [pixmap.getWidth(), pixmap.getPixels()];
+  const at = (mm: [number, number]) => samples[Math.round((mm[1] * 72) / 25.4 * scale) * width + Math.round((mm[0] * 72) / 25.4 * scale)];
+  // The box's border box runs from 6 mm to 74 mm across and 6 mm to 34 mm down (60 + 2 × 4 wide, 20 + 2 × 4 tall, a half-point border aside); the shadow is the same box moved 3 mm right and down.
+  assert.equal(at([60, 31]), 255, 'inside the box, where the shadow lies under it, the page shows');
+  assert.ok(at([75.5, 25]) < 200, `the band right of the box is the shadow (${at([75.5, 25])})`);
+  assert.ok(at([50, 35.5]) < 200, `the band under the box is the shadow (${at([50, 35.5])})`);
+});
