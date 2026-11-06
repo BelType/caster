@@ -71,3 +71,28 @@ test('counter(page) and counter(pages) wait for the pages, then read the page ho
     server.close();
   }
 });
+
+test('a generated span the page delivered, in a clone whose original reads nothing, leaves the pairing', async () => {
+  const server = await serve();
+  const port = (server.address() as { port: number }).port;
+  const browser = await launchBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`);
+    const seen = await page.evaluate(async () => {
+      const { pairTrees } = await import('/src/adapters/cicero.js' as string);
+      const html = (text: string) => Object.assign(document.createElement('section'), { innerHTML: text });
+      // `span::before { content: string(family) }`: an original stands on no page and reads nothing, and its clone reads the family's name.
+      const source = html('<p><span class="s"><em>a</em></span></p>');
+      const clone = html('<p><span class="s"><span class="caster-generated">Family</span><em>a</em></span></p>');
+      const twins = new Map<Element, Element>();
+      pairTrees(clone, source, twins, () => '', false);
+      const generated = clone.querySelector('.caster-generated')!;
+      return { generatedHasTwin: twins.has(generated), emPaired: twins.get(clone.querySelector('em')!) === source.querySelector('em') };
+    });
+    assert.deepEqual(seen, { generatedHasTwin: false, emPaired: true });
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

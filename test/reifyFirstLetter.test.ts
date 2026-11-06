@@ -21,10 +21,13 @@ const PAGE = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 <script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
 <style>
 body { margin: 0; width: 400px; font: 11pt serif }
+.resumed::first-letter { all: unset !important }
 .drop::first-letter { float: left; font-size: 30pt; line-height: 0.85; margin: 1mm 2mm 0 0; color: rgb(184, 137, 43) }
 </style></head><body>
 <p class="drop">«Nell’estate del 117 muore Traiano, e l’Impero che lascia non sarà mai più così grande.</p>
 <p class="plain">Una riga qualsiasi.</p>
+<p class="tinted" style="background: rgb(240, 240, 240); vertical-align: top; text-decoration: underline">Uno sfondo non è una capitale.</p>
+<p class="resumed" style="background: rgb(240, 240, 240)">Un pezzo che riprende, vestito da Cicero.</p>
 <div class="drop"><p>Dentro un blocco figlio.</p></div>
 </body></html>`;
 
@@ -68,7 +71,7 @@ test('an authored ::first-letter becomes a span with its style, and no rectangle
       const style = span ? getComputedStyle(span) : null;
       return {
         letter: span?.textContent, fontSize: style?.fontSize, color: style?.color, float: style?.cssFloat, drift, count: [before.length, after.length],
-        plain: document.querySelectorAll('p.plain .caster-first-letter').length, nested: [...document.querySelectorAll('div.drop .caster-first-letter')].map((s) => [s.textContent, getComputedStyle(s).fontSize, getComputedStyle(s).color]),
+        plain: document.querySelectorAll('p.plain .caster-first-letter').length, tinted: document.querySelectorAll('p.tinted .caster-first-letter, p.resumed .caster-first-letter').length, nested: [...document.querySelectorAll('div.drop .caster-first-letter')].map((s) => [s.textContent, getComputedStyle(s).fontSize, getComputedStyle(s).color]),
       };
     });
     assert.equal(seen.letter, '«N', 'the first letter with the punctuation before it');
@@ -76,6 +79,7 @@ test('an authored ::first-letter becomes a span with its style, and no rectangle
     assert.deepEqual(seen.count[0], seen.count[1]);
     assert.ok(seen.drift < 0.05, `no glyph moved (largest drift ${seen.drift} px)`);
     assert.equal(seen.plain, 0, 'a paragraph whose first letter nobody styled is left alone');
+    assert.equal(seen.tinted, 0, 'a property the letter does not inherit is compared with its initial value: a block\'s background is no drop capital, nor is the `all: unset` Cicero dresses a resumed piece in');
     assert.deepEqual(seen.nested, [['D', '40px', 'rgb(184, 137, 43)']], 'a first letter held by a block child is made real with the outer block\'s style (issue 13)');
   } finally {
     await browser.close();

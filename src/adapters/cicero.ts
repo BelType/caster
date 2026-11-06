@@ -17,7 +17,7 @@ import { domPathOf } from '../measure/textMeasure.ts';
 import { ARTIFACT_ATTRIBUTE } from '../walk/structure.ts';
 import { TABLE_REPEAT_ATTRIBUTE } from '../walk/tableModel.ts';
 import { deriveIntervals } from './intervals.ts';
-import { pairsOf, reify, resolveGenerated } from './reify.ts';
+import { GENERATED_CLASS, pairsOf, reify, resolveGenerated } from './reify.ts';
 
 import type { PageStrip, StripPage } from './strip.ts';
 import type { DerivationNote } from './intervals.ts';
@@ -198,6 +198,7 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
       if (!parent.closest(FRAGMENT_SELECTOR)) return { source: parent };
       const twin = twins.get(parent);
       if (twin) return { source: twin };
+      if (parent.classList.contains(GENERATED_CLASS)) return { sourceless: 'content', label: 'generated content the page delivered' };
       return { unmapped: 'an element inside a clone with no twin' };
     }
   });
@@ -260,8 +261,10 @@ export function pairTrees(clone: Element, source: Element, twins: Map<Element,El
     if (cloneEl.tagName === 'OBJECT' && cloneEl.getAttribute('is') === 'beltype-facsimile') return;
     // The Compositor's hint marks (R8) are inserted into a composed clone and exist in no original, so they have no twin to pair with (*two merges, one arrangement*, S48).
     // A repeated group's copy (the `artifact` word) has no twin, and it stands for a group the source already holds: both leave the alignment, the copy from the clone and the source's group of the same tag from the twin's children, so the rows that continue still line up with their own source rows.
-    const cloneKids = [...cloneEl.children].filter((k) => !hasWordOn(k, 'break') && !hasWordOn(k, 'fill') && !hasWordOn(k, ARTIFACT_WORD));
     const twinKids = [...twin.children];
+    // The second moment of reification (S79) writes where the page answers: `content: string(family)` reads the family's name in a clone on a page and nothing in its original, which stands on none. So a clone's generated span may have no twin, and it leaves the alignment.
+    const generatedHasTwin = twinKids.some((k) => k.classList.contains(GENERATED_CLASS));
+    const cloneKids = [...cloneEl.children].filter((k) => !hasWordOn(k, 'break') && !hasWordOn(k, 'fill') && !hasWordOn(k, ARTIFACT_WORD) && (generatedHasTwin || !k.classList.contains(GENERATED_CLASS)));
     for (const copy of cloneEl.children) {
       if (!hasWordOn(copy, ARTIFACT_WORD)) continue;
       const at = twinKids.findIndex((k) => k.tagName === copy.tagName);
@@ -445,6 +448,8 @@ export function joinedWords(root: Element): string[] {
       } else if (child.nodeType === 1) {
         // A repeated group's copy is the table's header or footer drawn again, not words of the block: the block's own words are the ones its fragments hold once (*a table Paged.js cut across pages is one table in several fragments*, DESIGN.md S63; the artifact word).
         if (hasWordOn((child as Element), ARTIFACT_WORD)) continue;
+        // Generated text is the printer's reading of a pseudo-element, not a word of the block, and the second moment writes it where the page answers (S79): in a clone and not in its original.
+        if ((child as Element).classList.contains(GENERATED_CLASS)) continue;
         const inline = joins((child as Element));
         if (!inline) open = false;
         walk(child);
