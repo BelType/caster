@@ -193,6 +193,8 @@ export type MeasureOptions = {
   blocks?: HTMLElement[];
   /** Which CSS family a run's face is matched in. E3 (`text-emission.md`) and E5 (`structure-tree.md`) have exactly one family and name it; a fixture with a family per page reads it off the computed style, which is what the default cannot do. */
   familyOf?: (parent: Element, request: FaceRequest) => string;
+  /** Told the family a run landed on, for the families in the stack it passed over to get there. */
+  passedOver?: (parent: Element, request: FaceRequest, chosen: string) => void;
   /** The variable-font instance a run is painted at, from the computed style and the face's own axes. The default is no axes at all, which is every static face and is the whole world of E3 (`text-emission.md`) and E5 (`structure-tree.md`). */
   coordsOf?: (parent: Element, face: FaceDescriptor) => Coords;
   /** The structure element that owns text appearing directly inside `parent`, as an opaque key. Runs split where it changes, so a content item never spans two owners. Default: every segment has the same, empty, owner. */
@@ -865,6 +867,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
         const resolved = resolveWord(part.text, request, table, sizePx);
         return resolved.runs.map((run) => {
             const descriptor = run.face === null ? null : table.find((d) => d.id === run.face);
+            if (descriptor) options.passedOver?.(parent, request, descriptor.family);
             const match = descriptor ? matchFace(table, descriptor.family, request) : null;
             if (!match) {
                 const clusters = [...run.text].map((ch) => 'U+' + ((ch.codePointAt(0) as number)).toString(16).toUpperCase().padStart(4, '0')).join(' ');

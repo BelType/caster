@@ -26,7 +26,7 @@ const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 type Node = { tag: string; kids: Node[] };
 
 /** Prints `body` inside a strip of 120 mm by 60 mm, with `css` added, and answers the file and the tree the walk intended. */
-async function printCase(css: string, body: string): Promise<{ doc: mupdf.Document; tree: Node }> {
+async function printCase(css: string, body: string): Promise<{ doc: mupdf.Document; tree: Node; warnings: string[] }> {
   const page = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 <script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
 <style>
@@ -50,7 +50,7 @@ ${css}
     const tab = await browser.newPage();
     await tab.goto(`http://127.0.0.1:${(server.address() as { port: number }).port}/`);
     await tab.evaluate(() => document.fonts.ready);
-    const { base64, tree } = await tab.evaluate(async (writer: string) => {
+    const { base64, tree, warnings } = await tab.evaluate(async (writer: string) => {
       const caster = await import('/src/index.js' as string);
       caster.prepare(document);
       const strip = document.querySelector('.s') as HTMLElement;
@@ -66,9 +66,9 @@ ${css}
       }, { writer });
       let binary = '';
       for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
-      return { base64: btoa(binary), tree: printed.report.structure.expectedTree };
+      return { base64: btoa(binary), tree: printed.report.structure.expectedTree, warnings: printed.report.warnings };
     }, WRITER);
-    return { doc: mupdf.Document.openDocument(Buffer.from(base64, 'base64'), 'application/pdf'), tree };
+    return { doc: mupdf.Document.openDocument(Buffer.from(base64, 'base64'), 'application/pdf'), tree, warnings };
   } finally {
     await browser.close();
     server.close();
@@ -77,6 +77,18 @@ ${css}
 
 const textOf = (doc: mupdf.Document) => doc.loadPage(0).toStructuredText('preserve-whitespace').asText();
 const tagsOf = (node: Node): string[] => [node.tag, ...node.kids.flatMap(tagsOf)];
+
+test('a family no @font-face declares, passed over for a declared one, is said once; one after the chosen family and a generic are not', async () => {
+  const { warnings } = await printCase('', [
+    '<p style="font-family: Helvetica, \'Crimson Text\'">Uno.</p>',
+    '<p style="font-family: Helvetica, \'Crimson Text\'">Due.</p>',
+    '<p style="font-family: \'Crimson Text\', Georgia, serif">Tre.</p>',
+    '<p style="font-family: sans-serif, \'Crimson Text\'">Quattro.</p>',
+  ].join(''));
+  const said = warnings.filter((w) => w.includes('@font-face declares'));
+  assert.equal(said.length, 1, JSON.stringify(said));
+  assert.match(said[0]!, /names "Helvetica" before "Crimson Text"/);
+});
 
 test('a word that is not shown is neither drawn nor counted, and a shown word inside a hidden one is drawn', async () => {
   const { doc } = await printCase('.n { display: none } .v { visibility: hidden } .v b { visibility: visible; font-weight: normal }', [

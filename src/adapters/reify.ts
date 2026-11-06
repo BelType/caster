@@ -42,8 +42,10 @@ export const SUPPRESS_CLASS = { before: 'caster-no-before', after: 'caster-no-af
 /** The class on a block whose `::first-letter` was made a real span, and the class of that span. */
 export const FIRST_LETTER_CLASS = { block: 'caster-no-first-letter', letter: 'caster-first-letter' };
 
-/** The `::first-letter` properties whose difference from the block's own says an author styled it. */
-const FIRST_LETTER_SIGNS = ['font-size', 'font-family', 'font-weight', 'font-style', 'color', 'float', 'text-transform', 'vertical-align', 'background-color', 'letter-spacing', 'font-variant-caps', 'text-decoration-line'];
+/** The `::first-letter` properties whose difference says an author styled it: from the block's own value for one the letter inherits, from the initial value for one it does not, or a block's background would read as a drop capital, and so would the `all: unset` Cicero dresses a resumed piece in. */
+const FIRST_LETTER_SIGNS = ['font-size', 'font-family', 'font-weight', 'font-style', 'color', 'text-transform', 'letter-spacing', 'font-variant-caps'];
+const FIRST_LETTER_INITIALS: [string, string][] = [['float', 'none'], ['vertical-align', 'baseline'], ['background-color', 'rgba(0, 0, 0, 0)'], ['text-decoration-line', 'none']];
+const letterStyled = (letter: CSSStyleDeclaration, block: CSSStyleDeclaration) => FIRST_LETTER_SIGNS.some((property) => letter.getPropertyValue(property) !== block.getPropertyValue(property)) || FIRST_LETTER_INITIALS.some(([property, initial]) => letter.getPropertyValue(property) !== initial);
 
 /** The id of the one `<style>` that holds the suppress rules. */
 const SUPPRESS_ID = 'caster-generated-style';
@@ -344,7 +346,7 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
 function firstLetterSpan(view: Window, element: Element, style: CSSStyleDeclaration, writes: (() => void)[]) {
   if (!/^(block|list-item|flow-root|inline-block|table-cell|table-caption)$/.test(style.display) || element.classList.contains(FIRST_LETTER_CLASS.block)) return;
   const letter = view.getComputedStyle(element, '::first-letter');
-  if (!FIRST_LETTER_SIGNS.some((property) => letter.getPropertyValue(property) !== style.getPropertyValue(property))) return;
+  if (!letterStyled(letter, style)) return;
   const doc = element.ownerDocument;
   const walker = doc.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
   let text: Text|null = null;
@@ -356,7 +358,7 @@ function firstLetterSpan(view: Window, element: Element, style: CSSStyleDeclarat
       const inFlow = child.display === 'block' && child.cssFloat === 'none' && (child.position === 'static' || child.position === 'relative');
       if (!inFlow) return;
       const own = view.getComputedStyle(node as Element, '::first-letter');
-      if (FIRST_LETTER_SIGNS.some((property) => own.getPropertyValue(property) !== child.getPropertyValue(property))) return;
+      if (letterStyled(own, child)) return;
       continue;
     }
     if (/\S/.test((node as Text).data)) { text = node as Text; break; }

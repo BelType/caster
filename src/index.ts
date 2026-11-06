@@ -18,7 +18,7 @@ import { createReport, recordProblem, stage } from './report.ts';
 import { load, neededCapabilities, capability } from './capabilities.ts';
 import { lock, precheck } from './precheck.ts';
 import { createGateway } from './host/gateway.ts';
-import { buildFontTable, declaredFaces, refuseFamily, unreadableFamilies } from './host/fonts.ts';
+import { buildFontTable, declaredFaces, isGenericFamily, refuseFamily, unreadableFamilies } from './host/fonts.ts';
 import { adaptCicero } from './adapters/cicero.ts';
 import { adaptPagedjs, STRIP_SELECTOR as PAGEDJS_STRIP } from './adapters/pagedjs.ts';
 import { prepare } from './adapters/prepare.ts';
@@ -209,6 +209,18 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
 
     // 6 — fonts. The descriptor table out of the CSSOM, the bytes through the gateway, WOFF decoded by hand and WOFF2 through the decoder that *BelType ships faces of its own, and WOFF2 is decoded* (S46) made settle.
     const table = await buildFontTable(doc, gateway);
+    // A family the document does not declare is passed over, since the printer embeds only what it can read; the browser goes by what the machine has. If the machine has it, the screen shows that face and the PDF the one chosen, so the run says so, once a pair.
+    const said = new Set<string>();
+    const passedOver = (parent: Element, request: FaceRequest, chosen: string) => {
+      const declared = new Set(table.descriptors.map((d) => d.family));
+      for (const family of request.families) {
+        if (family === chosen) return;
+        const pair = `${family}\n${chosen}`;
+        if (declared.has(family) || isGenericFamily(family) || said.has(pair)) continue;
+        said.add(pair);
+        report.warnings.push(`caster: font-family at ${domPathOf(parent, doc.body)} names "${family}" before "${chosen}", and no @font-face declares "${family}". If this machine has it, the screen shows "${family}" and the PDF "${chosen}".`);
+      }
+    };
     report.warnings.push(...table.warnings);
     for (const [url, bytes] of table.bytesByUrl) {
       const shaperStarted = now();
@@ -307,7 +319,12 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       colorOf: (parent) => elementColor(parent, domPathOf(parent, container)),
       // The decorations of `vector-painting.md` (E9). Runs split on the answer, and the run is what a decoration rectangle spans; the walk up for the propagated line is `decorationOf`'s, because `text-decoration` propagates rather than inherits and a descendant's computed style says `none` while the line is plainly there.
       decorationOf: (parent) => decorationOf(parent, container) ?? undefined,
-      familyOf: (parent, request) => familyFor(parent, request, table, container),
+      familyOf: (parent, request) => {
+        const family = familyFor(parent, request, table, container);
+        passedOver(parent, request, family);
+        return family;
+      },
+      passedOver,
       // The instancing of `font-embedding.md` (E4). A PDF carries no variable font, so a variable face has to be frozen at exactly the coordinate Chromium painted, and the coordinate is derived from the computed style — the cascade, the clamping and the defaults have all happened by then. Unwired, every variable face was shaped, measured and embedded at its default master under the browser's own rectangles, with no refusal anywhere to say so.
       coordsOf: (parent, face) => instanceCoords(getComputedStyle(parent), face.axes ?? {}),
       pageElementOf: strip.pageElementOf,

@@ -11,4 +11,8 @@ TRACKED IN GIT, not generated. `scripts/profiles.sh` is their provenance: with n
 
 Neither is a press characterisation profile — no FOGRA39 or FOGRA51 is reachable from this environment — so the output condition identifier is the profile's own description string rather than a registered characterisation name. That is the experiments' own limit, recorded in `docs/guide/colour.md` and inherited here unchanged: a venue that has a real characterisation profile should be able to name it, and the door for that is the `profiles` capability's file list.
 
+## Their licence
+
+Both profiles come from ghostpdl's `iccprofiles/`, and ghostpdl's `LICENSE` names that directory as part of GPL Ghostscript, under the AGPL-3.0, with no exemption of the kind it grants its fonts. Each profile's own copyright tag reads *Copyright Artifex Software 2011*. This package is MIT, publishes both files in `dist/profiles/`, and embeds them in a PDF that declares colour. Read on 2026-11-06; whether they stay or are replaced waits on a ruling.
+
 saucecontrol's 456-byte `sRGB-v2-micro.icc` was the fallback for the case where Ghostscript's sRGB turned out not to be v2. It is v2, so the compact profile is not committed.
