@@ -85,8 +85,63 @@ export function registerHintProperties(): HintRegistration[] {
   });
 }
 
+/** What a hint's declaration looks like, among the printer's properties: `--pdf-bleed`, `--pdf-trim-inset`, `--pdf-marks` and `--pdf-page-label` are read on the root alone, and reification copies a pseudo-element's registered properties onto its span, so those two kinds of text say nothing. */
+const HINT_NAMES = /--pdf-(?:color|background|overprint|border|fill|stroke|artifact)/;
+const HINT_ATTRIBUTES = ['color', 'background', 'overprint', 'border', 'fill', 'stroke', 'artifact'].map((name) => `[style*="--pdf-${name}"]`).join(', ');
+
+/**
+ * Whether any text that styles the document matches: a rule of a sheet, in the document or in any open shadow tree, or an inline style.
+ *
+ * @remarks
+ * A sheet the page may not read may say anything, and answers yes.
+ *
+ * ponytail: a closed shadow root cannot be read from outside, so what its rules say to its host is not seen. Nothing in the corpus closes one; a walk over the host's own styles is the upgrade if one does.
+ *
+ * @param attributes - The selector that finds the same words in a `style` attribute.
+ */
+export function stylesMention(doc: Document, pattern: RegExp, attributes: string): boolean {
+  const seen: Set<CSSStyleSheet> = new Set();
+  const inSheet = (sheet: CSSStyleSheet): boolean => {
+    if (seen.has(sheet)) return false;
+    seen.add(sheet);
+    let rules: CSSRuleList;
+    try { rules = sheet.cssRules; } catch { return true; }
+    for (const rule of rules) {
+      const imported = (rule as CSSImportRule).styleSheet;
+      if (imported ? inSheet(imported) : pattern.test(rule.cssText)) return true;
+    }
+    return false;
+  };
+  const inTree = (root: Document|ShadowRoot): boolean => {
+    if ([...root.styleSheets, ...root.adoptedStyleSheets].some(inSheet) || root.querySelector(attributes)) return true;
+    for (const element of root.querySelectorAll('*')) if (element.shadowRoot && inTree(element.shadowRoot)) return true;
+    return false;
+  };
+  return inTree(doc);
+}
+
+/**
+ * Whether anything in the document can declare a `--pdf-*` hint.
+ *
+ * @remarks
+ * A custom property has a value only where something declared it, so with no such text no element has to be asked, and a print asks about 28 000 times on a 61-day bolletta.
+ */
+export function declaresHints(doc: Document): boolean {
+  return stylesMention(doc, HINT_NAMES, HINT_ATTRIBUTES);
+}
+
+/** Set for the length of a print whose document declares no hint, under the same lock as `coordinates/frame.js`'s frame. */
+let hintless = false;
+
+/** What {@link readHint} may assume for the print that is running, from {@link declaresHints}, until {@link releaseHints}. Measured 2026-11-07 on the bolletta, with the survey that takes the same answer: about 5 ms of a 61-day bill's print, 2 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2). */
+export function holdHints(declared: boolean) { hintless = !declared; }
+
+/** Ask every element again. */
+export function releaseHints() { hintless = false; }
+
 /** The computed value of one hint on one element; the empty string when unset. */
 export function readHint(element: Element, name: string): string {
+  if (hintless) return '';
   return getComputedStyle(element).getPropertyValue(name).trim();
 }
 

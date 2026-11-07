@@ -53,7 +53,7 @@ import { collectSvg } from './vectors/svgGeometry.ts';
 import { matchFace, requestFor } from './fonts/fontResolve.ts';
 import { isolateBlends } from './vectors/blendIsolation.ts';
 import { collectListMarkers } from './vectors/listMarkers.ts';
-import { registerHintProperties, elementColor } from './colour/colorHints.ts';
+import { declaresHints, elementColor, holdHints, registerHintProperties, releaseHints } from './colour/colorHints.ts';
 import { convertibleRuns, conversionRecord, lcmsImageConverter, lcmsTransform, textWorklist, wasmConversion } from './colour/rgbToCmyk.ts';
 import type { ImageConverter } from './colour/rgbToCmyk.ts';
 import { parsePng } from './images/png.ts';
@@ -163,7 +163,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     await strip.seatPageImages?.(gateway);
 
     // 3 — needs and capability load. The walk's facts and the options decide which bundles to import; the loads run in parallel.
-    const needs: ReportNeeds = surveyNeeds(doc, strip.strip, options);
+    const hinted = declaresHints(doc);
+    holdHints(hinted);
+    const needs: ReportNeeds = surveyNeeds(doc, strip.strip, options, hinted);
     report.needs = needs;
     report.capabilities = await load(neededCapabilities(needs, options), input.onCapability);
     step('capabilities');
@@ -583,6 +585,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     endFrame();
     clearPageGeometry();
     releaseDomPaths();
+    releaseHints();
     release();
   }
 }
@@ -738,7 +741,7 @@ export { reify };
  *
  * @throws {CasterError} An element declares a colour hint this round's painting does not read.
  */
-export function surveyNeeds(doc: Document, container: HTMLElement, options: CasterOptions): ReportNeeds {
+export function surveyNeeds(doc: Document, container: HTMLElement, options: CasterOptions, hinted: boolean = declaresHints(doc)): ReportNeeds {
   const view = doc.defaultView ?? window;
   const images = [...container.querySelectorAll('img')];
   // A URL test, and it is what it is: the survey runs before a byte is fetched, deliberately (a document with no raster at all must never pay for the decoder). A `data:` PNG, a background-image PNG or an extension-less one is not counted here, and `imageEmbed.js` refuses by name when a decode is reached without the capability rather than blaming this flag.
@@ -748,7 +751,7 @@ export function surveyNeeds(doc: Document, container: HTMLElement, options: Cast
   // Only `--pdf-marks` counts as a colour story among the page-level properties, and it counts because a registration mark is drawn in the `/All` separation, which needs the profiles. `--pdf-bleed`, `--pdf-trim-inset` and `--pdf-page-label` say nothing about ink, and counting them made a bleed-only document download 186 kB of profiles and gain `/OutputIntents` and `/DefaultRGB` it had no use for — which contradicts *`colour` is Caster's own flag* (S7), the flag's own reason for existing.
   const marks = root.getPropertyValue('--pdf-marks').trim();
   if (marks !== '' && marks !== 'none') colourHints = true;
-  if (!colourHints) {
+  if (!colourHints && hinted) {
     for (const element of container.querySelectorAll('*')) {
       const style = view.getComputedStyle(element);
       // The three the painting reads. `--pdf-background-color`, `--pdf-border-color`, `--pdf-fill` and `--pdf-stroke` are not here: nothing in the walk reads them, so surveying them fetched the profiles for a document whose declared inks were then quietly painted from the RGB computed style — the one failure this printer says it never commits. They refuse by name below instead.

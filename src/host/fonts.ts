@@ -20,7 +20,7 @@ import { platformFamilyName, parseUnicodeRange } from '../fonts/fontResolve.ts';
 import { decodeWoff, decodeWoff2, isWoff, isWoff2 } from '../fonts/woff.ts';
 import { sniffMimeType } from './gateway.ts';
 
-import type { Gateway } from './gateway.ts';
+import type { Gateway, GatewayBytes } from './gateway.ts';
 import type { FaceDescriptor, FontStyle } from '../fonts/fontResolve.ts';
 import type { AxisRange } from '../fonts/axisMap.ts';
 import type { ReportFontLoad } from '../report.ts';
@@ -91,14 +91,16 @@ const unquote = ( value: string) => value.trim().replace(/^["']|["']$/g, '');
  *
  * @returns `null` when the document keeps no record; `statusOf` is the browser's own word for the report, `unknown` where the set has no entry for the rule.
  */
-export function browserLoaded(doc: Document): ((face: DeclaredFace) => boolean|null)&{ statusOf: (face: DeclaredFace) => string; size: number; statuses: Record<string,number>; keyOf: (face: DeclaredFace) => string; faceKeys: string[]; } {
+export function browserLoaded(doc: Document): ((face: DeclaredFace) => boolean|null)&{ statusOf: (face: DeclaredFace) => string; size: number; statuses: Record<string,number>; keyOf: (face: DeclaredFace) => string; faceKeys: string[]; faceOf: (face: DeclaredFace) => FontFace|undefined; } {
   const set = (doc as any).fonts;
-  if (!set || typeof set[Symbol.iterator] !== 'function') return Object.assign(() => null, { statusOf: () => 'unknown', size: 0, statuses: {}, keyOf: () => '', faceKeys: [] });
+  if (!set || typeof set[Symbol.iterator] !== 'function') return Object.assign(() => null, { statusOf: () => 'unknown', size: 0, statuses: {}, keyOf: () => '', faceKeys: [], faceOf: () => undefined });
   // `declaredFaces` fills an unset weight as `400` and an unset stretch as `100%`, where a `FontFace` says `normal` for both; CSS Fonts 4 makes them the same value.
   const keyOf = (family: string, weight: string, style: string, stretch: string, unicodeRange: string) => [unquote(family), (weight.trim() || 'normal').replace(/^normal$/, '400'), style.trim() || 'normal', (stretch.trim() || 'normal').replace(/^normal$/, '100%'), (unicodeRange.trim() || 'U+0-10FFFF').replace(/\s+/g, '').toUpperCase()].join('|');
   const statusByKey: Map<string,string> = new Map<any, any>();
+  const faceByKey: Map<string,FontFace> = new Map();
   for (const face of set) {
     const key = keyOf(face.family, face.weight, face.style, face.stretch, face.unicodeRange);
+    faceByKey.set(key, face);
     const before = statusByKey.get(key);
     // Two rules with one key (a face declared twice): any copy the browser needed makes the key needed.
     statusByKey.set(key, before && before !== 'unloaded' ? before : face.status);
@@ -107,8 +109,16 @@ export function browserLoaded(doc: Document): ((face: DeclaredFace) => boolean|n
   const loaded = ( face: DeclaredFace) => { const s = statusOf(face); return s === 'unknown' ? null : s !== 'unloaded'; };
   const statuses: Record<string,number> = {};
   for (const s of statusByKey.values()) statuses[s] = (statuses[s] ?? 0) + 1;
-  return Object.assign(loaded, { statusOf, size: statusByKey.size, statuses, keyOf: ( f: DeclaredFace) => keyOf(f.family, f.weight, f.style, f.stretch, f.unicodeRange), faceKeys: [...statusByKey.keys()] });
+  return Object.assign(loaded, { statusOf, size: statusByKey.size, statuses, keyOf: ( f: DeclaredFace) => keyOf(f.family, f.weight, f.style, f.stretch, f.unicodeRange), faceKeys: [...statusByKey.keys()], faceOf: ( f: DeclaredFace) => faceByKey.get(keyOf(f.family, f.weight, f.style, f.stretch, f.unicodeRange)) });
 }
+
+/**
+ * What each face the browser holds was read as, by URL, from one print to the next.
+ *
+ * @remarks
+ * Keyed on the `FontFace`, because that object is what the page paints with and it lives exactly as long as the page keeps that load: a page kept between prints keeps it, and a new document or a changed `@font-face` rule makes a new one, which reads the file again. So a kept page prints the bytes it paints. Measured 2026-11-07 on the bolletta, with the decode the bytes then find remembered: about 12 ms of every print on a kept page, 30-day and 61-day alike (codeberg.org/BelType/cli issue 2).
+ */
+const readByFace: WeakMap<FontFace,Map<string,GatewayBytes>> = new WeakMap();
 
 /** Every `@font-face` rule in the document, from both sheet lists, in cascade order. */
 export function declaredFaces(doc: Document): DeclaredFace[] {
@@ -208,6 +218,20 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
     return load;
   };
 
+  /** The gateway's answer for one source of one face, or what it answered last print if the browser still holds that face. */
+  const read = async (face: DeclaredFace, url: string): Promise<GatewayBytes> => {
+    const owner = loaded.faceOf(face);
+    let held = owner ? readByFace.get(owner) : undefined;
+    const known = held?.get(url);
+    if (known) return known;
+    const fetched = await gateway.getBytes(url);
+    if (owner) {
+      if (!held) readByFace.set(owner, (held = new Map()));
+      held.set(url, fetched);
+    }
+    return fetched;
+  };
+
   let ordinal = 0;
   for (const face of declared) {
     ordinal += 1;
@@ -229,7 +253,7 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
       let fetched;
       const fetchStarted = clock();
       try {
-        fetched = await gateway.getBytes(source.url);
+        fetched = await read(face, source.url);
       } catch (error) {
         attempts.push(`${source.url} could not be read (${String((error as Error).message ?? error)})`);
         continue;
@@ -258,7 +282,7 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
     if (!sfnt && woff2Url && attempts.length === face.sources.length) {
       try {
         const fetchStarted = clock();
-        const fetched = await gateway.getBytes(woff2Url);
+        const fetched = await read(face, woff2Url);
         const load = loadOf(woff2Url, face, clock() - fetchStarted, fetched.url);
         const decodeStarted = clock();
         sfnt = await decodeWoff2(fetched.bytes, face.family, woff2Url);

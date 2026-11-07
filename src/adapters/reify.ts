@@ -7,7 +7,7 @@
  *
  * Three rules, and the reason each is shaped as it is.
  *
- * 1. **`::before` and `::after` on every element.** `getComputedStyle` answers `content` in specified form — `counter(h2) ". "`, never `3. ` — so the counters are resolved by the walk itself. CSS counters are a property of the walk and not of an element: `counter-reset` on an element creates a counter in scope for that element, its descendants and its following siblings, which is why a scope is popped when the walk leaves the resetting element's parent rather than the element itself, and why the walk is one pass in document order over the whole tree — `counter(page)` on a margin cell must see every `.pagedjs_page { counter-increment: page }` before it. The pseudo is suppressed by one injected rule keyed on a class, because an element has no way to address its own pseudo from an inline style; and there is one class per pseudo, because a rule killing both took away a decorative `h2::after` the author also wrote, in silence.
+ * 1. **`::before` and `::after` on every element a sheet can give one to** ({@link namedHosts}; every element where the sheets cannot say). `getComputedStyle` answers `content` in specified form — `counter(h2) ". "`, never `3. ` — so the counters are resolved by the walk itself. CSS counters are a property of the walk and not of an element: `counter-reset` on an element creates a counter in scope for that element, its descendants and its following siblings, which is why a scope is popped when the walk leaves the resetting element's parent rather than the element itself, and why the walk is one pass in document order over the whole tree — `counter(page)` on a margin cell must see every `.pagedjs_page { counter-increment: page }` before it. The pseudo is suppressed by one injected rule keyed on a class, because an element has no way to address its own pseudo from an inline style; and there is one class per pseudo, because a rule killing both took away a decorative `h2::after` the author also wrote, in silence.
  *
  * 2. **`::marker` on every element whose computed `display` is `list-item`, and not on the tag.** `docs/guide/structure-tree.md` §"The engine contract": `::marker` paints a glyph no marked-content sequence can claim, so a real `<span class="marker">` goes first in the item with the text the marker painted, and the native marker is taken away with `display: block` — without touching `list-style-type`, which `walk/structure.js`'s `LIST_NUMBERING` still reads `/ListNumbering` from. Keying on the display type rather than on `<li>` is what reaches a footnote body, and what leaves alone an `li` an author made `display: inline` for a horizontal nav — which paints no marker either. Where the computed `content` is `normal` — Chromium's answer for every ordinary counter marker — the text is derived from `list-style-type` and the item's ordinal among its list-item siblings (the list's `start`, `reversed` and each item's `value` honoured), which is the fallback D9 names. Where it is anything else it goes through the same resolver as rule 1, so `::marker { content: counter(footnote-marker) ". " }` reads the walk's counters.
  *
@@ -23,6 +23,7 @@
  */
 
 import { CasterError } from '../errors.ts';
+import { stylesMention } from '../colour/colorHints.ts';
 import { paintsDecoration } from '../vectors/cssBoxes.ts';
 import { ASCENT_ATTRIBUTE, SHAPE_ATTRIBUTE, SHAPE_MARKERS, markerBox } from '../vectors/listMarkers.ts';
 
@@ -101,7 +102,7 @@ export type Reification = {
  * Reify every pseudo-painted text in the document.
  *
  * @remarks
- * Whole-document, document order, idempotent.
+ * Whole-document, document order, idempotent. The whole tree is walked only where a list item or a counter needs it; otherwise the elements that can make a span are read alone, in the walk's order ({@link elementsThatMatter}).
  *
  * Every element is read before anything is written: the walk reads in document order and queues its writes, and the queue runs once the walk is done. Measured 2026-10-29 on the manual, every page built (65 207 elements, 400 pseudo-elements with content): with each write made where it was decided, every read after it made the browser restyle the document first, and reification took 1.49 s; read first, it takes 1.16 s, where the reads alone take 741 ms. So every read sees the page as the engine presented it, never a page some spans into this reification; the two differ only where a selector depends on structure the spans change (`:first-child`, a sibling combinator, `:empty`, `:has()`), and there the presented page is the oracle (Egildo's ruling, 2026-10-29). A shape marker's own probe is the one write left inside the walk, because it is what that reading reads.
  *
@@ -121,6 +122,10 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   }
 
   const reads = defer ? readNamesOf(doc) : null;
+  // Measured 2026-11-07 on the bolletta: about 21 ms of a 61-day bill's prepare and print, 11 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2). A `::first-letter` read on every block, twice, was what the drop capital of issue 9 had added.
+  const letters = namedHosts(doc, 'first-letter');
+  // A missed one is refused and never lost: the census of generated text still asks every element, after the measurement. `q` is the one element the user-agent sheet gives them to, which `test/reifyHosts.test.ts` pins. Measured 2026-11-07 on the bolletta: about 5 ms of a 61-day bill's prepare and print, 3 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
+  const pseudos = namedHosts(doc, 'before|after', 'q');
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
   const apply = ( style: CSSStyleDeclaration,  depth: number) => {
@@ -151,32 +156,126 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     return items;
   };
 
+  /** An element's marker, its `::before` and its first letter: what stands before its children. */
+  const open = (element: Element, style: CSSStyleDeclaration, depth: number) => {
+    // `::marker` is the item's first box, so it goes first; then `::before`, then the children. The element's own counters have moved before any of the three reads them.
+    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, itemsOf, out, writes) : null;
+    const before = mayHold(pseudos, element) ? pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes) : null;
+    if (before) writes.push(() => element.insertBefore(before, element.firstChild));
+    if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
+    // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
+    if (!before && !marker && mayHold(letters, element)) firstLetterSpan(view, element, style, writes);
+  };
+  const close = (element: Element, depth: number) => {
+    const after = mayHold(pseudos, element) ? pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes) : null;
+    if (after) writes.push(() => element.append(after));
+  };
   /** One element: its counters, its marker and `::before`, its children, its `::after`, then the scopes it closes. */
   const walk = (element: Element, depth: number) => {
     const style = view.getComputedStyle(element);
     // `display: none` generates no box, so it generates no pseudo-element and its counter operations do not happen (CSS Lists 3 §4.4) — and an element a paginator has emptied and hidden is one whose words the engine has already taken back, so a span written into it would be a word the block never held (*a pseudo that reads a value the engine delivers is made real after the run*, DESIGN.md S79).
     if (style.display === 'none') return;
     apply(style, depth);
-    // `::marker` is the item's first box, so it goes first; then `::before`, then the children. The element's own counters have moved before any of the three reads them.
-    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, itemsOf, out, writes) : null;
-    const before = pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes);
-    if (before) writes.push(() => element.insertBefore(before, element.firstChild));
-    if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
-    // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
-    if (!before && !marker) firstLetterSpan(view, element, style, writes);
+    open(element, style, depth);
     for (const child of [...element.children]) {
       if (child.classList.contains(GENERATED_CLASS) || child.classList.contains(MARKER_CLASS)) continue;
       walk(child, depth + 1);
     }
-    const after = pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes);
-    if (after) writes.push(() => element.append(after));
+    close(element, depth);
     // A counter created below this element stays in scope for this element's following siblings, and dies with this element's parent — which is where the walk is now.
     while (scopes.length && scopes[scopes.length - 1].ownerDepth > depth) scopes.pop();
   };
-  walk(doc.documentElement, 0);
+  const alone = elementsThatMatter(doc, view, pseudos, letters);
+  if (alone) {
+    // The same order as the walk's, so the report's lists read the same: an element's `::after` comes once the elements inside it are done.
+    const unclosed: Element[] = [];
+    for (const element of alone) {
+      while (unclosed.length && !unclosed[unclosed.length - 1].contains(element)) close((unclosed.pop() as Element), 0);
+      open(element, view.getComputedStyle(element), 0);
+      unclosed.push(element);
+    }
+    while (unclosed.length) close((unclosed.pop() as Element), 0);
+  } else {
+    walk(doc.documentElement, 0);
+  }
   for (const write of writes) write();
 
   return out;
+}
+
+/** The rules a selector inside them is read as written, whatever their condition: an element they do not apply to now is only read for nothing. */
+const GROUPING_RULES = new Set(['CSSMediaRule', 'CSSSupportsRule', 'CSSLayerBlockRule', 'CSSContainerRule']);
+
+/**
+ * The elements a sheet's rule may give one of these pseudo-elements, or null where the sheets cannot say.
+ *
+ * @remarks
+ * A pseudo-element's style differs from what its element hands it only through a rule that names it, so an element no selector reaches needs no read: on a 61-day bolletta 1 244 elements have two rules between them. Each selector is asked of the browser with the pseudo-element replaced by a selector that matches anything, which stays valid wherever the pseudo-element stood (`.a ::before`, `::before` alone). What this cannot read as written answers null, and every element is asked as before: a sheet the page may not read, a nested rule, whose selector stands on its parent's, and any other rule that holds such a selector, `@scope` among them. A shadow tree's sheets are not read: its `:host` and `::slotted()` rules reach only a host and an assigned element, which {@link mayHold} always asks.
+ *
+ * @param names - The pseudo-elements, as a pattern's alternatives.
+ * @param always - A selector the user-agent's own sheet gives them on.
+ */
+export function namedHosts(doc: Document, names: string, always?: string): Set<Element>|null {
+  const named = new RegExp(`::?(?:${names})\\b`);
+  // A selector's strings serialise in double quotes, and `[title="::before"]` has to go on matching.
+  const replaced = new RegExp(`"(?:[^"\\\\]|\\\\.)*"|${named.source}`, 'g');
+  const selectors = always ? [always] : [];
+  const read = (rules: CSSRuleList): boolean => {
+    for (const rule of rules) {
+      const { selectorText, cssRules, styleSheet } = rule as CSSStyleRule & CSSImportRule;
+      if (selectorText !== undefined) {
+        if (cssRules.length > 0 && named.test(rule.cssText)) return false;
+        if (named.test(selectorText)) selectors.push(selectorText.replace(replaced, (match) => (match[0] === '"' ? match : ':is(*)')));
+      } else if (styleSheet) {
+        if (!read(styleSheet.cssRules)) return false;
+      } else if (GROUPING_RULES.has(rule.constructor.name)) {
+        if (!read(cssRules)) return false;
+      } else if (named.test(rule.cssText)) return false;
+    }
+    return true;
+  };
+  try {
+    for (const sheet of [...doc.styleSheets, ...doc.adoptedStyleSheets]) if (!read(sheet.cssRules)) return null;
+    return new Set(selectors.length ? doc.querySelectorAll(selectors.join(', ')) : []);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The elements that can make a span, in document order, where nothing else about the document has to be read; null where the whole walk is needed.
+ *
+ * @remarks
+ * The walk reads every element for three things: whether it is hidden, which stops the walk at it; whether it is a list item; and its counters, which a later pseudo-element may read. The first is asked of a candidate's ancestors alone, and the other two can be ruled out without the walk: a list item is an `<li>`, a `<summary>` or whatever a style makes one, and a counter matters only if one of these elements paints one. This is read before anything is written, so giving up leaves nothing to undo. Measured 2026-11-07 on the bolletta: about 5 ms of a 61-day bill's prepare and print, 3 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
+ */
+export function elementsThatMatter(doc: Document, view: Window, pseudos: Set<Element>|null, letters: Set<Element>|null): Element[]|null {
+  if (!pseudos || !letters || stylesMention(doc, /list-item/, '[style*="list-item"]')) return null;
+  const items = new Set(doc.querySelectorAll('li, summary'));
+  const hidden: Map<Element,boolean> = new Map();
+  const isHidden = (element: Element): boolean => {
+    let answer = hidden.get(element);
+    if (answer === undefined) {
+      answer = view.getComputedStyle(element).display === 'none' || (element.parentElement !== null && isHidden(element.parentElement));
+      hidden.set(element, answer);
+    }
+    return answer;
+  };
+  const elements: Element[] = [];
+  for (const element of doc.querySelectorAll('*')) {
+    if (!items.has(element) && !mayHold(pseudos, element) && !mayHold(letters, element)) continue;
+    if (element.classList.contains(GENERATED_CLASS) || element.classList.contains(MARKER_CLASS) || isHidden(element)) continue;
+    for (const pseudo of ['::before', '::after', '::marker']) if (PAINTS_COUNTER.test(view.getComputedStyle(element, pseudo).content)) return null;
+    elements.push(element);
+  }
+  return elements;
+}
+
+/** A computed `content` that reads a counter. */
+const PAINTS_COUNTER = /\bcounters?\(/;
+
+/** Whether an element has to be asked about the pseudo-elements {@link namedHosts} answered for. A host and an assigned element are, because the rules of a shadow tree reach them. */
+function mayHold(hosts: Set<Element>|null, element: Element) {
+  return !hosts || hosts.has(element) || element.shadowRoot !== null || element.assignedSlot !== null;
 }
 
 /**
