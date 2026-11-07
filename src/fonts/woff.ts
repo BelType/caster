@@ -176,9 +176,16 @@ const WOFF2_DEADLINE_MS = 30000;
  * @throws {CasterError} The decode did not settle within {@link WOFF2_DEADLINE_MS}, or produced nothing.
  */
 export async function decodeWoff2(bytes: Uint8Array, family: string, url: string): Promise<Uint8Array> {
+    const known = decodedWoff2.get(bytes);
+    if (known)
+        return known;
     const { decompress } = capability('woff2');
     const deadline = new Promise<any>((_, reject) => setTimeout(() => reject(new CasterError(`caster: decoding the WOFF2 for ${JSON.stringify(family)} at ${url} did not finish in ${WOFF2_DEADLINE_MS} ms — ${WOFF2_NEVER_SETTLED}`, { element: family })), WOFF2_DEADLINE_MS));
     const decoded = await Promise.race([decompress(bytes), deadline]);
     if (!decoded || !((decoded as any).length)) throw new CasterError(`caster: the WOFF2 for ${JSON.stringify(family)} at ${url} decoded to nothing`, { element: family });
-    return new Uint8Array((decoded as ArrayLike<number>));
+    const sfnt = new Uint8Array((decoded as ArrayLike<number>));
+    decodedWoff2.set(bytes, sfnt);
+    return sfnt;
 }
+/** A decode is a function of its bytes, and the font table keeps a kept face's bytes between prints (`host/fonts.ts`). */
+const decodedWoff2: WeakMap<Uint8Array,Uint8Array> = new WeakMap();
