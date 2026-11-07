@@ -22,6 +22,7 @@
  * @packageDocumentation
  */
 import { backgroundUrlOf, currentSourceOf } from '../host/gateway.ts';
+import { readHint } from '../colour/colorHints.ts';
 import { paintsDecoration } from '../vectors/cssBoxes.ts';
 import { SHAPE_ATTRIBUTE } from '../vectors/listMarkers.ts';
 import { assignHeaders, scopeNameOf } from './tableHeaders.ts';
@@ -299,8 +300,8 @@ function parseRgb(color: string): [number,number,number] {
  */
 function artifactKindOf(element: Element): ArtifactKind|null {
     const attribute = element.getAttribute(ARTIFACT_ATTRIBUTE)?.trim() ?? '';
-    const property = getComputedStyle(element).getPropertyValue(ARTIFACT_PROPERTY).trim();
-    const own = element.parentElement ? getComputedStyle(element.parentElement).getPropertyValue(ARTIFACT_PROPERTY).trim() : '';
+    const property = readHint(element, ARTIFACT_PROPERTY);
+    const own = element.parentElement ? readHint(element.parentElement, ARTIFACT_PROPERTY) : '';
     // An inherited value is not a declaration: only a property that differs from the parent's was set on this element.
     const declared = property !== '' && property !== own ? property : '';
     if (attribute !== '' && declared !== '' && attribute !== declared) {
