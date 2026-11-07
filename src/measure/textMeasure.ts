@@ -1443,13 +1443,30 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
     });
     // The column offset is the harness's page model — pages laid out side by side one `COLUMN_WIDTH_PX` apart — and it is the fallback road, exactly as it is for an ordinary segment (`local ? local.xPx : rect.left - containerRect.left - page * COLUMN_WIDTH_PX`). Under a frame `request.toContainer` was composed with `clientToLocalMatrix`, which already expresses the point against the page's own origin, so subtracting the offset a second time moved every `<text>` on page N one page-width to the left and off the page. Latent until a drawing was collected on a page other than the first (*a drawing inside a continuation was painted on no page*, S40); load-bearing the moment one was.
     const columnOffset = activeFrame() ? 0 : request.page * COLUMN_WIDTH_PX;
+    // A `<tspan>` paints with its own computed `fill`, which the `<text>` may not share: Mermaid fills an actor's `<text>` with the box's own colour and its `<tspan>` black, so the `<text>`'s fill printed the label invisible. Each rendered character's paint is its text node's parent's, indexed as `rendered` collapses whitespace.
+    const owners: Element[] = [];
+    let space = true;
+    const paintWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let n = paintWalker.nextNode(); n; n = paintWalker.nextNode()) {
+        for (const ch of (n as Text).data.split('')) {
+            const white = /\s/u.test(ch);
+            if (white && space) continue;
+            owners.push((n as Text).parentElement ?? element);
+            space = white;
+        }
+    }
     const words = svgWords(element, rendered);
     words.forEach((match2) => {
         const { start, end } = match2;
+        const paint = getComputedStyle(owners[start] ?? element);
+        const color = paint.fill && paint.fill.startsWith('rgb') ? paint.fill : paint.color;
         const first = element.getStartPositionOfChar(start);
         const last = element.getEndPositionOfChar(end - 1);
-        const [startX, startY] = apply(request.toContainer, first.x, first.y);
-        const [endX] = apply(request.toContainer, last.x, last.y);
+        // `getStartPositionOfChar` answers the alignment point, before `dominant-baseline` or `alignment-baseline` moved the glyphs; `getExtentOfChar` answers the moved cell, whose top is the alphabetic baseline less the ascent. Measured 2026-11-07 on Chromium: 16px sans-serif at y=100 starts at 100 under every baseline, its cell's top at 86 under `alphabetic`, 91 under `central`, 90.19 under `middle`. Mermaid centres every sequence-diagram label this way.
+        const aligned = (paint.dominantBaseline !== 'auto' && paint.dominantBaseline !== 'alphabetic') || !['auto', 'baseline', 'alphabetic'].includes(paint.alignmentBaseline);
+        const shift = aligned ? element.getExtentOfChar(start).y + ascentPx(`${style.fontStyle} ${style.fontWeight} ${style.fontSize} "${match.face.family}"`) - first.y : 0;
+        const [startX, startY] = apply(request.toContainer, first.x, first.y + shift);
+        const [endX] = apply(request.toContainer, last.x, last.y + shift);
         refuseMissingSmallCaps(match.face, features, match2.text, { element: request.domPath });
         const shaped = shapeWord(match.face.url, match2.text, sizePx, features, undefined, shaperVariations(coords));
         ctx.segments.push({
@@ -1468,8 +1485,8 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
             instanceKey,
             url: match.face.url,
             sizePx,
-            color: style.fill && style.fill.startsWith('rgb') ? style.fill : style.color,
-            rgb: parseRgb(style.fill && style.fill.startsWith('rgb') ? style.fill : style.color),
+            color,
+            rgb: parseRgb(color),
             element,
             letterSpacingPx,
             xPx: startX - columnOffset,

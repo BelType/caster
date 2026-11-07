@@ -21,11 +21,9 @@ import { castDocument, checks, cutCheck, inspection, markerDifferences, FIXTURES
  * Known Caster defects, each keyed by the elements it lives in. A known defect excuses a failure only where its elements are, and one that excuses nothing in its document fails the check, which asks for its removal here.
  *
  * @remarks
- * The monorepo carried five for its minimal fixtures, and five more for the manual, which this repository does not hold. Measured 2026-11-07 on Caster 0.2.1 and Cicero 0.1.7, the first run of this port, three of the five excused nothing and are removed, each with its fixture kept and its check now holding it to the page: the divided row (`fixtures/cast-divided-row/`, its long row on the second and third pages, whose cells the file now reads in the page's order), the wrapped Mermaid label (`fixtures/cast-wrapped-label/`, 0.001 % of the page's pixels differ, 0.7 % of the worst tile), and the heading clipped to nothing (`fixtures/cast-clipped/`, 0.018 % and 1.6 %, since 0.2.1 honours `clip: rect()`). The two below still show.
+ * The monorepo carried five for its minimal fixtures, and five more for the manual, which this repository does not hold. Measured 2026-11-07 on Caster 0.2.1 and Cicero 0.1.7, the first run of this port, three of the five excused nothing and are removed, each with its fixture kept and its check now holding it to the page: the divided row (`fixtures/cast-divided-row/`, its long row on the second and third pages, whose cells the file now reads in the page's order), the wrapped Mermaid label (`fixtures/cast-wrapped-label/`, 0.001 % of the page's pixels differ, 0.7 % of the worst tile), and the heading clipped to nothing (`fixtures/cast-clipped/`, 0.018 % and 1.6 %, since 0.2.1 honours `clip: rect()`). The inline formula healed with 0.2.2's reading order, and the sequence diagram's labels on 2026-11-07, once a `<tspan>`'s own fill and a centred baseline were printed (CHANGELOG, Unreleased); none stands.
  */
-const KNOWN: Known[] = [
-  { at: 'sequence-diagram:pictures', elements: '.mermaid', parts: ['labels', 'arrowheads'], why: 'a Mermaid sequence diagram\'s actor labels are not drawn, and its message labels sit a few pixels from where the page has them' },
-];
+const KNOWN: Known[] = [];
 /** The documents: the hand-written one, and one minimal fixture for each defect the monorepo's Press round found. The three Markdown fixtures are committed finished (`index.html` beside `index.md`), because the belt that compiles them is BelType's. */
 const DOCUMENTS: { key: string; label: string; name: string; markers?: number }[] = [
   { key: 'cast', label: 'the hand-written document', name: 'cast/index.html', markers: 3 },
