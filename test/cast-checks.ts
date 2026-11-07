@@ -804,8 +804,12 @@ export async function readPages(bytes: Buffer): Promise<{ pages: string[]; stray
  *
  * @remarks
  * An extractor that goes by the stream (copy and paste, `pdftotext`, pdf.js's own text layer) reads what {@link readPages} reads only where the two orders agree. Each page's marked-content ids are listed twice, once as the stream opens them and once as the structure tree holds them, a drawing's own content left out of both as `readPages` leaves it out; a page is named where the lists differ, with its first differing text.
+ *
+ * The two orders differ on purpose where CSS paints a box later than the tree reads it: a positioned box with `z-index: auto` paints in Appendix E's step 8, after every in-flow box of its stacking context, and the stream is the painting order, because in PDF what is painted later covers what was painted before (DESIGN.md S76, amended 2026-11-07, the second amendment). `later` names those boxes by the start of their text, whitespace out; the expected stream is the tree's order with them taken out and put after the rest of the page, in the tree's order among themselves.
+ *
+ * @param later - The start of each positioned box's text that the page paints after its in-flow text.
  */
-export async function streamDifferences(bytes: Buffer): Promise<string[]> {
+export async function streamDifferences(bytes: Buffer, later: string[] = []): Promise<string[]> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes) });
   const doc = await task.promise;
@@ -831,9 +835,11 @@ export async function streamDifferences(bytes: Buffer): Promise<string[]> {
       for (const child of node.children ?? []) walk(child, node.role);
     };
     walk(await page.getStructTree());
+    const isLater = (id: string) => later.some((text) => textOf.get(id)!.replace(/\s+/g, '').startsWith(text));
+    const expected = [...tree.filter((id) => !isLater(id)), ...tree.filter(isLater)];
     const kept = stream.filter((id) => tree.includes(id));
-    const at = kept.findIndex((id, k) => id !== tree[k]);
-    if (at >= 0) differ.push(`page ${n}: the stream reads ${JSON.stringify(textOf.get(kept[at]!)!.slice(0, 40))} where the tree reads ${JSON.stringify(textOf.get(tree[at]!)!.slice(0, 40))}`);
+    const at = kept.findIndex((id, k) => id !== expected[k]);
+    if (at >= 0) differ.push(`page ${n}: the stream reads ${JSON.stringify(textOf.get(kept[at]!)!.slice(0, 40))} where the tree reads ${JSON.stringify(textOf.get(expected[at]!)!.slice(0, 40))}`);
   }
   await task.destroy();
   return differ;
