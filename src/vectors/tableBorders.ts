@@ -302,12 +302,14 @@ export function collectTableBorders(options: TableBorderOptions): TableBorderRes
         }
       }
 
+      // Every unit by its place, because the merge and the corners below ask for one by place, for every place of the grid. Measured 2026-11-07 on the bolletta: about 3.5 ms of a 61-day bill's print, and nothing on a 30-day bill's, since the search grew with the square of the rows (codeberg.org/BelType/cli issue 2).
+      const unitAt: Map<string,UnitEdge> = new Map();
+      for (const unit of units) unitAt.set(`${unit.axis}|${unit.line}|${unit.slot}`, unit);
+
       /** Half the widest vertical border meeting a corner, which is what a horizontal edge grows by. */
       const verticalHalfAt = (colLine: number, rowLine: number): number => {
-        const touching = units.filter(
-          (u) => u.axis === 'v' && u.line === colLine && (u.slot === rowLine - 1 || u.slot === rowLine) && u.winner,
-        );
-        return touching.length === 0 ? 0 : Math.max(...touching.map((u) => (u.winner as Candidate).widthPx)) / 2;
+        const touching = [unitAt.get(`v|${colLine}|${rowLine - 1}`), unitAt.get(`v|${colLine}|${rowLine}`)].filter((u) => u?.winner);
+        return touching.length === 0 ? 0 : Math.max(...touching.map((u) => ((u as UnitEdge).winner as Candidate).widthPx)) / 2;
       };
 
       // --- merge, then paint --------------------------------------------------
@@ -326,7 +328,7 @@ export function collectTableBorders(options: TableBorderOptions): TableBorderRes
             a.winner.color === b.winner.color &&
             a.winner.origin === b.winner.origin;
           for (let slot = slotFrom; slot <= slotTo; slot++) {
-            const unit = units.find((u) => u.axis === axis && u.line === line && u.slot === slot);
+            const unit = unitAt.get(`${axis}|${line}|${slot}`);
             if (unit && run && same(run.unit, unit)) {
               run.to = slot + 1;
               continue;
