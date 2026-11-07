@@ -482,7 +482,7 @@
    },
    {
     "block": "Caption",
-    "path": "Document/Div[0]/Caption[0]",
+    "path": "Document/Figure[0]/Caption[0]",
     "text": "A canvas of 800 by 500 pixels, painted by a script, a hundred millimetres wide.",
     "mcids": [
      {
@@ -1176,29 +1176,22 @@
      "kids": []
     },
     {
-     "tag": "Div",
-     "path": "Document/Div[0]",
-     "mcids": [],
-     "attrs": {},
+     "tag": "Figure",
+     "path": "Document/Figure[0]",
+     "pg": 0,
+     "mcids": [
+      {
+       "page": 0,
+       "mcid": 1
+      }
+     ],
+     "attrs": {
+      "alt": "A painted figure: a blue to orange gradient behind a dark circle, a pale square and three diagonal lines"
+     },
      "kids": [
       {
-       "tag": "Figure",
-       "path": "Document/Div[0]/Figure[0]",
-       "pg": 0,
-       "mcids": [
-        {
-         "page": 0,
-         "mcid": 1
-        }
-       ],
-       "attrs": {
-        "alt": "A painted figure: a blue to orange gradient behind a dark circle, a pale square and three diagonal lines"
-       },
-       "kids": []
-      },
-      {
        "tag": "Caption",
-       "path": "Document/Div[0]/Caption[0]",
+       "path": "Document/Figure[0]/Caption[0]",
        "pg": 0,
        "mcids": [
         {
@@ -1219,18 +1212,14 @@
    {
     "mcidOwners": [
      "Document/H1[0]",
-     "Document/Div[0]/Figure[0]",
-     "Document/Div[0]/Caption[0]"
+     "Document/Figure[0]",
+     "Document/Figure[0]/Caption[0]"
     ]
    }
   ],
   "tagCounts": [
    {
     "tag": "Caption",
-    "count": 1
-   },
-   {
-    "tag": "Div",
     "count": 1
    },
    {
@@ -1370,5 +1359,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 143186
+ "bytes": 143082
 }

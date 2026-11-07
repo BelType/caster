@@ -3,7 +3,7 @@
  *
  * Ported from `harness/src/export/structure.ts` (E5, E7, E9, E11, E12F). Guide: `docs/guide/structure-tree.md`, `docs/guide/tables.md`.
  *
- * WHAT THE PORT CHANGED — the tag table is v2 (P7). v1 refuses anything it does not name, which is right and is why the table can grow safely; BelType's belt emits a wider vocabulary than the fixture of `structure-tree.md` (E5) did (`docs/syntax.md` lists every construct, and `packages/core/src/plugins/` says what each emits). v1's mappings are kept exactly, except one correction the plan states and this port takes in half (*veraPDF folds a `Div`*, S25): a `<figure>` whose content is one image keeps v1's `Figure`, with the `Caption` inside it where ISO 14289-2 8.2.5.27 wants it, and a `<figure>` holding a table, a code block or an SVG becomes a `Div` instead of throwing. v1 required a `<figure>` to hold an `<img>` and threw otherwise; the half-correction lets a figure hold something that is not a raster without moving a Caption out from under the rule that governs it.
+ * WHAT THE PORT CHANGED — the tag table is v2 (P7). v1 refuses anything it does not name, which is right and is why the table can grow safely; BelType's belt emits a wider vocabulary than the fixture of `structure-tree.md` (E5) did (`docs/syntax.md` lists every construct, and `packages/core/src/plugins/` says what each emits). v1's mappings are kept exactly, except one correction the plan states and this port takes in half (*veraPDF folds a `Div`*, S25): a `<figure>` whose content is one image keeps v1's `Figure`, with the `Caption` inside it where ISO 14289-2 8.2.5.27 wants it, and a `<figure>` holding a table or a code block becomes an `Aside` with its `Caption`, or a `Div` with none, instead of throwing (`visitAsFigure`). v1 required a `<figure>` to hold an `<img>` and threw otherwise; the half-correction lets a figure hold something that is not a raster without moving a Caption out from under the rule that governs it.
  *
  * The additions, each with what emits it: `<blockquote>` -> `Div` (`BlockQuote` is not in the PDF 2.0 standard namespace — `structure-tree.md` §"What is not in the PDF 2.0 standard namespace"); `<pre>` -> `P`; `<dl>`/`<dt>`/`<dd>` -> `L` with `Lbl`/`LBody` per item; `<details>`/`<summary>` -> `Div`/`P`; `<nav>` -> `Div` around its lists; `<del>`/`<s>`/`<mark>`/`<ins>`/`<u>`/`<i>`/`<b>`/`<small>`/`<cite>`/`<q>`/`<var>`/`<samp>`/`<time>`/`<data>`/`<bdi>`/`<bdo>`/`<ruby>` -> `Span`; a `.footnote` span (the belt's `inline-footnotes.js`) -> `FENote`; a KaTeX span (`rehype-katex`) -> `Formula` with `/Alt` from its `<annotation encoding="application/x-tex">` and its inner HTML transparent; a mermaid `<svg>` -> the SVG rule of E9 (`vector-painting.md`) unchanged.
  *
@@ -785,8 +785,21 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visit(child, body);
         }
     };
+    /** The `<figcaption>` of `figure`, if it has one, as the last child of `self`: 8.2.5.27 t1 asks a Caption first or last of what it captions, and DOM order puts it last only by a coincidence of authoring. */
+    const captionInto = (figure: Element, self: StructureNode) => {
+        const figcaption = (figure.querySelector(':scope > figcaption') as HTMLElement|null);
+        if (!figcaption) return;
+        const caption = node('Caption', self);
+        ownerByElement.set(figcaption, caption.path);
+        block(figcaption, caption.tag, caption.path);
+        for (const child of figcaption.children) visit(child, caption);
+        self.kids = [...self.kids.filter((k) => k !== caption), caption];
+    };
     /**
-     * A figure, and the shape P7's correction settles on: a `Figure` with its `Caption` inside it when its content is one image, a `Div` otherwise (see the `FIGURE` branch).
+     * A figure, and the shape P7's correction settles on: a `Figure` with its `Caption` inside it when its content is one picture (an image, a page of another PDF, a `<canvas>` or an `<svg>` that is not decorative), an `Aside` holding its content and its `Caption` when it has a caption and other content, a `Div` when it has neither (see the `FIGURE` branch).
+     *
+     * @remarks
+     * The `Aside` is measured (2026-11-07, veraPDF 1.30.0, `--flavour ua2`): a `Caption` in a `Div` fails ISO 32005's Table 5 as *`<Document>` shall not contain `<Caption>`*, because the validator folds the `Div` into its parent, and 8.2.5.27 t1 when the folded parent has more kids after it; the paper's table figure and SVG figure and the canvas figure failed both ways. An `Aside` may hold one `Caption` and is not folded. A `Figure` would pass the profile too, but it asks an `/Alt`, which a reader is told in place of the table or the code it holds.
      *
      * @throws {CasterError} The one image has no alt text.
      */
@@ -804,33 +817,30 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             ownerByElement.set(single, self.path);
             structPathByElement.set(single, self.path);
             pushImage({ path: self.path, element: single, kind: 'img', tag: 'Figure', src: currentSourceOf(single), alt, box: 'content', domPath });
-            const figcaption = (element.querySelector(':scope > figcaption') as HTMLElement|null);
-            if (figcaption) {
-                const caption = node('Caption', self);
-                ownerByElement.set(figcaption, caption.path);
-                block(figcaption, caption.tag, caption.path);
-                for (const child of figcaption.children) visit(child, caption);
-            }
-            // 8.2.5.27 t1: a Caption is the first or last child of what it captions. DOM order already puts it last; this makes that a guarantee rather than a coincidence of authoring.
-            const captions = self.kids.filter((k) => k.tag === 'Caption');
-            self.kids = [...self.kids.filter((k) => k.tag !== 'Caption'), ...captions];
+            captionInto(element, self);
             return;
         }
         // A `<figure>` whose content is ONE page of another PDF is a Figure with its Caption inside, for the same 8.2.5.27 reason as one image (the validator folds a Div, so a Caption beside the Figure in a Div is a Caption in the middle of the Div's parent — measured on the embedded-PDF round's real print, `Sect` with the Caption as its fourth child).
         const content = [...element.children].filter((child) => child.tagName !== 'FIGCAPTION');
         if (content.length === 1 && facsimileOf(content[0])) {
-            const self = facsimileFigure(content[0], parent, element);
-            const figcaption = (element.querySelector(':scope > figcaption') as HTMLElement|null);
-            if (figcaption) {
-                const caption = node('Caption', self);
-                ownerByElement.set(figcaption, caption.path);
-                block(figcaption, caption.tag, caption.path);
-                for (const child of figcaption.children) visit(child, caption);
-            }
+            captionInto(element, facsimileFigure(content[0], parent, element));
             return;
         }
-        const self = noteLang(element, node('Div', parent, langAttrs(element)));
-        for (const child of element.children) visit(child, self);
+        // One drawing, a `<canvas>` or an `<svg>`, is a Figure like one image: its own branch tags it, and the Caption goes inside. A drawing that made no Figure (one declared decorative, a continuation) leaves its caption to the wrapper below.
+        const drawing = content.length === 1 && (content[0].tagName === 'CANVAS' || content[0].tagName.toLowerCase() === 'svg') ? content[0] : null;
+        if (drawing) {
+            const before = parent.kids.length;
+            visit(drawing, parent);
+            const made = parent.kids.length > before ? parent.kids[parent.kids.length - 1] : null;
+            if (made?.tag === 'Figure') {
+                Object.assign(made.attrs, langAttrs(element));
+                captionInto(element, noteLang(element, made));
+                return;
+            }
+        }
+        const figcaption = element.querySelector(':scope > figcaption');
+        const self = noteLang(element, node(figcaption ? 'Aside' : 'Div', parent, langAttrs(element)));
+        for (const child of element.children) if (child !== drawing) visit(child, self);
         const captions = self.kids.filter((k) => k.tag === 'Caption');
         self.kids = [...self.kids.filter((k) => k.tag !== 'Caption'), ...captions];
     };
@@ -1227,7 +1237,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
          *
          * What veraPDF 1.30.2 said, on the specimen, with everything else passing (1726 rules, 30 717 checks): ISO 14289-2:2024 **8.2.5.27 t1**, *"When present, the Caption element shall be the first or the last child of the structure element"* — `Structure element 131 0 obj contains Caption as its 3 child instead of first or last one`, where 131 is a `Sect` whose own kids are `H3, Div, Div, P` and whose two `Div`s each hold `Figure, Caption`. The validator folds a `Div` when it computes a parent's kid types, so the effective list is `H3, Figure, Caption, Figure, Caption, P` and the first Caption is the third child — which is exactly the ordinal the message names. A grouping box does not shield a Caption from the rule.
          *
-         * So: a `<figure>` whose content is one image is a `Figure`, with the `Caption` inside it where 8.2.5.27 wants it — v1's tag, kept. A `<figure>` holding anything else is a `Div`, which is what P7 opened the door for. What is gone either way is v1's throw.
+         * So: a `<figure>` whose content is one image is a `Figure`, with the `Caption` inside it where 8.2.5.27 wants it — v1's tag, kept. A `<figure>` holding anything else was a `Div`, which is what P7 opened the door for, until veraPDF failed the same rule through it (see CHANGELOG, Unreleased): now one canvas or SVG is a `Figure` like one image, and other content with a caption is an `Aside` (`visitAsFigure`). What is gone either way is v1's throw.
          */
         if (tag === 'FIGURE') {
             visitAsFigure(element, parent);

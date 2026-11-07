@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A figure that holds a canvas, an SVG or a table passes PDF/UA-2.** A `<figure>` whose content was not one `<img>` was tagged `Div` with its `Caption` inside, and veraPDF 1.30.0 under `--flavour ua2` folds a `Div` into its parent, so it read the `Caption` as the `Document`'s own (ISO 32005 Table 5, *`<Document>` shall not contain `<Caption>`*) and, on the paper, as a middle child (8.2.5.27 t1). The file claimed PDF/UA-2 and failed it, and nothing told the author. A figure holding one `<canvas>` or one `<svg>` that is not decorative is now a `Figure` with its `Caption` inside, as one image always was; a figure with a caption and any other content, such as the paper's table, is an `Aside`, which may hold one `Caption` and is not folded; a figure with no caption stays a `Div`. A `Figure` around a table was not chosen, because it asks an `/Alt`, which a reader hears in place of the table. `fixtures/lists/` re-records `paper` and `canvas`, and `test/pdfua.test.ts` runs veraPDF over the two and fails on any rule (it skips where `verapdf` is not on the path). Measured: 16 of 18 files passed before, 18 of 18 after.
+
 ## 0.2.1 — 2026-11-07
 
 - **The development pin moves to Cicero 0.1.7**, whose root line-height provision is a floor of zero specificity: a fixture whose root declared no `line-height` is refused at intake (`I5`), so the page background fixture says `font: 11pt/1.4 F`. The printer is unchanged.
