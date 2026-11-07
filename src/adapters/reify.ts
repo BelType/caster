@@ -88,6 +88,14 @@ export type Scope = { name: string, value: number, ownerDepth: number };
  */
 export type QuoteState = { depths: Map<Element|null, number>, made: boolean };
 
+/**
+ * The attribute every element made from generated content carries, valued by the pseudo it was made from (`before`, `after`, `marker`; a quote mark is made inside a `before` or an `after`), so a reader of an element's text, Cicero's `content()` and `string-set`, can leave it out (ruled 2026-11-07).
+ *
+ * @remarks
+ * The name and its values are `GENERATED_ATTRIBUTE` and `GeneratedPseudo` in `@beltype/common/data-beltype`; the literal is spelled here until this package's common pin moves past 0.1.2, and is then replaced by the import. An attribute adds no layout (*preparation runs in no author preview, and must not change layout*, DESIGN.md S81).
+ */
+export const GENERATED_ATTRIBUTE = 'data-beltype-generated';
+
 /** The attribute on a span whose text holds a quote mark, which a later reification has to know is there. */
 const QUOTE_ATTRIBUTE = 'data-caster-quote';
 
@@ -353,6 +361,7 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   const span = item.ownerDocument.createElement('span');
   span.className = MARKER_CLASS;
   span.textContent = text;
+  span.setAttribute(GENERATED_ATTRIBUTE, 'marker');
   // An outside marker hangs before the text and advances nothing, so the span is a box of no width whose text is aligned to its end and overflows toward its start: the item's words stay where the native marker left them, and the marker ends where they begin (*preparation runs in no author preview, and must not change layout*, DESIGN.md S81). No width is measured, because the frame's faces may not have loaded when this runs. `white-space: pre` is the UA's own for `::marker`, and keeps the trailing space a line end would otherwise drop. An inside marker advances, as an ordinary inline span does. An outside marker before a block is also out of the flow ({@link opensWithBlock}). Where the item has inline-start padding, a border or a `text-indent`, the marker ends that much before its words, at the border box ({@link outsideInset}).
   if (style.listStylePosition !== 'inside') span.style.cssText = `${hangs ? 'position: absolute; ' : ''}display: inline-flex; inline-size: 0; block-size: 0; justify-content: flex-end; white-space: pre; margin-inline: ${-outsideInset(style)}px ${outsideInset(style)}px`;
   // The marker's own colour and face, as a shape marker takes them, written after the hanging box's `cssText`, which would replace them: a `::marker` set apart from its item printed in the item's paint, and an outside marker in a larger face made its line shorter than the native marker did (measured 2026-11-07, a 28 px marker on a 16 px item: 35.39 px tall natively, 22.39 px with the span in the item's face). Its line height too, which a `font` shorthand on `::marker` resets. The outside box has no block size, so its ascent pushes the line down as Blink's marker does and its descent overhangs as Blink's does: with a block size of its own the same item was 39.19 px tall. `test/reifyMarkers.test.ts` holds the sizes measured.
@@ -392,6 +401,7 @@ function shapeMarkerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclara
   const span = doc.createElement('span');
   span.className = MARKER_CLASS;
   copyMarkerPaint(span, markerStyle);
+  span.setAttribute(GENERATED_ATTRIBUTE, 'marker');
   span.setAttribute(SHAPE_ATTRIBUTE, listStyle);
   span.setAttribute(ASCENT_ATTRIBUTE, String(ascent));
   // `unicode-bidi: isolate`, the UA's own for `::marker`: an empty inline in a right-to-left item opening with left-to-right text was reordered after that text, to its left, where an isolate stands at the line's start as the marker does.
@@ -573,6 +583,7 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   const span = element.ownerDocument.createElement('span');
   span.className = GENERATED_CLASS;
   span.textContent = text;
+  span.setAttribute(GENERATED_ATTRIBUTE, which === '::before' ? 'before' : 'after');
   // The pseudo's own painting, carried onto the span: without it the number would take the heading's colour and face rather than the ones the author gave the marker.
   copyStyle(view, span, style, element);
   if (holdsQuote(content)) span.setAttribute(QUOTE_ATTRIBUTE, '');
