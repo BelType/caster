@@ -144,6 +144,18 @@ test('reification', async (t) => {
       ].sort());
     });
 
+    await t.test('the sheets narrow what is asked, where they can be read', async () => {
+      const tab = await open('/generated');
+      const asked = await tab.evaluate(async () => {
+        const { namedHosts } = await import('/src/adapters/reify.js' as string);
+        const hosts = namedHosts(document, 'before|after', 'q');
+        return hosts ? [...hosts].map((element: Element) => element.className || element.getAttribute('title') || element.localName) : null;
+      });
+      assert.ok(asked, 'the page has a rule of every spelling that can be read, and the sheets answered nothing');
+      assert.ok(!asked.includes('plain tinted'), `an element no rule names is asked: ${asked.join(', ')}`);
+      for (const name of ['legacy', 'comma-a', 'comma-b', 'is-a', 'under', '::before', 'grouped', 'contained', 'state', 'imported', 'adopted', 'bare', 'print']) assert.ok(asked.includes(name), `${name} is not asked: ${asked.join(', ')}`);
+    });
+
     await t.test('a nested rule and @scope leave every element to be asked', async () => {
       assert.deepEqual(await generated('/nested'), ['p.nesting ::before nested']);
       assert.deepEqual(await generated('/nested-media'), ['p.nesting ::after nested']);

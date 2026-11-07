@@ -106,6 +106,8 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   const reads = defer ? readNamesOf(doc) : null;
   // Measured 2026-11-07 on the bolletta: about 21 ms of a 61-day bill's prepare and print, 11 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2). A `::first-letter` read on every block, twice, was what the drop capital of issue 9 had added.
   const letters = namedHosts(doc, 'first-letter');
+  // A missed one is refused and never lost: the census of generated text still asks every element, after the measurement. `q` is the one element the user-agent sheet gives them to, which `test/reifyHosts.test.ts` pins. Measured 2026-11-07 on the bolletta: about 5 ms of a 61-day bill's prepare and print, 3 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
+  const pseudos = namedHosts(doc, 'before|after', 'q');
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
   const apply = ( style: CSSStyleDeclaration,  depth: number) => {
@@ -144,7 +146,8 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     apply(style, depth);
     // `::marker` is the item's first box, so it goes first; then `::before`, then the children. The element's own counters have moved before any of the three reads them.
     const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, itemsOf, out, writes) : null;
-    const before = pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes);
+    const askPseudos = mayHold(pseudos, element);
+    const before = askPseudos ? pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes) : null;
     if (before) writes.push(() => element.insertBefore(before, element.firstChild));
     if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
     // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
@@ -153,7 +156,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
       if (child.classList.contains(GENERATED_CLASS) || child.classList.contains(MARKER_CLASS)) continue;
       walk(child, depth + 1);
     }
-    const after = pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes);
+    const after = askPseudos ? pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes) : null;
     if (after) writes.push(() => element.append(after));
     // A counter created below this element stays in scope for this element's following siblings, and dies with this element's parent — which is where the walk is now.
     while (scopes.length && scopes[scopes.length - 1].ownerDepth > depth) scopes.pop();
@@ -176,7 +179,7 @@ const GROUPING_RULES = new Set(['CSSMediaRule', 'CSSSupportsRule', 'CSSLayerBloc
  * @param names - The pseudo-elements, as a pattern's alternatives.
  * @param always - A selector the user-agent's own sheet gives them on.
  */
-function namedHosts(doc: Document, names: string, always?: string): Set<Element>|null {
+export function namedHosts(doc: Document, names: string, always?: string): Set<Element>|null {
   const named = new RegExp(`::?(?:${names})\\b`);
   // A selector's strings serialise in double quotes, and `[title="::before"]` has to go on matching.
   const replaced = new RegExp(`"(?:[^"\\\\]|\\\\.)*"|${named.source}`, 'g');
