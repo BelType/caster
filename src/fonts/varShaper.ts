@@ -34,10 +34,16 @@ export type ShapedRun = {
 /** One harfbuzzjs Font per `(file, axis setting)`. The handle stays `any`: harfbuzzjs ships no declarations (`types/vendor.d.ts`). */
 const instances: Map<string,{ font: any; upem: number; }> = new Map<any, any>();
 const bytesByUrl: Map<string,Uint8Array> = new Map<any, any>();
-/** Remember the bytes so an instance can be built lazily, per axis setting. */
+/** Remember the bytes so an instance can be built lazily, per axis setting; other bytes under a held URL forget its instances, as `hbShaper.js`'s `loadFont` does. */
 export function registerBytes(url: string, bytes: Uint8Array) {
-    if (!bytesByUrl.has(url))
-        bytesByUrl.set(url, bytes);
+    const held = bytesByUrl.get(url);
+    if (held && hbs.sameBytes(held, bytes))
+        return;
+    if (held)
+        for (const key of instances.keys())
+            if (key === url || key.startsWith(`${url}|`))
+                instances.delete(key);
+    bytesByUrl.set(url, bytes);
 }
 /** Stable cache key for one file at one instance. */
 export function instanceKey(url: string, axes: AxisSetting[]): string {

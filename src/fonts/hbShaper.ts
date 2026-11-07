@@ -33,7 +33,7 @@ export type HbRun = {
 const hb = () => capability('harfbuzz');
 
 /** One harfbuzzjs Face per font file, by key. The handles stay `any`: harfbuzzjs ships no declarations, and a hand-written surface would be a second version to keep in step (`types/vendor.d.ts`). */
-const faces: Map<string,{ face: any; upem: number; }> = new Map<any, any>();
+const faces: Map<string,{ face: any; upem: number; bytes: Uint8Array; }> = new Map<any, any>();
 /** Keyed on font URL plus the variation settings, see fontKey(). */
 const fonts: Map<string,{ font: any; upem: number; }> = new Map<any, any>();
 /** A font-cache key. A variable font shaped at two instances needs two hb.Font objects, because setVariations() mutates the font it is called on. */
@@ -45,12 +45,41 @@ function fontKey(key: string, variations: Coords|undefined) {
         .join(',');
     return `${key}|${settings}`;
 }
-/** Blob/Face are built once per font file and reused for every instance. */
+/**
+ * Whether two font files are the same bytes.
+ *
+ * @remarks
+ * The same array answers at once, which is the kept page's usual case; otherwise a length and a byte-by-byte comparison, exact where a digest could collide and no dearer, since a digest reads every byte too. Measured 2026-11-07 in node on the 246 KB Crimson Pro: about 0.26 ms a comparison once warm, 1.2 ms the first time.
+ */
+export function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+    if (a === b)
+        return true;
+    if (a.length !== b.length)
+        return false;
+    for (let i = 0; i < a.length; i++)
+        if (a[i] !== b[i])
+            return false;
+    return true;
+}
+/**
+ * Blob/Face are built once per font file and reused for every instance.
+ *
+ * @remarks
+ * A key is a URL, and a kept page prints document after document under one module, so one URL can be handed other bytes (codeberg.org/BelType/cli, serve-font-cached-by-url). Other bytes under a held key forget the key's face, its instances and every remembered shape, and the new bytes are loaded in their place.
+ */
 export function loadFont(key: string, bytes: Uint8Array) {
-    if (faces.has(key))
+    const held = faces.get(key);
+    if (held && sameBytes(held.bytes, bytes))
         return;
+    if (held) {
+        // ponytail: the old hb objects are left to the wasm heap, as every other one here is; destroy() them if a kept page ever changes faces often.
+        for (const cacheKey of fonts.keys())
+            if (cacheKey === key || cacheKey.startsWith(`${key}|`))
+                fonts.delete(cacheKey);
+        shapes.clear();
+    }
     const face = new (hb().Face)(new (hb().Blob)(bytes));
-    faces.set(key, { face, upem: face.upem });
+    faces.set(key, { face, upem: face.upem, bytes });
 }
 /**
  * The hb.Font for one instance of one file, created on first use.
@@ -118,7 +147,7 @@ const SHAPES_KEPT = 20000;
  * The shapes already made, for a word asked again: the measurement asks of each word twice (`fallbackParts`, then the segment), and a bill repeats its words within a print and from one print to the next.
  *
  * @remarks
- * A shape is a function of the font, the instance, the features, the language and the text, and {@link loadFont} keeps a key's first bytes as long as this module lives, so nothing can stale it; the size only scales the width. Its arrays are shared between callers, and nothing writes to them. Measured 2026-11-07 on the bolletta: about 7 ms of a 61-day bill's measure stage, 5 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
+ * A shape is a function of the font, the instance, the features, the language and the text, and {@link loadFont} forgets every shape when a key is handed other bytes, so nothing can stale it; the size only scales the width. Its arrays are shared between callers, and nothing writes to them. Measured 2026-11-07 on the bolletta: about 7 ms of a 61-day bill's measure stage, 5 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
  */
 const shapes: Map<string,Omit<HbRun,'widthPx'>&{ units: number; }> = new Map();
 /**
