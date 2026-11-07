@@ -61,7 +61,9 @@
   "writer": "pdf-lib"
  },
  "errors": [],
- "warnings": [],
+ "warnings": [
+  "caster: \"Source Sans 3\" has no italic face, and beltype-root[0]/p[4]/em[0] asks for one. The screen fakes a italic the printer does not, so the PDF prints this text upright. Declare a italic @font-face for \"Source Sans 3\", or set font-synthesis: none so the screen shows what prints."
+ ],
  "needs": {
   "forcedPngDecode": false,
   "woff2Only": true,
@@ -7257,5 +7259,5 @@
    "source": "element"
   }
  ],
- "bytes": 175646
+ "bytes": 173125
 }

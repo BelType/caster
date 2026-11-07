@@ -1,6 +1,6 @@
 {
- "caster": "aa6366b",
- "cicero": "ef1da70",
+ "caster": "48636a0",
+ "cicero": "35daa7e",
  "documents": [
   {
    "name": "paper",
@@ -47,16 +47,16 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "59d016d834d75183793fc14e7e3fd526dc8808ea4d39f0dced4352046f0c5de0",
-   "bytes": 175646,
+   "sha256": "986c7b677e2c98c3a08dcee63448cee6e702889bd0a139d759844f7fbb6dc657",
+   "bytes": 173125,
    "options": {
     "blackText": "100k"
    },
    "list": {
     "bytes": 33541,
     "blobs": [
+     "07cd969af98c1de73bd32427aa77bfea2e953f50779ae21694f1f5511ea7fd40",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "49a94c9cc47d57564a954f83d6932a1915048bcb77059734efad2c0e36c5029c",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
@@ -201,8 +201,8 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "2ddf41897050454ab71f02a6bc268adf17bb2dae06f2c530ae582987e016b52c",
-   "bytes": 291739,
+   "sha256": "2ff705f3f45051c9200efda3daaf86f4531496316a2c20fa570a7737ea063bec",
+   "bytes": 290278,
    "list": {
     "bytes": 148651,
     "blobs": [
@@ -210,7 +210,7 @@
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "8b75f1753b9dc80814a9c3e4c6f65fd8a1a2b68e138c150d84631f1185655dd6",
      "9b9fbed07be70434c1e98bbc3b80e0976d3f79c04fd3886e44391538503ba373",
-     "a3960671696342e9e66780f3ce166bdd3fba3c1a3de74b0fdd054582b26bf896",
+     "df728a1467754aa28528a060b170549e6af9c7bdbf758bfeb27349cb0f7644ec",
      "eb5750d714f8f24a329e9e3815cf83f8e32d75d941928c53a712f232b9b869b2",
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
