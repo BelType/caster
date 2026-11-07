@@ -119,8 +119,16 @@ function stackingReason(element: Element, style: CSSStyleDeclaration, isRoot: bo
  *
  * @remarks
  * The walk is a straight transcription of Appendix E's seven steps, run once per stacking context and spliced into its parent's step 2, 6 or 7 by `z-index`. Inside a step, entries stay in tree order, which is what makes the result stable and what makes a diff of two runs a diff of the fixture.
+ *
+ * The tree is the flat tree where the engine assigns the container's children to its pages' slots: the boxes are laid out, and painted, in the order the slots were assigned them, not in the light DOM's. Cicero appends a continuation to its root after every original, so in the light DOM a divided table's last rows stand after the paragraph that follows it on the page, and the stream read them after it (DESIGN.md S76). `presented` is every page's flow in page order; the container's children it holds take the places those children hold in the light DOM, in its order, and every other child keeps its place.
+ *
+ * @param presented - The strip's pages' flows, concatenated; an element that is no child of the container is passed over, so an engine whose pages are light DOM orders nothing.
  */
-export function paintOrderOf(container: HTMLElement): PaintOrder {
+export function paintOrderOf(container: HTMLElement, presented: Element[] = []): PaintOrder {
+    const children = new Set(container.children);
+    const queue = presented.filter((el) => children.has(el));
+    const placed = new Set(queue);
+    const top = [...container.children].map((child) => (placed.has(child) ? queue.shift()! : child));
     const contexts: StackingContextRecord[] = [];
     let treeCounter = 0;
     /**
@@ -147,7 +155,7 @@ export function paintOrderOf(container: HTMLElement): PaintOrder {
         const floats: RawEntry[] = [];
         const inlines: RawEntry[] = [{ element: root, kind: 'content', phase: hoist ? 'positioned-z0' : 'inline', context: root }];
         const descend = (parent: Element) => {
-            for (const child of parent.children) {
+            for (const child of parent === container ? top : parent.children) {
                 const childStyle = getComputedStyle(child);
                 const display = displayOf(childStyle);
                 if (display === 'none')

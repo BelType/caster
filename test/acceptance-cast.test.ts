@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as mupdf from 'mupdf';
-import { castDocument, checks, cutCheck, inspection, markerDifferences, FIXTURES, type Known } from './cast-checks.ts';
+import { castDocument, checks, streamDifferences, cutCheck, inspection, markerDifferences, FIXTURES, type Known } from './cast-checks.ts';
 
 /**
  * Known Caster defects, each keyed by the elements it lives in. A known defect excuses a failure only where its elements are, and one that excuses nothing in its document fails the check, which asks for its removal here.
@@ -25,12 +25,12 @@ import { castDocument, checks, cutCheck, inspection, markerDifferences, FIXTURES
  */
 const KNOWN: Known[] = [];
 /** The documents: the hand-written one, and one minimal fixture for each defect the monorepo's Press round found. The three Markdown fixtures are committed finished (`index.html` beside `index.md`), because the belt that compiles them is BelType's. */
-const DOCUMENTS: { key: string; label: string; name: string; markers?: number }[] = [
-  { key: 'cast', label: 'the hand-written document', name: 'cast/index.html', markers: 3 },
+const DOCUMENTS: { key: string; label: string; name: string; markers?: number; stream?: boolean }[] = [
+  { key: 'cast', label: 'the hand-written document', name: 'cast/index.html', markers: 3, stream: true },
   // The manual's page 36, reduced: an inline formula's text is read after the paragraph's in the file's structure tree.
   { key: 'inline-formula', label: 'an inline formula', name: 'cast-inline-formula/index.html' },
   // The manual's page 92, reduced: a row divided across a page, whose long cell is read first in the file's structure tree.
-  { key: 'divided-row', label: 'a divided table row', name: 'cast-divided-row/index.html' },
+  { key: 'divided-row', label: 'a divided table row', name: 'cast-divided-row/index.html', stream: true },
   // The manual's pages 90, 198, 237 and 275, reduced: a Mermaid sequence diagram's actor labels are missing from the file.
   { key: 'sequence-diagram', label: 'a sequence diagram', name: 'cast-sequence-diagram/index.html' },
   // The manual's page 111 and some forty more, reduced: a Mermaid label that wraps draws its second line's first word at the end of the first.
@@ -45,7 +45,7 @@ test('the file holds the pages Cicero presented, word for word, place for place 
   // A name `CAST_ONLY` does not know is a failure, never a run that checks nothing.
   const unknown = only.filter((k) => !DOCUMENTS.some((d) => d.key === k));
   assert.deepEqual(unknown, [], `CAST_ONLY names ${unknown.join(', ')}, which this suite does not have; it has ${DOCUMENTS.map((d) => d.key).join(', ')}`);
-  for (const { key, label, name, markers: least } of DOCUMENTS.filter((d) => !only.length || only.includes(d.key))) {
+  for (const { key, label, name, markers: least, stream } of DOCUMENTS.filter((d) => !only.length || only.includes(d.key))) {
     await t.test(label, async (st) => {
       const known = KNOWN.filter((k) => k.at.startsWith(`${key}:`));
       const cast = await castDocument({ name, inspect: inspection(known, true) });
@@ -55,6 +55,12 @@ test('the file holds the pages Cicero presented, word for word, place for place 
       // A document with bullets compares them, or the marker check passes over none.
       if (least) await st.test(`Blink's shape markers are read, at least ${least}`, () => { const read = markers?.filter((m: { shape: string }) => m.shape !== 'gutter').length ?? 0; assert.ok(read >= least, `${read} read`); });
       await checks(st, key, cast.inspected, cast.bytes, known, markers);
+      // A continuation is painted where its page shows it, not where the root's light DOM holds it (DESIGN.md S76). Held on the two documents with a divided block followed by more on its page; the others' streams still differ from their trees for reasons of their own, filed in the CHANGELOG.
+      if (stream) await st.test('the content stream reads the tagged text in the structure tree\'s order', async (ct) => {
+        const differ = await streamDifferences(cast.bytes);
+        for (const d of differ.slice(0, 8)) ct.diagnostic(d);
+        assert.deepEqual(differ, [], 'every page\'s stream in reading order, so an extractor that reads the stream reads the page as a reader does');
+      });
       await st.test('preparation moves no cut: the pages cut unprepared are the pages cut prepared', (ct) => cutCheck(ct, cast.inspected.loaded.unprepared, ledger));
     });
   }

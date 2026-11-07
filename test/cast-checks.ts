@@ -800,6 +800,46 @@ export async function readPages(bytes: Buffer): Promise<{ pages: string[]; stray
 }
 
 /**
+ * Every page whose content stream reads its tagged text in another order than its structure tree does.
+ *
+ * @remarks
+ * An extractor that goes by the stream (copy and paste, `pdftotext`, pdf.js's own text layer) reads what {@link readPages} reads only where the two orders agree. Each page's marked-content ids are listed twice, once as the stream opens them and once as the structure tree holds them, a drawing's own content left out of both as `readPages` leaves it out; a page is named where the lists differ, with its first differing text.
+ */
+export async function streamDifferences(bytes: Buffer): Promise<string[]> {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const task = pdfjs.getDocument({ data: new Uint8Array(bytes) });
+  const doc = await task.promise;
+  const differ: string[] = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const page = await doc.getPage(n);
+    const content = await page.getTextContent({ includeMarkedContent: true });
+    const textOf = new Map<string, string>();
+    const stream: string[] = [];
+    const open: { id?: string; tag: string }[] = [];
+    for (const item of content.items as any[]) {
+      if (item.type === 'beginMarkedContent' || item.type === 'beginMarkedContentProps') { open.push({ id: item.id, tag: item.tag }); continue; }
+      if (item.type === 'endMarkedContent') { open.pop(); continue; }
+      if (open.some((m) => m.tag === 'Artifact') || !item.str.trim()) continue;
+      const id = open.findLast((m) => m.id)?.id;
+      if (!id) continue;
+      if (!textOf.has(id)) stream.push(id);
+      textOf.set(id, (textOf.get(id) ?? '') + item.str);
+    }
+    const tree: string[] = [];
+    const walk = (node: any, role?: string) => {
+      if (node.type === 'content') { if (role !== 'Figure' && textOf.has(node.id)) tree.push(node.id); return; }
+      for (const child of node.children ?? []) walk(child, node.role);
+    };
+    walk(await page.getStructTree());
+    const kept = stream.filter((id) => tree.includes(id));
+    const at = kept.findIndex((id, k) => id !== tree[k]);
+    if (at >= 0) differ.push(`page ${n}: the stream reads ${JSON.stringify(textOf.get(kept[at]!)!.slice(0, 40))} where the tree reads ${JSON.stringify(textOf.get(tree[at]!)!.slice(0, 40))}`);
+  }
+  await task.destroy();
+  return differ;
+}
+
+/**
  * Every page whose text is not Cicero's, with the place it first differs, and which known defects excuse it.
  *
  * @remarks

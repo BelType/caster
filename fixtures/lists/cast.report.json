@@ -1073,6 +1073,28 @@
     "mcid": -1
    },
    {
+    "index": 75,
+    "page": 1,
+    "line": 75,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10.5,
+    "color": "rgb(34, 34, 34)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 76,
+    "page": 1,
+    "line": 76,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10.5,
+    "color": "rgb(34, 34, 34)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
     "index": 14,
     "page": 1,
     "line": 14,
@@ -1081,7 +1103,7 @@
     "sizePt": 9,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 1
+    "mcid": 2
    },
    {
     "index": 15,
@@ -1092,7 +1114,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 16,
@@ -1103,7 +1125,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 17,
@@ -1114,7 +1136,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 18,
@@ -1125,7 +1147,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 19,
@@ -1136,7 +1158,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 20,
@@ -1147,7 +1169,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 2
+    "mcid": 3
    },
    {
     "index": 21,
@@ -1158,7 +1180,7 @@
     "sizePt": 13,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 3
+    "mcid": 4
    },
    {
     "index": 22,
@@ -1169,7 +1191,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 4
+    "mcid": 5
    },
    {
     "index": 23,
@@ -1180,7 +1202,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 4
+    "mcid": 5
    },
    {
     "index": 24,
@@ -1191,7 +1213,7 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 4
+    "mcid": 5
    },
    {
     "index": 25,
@@ -1202,34 +1224,12 @@
     "sizePt": 10.5,
     "color": "rgb(34, 34, 34)",
     "letterSpacingPt": 0,
-    "mcid": 4
+    "mcid": 5
    },
    {
     "index": 26,
     "page": 1,
     "line": 26,
-    "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
-    "sizePt": 10.5,
-    "color": "rgb(34, 34, 34)",
-    "letterSpacingPt": 0,
-    "mcid": 4
-   },
-   {
-    "index": 75,
-    "page": 1,
-    "line": 75,
-    "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
-    "sizePt": 10.5,
-    "color": "rgb(34, 34, 34)",
-    "letterSpacingPt": 0,
-    "mcid": 5
-   },
-   {
-    "index": 76,
-    "page": 1,
-    "line": 76,
     "faceId": "Source Sans 3#1",
     "instanceKey": "Source Sans 3#1|wght=400",
     "sizePt": 10.5,
@@ -1873,7 +1873,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 1
+      "mcid": 2
      }
     ]
    },
@@ -1884,7 +1884,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 2
+      "mcid": 3
      }
     ]
    },
@@ -1895,7 +1895,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 3
+      "mcid": 4
      }
     ]
    },
@@ -1906,7 +1906,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 4
+      "mcid": 5
      }
     ]
    },
@@ -2067,7 +2067,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 5
+      "mcid": 0
      }
     ]
    },
@@ -8867,7 +8867,616 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "justified",
+    "xPt": 39.68,
+    "rightPt": 75,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     37,
+     48,
+     46,
+     47,
+     36,
+     33,
+     36,
+     32,
+     31
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "advancePt": [
+     2.594,
+     5.712,
+     4.19,
+     3.549,
+     2.583,
+     3.066,
+     2.583,
+     5.208,
+     5.828
+    ],
+    "advanceWidthPt": 35.312,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "each",
+    "xPt": 77.086,
+    "rightPt": 97.957,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     32,
+     28,
+     30,
+     35
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     5.061,
+     5.292,
+     4.788,
+     5.712
+    ],
+    "advanceWidthPt": 20.853,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.524
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "line",
+    "xPt": 100.043,
+    "rightPt": 116.273,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     39,
+     36,
+     41,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     2.678,
+     2.583,
+     5.744,
+     5.208
+    ],
+    "advanceWidthPt": 16.212,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.381
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "by",
+    "xPt": 118.359,
+    "rightPt": 129.047,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     29,
+     52
+    ],
+    "clusters": [
+     0,
+     1
+    ],
+    "advancePt": [
+     5.765,
+     4.904
+    ],
+    "advanceWidthPt": 10.668,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.381
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "sliding",
+    "xPt": 131.133,
+    "rightPt": 160.266,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     39,
+     36,
+     31,
+     36,
+     41,
+     34
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "advancePt": [
+     4.4,
+     2.678,
+     2.583,
+     5.828,
+     2.583,
+     5.744,
+     5.292
+    ],
+    "advanceWidthPt": 29.106,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.572
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "thin",
+    "xPt": 162.352,
+    "rightPt": 179.953,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     36,
+     41
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "advancePt": [
+     3.549,
+     5.712,
+     2.583,
+     5.744
+    ],
+    "advanceWidthPt": 17.588,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -1.238
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "spaces",
+    "xPt": 182.039,
+    "rightPt": 211.594,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     43,
+     28,
+     30,
+     32,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     4.4,
+     5.681,
+     5.292,
+     4.568,
+     5.208,
+     4.4
+    ],
+    "advanceWidthPt": 29.547,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.048
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "between",
+    "xPt": 213.68,
+    "rightPt": 251.813,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     29,
+     32,
+     47,
+     50,
+     32,
+     32,
+     41
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "advancePt": [
+     5.807,
+     5.103,
+     3.549,
+     7.508,
+     5.208,
+     5.208,
+     5.744
+    ],
+    "advanceWidthPt": 38.125,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.571
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "the",
+    "xPt": 253.91,
+    "rightPt": 268.383,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.549,
+     5.712,
+     5.208
+    ],
+    "advanceWidthPt": 14.469,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.428
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 75,
+    "block": "P",
+    "text": "words",
+    "xPt": 270.48,
+    "rightPt": 297.457,
+    "topPt": 430.117,
+    "baselineMeasureTextPt": 419.617,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     42,
+     45,
+     31,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     7.508,
+     5.691,
+     3.539,
+     5.828,
+     4.4
+    ],
+    "advanceWidthPt": 26.964,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.095
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 76,
+    "block": "P",
+    "text": "until",
+    "xPt": 39.68,
+    "rightPt": 59.953,
+    "topPt": 412.796,
+    "baselineMeasureTextPt": 402.296,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     48,
+     41,
+     47,
+     36,
+     39
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     5.712,
+     5.744,
+     3.549,
+     2.583,
+     2.678
+    ],
+    "advanceWidthPt": 20.265,
+    "spaceBefore": true,
+    "spaceEmitted": false,
+    "emittedAdj": null
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 76,
+    "block": "P",
+    "text": "the",
+    "xPt": 62.039,
+    "rightPt": 76.523,
+    "topPt": 412.796,
+    "baselineMeasureTextPt": 402.296,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     35,
+     32
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     3.549,
+     5.712,
+     5.208
+    ],
+    "advanceWidthPt": 14.469,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0.571
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 76,
+    "block": "P",
+    "text": "stick",
+    "xPt": 78.609,
+    "rightPt": 98.93,
+    "topPt": 412.796,
+    "baselineMeasureTextPt": 402.296,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     46,
+     47,
+     36,
+     30,
+     38
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "advancePt": [
+     4.19,
+     3.549,
+     2.583,
+     4.788,
+     5.198
+    ],
+    "advanceWidthPt": 20.307,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.095
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 76,
+    "block": "P",
+    "text": "was",
+    "xPt": 101.016,
+    "rightPt": 118.16,
+    "topPt": 412.796,
+    "baselineMeasureTextPt": 402.296,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     50,
+     28,
+     46
+    ],
+    "clusters": [
+     0,
+     1,
+     2
+    ],
+    "advancePt": [
+     7.445,
+     5.292,
+     4.4
+    ],
+    "advanceWidthPt": 17.136,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": 0
+   },
+   {
+    "page": 1,
+    "mcid": 0,
+    "runIndex": 76,
+    "block": "P",
+    "text": "tight.",
+    "xPt": 120.258,
+    "rightPt": 143.648,
+    "topPt": 412.796,
+    "baselineMeasureTextPt": 402.296,
+    "baselineProbePt": null,
+    "baselineProbeBeforePt": null,
+    "probeMoved": false,
+    "probeOffLine": false,
+    "probeBeforeOffLine": false,
+    "gids": [
+     47,
+     36,
+     34,
+     35,
+     47,
+     1387
+    ],
+    "clusters": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "advancePt": [
+     3.549,
+     2.583,
+     5.292,
+     5.712,
+     3.623,
+     2.614
+    ],
+    "advanceWidthPt": 23.373,
+    "spaceBefore": true,
+    "spaceEmitted": true,
+    "emittedAdj": -0.571
+   },
+   {
+    "page": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "The",
@@ -8902,7 +9511,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "device",
@@ -8946,7 +9555,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "stands",
@@ -8990,7 +9599,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "in",
@@ -9022,7 +9631,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "for",
@@ -9057,7 +9666,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "a",
@@ -9086,7 +9695,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "printer's",
@@ -9139,7 +9748,7 @@
    },
    {
     "page": 1,
-    "mcid": 1,
+    "mcid": 2,
     "runIndex": 14,
     "block": "Caption",
     "text": "mark.",
@@ -9180,7 +9789,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "When",
@@ -9218,7 +9827,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "a",
@@ -9247,7 +9856,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "stick",
@@ -9288,7 +9897,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "was",
@@ -9323,7 +9932,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "full",
@@ -9361,7 +9970,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "the",
@@ -9396,7 +10005,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "lines",
@@ -9437,7 +10046,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "went",
@@ -9475,7 +10084,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "onto",
@@ -9513,7 +10122,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "a",
@@ -9542,7 +10151,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "galley,",
@@ -9589,7 +10198,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "a",
@@ -9618,7 +10227,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 15,
     "block": "P",
     "text": "shallow",
@@ -9665,7 +10274,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "tray",
@@ -9703,7 +10312,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "with",
@@ -9741,7 +10350,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "three",
@@ -9782,7 +10391,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "raised",
@@ -9826,7 +10435,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "edges,",
@@ -9870,7 +10479,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "and",
@@ -9905,7 +10514,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "the",
@@ -9940,7 +10549,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "galley",
@@ -9984,7 +10593,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "went",
@@ -10022,7 +10631,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "to",
@@ -10054,7 +10663,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 16,
     "block": "P",
     "text": "the",
@@ -10089,7 +10698,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "proof",
@@ -10130,7 +10739,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "press.",
@@ -10174,7 +10783,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "The",
@@ -10209,7 +10818,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "first",
@@ -10250,7 +10859,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "proof",
@@ -10291,7 +10900,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "was",
@@ -10326,7 +10935,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "read",
@@ -10364,7 +10973,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "against",
@@ -10411,7 +11020,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "the",
@@ -10446,7 +11055,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "copy",
@@ -10484,7 +11093,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "by",
@@ -10516,7 +11125,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 17,
     "block": "P",
     "text": "a",
@@ -10545,7 +11154,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "reader",
@@ -10589,7 +11198,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "and",
@@ -10624,7 +11233,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "a",
@@ -10653,7 +11262,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "copyholder,",
@@ -10712,7 +11321,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "one",
@@ -10747,7 +11356,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "reading",
@@ -10794,7 +11403,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "aloud",
@@ -10835,7 +11444,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "and",
@@ -10870,7 +11479,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "the",
@@ -10905,7 +11514,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 18,
     "block": "P",
     "text": "other",
@@ -10946,7 +11555,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "following",
@@ -10999,7 +11608,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "the",
@@ -11034,7 +11643,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "type,",
@@ -11075,7 +11684,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "and",
@@ -11110,7 +11719,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "every",
@@ -11151,7 +11760,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "error",
@@ -11192,7 +11801,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "was",
@@ -11227,7 +11836,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "marked",
@@ -11271,7 +11880,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "in",
@@ -11303,7 +11912,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 19,
     "block": "P",
     "text": "the",
@@ -11338,7 +11947,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "margin",
@@ -11382,7 +11991,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "with",
@@ -11420,7 +12029,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "a",
@@ -11449,7 +12058,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "sign",
@@ -11487,7 +12096,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "the",
@@ -11522,7 +12131,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "compositor",
@@ -11578,7 +12187,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "would",
@@ -11619,7 +12228,7 @@
    },
    {
     "page": 1,
-    "mcid": 2,
+    "mcid": 3,
     "runIndex": 20,
     "block": "P",
     "text": "understand.",
@@ -11678,7 +12287,7 @@
    },
    {
     "page": 1,
-    "mcid": 3,
+    "mcid": 4,
     "runIndex": 21,
     "block": "H2",
     "text": "The",
@@ -11713,7 +12322,7 @@
    },
    {
     "page": 1,
-    "mcid": 3,
+    "mcid": 4,
     "runIndex": 21,
     "block": "H2",
     "text": "forme",
@@ -11754,7 +12363,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "Corrected",
@@ -11807,7 +12416,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "galleys",
@@ -11854,7 +12463,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "were",
@@ -11892,7 +12501,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "divided",
@@ -11939,7 +12548,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "into",
@@ -11977,7 +12586,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "pages",
@@ -12018,7 +12627,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "on",
@@ -12050,7 +12659,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "the",
@@ -12085,7 +12694,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 22,
     "block": "P",
     "text": "imposing",
@@ -12135,7 +12744,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "stone,",
@@ -12179,7 +12788,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "a",
@@ -12208,7 +12817,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "flat",
@@ -12246,7 +12855,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "table",
@@ -12287,7 +12896,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "of",
@@ -12319,7 +12928,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "marble",
@@ -12363,7 +12972,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "or",
@@ -12395,7 +13004,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "iron.",
@@ -12436,7 +13045,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "The",
@@ -12471,7 +13080,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "pages",
@@ -12512,7 +13121,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "were",
@@ -12550,7 +13159,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "laid",
@@ -12588,7 +13197,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 23,
     "block": "P",
     "text": "out",
@@ -12623,7 +13232,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "in",
@@ -12655,7 +13264,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "the",
@@ -12690,7 +13299,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "order",
@@ -12731,7 +13340,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "the",
@@ -12766,7 +13375,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "folded",
@@ -12810,7 +13419,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "sheet",
@@ -12851,7 +13460,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "would",
@@ -12892,7 +13501,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "need,",
@@ -12933,7 +13542,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "surrounded",
@@ -12989,7 +13598,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 24,
     "block": "P",
     "text": "by",
@@ -13021,7 +13630,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "furniture",
@@ -13074,7 +13683,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "of",
@@ -13106,7 +13715,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "wood",
@@ -13144,7 +13753,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "or",
@@ -13176,7 +13785,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "metal,",
@@ -13220,7 +13829,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "and",
@@ -13255,7 +13864,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "locked",
@@ -13299,7 +13908,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "into",
@@ -13337,7 +13946,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "a",
@@ -13366,7 +13975,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "chase",
@@ -13407,7 +14016,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 25,
     "block": "P",
     "text": "with",
@@ -13445,7 +14054,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 26,
     "block": "P",
     "text": "wedges",
@@ -13489,7 +14098,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 26,
     "block": "P",
     "text": "called",
@@ -13533,7 +14142,7 @@
    },
    {
     "page": 1,
-    "mcid": 4,
+    "mcid": 5,
     "runIndex": 26,
     "block": "P",
     "text": "quoins.",
@@ -13577,615 +14186,6 @@
     "spaceBefore": true,
     "spaceEmitted": true,
     "emittedAdj": 0.047
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "justified",
-    "xPt": 39.68,
-    "rightPt": 75,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     37,
-     48,
-     46,
-     47,
-     36,
-     33,
-     36,
-     32,
-     31
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5,
-     6,
-     7,
-     8
-    ],
-    "advancePt": [
-     2.594,
-     5.712,
-     4.19,
-     3.549,
-     2.583,
-     3.066,
-     2.583,
-     5.208,
-     5.828
-    ],
-    "advanceWidthPt": 35.312,
-    "spaceBefore": true,
-    "spaceEmitted": false,
-    "emittedAdj": null
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "each",
-    "xPt": 77.086,
-    "rightPt": 97.957,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     32,
-     28,
-     30,
-     35
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "advancePt": [
-     5.061,
-     5.292,
-     4.788,
-     5.712
-    ],
-    "advanceWidthPt": 20.853,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": 0.524
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "line",
-    "xPt": 100.043,
-    "rightPt": 116.273,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     39,
-     36,
-     41,
-     32
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "advancePt": [
-     2.678,
-     2.583,
-     5.744,
-     5.208
-    ],
-    "advanceWidthPt": 16.212,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.381
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "by",
-    "xPt": 118.359,
-    "rightPt": 129.047,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     29,
-     52
-    ],
-    "clusters": [
-     0,
-     1
-    ],
-    "advancePt": [
-     5.765,
-     4.904
-    ],
-    "advanceWidthPt": 10.668,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.381
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "sliding",
-    "xPt": 131.133,
-    "rightPt": 160.266,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     46,
-     39,
-     36,
-     31,
-     36,
-     41,
-     34
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5,
-     6
-    ],
-    "advancePt": [
-     4.4,
-     2.678,
-     2.583,
-     5.828,
-     2.583,
-     5.744,
-     5.292
-    ],
-    "advanceWidthPt": 29.106,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.572
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "thin",
-    "xPt": 162.352,
-    "rightPt": 179.953,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     47,
-     35,
-     36,
-     41
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "advancePt": [
-     3.549,
-     5.712,
-     2.583,
-     5.744
-    ],
-    "advanceWidthPt": 17.588,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -1.238
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "spaces",
-    "xPt": 182.039,
-    "rightPt": 211.594,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     46,
-     43,
-     28,
-     30,
-     32,
-     46
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5
-    ],
-    "advancePt": [
-     4.4,
-     5.681,
-     5.292,
-     4.568,
-     5.208,
-     4.4
-    ],
-    "advanceWidthPt": 29.547,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": 0.048
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "between",
-    "xPt": 213.68,
-    "rightPt": 251.813,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     29,
-     32,
-     47,
-     50,
-     32,
-     32,
-     41
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5,
-     6
-    ],
-    "advancePt": [
-     5.807,
-     5.103,
-     3.549,
-     7.508,
-     5.208,
-     5.208,
-     5.744
-    ],
-    "advanceWidthPt": 38.125,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": 0.571
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "the",
-    "xPt": 253.91,
-    "rightPt": 268.383,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     47,
-     35,
-     32
-    ],
-    "clusters": [
-     0,
-     1,
-     2
-    ],
-    "advancePt": [
-     3.549,
-     5.712,
-     5.208
-    ],
-    "advanceWidthPt": 14.469,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.428
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 75,
-    "block": "P",
-    "text": "words",
-    "xPt": 270.48,
-    "rightPt": 297.457,
-    "topPt": 430.117,
-    "baselineMeasureTextPt": 419.617,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     50,
-     42,
-     45,
-     31,
-     46
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4
-    ],
-    "advancePt": [
-     7.508,
-     5.691,
-     3.539,
-     5.828,
-     4.4
-    ],
-    "advanceWidthPt": 26.964,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.095
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 76,
-    "block": "P",
-    "text": "until",
-    "xPt": 39.68,
-    "rightPt": 59.953,
-    "topPt": 412.796,
-    "baselineMeasureTextPt": 402.296,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     48,
-     41,
-     47,
-     36,
-     39
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4
-    ],
-    "advancePt": [
-     5.712,
-     5.744,
-     3.549,
-     2.583,
-     2.678
-    ],
-    "advanceWidthPt": 20.265,
-    "spaceBefore": true,
-    "spaceEmitted": false,
-    "emittedAdj": null
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 76,
-    "block": "P",
-    "text": "the",
-    "xPt": 62.039,
-    "rightPt": 76.523,
-    "topPt": 412.796,
-    "baselineMeasureTextPt": 402.296,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     47,
-     35,
-     32
-    ],
-    "clusters": [
-     0,
-     1,
-     2
-    ],
-    "advancePt": [
-     3.549,
-     5.712,
-     5.208
-    ],
-    "advanceWidthPt": 14.469,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": 0.571
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 76,
-    "block": "P",
-    "text": "stick",
-    "xPt": 78.609,
-    "rightPt": 98.93,
-    "topPt": 412.796,
-    "baselineMeasureTextPt": 402.296,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     46,
-     47,
-     36,
-     30,
-     38
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4
-    ],
-    "advancePt": [
-     4.19,
-     3.549,
-     2.583,
-     4.788,
-     5.198
-    ],
-    "advanceWidthPt": 20.307,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.095
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 76,
-    "block": "P",
-    "text": "was",
-    "xPt": 101.016,
-    "rightPt": 118.16,
-    "topPt": 412.796,
-    "baselineMeasureTextPt": 402.296,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     50,
-     28,
-     46
-    ],
-    "clusters": [
-     0,
-     1,
-     2
-    ],
-    "advancePt": [
-     7.445,
-     5.292,
-     4.4
-    ],
-    "advanceWidthPt": 17.136,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": 0
-   },
-   {
-    "page": 1,
-    "mcid": 5,
-    "runIndex": 76,
-    "block": "P",
-    "text": "tight.",
-    "xPt": 120.258,
-    "rightPt": 143.648,
-    "topPt": 412.796,
-    "baselineMeasureTextPt": 402.296,
-    "baselineProbePt": null,
-    "baselineProbeBeforePt": null,
-    "probeMoved": false,
-    "probeOffLine": false,
-    "probeBeforeOffLine": false,
-    "gids": [
-     47,
-     36,
-     34,
-     35,
-     47,
-     1387
-    ],
-    "clusters": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5
-    ],
-    "advancePt": [
-     3.549,
-     2.583,
-     5.292,
-     5.712,
-     3.623,
-     2.614
-    ],
-    "advanceWidthPt": 23.373,
-    "spaceBefore": true,
-    "spaceEmitted": true,
-    "emittedAdj": -0.571
    },
    {
     "page": 1,
@@ -30898,7 +30898,7 @@
       },
       {
        "page": 1,
-       "mcid": 5
+       "mcid": 0
       }
      ],
      "attrs": {},
@@ -30911,7 +30911,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 0
+       "mcid": 1
       }
      ],
      "attrs": {
@@ -30925,7 +30925,7 @@
        "mcids": [
         {
          "page": 1,
-         "mcid": 1
+         "mcid": 2
         }
        ],
        "attrs": {},
@@ -30940,7 +30940,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 2
+       "mcid": 3
       }
      ],
      "attrs": {},
@@ -30953,7 +30953,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 3
+       "mcid": 4
       }
      ],
      "attrs": {},
@@ -30966,7 +30966,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 4
+       "mcid": 5
       }
      ],
      "attrs": {},
@@ -31292,12 +31292,12 @@
    },
    {
     "mcidOwners": [
+     "Document/P[2]",
      "Document/Figure[0]",
      "Document/Figure[0]/Caption[0]",
      "Document/P[3]",
      "Document/H2[1]",
-     "Document/P[4]",
-     "Document/P[2]"
+     "Document/P[4]"
     ]
    },
    {
@@ -31520,6 +31520,8 @@
   "h2[0]#decoration",
   "p[1]#decoration",
   "p[2]#decoration",
+  "p[11]#decoration",
+  "p[12]#decoration",
   "figure[0]#decoration",
   "figure[0]/img[0]#decoration",
   "figure[0]/figcaption[0]#decoration",
@@ -31541,8 +31543,6 @@
   "h2[3]#decoration",
   "p[9]#decoration",
   "p[10]#decoration",
-  "p[11]#decoration",
-  "p[12]#decoration",
   "span[0]#decoration",
   "span[1]#decoration",
   "span[2]#decoration",
@@ -31558,6 +31558,8 @@
   "h2[0]#content",
   "p[1]#content",
   "p[2]#content",
+  "p[11]#content",
+  "p[12]#content",
   "figure[0]#content",
   "figure[0]/img[0]#content",
   "figure[0]/figcaption[0]#content",
@@ -31579,8 +31581,6 @@
   "h2[3]#content",
   "p[9]#content",
   "p[10]#content",
-  "p[11]#content",
-  "p[12]#content",
   "span[0]#content",
   "span[1]#content",
   "span[2]#content",
@@ -31682,5 +31682,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 35149
+ "bytes": 35142
 }
