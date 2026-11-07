@@ -53,6 +53,7 @@
     "lcms-wasm": "1.0.5",
     "mupdf": "1.28.1",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.2.108",
     "playwright-core": "1.63.0",
     "typescript": "7.0.2",
     "wawoff2": "^2.0.1"

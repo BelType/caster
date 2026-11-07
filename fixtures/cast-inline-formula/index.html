@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>An inline formula</title>
+
+  <style>
+    /* Default page geometry. With no @page anywhere Paged.js falls back to
+       letter/margin-0, so a sensible default must always be present — but it is
+       just a default: this is unlayered and loads before author sheets, so an
+       author @page { size: A5 } in a linked stylesheet beats it on source order
+       (verified against the real engine). It lives here, not in the addendum,
+       because Paged.js hoists @page out of any @layer — the addendum's whole
+       contract is "always loses via layering", which a hoisted rule can't keep.
+       Presentation beyond this default (size, margins, running headers/footers
+       via the @top- and @bottom- margin boxes) is author CSS now, not config.
+
+       DO NOT write a star followed by a slash inside this comment. It
+       happened: naming the two margin-box families with a star wildcard and a
+       slash between them closed the comment four lines early, the remainder
+       parsed as garbage, and Chromium's error recovery swallowed the @page
+       rule below. The "default that must always be present" reached no browser
+       at all, and every document without its own @page silently got Paged.js's
+       letter/margin-0 fallback instead of A4/20mm. Nothing noticed for months,
+       because Paged.js HAS a fallback: the symptom was a slightly wrong page
+       size, never an error. Cicero found it in an hour by refusing to guess a
+       page size at all (its I5), which is the argument for a second engine in
+       one bug. Note also that this CSS lives in a JS template literal, so a
+       backtick here is a syntax error in this file. */
+    @page { size: A4; margin: 20mm; }
+
+    @media print { .no-print { display: none !important; } }
+    .page-break { break-after: page; }
+    .no-break { break-inside: avoid; }
+
+    /* Figure numbering + cross-references (functional, resolved by the paged
+       engine at layout time — target-counter() is standard CSS GCPM). The
+       "Figure N." label is a look and lives in the addendum. */
+    body { counter-reset: figure; }
+    figure { counter-increment: figure; }
+    .xref::after { content: target-counter(attr(href url), figure); }
+
+    /* Generated table-of-contents page. The page break and the page number are
+       the feature — target-counter() is resolved by the paged engine at layout
+       time and nothing else can produce it. The leader layout and the
+       per-level indents are a look, and live in the addendum. */
+    .toc-page { break-after: page; }
+    /* attr(href url) — the typed form, as in the xref rule above. The spec's
+       first parameter is a url; Paged.js reads extra idents as fallback
+       attribute names, so typed and untyped behave identically there, but an
+       engine that honours attr() types needs the annotation. Keep them typed. */
+    .toc-entry a::after { content: target-counter(attr(href url), page); }
+
+  </style>
+
+  <link rel="stylesheet" href="../beltype-ua/beltype-ua.css">
+  <link rel="stylesheet" href="katex/katex.min.css">
+  
+  
+  
+  
+
+  
+</head>
+<body>
+  <p>Inline <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">a^2 + b^2 = c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span>, and on its own line:</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mn>30</mn><mo>×</mo><mn>90,000</mn><mo>=</mo><mn>2,700,000</mn><mtext>&nbsp;km</mtext></mrow><annotation encoding="application/x-tex">30 \times 90{,}000 = 2{,}700{,}000 \text{ km}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">30</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">90</span><span class="mord"><span class="mpunct">,</span></span><span class="mord">000</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">2</span><span class="mord"><span class="mpunct">,</span></span><span class="mord">700</span><span class="mord"><span class="mpunct">,</span></span><span class="mord">000</span><span class="mord text"><span class="mord">&nbsp;km</span></span></span></span></span></span>
+<p>A paragraph after it.</p>
+
+
+  
+
+</body></html>

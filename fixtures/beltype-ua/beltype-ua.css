@@ -1,0 +1,329 @@
+/* BelType — user agent stylesheet addendum
+ * ============================================================================
+ *
+ * This is NOT a theme. It is the rules a browser would already ship if it knew
+ * about BelType's markup: one rule per hook the transformation belt can emit.
+ * A browser styles <blockquote> and <h1> so unstyled HTML stays legible; this
+ * file does the same job for `.alert`, `.xref`, `figcaption`, `.toc-entry` and
+ * the rest — things no user agent has ever heard of.
+ *
+ * IT ALWAYS APPLIES, AND IT ALWAYS LOSES.
+ *
+ * Everything here sits in `@layer beltype`, and an unlayered rule beats a
+ * layered one *regardless of specificity*. So a bare `code { color: red }` in
+ * your own stylesheet defeats the `:not(pre) > code` below without escalating,
+ * without !important, and without a specificity war. That is exactly what a UA
+ * stylesheet does, and it is why this file needs no opt-out switch: writing CSS
+ * IS the opt-out. (It replaced one — BelType used to delete its whole default
+ * look the moment you supplied any stylesheet, because a 0-1-1 selector in here
+ * could not otherwise be beaten by a 0-0-1 selector in yours. Adding an
+ * eleven-line file to change a body font therefore cost you every alert, table
+ * and code block in the document.)
+ *
+ * WHAT IS *NOT* HERE
+ *
+ * The mechanics — the default `@page` (size/margin), the figure/page counters,
+ * `.page-break`/`.no-break`/`.no-print` —
+ * stay unlayered in the shell. They make BelType's features *exist*; this file
+ * only decides how they look. `@page` in particular must never move into a
+ * layer: Paged.js hoists it back out. Page size, margins and running
+ * headers/footers are author CSS now (an unlayered `@page` in your stylesheet
+ * beats the shell default); there is no `page:`/`header:`/`footer:` config.
+ *
+ * HOW TO REPLACE IT
+ *
+ * Don't edit this file — it ships with BelType and upgrades will overwrite it.
+ * Fork it into a spec instead:
+ *
+ *     ~/company/report/beltype.config.js   →  { styles: './assets/look.css' }
+ *     your project's beltype.config.js     →  { spec: '~/company/report' }
+ *
+ * A spec's sheets are unlayered, so they beat everything here by default.
+ * ========================================================================= */
+
+/* --- THE PRINT DEFAULT FACES -------------------------------------------------
+ *
+ * Four families, vendored in `assets/fonts/` and served through the compiler's
+ * `/_beltype/` table at `vendor/beltype-fonts/` — which is why every `src` below
+ * is RELATIVE to this file's own URL and not root-absolute: one relative ref, and
+ * the dev server, the editing tools' server and the browser proof all answer it
+ * from the same table with no second spelling. See
+ * `.claude/decisions/project/print-default-faces.md`.
+ *
+ * They exist because BelType's own printer (Caster) embeds font PROGRAMS: a stack
+ * that ends in a system family is a document nobody can print, since a tab cannot
+ * read the bytes behind `sans-serif`. Before these, EVERY document that declared
+ * no `@font-face` of its own refused. The screen and the file now show the same
+ * faces, which is the whole point — one look, and what you see is what prints.
+ *
+ * All four are SIL OFL 1.1, all VARIABLE, all with TrueType (`glyf`) outlines,
+ * and the bytes are Google Fonts' own builds with nothing but WOFF2 compression
+ * applied. `assets/fonts/PROVENANCE.md` names every source URL, commit and sum.
+ *
+ * The weight ranges are the faces' OWN `fvar` minima and maxima, read out of the
+ * programs rather than copied from the `100 900` everyone writes: Source Serif 4,
+ * Source Sans 3 and Source Code Pro run 200–900, and Noto Emoji runs 300–700. A
+ * descriptor claiming a coordinate the axis does not reach is a claim about a
+ * master that does not exist (the same argument as the specimen's Crimson Pro).
+ *
+ * Source Serif 4 also carries an `opsz` axis (8–60). There is no `@font-face`
+ * descriptor for it and none is wanted: `font-optical-sizing: auto` is the CSS
+ * default, Chromium pins `opsz` to the used font size, and the printer reads that
+ * back off the COMPUTED style and freezes the instance there.
+ *
+ * `@font-face` INSIDE `@layer` IS HONOURED — measured in headless Chromium, not
+ * assumed, because `@page` has to stay unlayered (Paged.js hoists it) and it
+ * would have been reasonable to guess the same of this. It is honoured because
+ * layers order DECLARATIONS in style rules, and a `@font-face` declares no style;
+ * it is a resource. So it stays here, where the rest of the default look is, and
+ * an author's own `@font-face` for the same family wins by ordinary cascade.
+ * Caster's `declaredFaces` walks into grouping rules for exactly this reason. */
+
+@layer beltype {
+
+  @font-face {
+    font-family: 'Source Serif 4';
+    src: url('vendor/beltype-fonts/sourceserif4/SourceSerif4-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Source Serif 4';
+    src: url('vendor/beltype-fonts/sourceserif4/SourceSerif4-Italic-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: italic;
+  }
+  @font-face {
+    font-family: 'Source Sans 3';
+    src: url('vendor/beltype-fonts/sourcesans3/SourceSans3-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Source Sans 3';
+    src: url('vendor/beltype-fonts/sourcesans3/SourceSans3-Italic-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: italic;
+  }
+  @font-face {
+    font-family: 'Source Code Pro';
+    src: url('vendor/beltype-fonts/sourcecodepro/SourceCodePro-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Source Code Pro';
+    src: url('vendor/beltype-fonts/sourcecodepro/SourceCodePro-Italic-Variable.woff2') format('woff2-variations');
+    font-weight: 200 900;
+    font-style: italic;
+  }
+  /* MONOCHROME, and that is the decision rather than an oversight: the printer
+     paints no COLR or CBDT table, and Noto Color Emoji is nine megabytes. An
+     outline face is a glyph like any other — it shapes, subsets, instances and
+     embeds through the same road as a letter. It stands BEFORE the generic in
+     every stack below so a pictographic cluster reaches bytes instead of the
+     system's emoji face, which a tab cannot read and the printer cannot embed. */
+  @font-face {
+    font-family: 'Noto Emoji';
+    src: url('vendor/beltype-fonts/notoemoji/NotoEmoji-Variable.woff2') format('woff2-variations');
+    font-weight: 300 700;
+    font-style: normal;
+  }
+
+  /* --- Box model, page body, print flow ---------------------------------- */
+
+  /* These lived in the shell's mechanics, unlayered, until egildo/beltype#40: a venue whose own sheets sit in `@layer` could not restore `box-sizing: content-box`, size an image past `height: auto`, or choose its own orphans and heading breaks, because an unlayered rule beats every layered one whatever its specificity. None of them makes a feature exist — they are defaults a document may want otherwise — so they belong where every default loses. Paged.js still sees the break declarations here: it reads them from its own parse of every sheet, layers included (measured: `break-before: page` and a counter inside `@layer` paginate and number exactly as unlayered). */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; padding: 0; }
+  img { max-width: 100%; height: auto; }
+
+  p { orphans: 3; widows: 3; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, pre, blockquote, dl { break-inside: avoid; }
+  tr, thead { break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* --- Typography ------------------------------------------------------- */
+
+  /* The body is set in the serif, which is the print default's own decision (Egildo, 2026-09-14): a document that declares nothing is a document to be read on paper, and paper reads serif. Code keeps its mono. NO HEADING RULE IS ADDED — a document that styles only `body` inherits into its headings, and a font-family here would quietly take that inheritance away from every such document; headings are the serif by inheritance, and an author who wants sans headings writes the one rule. The generic still terminates every stack: it is what a browser with no network shows, and the one thing the printer cannot embed, which is why nothing reaches it by default. Source Sans 3 ships declared and reachable by name — `font-family: 'Source Sans 3', 'Noto Emoji', sans-serif` — and seats nothing by default. */
+  body {
+    font-family: 'Source Serif 4', 'Noto Emoji', serif;
+    line-height: 1.65;
+    color: #1f2328;
+    font-size: 11pt;
+  }
+  h1, h2, h3, h4, h5, h6 { margin: 1.6em 0 0.6em; font-weight: 650; line-height: 1.25; }
+  h1 { font-size: 2em; border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+  h2 { font-size: 1.5em; border-bottom: 1px solid #e6e9ec; padding-bottom: 0.2em; }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  p { margin: 0 0 1em; }
+  a { color: #0b5cad; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote { margin: 1em 0; padding: 0.4em 1.1em; color: #57606a; border-left: 4px solid #d0d7de; background: #f6f8fa; }
+
+  /* --- Code (fenced + inline) ------------------------------------------- */
+
+  pre { background: #f6f8fa; padding: 14px 16px; border-radius: 6px; overflow-x: auto; border: 1px solid #eaecef; }
+  /* `pre` is here beside `code` because the browser's OWN user agent sheet gives it
+     `font-family: monospace` and nothing else did — so a fenced block whose text is
+     not wrapped in a `<code>` computed to the bare generic, which is the one family
+     the printer cannot embed, in the one element most likely to hold it. */
+  pre, code { font-family: 'Source Code Pro', 'Noto Emoji', monospace; }
+  code { font-size: 0.88em; }
+  :not(pre) > code { background: #eff1f3; padding: 0.15em 0.4em; border-radius: 4px; }
+
+  /* --- Syntax highlighting (rehype-highlight) ---------------------------- */
+
+  /* rehype-highlight is on by default and tags every fenced block with hljs-*
+     token classes; until these rules existed it had never produced a single
+     colour — the belt emitted hooks nothing answered. Palette adapted from
+     highlight.js's own github theme (BSD; light, so it prints), grouped as
+     that file groups them. No background here: `pre` above supplies it. */
+  .hljs { color: #24292e; }
+  .hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword, .hljs-template-tag,
+  .hljs-template-variable, .hljs-type, .hljs-variable.language_ { color: #d73a49; }
+  .hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__,
+  .hljs-title.function_ { color: #6f42c1; }
+  .hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number,
+  .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class,
+  .hljs-selector-id { color: #005cc5; }
+  .hljs-regexp, .hljs-string, .hljs-meta .hljs-string { color: #032f62; }
+  .hljs-built_in, .hljs-symbol { color: #e36209; }
+  .hljs-comment, .hljs-code, .hljs-formula { color: #6a737d; font-style: italic; }
+  .hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo { color: #22863a; }
+  .hljs-subst { color: #24292e; }
+  .hljs-section { color: #005cc5; font-weight: 650; }
+  .hljs-bullet { color: #735c0f; }
+  .hljs-emphasis { font-style: italic; }
+  .hljs-strong { font-weight: 650; }
+  .hljs-addition { color: #22863a; background: #f0fff4; }
+  .hljs-deletion { color: #b31d28; background: #ffeef0; }
+
+  /* --- Tables (remark-gfm) ---------------------------------------------- */
+
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 12px; text-align: left; }
+  th { background: #f6f8fa; font-weight: 650; }
+
+  /* A `|---:|` column emits align="…" (a presentational attribute, which loses
+     to any author CSS — including the baseline right above). These re-state it
+     as CSS so the author's alignment syntax actually works; being later and
+     more specific, they beat the baseline inside this layer. */
+  th[align='center'], td[align='center'] { text-align: center; }
+  th[align='right'], td[align='right'] { text-align: right; }
+  th[align='left'], td[align='left'] { text-align: left; }
+
+  /* --- Task lists (remark-gfm) ------------------------------------------ */
+
+  /* GFM renders `- [x]` as a checkbox inside a normal <li>, which the browser
+     gives a bullet AND a box. Drop the bullet, keep the indent. */
+  .contains-task-list { list-style: none; padding-left: 1.4em; }
+  .task-list-item > input[type='checkbox'] { margin-right: 0.4em; }
+
+  /* --- Markers (remark-flexible-markers) -------------------------------- */
+
+  /* `==text==` → <mark class="flexible-marker flexible-marker-default">, and
+     `=r=text==` names a colour: one class per letter of the plugin's a–z
+     dictionary. The browser's UA yellow covers the default; these give every
+     named colour a light, printable highlighter tint (dark tints would eat
+     the text — a marker is a stroke over words, not a design system). */
+  .flexible-marker { padding: 0.05em 0.2em; border-radius: 3px; }
+  .flexible-marker-amber { background: #fbecc2; }
+  .flexible-marker-blue { background: #d9e8fb; }
+  .flexible-marker-brown { background: #eadfd3; }
+  .flexible-marker-cyan { background: #d3f2f7; }
+  .flexible-marker-espresso { background: #e5d9cf; }
+  .flexible-marker-fuchsia { background: #f9ddf5; }
+  .flexible-marker-gray { background: #e6e8ea; }
+  .flexible-marker-green { background: #d9efdc; }
+  .flexible-marker-hotpink { background: #fcdbe9; }
+  .flexible-marker-indigo { background: #dfdcf7; }
+  .flexible-marker-jade { background: #d3efe3; }
+  .flexible-marker-kiwi { background: #e4f2cf; }
+  .flexible-marker-lime { background: #e8f7c4; }
+  .flexible-marker-magenta { background: #f9d9ee; }
+  .flexible-marker-navyblue { background: #d6def0; }
+  .flexible-marker-orange { background: #fce4cf; }
+  .flexible-marker-pink { background: #fadfe6; }
+  .flexible-marker-purple { background: #e9def7; }
+  .flexible-marker-red { background: #fadcd9; }
+  .flexible-marker-silver { background: #ececec; }
+  .flexible-marker-teal { background: #d2eeeb; }
+  .flexible-marker-umber { background: #e6ddd0; }
+  .flexible-marker-violet { background: #eadcf6; }
+  .flexible-marker-white { background: #ffffff; box-shadow: inset 0 0 0 1px #d0d7de; }
+  .flexible-marker-yellow { background: #fdf3c7; }
+  .flexible-marker-black { background: #dcdfe2; }
+
+  /* --- Directives (core/src/plugins/directives.js) ------------------- */
+
+  .alert { padding: 14px 16px; border-radius: 6px; margin: 1.2em 0; border-left: 4px solid; break-inside: avoid; }
+  .alert-tip { background: #eaf6ee; border-color: #2da44e; }
+  .alert-warning { background: #fdf6e3; border-color: #d4a72c; }
+  .alert-danger { background: #fbebea; border-color: #cf222e; }
+  .alert-info { background: #eaf1fb; border-color: #0969da; }
+  .directive-title { font-weight: 700; margin: 0 0 6px; font-size: 0.95em; text-align: left; text-align-last: left; }
+
+  .sidebar { float: right; width: 32%; margin: 0 0 1em 1.2em; padding: 14px 16px; background: #f6f8fa; border-radius: 6px; font-size: 0.95em; }
+
+  /* A `:val[key]` no keyscope supplied. The belt does not stop the build for
+     one — a document should still be readable while it is being written — but
+     a hole that ships silently is worse than a build that refuses, and a PDF
+     cannot be re-checked after the fact. So the addendum says the key's name
+     out loud. Being layered, one unlayered author rule turns it off; that is
+     the opt-out, and it is the same opt-out everything else here has. */
+  .val-missing::after { content: "‹" attr(data-key) "?›"; color: #cf222e; font-weight: 650; }
+
+  /* --- Mermaid (core/src/plugins/mermaid.js) ------------------------- */
+
+  /* The belt lifts ```mermaid into <pre class="mermaid">, and the generic
+     `pre` box above would frame the rendered SVG like source code. Un-box it. */
+  .mermaid { background: none; border: none; padding: 0; text-align: center; }
+
+  /* --- Definition lists (remark-deflist) -------------------------------- */
+
+  dl { margin: 1em 0; }
+  dt { font-weight: 650; margin-top: 0.8em; }
+  dd { margin: 0.2em 0 0.6em 1.4em; }
+
+  /* --- Figures (core/src/plugins/figure.js) -------------------------- */
+
+  figure { margin: 1.2em 0; text-align: center; }
+  figcaption { font-size: 0.85em; color: #57606a; margin-top: 0.5em; font-style: italic; }
+  /* The label is a look — a word in one language — so it is here; the counter it prints and the `target-counter()` of the cross-reference are the feature, and stay in the shell's mechanics. */
+  figcaption::before { content: "Figure " counter(figure) ". "; font-weight: 650; font-style: normal; }
+  .xref::before { content: "Figure "; }
+
+  /* Centring is right for the thing a figure usually holds — an image, narrower than the measure, wanting to sit in the middle of it. It is wrong for preformatted content, always: a `pre` is a claim about where its characters are, and centring each line ragged against the next destroys the one property the block exists to show. A source excerpt, a specimen of a paginated document, an ASCII diagram — all of them arrive centred without this rule, and the author who hits it has no reason to suspect `figure` of doing it. So the figure keeps its centring for its own box, and preformatted content inside opts out. Tables too: a centred table body is the same mistake with cells. */
+  figure :is(pre, table) { text-align: initial; }
+
+  /* --- Footnotes (remark-gfm) ------------------------------------------- */
+
+  .footnotes { font-size: 0.85em; color: #57606a; border-top: 1px solid #d0d7de; margin-top: 2.5em; padding-top: 0.5em; }
+  a[data-footnote-ref], a[data-footnote-backref] { text-decoration: none; }
+
+  /* GFM labels the footnotes section with an h2.sr-only. Without this rule the
+     "screen-reader-only" heading rendered as a full visible h2 — the standard
+     visually-hidden clip pattern is what the emitted class asks for. */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  /* --- Generated TOC page (core/src/plugins/toc.js) ------------------ */
+
+  .toc-page > .toc-title { border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+  .toc-list { list-style: none; padding: 0; margin: 0; }
+  .toc-entry { margin: 0.35em 0; }
+  /* The leader: title left, page number right. The number itself comes from the
+     shell (target-counter); putting it on the far side is a look. */
+  .toc-entry a { display: flex; justify-content: space-between; text-decoration: none; color: inherit; }
+  .toc-entry a::after { color: #57606a; }
+
+  /* The nav is nested lists (toc.js emits the hierarchy — a written fact the
+     belt holds), so indentation is one rule per nesting step instead of a
+     padding ladder per absolute level — any depth indents correctly, and a
+     document that skips levels (h2 → h4) indents one step, as written. The
+     toc-level-N classes are still emitted on every li for selectors. */
+  .toc-list .toc-list { padding-left: 1.2em; }
+  .toc-text { }
+
+}
