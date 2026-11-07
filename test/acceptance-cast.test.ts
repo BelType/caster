@@ -24,7 +24,6 @@ import { castDocument, checks, cutCheck, inspection, markerDifferences, FIXTURES
  * The monorepo carried five for its minimal fixtures, and five more for the manual, which this repository does not hold. Measured 2026-11-07 on Caster 0.2.1 and Cicero 0.1.7, the first run of this port, three of the five excused nothing and are removed, each with its fixture kept and its check now holding it to the page: the divided row (`fixtures/cast-divided-row/`, its long row on the second and third pages, whose cells the file now reads in the page's order), the wrapped Mermaid label (`fixtures/cast-wrapped-label/`, 0.001 % of the page's pixels differ, 0.7 % of the worst tile), and the heading clipped to nothing (`fixtures/cast-clipped/`, 0.018 % and 1.6 %, since 0.2.1 honours `clip: rect()`). The two below still show.
  */
 const KNOWN: Known[] = [
-  { at: 'inline-formula:words', elements: '.katex', after: 'p', why: 'an inline KaTeX formula is tagged after its paragraph\'s text, so the file reads "Inline , and on its own line: a2+b2=c2"' },
   { at: 'sequence-diagram:pictures', elements: '.mermaid', parts: ['labels', 'arrowheads'], why: 'a Mermaid sequence diagram\'s actor labels are not drawn, and its message labels sit a few pixels from where the page has them' },
 ];
 /** The documents: the hand-written one, and one minimal fixture for each defect the monorepo's Press round found. The three Markdown fixtures are committed finished (`index.html` beside `index.md`), because the belt that compiles them is BelType's. */
