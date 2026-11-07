@@ -5,11 +5,11 @@
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "c5a02e25f18e5583513e8b655b3aff601a40ba24acde710e7735a24fe6975940",
-   "bytes": 109724,
-   "cli": "same",
+   "sha256": "7568d6273ca787ce280033a87c98f00c94957df2cba62d25bb492d72efade51e",
+   "bytes": 109619,
+   "cli": "differs: first differing byte at offset 155 (recorded 109619 bytes, now 109728), in object 2 recorded and object 2 now",
    "list": {
-    "bytes": 188318,
+    "bytes": 188330,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -233,10 +233,10 @@
   {
    "name": "canvas",
    "why": "a `<canvas>` figure painted by a script (a gradient, a circle, a square, three lines) with an `aria-label`: the image pass reads its pixels off the element as eight-bit RGBA, past the photo rule, and the list holds them as an image; the figure's /Alt is the label",
-   "sha256": "42431d768748dc781584bb050e6c22733f8debc89ce9a5bdd12457513a69065c",
-   "bytes": 143186,
+   "sha256": "a0610a1ddaf43c021ba2b5bb5cf9f04af83dfc0aec184ee3a1a65249d9e3c140",
+   "bytes": 143082,
    "list": {
-    "bytes": 4635,
+    "bytes": 4572,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "f00b3a5d87956d59f7087d62a135fb033e04952adfa2d7806172e1159639204f"
