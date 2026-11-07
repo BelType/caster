@@ -26,10 +26,13 @@ const PAGE = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 .n::after { content: counter(n); }
 </style></head><body><div id="strip"><div class="piede">Pagina <span class="pc"></span> di <span class="pt"></span></div><p class="n">Nota </p></div></body></html>`;
 
-function serve(): Promise<http.Server> {
+// A merged batch: each letter resets the page counter, so a letter stands before the running footer in the light tree. Under Cicero the two are slotted into different pages, and the footer's page host, not the letter, is the reset Chromium reads (Codeberg Caster issue 22: "Pagina 1/4" on all four pages).
+const MERGED = PAGE.replace('<div id="strip">', '<div id="strip"><section class="avviso" slot="one">Lettera</section>').replace('<div class="piede">', '<div class="piede" slot="two">').replace('</style>', '.avviso { counter-reset: page 1; }\n</style>');
+
+function serve(html = PAGE): Promise<http.Server> {
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
-    if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE);
+    if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
     const [root, rel] = url.pathname.startsWith('/common/') ? [COMMON, url.pathname.slice(8)] : [DIST, url.pathname.slice(1)];
     const file = path.join(root, rel);
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return void response.writeHead(404).end();
@@ -66,6 +69,35 @@ test('counter(page) and counter(pages) wait for the pages, then read the page ho
     assert.deepEqual(first.generated, ['4'], 'an author counter is still made real before the cut');
     assert.equal(prepared, 'Pagina  di ', 'no number is frozen before the pages exist');
     assert.equal(second, 'Pagina 2 di 3', 'the second moment reads the page host');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
+
+test('a page counter reset by an earlier sibling, on another page, reads the footer\'s own page host', async () => {
+  const server = await serve(MERGED);
+  const port = (server.address() as { port: number }).port;
+  const browser = await launchBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${port}/`);
+    const footer = await page.evaluate(async () => {
+      const load = (p: string) => import(p);
+      const { prepare } = await load('/src/adapters/prepare.js');
+      const { reify } = await load('/src/adapters/reify.js');
+      prepare(document);
+      // Two pages: the letter on the first, the footer on the second.
+      const root = document.getElementById('strip')!.attachShadow({ mode: 'open' });
+      for (const [slot, reset] of [['one', 'page 1 pages 4'], ['two', 'page 2 pages 4']]) {
+        const host = root.appendChild(document.createElement('div'));
+        host.style.counterReset = reset;
+        host.appendChild(Object.assign(document.createElement('slot'), { name: slot }));
+      }
+      reify(document);
+      return document.querySelector('.piede')!.textContent;
+    });
+    assert.equal(footer, 'Pagina 2 di 4', 'the footer reads its own page, not the letter that reset the counter before it');
   } finally {
     await browser.close();
     server.close();
