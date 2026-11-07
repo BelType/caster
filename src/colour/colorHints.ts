@@ -90,14 +90,16 @@ const HINT_NAMES = /--pdf-(?:color|background|overprint|border|fill|stroke|artif
 const HINT_ATTRIBUTES = ['color', 'background', 'overprint', 'border', 'fill', 'stroke', 'artifact'].map((name) => `[style*="--pdf-${name}"]`).join(', ');
 
 /**
- * Whether anything in the document can declare a `--pdf-*` hint: a rule of a sheet, in the document or in any open shadow tree, or an inline style.
+ * Whether any text that styles the document matches: a rule of a sheet, in the document or in any open shadow tree, or an inline style.
  *
  * @remarks
- * A custom property has a value only where something declared it, so with no such text no element has to be asked, and a print asks about 28 000 times on a 61-day bolletta. A sheet the page may not read may declare anything, and answers yes.
+ * A sheet the page may not read may say anything, and answers yes.
  *
- * ponytail: a closed shadow root cannot be read from outside, so a `:host { --pdf-color: … }` inside one is not seen and that host prints its RGB. Nothing in the corpus closes one; a walk over the host's own styles is the upgrade if one does.
+ * ponytail: a closed shadow root cannot be read from outside, so what its rules say to its host is not seen. Nothing in the corpus closes one; a walk over the host's own styles is the upgrade if one does.
+ *
+ * @param attributes - The selector that finds the same words in a `style` attribute.
  */
-export function declaresHints(doc: Document): boolean {
+export function stylesMention(doc: Document, pattern: RegExp, attributes: string): boolean {
   const seen: Set<CSSStyleSheet> = new Set();
   const inSheet = (sheet: CSSStyleSheet): boolean => {
     if (seen.has(sheet)) return false;
@@ -106,16 +108,26 @@ export function declaresHints(doc: Document): boolean {
     try { rules = sheet.cssRules; } catch { return true; }
     for (const rule of rules) {
       const imported = (rule as CSSImportRule).styleSheet;
-      if (imported ? inSheet(imported) : HINT_NAMES.test(rule.cssText)) return true;
+      if (imported ? inSheet(imported) : pattern.test(rule.cssText)) return true;
     }
     return false;
   };
   const inTree = (root: Document|ShadowRoot): boolean => {
-    if ([...root.styleSheets, ...root.adoptedStyleSheets].some(inSheet) || root.querySelector(HINT_ATTRIBUTES)) return true;
+    if ([...root.styleSheets, ...root.adoptedStyleSheets].some(inSheet) || root.querySelector(attributes)) return true;
     for (const element of root.querySelectorAll('*')) if (element.shadowRoot && inTree(element.shadowRoot)) return true;
     return false;
   };
   return inTree(doc);
+}
+
+/**
+ * Whether anything in the document can declare a `--pdf-*` hint.
+ *
+ * @remarks
+ * A custom property has a value only where something declared it, so with no such text no element has to be asked, and a print asks about 28 000 times on a 61-day bolletta.
+ */
+export function declaresHints(doc: Document): boolean {
+  return stylesMention(doc, HINT_NAMES, HINT_ATTRIBUTES);
 }
 
 /** Set for the length of a print whose document declares no hint, under the same lock as `coordinates/frame.js`'s frame. */

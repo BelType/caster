@@ -91,11 +91,38 @@ host.attachShadow({ mode: 'open' }).innerHTML = "<style>:host::first-letter { co
 
 const LETTERS_NESTED = page(`<style>.nesting { &::first-letter { float: left } }</style>`, `<p class="nesting">Prima</p><p class="plain">Prima</p>`);
 
+/** A counter read by a pseudo-element, kept by elements no rule of pseudo-elements names. */
+const COUNTERS = page(`<style>
+.chapter { counter-increment: chapter }
+.chapter h2::before { content: counter(chapter) ". " }
+.none-read h3::after { content: 'piano' }
+</style>`, `<section class="chapter"><h2>a</h2></section><section class="chapter"><h2>b</h2></section><div class="none-read"><h3>c</h3></div>`);
+const MARKER_COUNTER = page(`<style>li { counter-increment: voce } li::marker { content: counter(voce) ") " }</style>`, `<ul style="counter-reset: voce"><li>a</li><li>b</li></ul>`);
+
+/** What the elements that matter must keep from the walk: a hidden ancestor stops it, and the order is the walk's. */
+const ORDER = page(`<style>
+.outer::before { content: 'o1' } .outer::after { content: 'o2' }
+.inner::before { content: 'i1' } .inner::after { content: 'i2' }
+.next::before { content: 'n1' }
+.hidden-child::before { content: 'never' }
+.self-hidden { display: none } .self-hidden::after { content: 'never' }
+</style>`, `<div class="outer"><div class="plain"><p class="inner">a</p></div></div><p class="next">b</p>
+<div style="display: none"><div><p class="hidden-child">c</p></div></div><p class="self-hidden">d</p>`);
+
+/** Every road to a list item, each alone, because a stylesheet's word for one sends the whole page down the walk. */
+const LISTS: Record<string, string> = {
+  items: page('', `<ol><li>a</li><li style="display: none">b</li><li>c</li></ol><div style="display: none"><ul><li>hidden</li></ul></div>`),
+  sheet: page('<style>.item { display: list-item; list-style-type: decimal }</style>', `<div><p class="item">a</p><p class="item">b</p></div>`),
+  inline: page('', `<div><p style="display: list-item; list-style-type: decimal">a</p></div>`),
+  written: page('', `<div><p id="p">a</p></div><script type="module">const p = document.getElementById('p'); p.style.display = 'list-item'; p.style.listStyleType = 'decimal';</script>`),
+  slotted: page('', `<div id="host"><p>a</p></div><script type="module">document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<style>::slotted(p) { display: list-item; list-style-type: decimal }</style><slot></slot>';</script>`)
+};
+
 /** Every element of HTML, for what the user-agent sheet gives a pseudo-element, which no author sheet names. */
 const TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rb rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
 
 test('reification', async (t) => {
-  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/quote': page('', '<p>a <q>b</q></p>'), '/plain': page('', '') };
+  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/counters': COUNTERS, '/marker-counter': MARKER_COUNTER, '/order': ORDER, ...Object.fromEntries(Object.entries(LISTS).map(([name, html]) => [`/list-${name}`, html])), '/quote': page('', '<p>a <q>b</q></p>'), '/plain': page('', '') };
   const serve = (host: (url: URL) => string|undefined) => http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     const text = host(url);
@@ -156,6 +183,46 @@ test('reification', async (t) => {
       for (const name of ['legacy', 'comma-a', 'comma-b', 'is-a', 'under', '::before', 'grouped', 'contained', 'state', 'imported', 'adopted', 'bare', 'print']) assert.ok(asked.includes(name), `${name} is not asked: ${asked.join(', ')}`);
     });
 
+    await t.test('a pseudo-element that paints a counter gets the walk, which reads the counters', async () => {
+      assert.deepEqual(await generated('/counters'), ['h2 ::before 1. ', 'h2 ::before 2. ', 'h3 ::after piano']);
+      const tab = await open('/marker-counter');
+      const markers = await tab.evaluate(async () => {
+        const { reify } = await import('/src/adapters/reify.js' as string);
+        return reify(document).markers.map((m: { text: string }) => m.text);
+      });
+      assert.deepEqual(markers, ['1) ', '2) ']);
+    });
+
+    await t.test('a hidden ancestor stops it, and the record reads in the walk\'s order', async () => {
+      const tab = await open('/order');
+      const made = await tab.evaluate(async () => {
+        const { reify } = await import('/src/adapters/reify.js' as string);
+        return reify(document).generated.map((g: { text: string }) => g.text);
+      });
+      assert.deepEqual(made, ['o1', 'i1', 'i2', 'o2', 'n1']);
+    });
+
+    await t.test('every road to a list item makes its marker', async () => {
+      const markers = (where: string) => open(where).then((tab) => tab.evaluate(async () => {
+        const { reify } = await import('/src/adapters/reify.js' as string);
+        return reify(document).markers.map((m: { text: string }) => m.text);
+      }));
+      assert.deepEqual(await markers('/list-items'), ['1. ', '2. ']);
+      assert.deepEqual(await markers('/list-sheet'), ['1. ', '2. ']);
+      assert.deepEqual(await markers('/list-inline'), ['1. ']);
+      assert.deepEqual(await markers('/list-written'), ['1. ']);
+      assert.deepEqual(await markers('/list-slotted'), ['1. ']);
+    });
+
+    await t.test('reification reads only the elements that can make a span, where it can', async () => {
+      const tab = await open('/order');
+      const names = await tab.evaluate(async () => {
+        const { elementsThatMatter, namedHosts } = await import('/src/adapters/reify.js' as string);
+        return elementsThatMatter(document, window, namedHosts(document, 'before|after', 'q'), namedHosts(document, 'first-letter'))?.map((element: Element) => element.className);
+      });
+      assert.deepEqual(names, ['outer', 'inner', 'next']);
+    });
+
     await t.test('a nested rule and @scope leave every element to be asked', async () => {
       assert.deepEqual(await generated('/nested'), ['p.nesting ::before nested']);
       assert.deepEqual(await generated('/nested-media'), ['p.nesting ::after nested']);
@@ -211,6 +278,16 @@ test('reification', async (t) => {
         return out;
       }, TAGS);
       assert.deepEqual(found, ['q::before', 'q::after']);
+      const items = await tab.evaluate((tags) => tags.filter((tag) => {
+        const details = document.createElement('details');
+        const element = document.createElement(tag);
+        details.append(element);
+        document.body.append(details);
+        const answer = getComputedStyle(element).display === 'list-item';
+        details.remove();
+        return answer;
+      }), TAGS);
+      assert.deepEqual(items, ['li', 'summary'], 'a list item the walk does not read has to be one of these');
     });
   } finally {
     await browser.close();
