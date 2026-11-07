@@ -55,7 +55,13 @@ test('the font table reads a kept face once, and a new face again', async () => 
       (document.getElementById('rule') as HTMLElement).textContent = rule;
       const changed = await table();
       const again = await table();
-      return { first: first.reads, second: second.reads, changed: changed.reads, again: again.reads, kept: first.bytes === second.bytes, renewed: first.bytes !== changed.bytes, equal: first.bytes.length === changed.bytes.length, url: first.url };
+      // A host seats the next document in the same window (`document.open()`), and the module and its memory stay.
+      const html = document.documentElement.outerHTML;
+      document.open();
+      document.write(`<!doctype html>${html}`);
+      document.close();
+      const reseated = await table();
+      return { first: first.reads, second: second.reads, changed: changed.reads, again: again.reads, reseated: reseated.reads, kept: first.bytes === second.bytes, renewed: first.bytes !== changed.bytes, equal: first.bytes.length === changed.bytes.length, url: first.url };
     }, RULE('font-display: swap'));
     assert.match(seen.url, /CrimsonPro/);
     assert.equal(seen.first, 1, 'the first print reads the face');
@@ -65,6 +71,7 @@ test('the font table reads a kept face once, and a new face again', async () => 
     assert.ok(seen.renewed);
     assert.equal(seen.again, 2, 'and is kept from then on');
     assert.ok(seen.equal);
+    assert.equal(seen.reseated, 3, 'a document seated in the same window has faces of its own, and reads them');
   } finally {
     await browser.close();
     server.close();
