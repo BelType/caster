@@ -1408,7 +1408,6 @@ export function svgWords(element: SVGTextContentElement, rendered: string): { st
  */
 function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; container: HTMLElement; containerRect: DOMRect; table: FaceDescriptor[]; paragraphs: MeasuredParagraph[]; segments: MeasuredSegment[]; usedInstances: Map<string,{ instanceKey: string; faceId: string; url: string; coords: Coords; }>; familyOf: (parent: Element,request: FaceRequest) => string; coordsOf: (parent: Element,face: FaceDescriptor) => Coords; domIndex: number; }) {
     const element = request.element;
-    const style = getComputedStyle(element);
     const rendered = (element.textContent ?? '').replace(/\s+/gu, ' ').trim();
     if (rendered === '')
         return;
@@ -1420,18 +1419,24 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
         throw new CasterError(`caster: the <text> at ${request.domPath} renders ${count} characters but its collapsed text has ${rendered.length}; ` +
             'E9 measures SVG text through per-character positions and cannot align a string it cannot reconstruct');
     }
-    const sizePx = parseFloat(style.fontSize) * request.scale;
-    const letterSpacingPx = style.letterSpacing === 'normal' ? 0 : parseFloat(style.letterSpacing) * request.scale;
-    const features = featureTagsFor(style, letterSpacingPx, { element: request.domPath });
-    const faceRequest = requestFor(element);
-    const family = ctx.familyOf(element, faceRequest);
-    const match = matchFace(ctx.table, family, faceRequest);
-    if (!match)
-        throw new CasterError(`caster: no face in ${family} matched the <text> at ${request.domPath}`);
-    const coords = ctx.coordsOf(element, match.face);
-    const instanceKey = instanceKeyOf(match.face.id, coords);
-    ctx.usedInstances.set(instanceKey, { instanceKey, faceId: match.face.id, url: match.face.url, coords });
-    const upem = upemOf(match.face.url);
+    // A `<tspan>` sets its words in its own face, size and spacing, which the `<text>` may not share: each is read from the element holding the word's text node, once per element.
+    const fonts = new Map<Element, ReturnType<typeof fontOf>>();
+    const fontOf = (owner: Element) => {
+        const own = getComputedStyle(owner);
+        const sizePx = parseFloat(own.fontSize) * request.scale;
+        const letterSpacingPx = own.letterSpacing === 'normal' ? 0 : parseFloat(own.letterSpacing) * request.scale;
+        const features = featureTagsFor(own, letterSpacingPx, { element: request.domPath });
+        const faceRequest = requestFor(owner);
+        const family = ctx.familyOf(owner, faceRequest);
+        const match = matchFace(ctx.table, family, faceRequest);
+        if (!match)
+            throw new CasterError(`caster: no face in ${family} matched the <text> at ${request.domPath}`);
+        const coords = ctx.coordsOf(owner, match.face);
+        const instanceKey = instanceKeyOf(match.face.id, coords);
+        ctx.usedInstances.set(instanceKey, { instanceKey, faceId: match.face.id, url: match.face.url, coords });
+        return { style: own, sizePx, letterSpacingPx, features, match, coords, instanceKey, upem: upemOf(match.face.url), key: `${instanceKey} ${sizePx} ${letterSpacingPx} ${features.join(',')}` };
+    };
+    const font = (owner: Element) => { let f = fonts.get(owner); if (!f) fonts.set(owner, f = fontOf(owner)); return f; };
     const paragraph = ctx.paragraphs.length;
     ctx.paragraphs.push({
         block: 'svg-text',
@@ -1455,16 +1460,28 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
             space = white;
         }
     }
-    const words = svgWords(element, rendered);
+    // A word whose characters change face or size inside it (`a<tspan font-weight="bold">b</tspan>`) is two runs, one per font.
+    const words = svgWords(element, rendered).flatMap((word) => {
+        const out: typeof word[] = [];
+        let from = word.start;
+        for (let i = word.start + 1; i < word.end; i++) {
+            if (font(owners[i] ?? element).key === font(owners[from] ?? element).key) continue;
+            out.push({ start: from, end: i, text: rendered.slice(from, i) });
+            from = i;
+        }
+        out.push({ start: from, end: word.end, text: rendered.slice(from, word.end) });
+        return out;
+    });
     words.forEach((match2) => {
         const { start, end } = match2;
         const paint = getComputedStyle(owners[start] ?? element);
+        const { sizePx, letterSpacingPx, features, match, coords, instanceKey, upem, style: own } = font(owners[start] ?? element);
         const color = paint.fill && paint.fill.startsWith('rgb') ? paint.fill : paint.color;
         const first = element.getStartPositionOfChar(start);
         const last = element.getEndPositionOfChar(end - 1);
         // `getStartPositionOfChar` answers the alignment point, before `dominant-baseline` or `alignment-baseline` moved the glyphs; `getExtentOfChar` answers the moved cell, whose top is the alphabetic baseline less the ascent. Measured 2026-11-07 on Chromium: 16px sans-serif at y=100 starts at 100 under every baseline, its cell's top at 86 under `alphabetic`, 91 under `central`, 90.19 under `middle`. Mermaid centres every sequence-diagram label this way.
         const aligned = (paint.dominantBaseline !== 'auto' && paint.dominantBaseline !== 'alphabetic') || !['auto', 'baseline', 'alphabetic'].includes(paint.alignmentBaseline);
-        const shift = aligned ? element.getExtentOfChar(start).y + ascentPx(`${style.fontStyle} ${style.fontWeight} ${style.fontSize} "${match.face.family}"`) - first.y : 0;
+        const shift = aligned ? element.getExtentOfChar(start).y + ascentPx(`${own.fontStyle} ${own.fontWeight} ${own.fontSize} "${match.face.family}"`) - first.y : 0;
         const [startX, startY] = apply(request.toContainer, first.x, first.y + shift);
         const [endX] = apply(request.toContainer, last.x, last.y + shift);
         refuseMissingSmallCaps(match.face, features, match2.text, { element: request.domPath });
