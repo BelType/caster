@@ -102,6 +102,23 @@ for (const css of SIZED) test(`a sized marker leaves every item where it stood: 
   assert.deepEqual(seen.after, seen.before);
 });
 
+// An item whose first in-flow box is a block, reached through what makes no line of its own: an empty inline before it (an anchor), or a `display: contents` wrapper around it. Its marker hangs beside the block's first line, natively, and a span left in the flow would make an anonymous line above the block.
+const LOOSE = [
+  ['an empty inline first', '<ol><li><a id="anchor"></a><p>Alfa, a loose item.</p></li><li><span></span><p>Beta</p></li></ol>'],
+  ['a display: contents wrapper', '<ol><li><div style="display: contents"><p>Alfa, a loose item.</p></div></li><li><div style="display: contents"><span></span><p>Beta</p></div></li></ol>'],
+  ['a shape marker before an empty inline', '<ul><li><a id="anchor"></a><p>Alfa, a loose item.</p></li></ul>'],
+] as const;
+for (const [name, body] of LOOSE) test(`an outside marker leaves the item's height where it stood: ${name}`, async () => {
+  const seen = await withPage(pageWith('', body), (page) => page.evaluate(async (geometry: string) => {
+    const measure = (0, eval)(geometry) as () => unknown;
+    const caster = await import('/src/index.js' as string);
+    const before = measure();
+    caster.prepare(document);
+    return { before, after: measure() };
+  }, GEOMETRY.toString()));
+  assert.deepEqual(seen.after, seen.before);
+});
+
 /** Prints the strip and counts dark ink in the band left of each item's content box, where its marker stands. */
 async function markerInk(html: string): Promise<number[]> {
   return withPage(html, async (page) => {
@@ -153,4 +170,38 @@ test('list-style-image is refused by name, never printed as a disc', async () =>
   assert.equal(answer.refused, true, 'the print refuses');
   assert.equal(answer.name, 'CasterError');
   assert.match(answer.message, /list-style-image/);
+});
+
+/** The page's text in Chromium's own print, read back by MuPDF: what the browser itself renders, its list markers and generated text among them. */
+async function rendered(page: import('playwright-core').Page): Promise<string> {
+  const doc = mupdf.Document.openDocument(await page.pdf(), 'application/pdf');
+  return doc.loadPage(0).toStructuredText('preserve-whitespace').asText().replace(/[ \t]+/g, ' ').trim();
+}
+
+/** The page's words before preparation, as the browser renders them, and after, as the spans hold them. */
+async function readsTheSame(css: string, body: string) {
+  return withPage(pageWith(css, body), async (page) => {
+    const before = await rendered(page);
+    await page.evaluate(async () => { const caster = await import('/src/index.js' as string); caster.prepare(document); });
+    return { before, after: await rendered(page) };
+  });
+}
+
+// CSS Lists 3: every list item increments the implicit `list-item` counter, an `<ol>`, `<ul>` or `<menu>` resets it, `start`, `reversed` and `value` are that counter's reset and set, and an author's `counter-increment` or `counter-set` on it moves the number the marker shows. The order on one element is reset, increment, set.
+const LIST_ITEM = [
+  ['the HTML attributes', '', '<ol start="5"><li>a</li><li value="9">b</li><li>c</li></ol><ol reversed><li>a</li><li>b</li><li>c</li></ol><ol reversed start="10"><li>a</li><li value="4">b</li><li>c</li></ol>'],
+  ['counter-increment on list-item', 'li { counter-increment: list-item 2 }', '<ol><li>a</li><li>b</li><li>c</li></ol>'],
+  ['counter-set on list-item', 'li:nth-child(2) { counter-set: list-item 7 }', '<ol><li>a</li><li>b</li><li>c</li></ol>'],
+  ['counter-reset on the list', 'ol { counter-reset: list-item 3 }', '<ol><li>a</li><li>b</li></ol>'],
+  ['counter(list-item) in ::marker and ::before', 'li::marker { content: "(" counter(list-item) ") " } li::before { content: "[" counter(list-item) "] " }', '<ol start="3"><li>a</li><li>b</li></ol>'],
+  ['counters(list-item) across nested lists', 'li::before { content: counters(list-item, ".") " " } li::marker { content: none }', '<ol><li>a<ol><li>b</li><li>c</li></ol></li><li>d</li></ol>'],
+  ['a reversed list, whose markers and counter differ', 'li::before { content: "[" counter(list-item) "] " }', '<ol reversed><li>a</li><li>b</li><li>c</li></ol><ol reversed start="10"><li>a</li><li value="4">b</li><li>c</li></ol>'],
+  ['counter-increment on list-item in a reversed list', 'li { counter-increment: list-item 3 }', '<ol reversed><li>a</li><li>b</li></ol>'],
+  ['an item inside a block inside the list', '', '<ol><li>a</li><div><li>b</li></div><li>c</li></ol>'],
+  ['counter-set after counter-increment on one element', '.x { counter-increment: c 1; counter-set: c 5 } .x::after { content: "<" counter(c) ">" }', '<p class="x">a</p>'],
+  ['a list item outside any list', '.i { display: list-item; list-style-type: decimal; margin-left: 10mm } .i::before { content: counter(list-item) "/" }', '<div><p class="i">a</p><p class="i">b</p></div>'],
+] as const;
+for (const [name, css, body] of LIST_ITEM) test(`the list-item counter reads as the browser renders it: ${name}`, async () => {
+  const { before, after } = await readsTheSame(css, body);
+  assert.equal(after, before);
 });
