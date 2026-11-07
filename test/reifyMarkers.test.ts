@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as mupdf from 'mupdf';
+import { decode } from 'fast-png';
 import { launchBrowser } from './launch.ts';
 import { contentType } from '@beltype/common/mime';
 import { WRITER } from './writer.ts';
@@ -204,4 +205,63 @@ const LIST_ITEM = [
 for (const [name, css, body] of LIST_ITEM) test(`the list-item counter reads as the browser renders it: ${name}`, async () => {
   const { before, after } = await readsTheSame(css, body);
   assert.equal(after, before);
+});
+
+/**
+ * The columns of dark ink beside each item, on the side its outside marker hangs, in Chromium's own rendering before preparation and in the printed file, in CSS px from the strip's left.
+ *
+ * @remarks
+ * Blink hangs an outside marker against the item's border box, so the item's inline-start padding and border and its `text-indent` move the text and never the marker; the span stood at the line's start and moved with all three (BelType assessment 2026-11-07, `marker-drift`).
+ */
+async function markerColumns(html: string): Promise<{ native: [number, number]; printed: [number, number] }[]> {
+  return withPage(html, async (page) => {
+    const strip = await page.evaluate(() => { const r = document.querySelector('.s')!.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; });
+    const bands = await page.evaluate(() => { const s = document.querySelector('.s')!.getBoundingClientRect(); return [...document.querySelectorAll('li')].map((li) => { const r = li.getBoundingClientRect(); const rtl = getComputedStyle(li).direction === 'rtl'; return { left: rtl ? r.right - s.left : 0, right: rtl ? s.width : r.left - s.left, top: r.top - s.top, bottom: r.bottom - s.top }; }); });
+    const shot = await page.screenshot({ clip: strip });
+    const base64 = await page.evaluate(async (writer: string) => {
+      const caster = await import('/src/index.js' as string);
+      caster.prepare(document);
+      const strip = document.querySelector('.s') as HTMLElement;
+      const stripBox = strip.getBoundingClientRect();
+      const pt = (px: number) => ((px * 72) / 96);
+      const printed = await caster.print({
+        document,
+        strip: {
+          strip, probeRoot: strip, pageElements: [strip],
+          pages: [{ element: strip, index: 0, flow: [...strip.children], flowBox: null, trimBox: null, nominal: { widthPt: pt(stripBox.width), heightPt: pt(stripBox.height) }, declaredPx: { widthPx: stripBox.width, heightPx: stripBox.height }, contentArea: strip, continuations: [] }],
+          pageOfNode: new Map(), twinOf: () => null, transparent: () => false, lang: 'en', pageElementOf: () => strip, backgrounds: [],
+        },
+      }, { writer });
+      let binary = '';
+      for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
+      return btoa(binary);
+    }, WRITER);
+    const native = decode(shot);
+    const pixmap = mupdf.Document.openDocument(Buffer.from(base64, 'base64'), 'application/pdf').loadPage(0).toPixmap(mupdf.Matrix.scale(96 / 72, 96 / 72), mupdf.ColorSpace.DeviceGray, false, true);
+    const grey = pixmap.getPixels();
+    const columns = (dark: (x: number, y: number) => boolean, b: typeof bands[number]): [number, number] => {
+      let min = Infinity, max = -Infinity;
+      for (let y = Math.ceil(b.top); y < Math.floor(b.bottom); y++) for (let x = Math.ceil(b.left); x < Math.floor(b.right); x++) if (dark(x, y)) { min = Math.min(min, x); max = Math.max(max, x); }
+      return [min, max];
+    };
+    return bands.map((b) => ({
+      native: columns((x, y) => native.data[(y * native.width + x) * native.channels]! < 128, b),
+      printed: columns((x, y) => grey[y * pixmap.getWidth() + x]! < 128, b),
+    }));
+  });
+}
+
+const PLACED = [
+  ['a tight disc item with inline padding', 'li { padding-left: 12px }', '<ul><li>Alfa</li></ul>'],
+  ['a loose disc item with an inline border', 'li { border-left: 3px solid transparent }', '<ul><li><p>Alfa</p></li></ul>'],
+  ['a loose disc item with a text-indent', 'li { text-indent: 2em }', '<ul><li><p>Alfa</p></li></ul>'],
+  ['a tight number with inline padding and a text-indent', 'li { padding-left: 12px; text-indent: 1em }', '<ol><li>Alfa</li></ol>'],
+  ['a loose number with inline padding', 'li { padding-left: 12px }', '<ol><li><p>Alfa</p></li></ol>'],
+  ['a right-to-left disc item with inline padding', 'ul { direction: rtl; padding-left: 0; padding-right: 10mm } li { padding-right: 12px }', '<ul><li>Alfa</li></ul>'],
+  ['a right-to-left number', 'ol { direction: rtl; padding-left: 0; padding-right: 10mm }', '<ol><li><p>Alfa</p></li></ol>'],
+] as const;
+for (const [name, css, body] of PLACED) test(`an outside marker prints where Blink hangs it: ${name}`, async () => {
+  const [item] = await markerColumns(pageWith(css, body));
+  assert.ok(Number.isFinite(item!.native[0]), 'the control: Blink paints a marker beside the item');
+  for (const side of [0, 1]) assert.ok(Math.abs(item!.printed[side]! - item!.native[side]!) <= 1, `the file's marker ink spans x ${item!.printed.join(' to ')} px, Blink's ${item!.native.join(' to ')} px`);
 });

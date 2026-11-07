@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **An outside list marker prints where Blink hangs it when the item has inline padding, a border, a `text-indent` or a right-to-left direction.** Blink places an outside marker against the item's border box, so those move the item's text and never its marker; the reified span stood at the first line's start and moved with them, 12 px of padding moving a bullet 12 px right, and a `text-indent` or a right-to-left item drawing it where Blink paints nothing. The span is now moved back by the item's inline-start padding, border and `text-indent`, and forward again at its end so it still advances nothing, for a shape and a text marker alike (`outsideInset` in `adapters/reify.ts`). A shape marker's margins and padding are logical, so under `direction: rtl` they stand on the right, and it is `unicode-bidi: isolate` as the UA's `::marker` is, or in a right-to-left item opening with left-to-right text it was reordered to the text's left. Measured on Chromium 153: a 16 px disc 40 px into its list starts its ink at x = 24 with 12 px of padding, a 3 px border or a 2em `text-indent` as without, tight or loose. `test/reifyMarkers.test.ts` holds seven placements against Chromium's own rendering, six red before; the acceptance's marker check adds a padded, an indented and a right-to-left list. A sized marker on a tight item already printed in place; a `::marker` taller than a loose item's first line is the hanging path's open question and is not changed here.
+
 ## 0.2.2 — 2026-11-07
 
 - **The inline formula's known defect is healed.** With the formula read where it stands, the acceptance's entry for it excused nothing and failed the check by its own rule, so it is removed; the sequence diagram's labels and arrowheads remain the one named defect.

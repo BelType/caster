@@ -337,8 +337,8 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   const span = item.ownerDocument.createElement('span');
   span.className = MARKER_CLASS;
   span.textContent = text;
-  // An outside marker hangs before the text and advances nothing, so the span is a box of no width whose text is aligned to its end and overflows toward its start: the item's words stay where the native marker left them, and the marker ends where they begin (*preparation runs in no author preview, and must not change layout*, DESIGN.md S81). No width is measured, because the frame's faces may not have loaded when this runs. `white-space: pre` is the UA's own for `::marker`, and keeps the trailing space a line end would otherwise drop. An inside marker advances, as an ordinary inline span does. An outside marker before a block is also out of the flow ({@link opensWithBlock}).
-  if (style.listStylePosition !== 'inside') span.style.cssText = `${hangs ? 'position: absolute; ' : ''}display: inline-flex; inline-size: 0; block-size: 0; justify-content: flex-end; white-space: pre`;
+  // An outside marker hangs before the text and advances nothing, so the span is a box of no width whose text is aligned to its end and overflows toward its start: the item's words stay where the native marker left them, and the marker ends where they begin (*preparation runs in no author preview, and must not change layout*, DESIGN.md S81). No width is measured, because the frame's faces may not have loaded when this runs. `white-space: pre` is the UA's own for `::marker`, and keeps the trailing space a line end would otherwise drop. An inside marker advances, as an ordinary inline span does. An outside marker before a block is also out of the flow ({@link opensWithBlock}). Where the item has inline-start padding, a border or a `text-indent`, the marker ends that much before its words, at the border box ({@link outsideInset}).
+  if (style.listStylePosition !== 'inside') span.style.cssText = `${hangs ? 'position: absolute; ' : ''}display: inline-flex; inline-size: 0; block-size: 0; justify-content: flex-end; white-space: pre; margin-inline: ${-outsideInset(style)}px ${outsideInset(style)}px`;
   // The marker's own colour and face, as a shape marker takes them, written after the hanging box's `cssText`, which would replace them: a `::marker` set apart from its item printed in the item's paint, and an outside marker in a larger face made its line shorter than the native marker did (measured 2026-11-07, a 28 px marker on a 16 px item: 35.39 px tall natively, 22.39 px with the span in the item's face). Its line height too, which a `font` shorthand on `::marker` resets. The outside box has no block size, so its ascent pushes the line down as Blink's marker does and its descent overhangs as Blink's does: with a block size of its own the same item was 39.19 px tall. `test/reifyMarkers.test.ts` holds the sizes measured.
   copyMarkerPaint(span, markerStyle);
   span.style.setProperty('line-height', markerStyle.lineHeight);
@@ -377,13 +377,29 @@ function shapeMarkerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclara
   copyMarkerPaint(span, markerStyle);
   span.setAttribute(SHAPE_ATTRIBUTE, listStyle);
   span.setAttribute(ASCENT_ATTRIBUTE, String(ascent));
-  span.style.setProperty('margin-left', `${marginStart}px`);
-  span.style.setProperty('margin-right', `${marginEnd}px`);
-  span.style.setProperty('padding-right', `${width}px`);
+  // `unicode-bidi: isolate`, the UA's own for `::marker`: an empty inline in a right-to-left item opening with left-to-right text was reordered after that text, to its left, where an isolate stands at the line's start as the marker does.
+  span.style.setProperty('unicode-bidi', 'isolate');
+  const inset = style.listStylePosition === 'inside' ? 0 : outsideInset(style);
+  span.style.setProperty('margin-inline-start', `${marginStart - inset}px`);
+  span.style.setProperty('margin-inline-end', `${marginEnd + inset}px`);
+  span.style.setProperty('padding-inline-end', `${width}px`);
   // The lead is an offset and not a margin: an absolutely positioned box's margin collapses with nothing, so it never adjoins a break. Cicero gives the box a page resumes at and its first child `margin-top: 0 !important` (`adjoin`, css-break-3 §5.2), and this span is that first child, so it rose by its lead at a page's top (1 px on the cast fixture's loose item that opens page 4, 2026-10-29). Written `!important` on the element, it outranks any sheet's important rule, a cascade layer's included.
   if (hangs) { span.style.setProperty('position', 'absolute'); span.style.setProperty('margin-top', `${lead}px`, 'important'); }
   out.markers.push({ li: item, text: '', source: 'counter' });
   return span;
+}
+
+/**
+ * How far the item's first line starts from its border box's inline-start edge, where Blink hangs an outside marker.
+ *
+ * @remarks
+ * Blink places an outside marker against the item's border box, so the item's inline-start padding and border and its `text-indent` move its text and never its marker; the span stands at the line's start and is moved back by this much, and forward again at its end so it still advances nothing. Measured 2026-11-07 on Chromium 153, a 16 px disc 40 px into its list: its ink starts at x = 24 for a tight or a loose item alike, with 12 px of padding, a 3 px border or a 2em `text-indent` on the item, and under `direction: rtl` it ends 15 px past the item's right edge, with 12 px of padding there or none. A hanging span is out of the flow, and its static position is still the line's start, `text-indent` included.
+ *
+ * @param style - The item's own computed style.
+ */
+function outsideInset(style: CSSStyleDeclaration): number {
+  const indent = style.textIndent.endsWith('%') ? Number.parseFloat(style.textIndent) / 100 * Number.parseFloat(style.inlineSize) : Number.parseFloat(style.textIndent) || 0;
+  return (Number.parseFloat(style.paddingInlineStart) || 0) + (Number.parseFloat(style.borderInlineStartWidth) || 0) + indent;
 }
 
 /**
