@@ -397,7 +397,7 @@ Everything under `src/` is plain ESM with JSDoc types. Every module's header ope
 cd packages/caster
 npm test                # node --test test/*.test.js
 npm run check           # tsc -p jsconfig.json, over this package's own files (also run by npm test: test/check.test.js)
-npm run compliance      # qpdf and veraPDF over a freshly printed specimen
+npm run compliance -- fixtures/lists   # qpdf, veraPDF and PdfCraft over every PDF in a directory
 npm run census          # the intervals census over every document (about a minute); exits non-zero if it does not complete
 npm run bundle-vendor   # regenerate vendor/ after a dependency bump
 npm run profiles        # verify the two committed ICC profiles against their recorded checksums
@@ -414,7 +414,7 @@ Most suites under `test/` are pure and run anywhere. The ones that need a real t
 
 `npm run census` is a deliberate act too, kept out of `npm test` for its time. It opens the specimen, the manual and the Paged.js road in Chromium and takes about a minute (it was fifty-three seconds of every test run, a third of the package's wall clock). It judges nothing it measures: stage 0's predictions are reported to a person, and the command fails only if the census itself does not complete.
 
-`npm run compliance` is kept out of `npm test` deliberately. veraPDF is a large Java application that `scripts/verapdf.sh` installs under `.tools/` on first use, and it needs a real JRE (macOS's `java` shim is not one; it broke the run once). qpdf is a separate binary. A suite that skipped itself on most machines would be a green nobody can explain. The script prints the specimen through the editing tools' panel, the ordinary road, then runs `qpdf --check` (well-formed, and the header says 2.0) and veraPDF with `--flavour ua2`, which is the PDF/UA-2 profile itself. It says plainly what it could not run, including the case where `java` is only macOS's shim with no runtime behind it. The last recorded pass is 2026-09-14: qpdf clean, veraPDF 1.30.2 with zero failed rules.
+`npm run compliance -- <dir>` is kept out of `npm test` deliberately. veraPDF is a large Java application and qpdf a separate binary, both found on the path, and a suite that skipped itself on most machines would be a green nobody can explain. The script prints nothing: it reads every PDF in the directory, runs `qpdf --check` (well-formed, and the header says 2.0), veraPDF with `--flavour ua2` (the PDF/UA-2 profile itself), `wt1a` and `wt1r` (Well-Tagged PDF), and PdfCraft's checker, and says plainly what it could not run. A file that fails qpdf or any `ua2` rule fails the run, in any directory; over another writer's files a verdict that differs from the oracle's of the same name in `fixtures/lists/` fails too. On the corpus, `wt1a`, `wt1r` and PdfCraft are reported and do not fail: their only findings there are the oracle's two missing Well-Tagged declarations and the table summary. The last recorded pass is 2026-11-07, over the 18 files of `fixtures/lists/`: qpdf 12.4.2 clean on 18, veraPDF 1.30.0 `ua2` with zero failed rules on 18 (40 944 checks passed). The one veraPDF ua2 test inside `npm test` is `test/pdfua.test.ts`, over the paper and the canvas figure, which skips where `verapdf` is not on the path.
 
 Two preview seats in `.claude/launch.json` open the specimen: `beltype-caster` under Cicero and `beltype-caster-pagedjs` under Paged.js.
 
