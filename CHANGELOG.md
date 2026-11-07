@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A Mermaid sequence diagram's labels print where the page has them, in the page's colour.** Two faults of SVG text, both in `measureSvgText` (`measure/textMeasure.ts`). A word took its paint from its `<text>`, never from the `<tspan>` holding it, and Mermaid fills an actor's `<text>` with its box's colour and the `<tspan>` black, so each actor's name printed in the box's own colour and could not be seen. And a word sat on the point `getStartPositionOfChar` answers, which is the alignment point before `dominant-baseline` or `alignment-baseline` moved the glyphs, so every label Mermaid centres with `central` or `middle` sat several pixels below the page's. Each word now takes the computed `fill` of its own text node's parent, and where a baseline other than the alphabetic one applies, its baseline is the top of the character's cell, which `getExtentOfChar` answers moved, plus the face's ascent. Measured on Chromium: 16 px sans-serif at `y="100"` starts at 100 under every baseline, its cell's top at 86 under `alphabetic` and 91 under `central`. The acceptance's last known defect, on `fixtures/cast-sequence-diagram/`, excused nothing once the two were fixed and is removed: the page's picture now differs in 0.001 % of its pixels, 0.9 % of the worst tile. Its arrowheads were never wrong; the entry named them because its box covered the whole drawing. Only paint follows the `<tspan>`: a `<tspan>` in another face or size is still set in its `<text>`'s.
+
 ## 0.2.2 — 2026-11-07
 
 - **The inline formula's known defect is healed.** With the formula read where it stands, the acceptance's entry for it excused nothing and failed the check by its own rule, so it is removed; the sequence diagram's labels and arrowheads remain the one named defect.
