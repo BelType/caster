@@ -128,38 +128,48 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   const pseudos = namedHosts(doc, 'before|after', 'q');
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
-  const apply = ( style: CSSStyleDeclaration,  depth: number) => {
-    for (const [name, value] of pairsOf(style.counterReset)) {
+  const apply = (style: CSSStyleDeclaration, depth: number, element?: Element) => {
+    const implicit = element ? implicitListItem(element, style) : null;
+    const resets = pairsOf(style.counterReset);
+    const increments = pairsOf(style.counterIncrement, 1);
+    if (implicit?.reset !== undefined) resets.push(['list-item', implicit.reset]);
+    if (implicit?.increment !== undefined) increments.push(['list-item', implicit.increment]);
+    for (const [name, value] of resets) {
       // A new scope at the same depth replaces the one a previous sibling opened, and leaves every ancestor's alone. Pushing beside it made `counters(item, '.')` on the second of two sibling `<ol>`s resolve `3.1.` where Chromium renders `1.`, because the spent sibling's scope was still on the stack and still being joined. CSS Lists 3 §3: an element's counter-reset creates a new counter whose scope is that element and its descendants, so the previous sibling's is out of scope here by construction.
       const spent = scopes.findIndex((s) => s.name === name && s.ownerDepth === depth);
       if (spent >= 0) scopes.splice(spent, 1);
       scopes.push({ name, value, ownerDepth: depth });
     }
+    // Reset, then increment, then set (CSS Lists 3 §4.4): `counter-increment: c 1; counter-set: c 5` reads 5 in Chromium's print, where the set before the increment read 6.
+    for (const [name, value] of increments) {
+      const hit = innermost(scopes, name);
+      if (hit) hit.value += value; else scopes.push({ name, value, ownerDepth: depth });
+    }
     for (const [name, value] of pairsOf(style.counterSet)) {
       const hit = innermost(scopes, name);
       if (hit) hit.value = value; else scopes.push({ name, value, ownerDepth: depth });
     }
-    for (const [name, value] of pairsOf(style.counterIncrement, 1)) {
-      const hit = innermost(scopes, name);
-      if (hit) hit.value += value; else scopes.push({ name, value, ownerDepth: depth });
-    }
   };
 
-  // The list-item siblings of a parent, taken once, on the first demand. The walk alters each item as it passes (`display: block` takes it out of the list-item set), so a set read at the second item would no longer hold the first and every ordinal after it would slip by one. The first demand comes from the first list-item child, at which point no sibling has been altered yet: the earlier ones were never list items, the later ones have not been visited.
-  const itemsByParent: WeakMap<Element,Element[]> = new WeakMap<any, any>();
-  const itemsOf = ( parent: Element) => {
-    let items = itemsByParent.get(parent);
-    if (!items) {
-      items = [...parent.children].filter((child) => view.getComputedStyle(child).display === 'list-item');
-      itemsByParent.set(parent, items);
+  // Every item's marker number in a list, taken once, on the first demand. The walk alters each item as it passes (`display: block` takes it out of the list-item set), so a list read at the second item would no longer hold the first and every number after it would slip by one. The first demand comes from the list's first item, at which point no item of it has been altered yet: the earlier elements were never its items, the later ones have not been visited.
+  const ordinalsByOwner: WeakMap<Element,Map<Element,number>> = new WeakMap();
+  const ordinalOf = (item: Element) => {
+    const owner = listOwnerOf(item);
+    if (!owner) return 1;
+    let ordinals = ordinalsByOwner.get(owner);
+    if (!ordinals) {
+      ordinals = markerOrdinals(view, owner);
+      ordinalsByOwner.set(owner, ordinals);
     }
-    return items;
+    const ordinal = ordinals.get(item);
+    if (ordinal === undefined) throw new CasterError(`caster: the list item ${domPathish(item)} is not among the items of its list ${domPathish(owner)}, so its marker number is unknown`, { element: domPathish(item) });
+    return ordinal;
   };
 
   /** An element's marker, its `::before` and its first letter: what stands before its children. */
   const open = (element: Element, style: CSSStyleDeclaration, depth: number) => {
     // `::marker` is the item's first box, so it goes first; then `::before`, then the children. The element's own counters have moved before any of the three reads them.
-    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, itemsOf, out, writes) : null;
+    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, ordinalOf, out, writes) : null;
     const before = mayHold(pseudos, element) ? pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes) : null;
     if (before) writes.push(() => element.insertBefore(before, element.firstChild));
     if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
@@ -175,7 +185,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     const style = view.getComputedStyle(element);
     // `display: none` generates no box, so it generates no pseudo-element and its counter operations do not happen (CSS Lists 3 §4.4) — and an element a paginator has emptied and hidden is one whose words the engine has already taken back, so a span written into it would be a word the block never held (*a pseudo that reads a value the engine delivers is made real after the run*, DESIGN.md S79).
     if (style.display === 'none') return;
-    apply(style, depth);
+    apply(style, depth, element);
     open(element, style, depth);
     for (const child of [...element.children]) {
       if (child.classList.contains(GENERATED_CLASS) || child.classList.contains(MARKER_CLASS)) continue;
@@ -285,12 +295,12 @@ function mayHold(hosts: Set<Element>|null, element: Element) {
  * @param writes - Where the item's own write is queued.
  * @throws {CasterError} An `<li>`'s marker this printer cannot express; another list item's becomes a warning instead.
  */
-function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration, scopes: Scope[], itemsOf: (parent: Element) => Element[], out: Reification, writes: (() => void)[]): HTMLElement|null {
+function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration, scopes: Scope[], ordinalOf: (item: Element) => number, out: Reification, writes: (() => void)[]): HTMLElement|null {
   if (item.querySelector(`:scope > .${MARKER_CLASS}`)) return null;
   const hangs = style.listStylePosition !== 'inside' && opensWithBlock(view, item);
   const parent = item.parentElement;
-  // The list's items are taken before this item changes `display` on any path, so an item whose marker is hidden still counts, as Blink counts it (the seventh review of the Press round: `none, 2., 3.` printed `none, 1., 2.`).
-  if (parent) itemsOf(parent);
+  // The list's items are numbered before this item changes `display` on any path, so an item whose marker is hidden still counts, as Blink counts it (the seventh review of the Press round: `none, 2., 3.` printed `none, 1., 2.`).
+  const ordinal = ordinalOf(item);
   // An `<li>` in a `<ul>`, `<ol>` or `<menu>` reads `list-style-type` off the list, as D9 wrote it; anything else reads its own.
   const list = item.tagName === 'LI' && parent && (parent.tagName === 'UL' || parent.tagName === 'OL' || parent.tagName === 'MENU') ? parent : null;
   const listStyle = list ? view.getComputedStyle(list).listStyleType : style.listStyleType;
@@ -309,7 +319,7 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
     if (style.listStyleImage !== 'none') throw new CasterError(`caster: list-style-image on ${domPathish(item)} is not one this printer can express. A list-style-type is, or a ::marker content string; the image would be printed as a ${listStyle} the page does not show.`, { element: domPathish(item) });
     if (SHAPE_MARKERS.includes(listStyle)) return shapeMarkerSpan(view, item, style, listStyle, hangs, out);
     try {
-      text = counterText(listStyle, parent ? ordinalOf(item, itemsOf(parent)) : 1);
+      text = counterText(listStyle, ordinal);
     } catch (error) {
       // An `<li>` refuses, as it always has. Another element made a list item is the paginator's own furniture more often than the author's, and a marker only the engine can draw is left to the engine, with a warning that says so.
       if (list || !(error instanceof CasterError)) throw error;
@@ -383,16 +393,42 @@ function shapeMarkerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclara
  * A loose item (`li > p`, a Markdown list with blank lines between its items) opens with a block. Its native `::marker` hangs beside the block's first line and makes no line of its own, but an inline span before the block does: CSS wraps it in an anonymous block, and the item grows by a line (measured 2026-10-16 on the specimen under Paged.js: `alfa` 58.66 px to 80.66, and the cut moved). So the span of such an item is taken out of the flow, `position: absolute` with no offsets: its static position is the item's content box at the block's top, where nothing moves, and the end of its text stands at the item's content edge as the native marker's does (measured 2026-10-29 in standards mode against Blink's own marker: the same height for every item and the same x, for a first `p`, `pre`, nested list, `blockquote`, a padded or indented `p` and a figure). Its baseline is the item's own first line's, which is the block's where the block sets its first line in the item's face, as a `p` does; a first block in another face, with its own padding or opening with an image (a heading, a table, a figure) has Blink's marker on that line's baseline, 3 px lower for an `h3` and 13 px for a table cell padded 4 px or a 30 px image in that measurement, which this does not follow (none of the manual's 112 loose items, nor the cast fixture's 3, opens with anything but a `p`). An item whose `::before` paints opens with that inline box, and a tight item with its text: their marker stays in the line.
  */
 function opensWithBlock(view: Window, item: Element): boolean {
-  const before = view.getComputedStyle(item, '::before').content;
-  if (before && before !== 'none' && before !== 'normal') return false;
-  for (const node of item.childNodes) {
-    if (node.nodeType === 3 && /\S/u.test((node as Text).data)) return false;
+  return firstBoxOf(view, item) === 'block';
+}
+
+/** The kind of an element's first in-flow box, or null where it has none: what makes no line is passed over, an empty inline (an anchor before a paragraph) and a `display: contents` element whose own children are looked through (measured 2026-11-07: each left in the flow made a 22.39 px loose item 44.78 px tall). */
+function firstBoxOf(view: Window, parent: Element): 'block'|'inline'|null {
+  const before = view.getComputedStyle(parent, '::before').content;
+  if (before && before !== 'none' && before !== 'normal') return 'inline';
+  for (const node of parent.childNodes) {
+    if (node.nodeType === 3 && /\S/u.test((node as Text).data)) return 'inline';
     if (node.nodeType !== 1) continue;
     const child = view.getComputedStyle((node as Element));
     if (child.display === 'none' || child.position === 'absolute' || child.position === 'fixed' || child.float !== 'none') continue;
-    return child.display !== 'contents' && !child.display.startsWith('inline');
+    if (child.display === 'contents' || (child.display === 'inline' && makesNoLine(view, node as Element, child))) {
+      const inside = firstBoxOf(view, node as Element);
+      if (inside === 'block' && child.display !== 'contents') return 'inline';
+      if (inside) return inside;
+      continue;
+    }
+    return child.display.startsWith('inline') ? 'inline' : 'block';
   }
-  return false;
+  return null;
+}
+
+/** The elements that are content though they hold no text. */
+const REPLACED = new Set(['IMG', 'svg', 'VIDEO', 'CANVAS', 'IFRAME', 'EMBED', 'OBJECT', 'INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'BR', 'METER', 'PROGRESS', 'math']);
+
+/**
+ * Whether an inline element puts nothing on a line of its own: no replaced element and no inline-axis margin, border or padding, which CSS 2.1 §9.4.2 counts as content of a line.
+ *
+ * @remarks
+ * Its text is asked of {@link firstBoxOf}, which looks inside it as it looks inside the item.
+ */
+function makesNoLine(view: Window, element: Element, style: CSSStyleDeclaration): boolean {
+  if (REPLACED.has(element.tagName)) return false;
+  for (const side of ['left', 'right']) if (Number.parseFloat(style.getPropertyValue(`margin-${side}`)) || Number.parseFloat(style.getPropertyValue(`padding-${side}`)) || Number.parseFloat(style.getPropertyValue(`border-${side}-width`))) return false;
+  return true;
 }
 
 /**
@@ -404,19 +440,74 @@ function copyMarkerPaint(box: HTMLElement, markerStyle: CSSStyleDeclaration) {
   for (const property of ['color', 'font-family', 'font-size', 'font-weight', 'font-style']) box.style.setProperty(property, markerStyle.getPropertyValue(property));
 }
 
-/** The counter an item's marker shows, replayed from the list's start over the items before it: the list's `start` or `reversed`, then each item's own `value` in turn — the same sequence Chromium's `list-item` counter walks. */
-function ordinalOf(item: Element, items: Element[]) {
-  const parent = (item.parentElement as Element);
-  const start = Number.parseInt(parent.getAttribute('start') ?? '', 10);
-  const reversed = parent.hasAttribute('reversed');
-  let counter = Number.isFinite(start) ? start : (reversed ? items.length : 1);
-  for (const each of items) {
-    const declared = Number.parseInt(each.getAttribute('value') ?? '', 10);
-    if (Number.isFinite(declared)) counter = declared;
-    if (each === item) break;
-    counter += reversed ? -1 : 1;
+/** The elements HTML makes a list of its `<li>` descendants, and that reset the `list-item` counter (Blink's `ElementGeneratesListItemCounter`). */
+const LISTS = new Set(['OL', 'UL', 'MENU', 'DIR']);
+
+/** The element whose items an item is numbered among: an `<li>`'s nearest list ancestor, or the parent of any other list item and of an `<li>` in no list (Blink's `ListItemOrdinal`). */
+function listOwnerOf(item: Element): Element|null {
+  if (item.tagName === 'LI') for (let up = item.parentElement; up; up = up.parentElement) if (LISTS.has(up.tagName)) return up;
+  return item.parentElement;
+}
+
+/**
+ * The number each list item of a list shows in its marker, as Blink's `ListItemOrdinal` numbers them.
+ *
+ * @remarks
+ * The marker and `counter(list-item)` are two numbers in Chromium 153, though CSS Lists 3 makes them one: the marker reads the list's `start` and `reversed` and each item's `value`, `counter-increment` and `counter-set` on `list-item`, and never a `counter-reset` on the list, while `counter(list-item)` reads the counter the walk keeps ({@link implicitListItem}). Measured in Chromium's own print: `<ol reversed>` of three items shows the markers 3, 2, 1 and `counter(list-item)` 0, −1, −2; `<li value="4">` shows 4 and the counter 9; `ol { counter-reset: list-item 3 }` leaves the markers at 1, 2. A reversed list starts at its item count plus one and takes each item's own increment, so `li { counter-increment: list-item 3 }` in a reversed list of two reads 6, 9, as Blink paints it. `test/reifyMarkers.test.ts` holds each shape.
+ *
+ * @param owner - The list, from {@link listOwnerOf}.
+ */
+function markerOrdinals(view: Window, owner: Element): Map<Element,number> {
+  const items: Element[] = [];
+  const isItem = (element: Element) => view.getComputedStyle(element).display === 'list-item' && listOwnerOf(element) === owner;
+  if (LISTS.has(owner.tagName)) {
+    // A nested list numbers its own items, and a hidden subtree has none: both are skipped whole, the nested list once it is asked whether it is an item itself.
+    const walker = owner.ownerDocument.createTreeWalker(owner, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => {
+      const element = node as Element;
+      if (view.getComputedStyle(element).display === 'none') return NodeFilter.FILTER_REJECT;
+      if (isItem(element)) items.push(element);
+      return LISTS.has(element.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+    } });
+    walker.nextNode();
+  } else {
+    for (const child of owner.children) if (isItem(child)) items.push(child);
   }
-  return counter;
+  const reversed = owner.tagName === 'OL' && owner.hasAttribute('reversed');
+  const start = owner.tagName === 'OL' ? Number.parseInt(owner.getAttribute('start') ?? '', 10) : Number.NaN;
+  let value = Number.isFinite(start) ? start + (reversed ? 1 : -1) : (reversed ? items.length + 1 : 0);
+  const ordinals = new Map<Element,number>();
+  for (const item of items) {
+    const style = view.getComputedStyle(item);
+    const increment = pairsOf(style.counterIncrement, 1).find(([name]) => name === 'list-item');
+    const set = pairsOf(style.counterSet).find(([name]) => name === 'list-item');
+    const declared = item.tagName === 'LI' ? Number.parseInt(item.getAttribute('value') ?? '', 10) : Number.NaN;
+    value += increment ? increment[1] : (reversed ? -1 : 1);
+    if (set) value = set[1]; else if (Number.isFinite(declared)) value = declared;
+    ordinals.set(item, value);
+  }
+  return ordinals;
+}
+
+/**
+ * The `list-item` counter an element moves without saying so, as Chromium moves it: an `<ol>`, `<ul>` or `<menu>` resets it and an `<li>` that is a list item increments it, unless the element's own `counter-reset`, `counter-increment` or `counter-set` names `list-item` (Blink's `CountersAttachmentContext`).
+ *
+ * @remarks
+ * What `counter(list-item)` and `counters(list-item, …)` read, which is not always the marker's number ({@link markerOrdinals}). An `<ol start>` resets it to one before `start`, or one after in a reversed list; a reversed list without `start` resets it to 1, so its first item reads 0 (measured in Chromium 153's print). An item of a reversed list decrements it. `value` does not move it. Another element made a list item does not increment it: its `counter(list-item)` reads 0 unless an author's rule moves it.
+ */
+function implicitListItem(element: Element, style: CSSStyleDeclaration): { reset?: number, increment?: number }|null {
+  const named = (value: string) => pairsOf(value).some(([name]) => name === 'list-item');
+  if (named(style.counterReset) || named(style.counterIncrement) || named(style.counterSet)) return null;
+  if (element.tagName === 'LI') {
+    if (style.display !== 'list-item') return null;
+    const owner = listOwnerOf(element);
+    return { increment: owner?.tagName === 'OL' && owner.hasAttribute('reversed') ? -1 : 1 };
+  }
+  if (element.tagName === 'OL') {
+    const reversed = element.hasAttribute('reversed');
+    const start = Number.parseInt(element.getAttribute('start') ?? '', 10);
+    return { reset: Number.isFinite(start) ? start + (reversed ? 1 : -1) : (reversed ? 1 : 0) };
+  }
+  return LISTS.has(element.tagName) ? { reset: 0 } : null;
 }
 
 /**
