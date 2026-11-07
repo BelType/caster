@@ -99,6 +99,13 @@ const COUNTERS = page(`<style>
 </style>`, `<section class="chapter"><h2>a</h2></section><section class="chapter"><h2>b</h2></section><div class="none-read"><h3>c</h3></div>`);
 const MARKER_COUNTER = page(`<style>li { counter-increment: voce } li::marker { content: counter(voce) ") " }</style>`, `<ul style="counter-reset: voce"><li>a</li><li>b</li></ul>`);
 
+/** Every kind of element preparation makes from generated content: a heading's counter, a quotation's marks, a pseudo after, a text marker and a shape marker. */
+const GENERATED_MARKER = page(`<style>
+.chapter { counter-increment: chapter }
+.chapter h2::before { content: counter(chapter) ". " }
+.note::after { content: " (fine)" }
+</style>`, `<section class="chapter"><h2>Results</h2></section><p class="note">a <q>b</q></p><ol><li>x</li></ol><ul><li>y</li></ul>`);
+
 /** What the elements that matter must keep from the walk: a hidden ancestor stops it, and the order is the walk's. */
 const ORDER = page(`<style>
 .outer::before { content: 'o1' } .outer::after { content: 'o2' }
@@ -122,7 +129,7 @@ const LISTS: Record<string, string> = {
 const TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rb rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
 
 test('reification', async (t) => {
-  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/counters': COUNTERS, '/marker-counter': MARKER_COUNTER, '/order': ORDER, ...Object.fromEntries(Object.entries(LISTS).map(([name, html]) => [`/list-${name}`, html])), '/quote': page('', '<p>a <q>b</q></p>'), '/quote-private': page('', '<p lang="x-klingon">a <q>b</q></p>'), '/plain': page('', '') };
+  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/counters': COUNTERS, '/marker-counter': MARKER_COUNTER, '/order': ORDER, ...Object.fromEntries(Object.entries(LISTS).map(([name, html]) => [`/list-${name}`, html])), '/quote': page('', '<p>a <q>b</q></p>'), '/quote-private': page('', '<p lang="x-klingon">a <q>b</q></p>'), '/plain': page('', ''), '/generated-marker': GENERATED_MARKER };
   const serve = (host: (url: URL) => string|undefined) => http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     const text = host(url);
@@ -191,6 +198,22 @@ test('reification', async (t) => {
         return reify(document).markers.map((m: { text: string }) => m.text);
       });
       assert.deepEqual(markers, ['1) ', '2) ']);
+    });
+
+    await t.test('every element made from generated content carries data-beltype-generated, valued by its pseudo', async () => {
+      const tab = await open('/generated-marker');
+      const seen = await tab.evaluate(async () => {
+        const { prepare } = await import('/src/adapters/prepare.js' as string);
+        prepare(document);
+        const made = [...document.querySelectorAll('[data-beltype-generated]')].map((el) => `${el.parentElement?.localName} ${el.getAttribute('data-beltype-generated')} ${el.textContent}`);
+        const heading = document.querySelector('h2') as Element;
+        const own = [...heading.childNodes].filter((n) => !(n instanceof Element && n.hasAttribute('data-beltype-generated'))).map((n) => n.textContent).join('');
+        return { made, own, quotes: document.querySelectorAll('[data-caster-quote][data-beltype-generated]').length, shape: document.querySelectorAll('[data-caster-marker][data-beltype-generated="marker"]').length };
+      });
+      assert.deepEqual(seen.made, ['h2 before 1. ', 'q before \u00ab', 'q after \u00bb', 'p after  (fine)', 'li marker 1. ', 'li marker '], 'the heading\'s number, both quote marks, the note\'s after and both markers');
+      assert.equal(seen.own, 'Results', 'what is left of the heading is the author\'s text');
+      assert.equal(seen.quotes, 2, 'a quote mark keeps data-caster-quote beside it');
+      assert.equal(seen.shape, 1, 'a shape marker keeps data-caster-marker beside it');
     });
 
     await t.test('a hidden ancestor stops it, and the record reads in the walk\'s order', async () => {
