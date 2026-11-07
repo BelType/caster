@@ -112,6 +112,15 @@ function guessedDirection(clusters: number[]): 'ltr'|'rtl' {
     }
     return 'ltr';
 }
+/** How many shapes {@link shapeWord} keeps. */
+const SHAPES_KEPT = 20000;
+/**
+ * The shapes already made, for a word asked again: the measurement asks of each word twice (`fallbackParts`, then the segment), and a bill repeats its words within a print and from one print to the next.
+ *
+ * @remarks
+ * A shape is a function of the font, the instance, the features, the language and the text, and {@link loadFont} keeps a key's first bytes as long as this module lives, so nothing can stale it; the size only scales the width. Its arrays are shared between callers, and nothing writes to them. Measured 2026-11-07 on the bolletta: about 7 ms of a 61-day bill's measure stage, 5 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2).
+ */
+const shapes: Map<string,Omit<HbRun,'widthPx'>&{ units: number; }> = new Map();
 /**
  * Shape one word. `featureTags` empty means "HarfBuzz script defaults only".
  *
@@ -122,33 +131,41 @@ function guessedDirection(clusters: number[]): 'ltr'|'rtl' {
  */
 export function shapeWord(key: string, text: string, sizePx: number, featureTags: readonly string[], language?: string, variations?: Coords): HbRun {
     const cached = fontFor(key, variations);
-    const buffer = new (hb().Buffer)();
-    buffer.addText(text);
-    buffer.guessSegmentProperties();
-    if (language)
-        buffer.setLanguage(language);
-    // harfbuzzjs' Feature constructor takes a raw OpenType tag and a value; it is Feature.fromString that is hb_feature_from_string, so it is the only way to say "-liga" and have it mean "liga=0" rather than a five-character tag.
-    const features = featureTags.map(( tag: string) => {
-        const feature = hb().Feature.fromString(tag);
-        if (!feature)
-            throw new CasterError(`caster: harfbuzz rejected the feature string ${tag}`);
-        return feature;
-    });
-    hb().shape(cached.font, buffer, features);
-    const infos = buffer.getGlyphInfos();
-    const glyphPositions = buffer.getGlyphPositions();
-    const gids = infos.map(( i: any) => i.codepoint);
-    const clusters = infos.map(( i: any) => i.cluster);
-    const advances = glyphPositions.map(( p: any) => p.xAdvance);
-    const positions = glyphPositions.map(( p: any) => ([p.xAdvance, p.yAdvance, p.xOffset, p.yOffset] as GlyphPosition));
-    const units = advances.reduce(( a: number,  b: number) => a + b, 0);
+    const remembered = `${fontKey(key, variations)}\n${featureTags.join()}\n${language ?? ''}\n${text}`;
+    let shape = shapes.get(remembered);
+    if (!shape) {
+        const buffer = new (hb().Buffer)();
+        buffer.addText(text);
+        buffer.guessSegmentProperties();
+        if (language)
+            buffer.setLanguage(language);
+        // harfbuzzjs' Feature constructor takes a raw OpenType tag and a value; it is Feature.fromString that is hb_feature_from_string, so it is the only way to say "-liga" and have it mean "liga=0" rather than a five-character tag.
+        const features = featureTags.map(( tag: string) => {
+            const feature = hb().Feature.fromString(tag);
+            if (!feature)
+                throw new CasterError(`caster: harfbuzz rejected the feature string ${tag}`);
+            return feature;
+        });
+        hb().shape(cached.font, buffer, features);
+        const infos = buffer.getGlyphInfos();
+        const glyphPositions = buffer.getGlyphPositions();
+        const gids = infos.map(( i: any) => i.codepoint);
+        const clusters = infos.map(( i: any) => i.cluster);
+        const advances = glyphPositions.map(( p: any) => p.xAdvance);
+        const positions = glyphPositions.map(( p: any) => ([p.xAdvance, p.yAdvance, p.xOffset, p.yOffset] as GlyphPosition));
+        shape = { units: advances.reduce(( a: number,  b: number) => a + b, 0), gids, clusters, advances, positions, direction: guessedDirection(clusters) };
+        // ponytail: a whole clear at the ceiling, a least-recently-used list if a long document ever thrashes it.
+        if (shapes.size >= SHAPES_KEPT)
+            shapes.clear();
+        shapes.set(remembered, shape);
+    }
     return {
-        widthPx: (units / cached.upem) * sizePx,
-        gids,
-        clusters,
-        advances,
-        positions,
-        direction: guessedDirection(clusters),
+        widthPx: (shape.units / cached.upem) * sizePx,
+        gids: shape.gids,
+        clusters: shape.clusters,
+        advances: shape.advances,
+        positions: shape.positions,
+        direction: shape.direction,
     };
 }
 /** hb's own name for an OpenType script tag, e.g. "latn" -> "Latn". */

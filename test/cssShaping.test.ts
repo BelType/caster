@@ -119,3 +119,40 @@ test('text-rendering: optimizeSpeed shapes without ligatures and keeps kerning, 
   { css: 'text-rendering: optimizeSpeed; font-variant-ligatures: common-ligatures', words: LIGATURES },
   { css: 'text-rendering: optimizeSpeed; font-feature-settings: "liga" 1', words: LIGATURES },
 ]));
+
+test('a word asked again keeps what its features, its instance and its size make of it', async () => {
+  const server = await serve();
+  const browser = await launchBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${(server.address() as { port: number }).port}/`);
+    const seen = await page.evaluate(async () => {
+      const load = (p: string) => import(p);
+      const capabilities = await load('/src/capabilities.js');
+      await capabilities.load(['harfbuzz']);
+      const shaper = await load('/src/fonts/hbShaper.js');
+      const url = '/fonts/CrimsonPro-Variable.ttf';
+      shaper.loadFont(url, new Uint8Array(await (await fetch(url)).arrayBuffer()));
+      const shape = (word: string, size: number, features: string[], variations?: Record<string, number>) => {
+        const { widthPx, gids, advances } = shaper.shapeWord(url, word, size, features, undefined, variations);
+        return { widthPx, gids: [...gids], advances: [...advances] };
+      };
+      const twice = (...args: Parameters<typeof shape>) => [shape(...args), shape(...args)];
+      return {
+        plain: twice('office', 40, []),
+        noLiga: twice('office', 40, ['-liga']),
+        bold: twice('office', 40, [], { wght: 900 }),
+        larger: twice('office', 80, []),
+        other: twice('officer', 40, [])
+      };
+    });
+    for (const [name, [first, second]] of Object.entries(seen)) assert.deepEqual(second, first, `${name} asked again`);
+    assert.notDeepEqual(seen.noLiga[0].gids, seen.plain[0].gids, 'features are part of what is remembered');
+    assert.notDeepEqual(seen.bold[0].advances, seen.plain[0].advances, 'the instance is part of what is remembered');
+    assert.notDeepEqual(seen.other[0].gids, seen.plain[0].gids, 'the text is part of what is remembered');
+    assert.equal(seen.larger[0].widthPx, seen.plain[0].widthPx * 2, 'the size scales the width');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
