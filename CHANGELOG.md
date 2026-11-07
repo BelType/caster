@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-11-07
 
+- **The development pin moves to Cicero 0.1.7**, whose root line-height provision is a floor of zero specificity: a fixture whose root declared no `line-height` is refused at intake (`I5`), so the page background fixture says `font: 11pt/1.4 F`. The printer is unchanged.
 - **A page counter counts on after a reset earlier in the document** (codeberg.org/BelType/caster issue 22). In a merged batch whose letters each reset the page counter, the footer printed "Pagina 1/4" on all four pages of a letter, while Chromium's print of the same pages counts 1/4 to 4/4. The second moment of reification asked the light-tree walk first, which still held the letter's `counter-reset: page 1` for every element after it, and the page host Cicero resets per page was never asked. `counter(page)` and `counter(pages)` now read the flat tree first and the walk only where nothing up it resets them. Measured on `provvedimento-imu`'s `batch.html` under Cicero's `main`: every footer of the 19 pages reads what `--printer chromium` reads, and nothing else in the text changed.
 - **A `::marker` number prints in its own colour and face, and its item keeps its height.** The text marker span took no paint of the marker's own, so a red or larger number printed in the item's colour and face, and a marker larger than the item's text made the item shorter once prepared (a 28 px marker on a 16 px item: 35.39 px natively, 22.39 px prepared). The span now takes the marker's colour, face and line height, and an outside one has no block size, so it pushes the line down and overhangs below it as Blink's marker does. A loose item's marker, out of the flow, still does not push its first block down where the marker is the larger.
 - **A list hidden with `visibility: hidden` prints no bullet.** A hidden list whose paragraphs are shown printed a disc beside each, which the page does not have.

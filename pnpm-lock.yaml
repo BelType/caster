@@ -13,8 +13,8 @@ importers:
         version: 0.1.2
     devDependencies:
       '@beltype/cicero':
-        specifier: 0.1.5
-        version: 0.1.5
+        specifier: 0.1.7
+        version: 0.1.7
       '@beltype/specimens':
         specifier: 0.1.0
         version: 0.1.0
@@ -54,8 +54,8 @@ importers:
 
 packages:
 
-  '@beltype/cicero@0.1.5':
-    resolution: {integrity: sha512-nw1IrZpknmpzx3CisafHS7vhrFyMYVRhJvYNzM+tlaMwb2uajD4BxburNh2BfygQ/PJXNiSMvn+RAc2SG0t6XA==}
+  '@beltype/cicero@0.1.7':
+    resolution: {integrity: sha512-cJ0TXCumuu8CpPihDVyeIslOumlYm3bY4+593uQ+6GmuWTIpEwWSb7zQmEo1eVDAvDaIWbhVNyVQxtyz2/NDRg==}
     engines: {node: '>=22'}
 
   '@beltype/common@0.1.1':
@@ -1028,7 +1028,7 @@ packages:
 
 snapshots:
 
-  '@beltype/cicero@0.1.5':
+  '@beltype/cicero@0.1.7':
     dependencies:
       '@beltype/common': 0.1.2
       css-tree: 3.2.1

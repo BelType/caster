@@ -55,7 +55,7 @@ async function printCase(css: string, options: Record<string, unknown> = {}): Pr
   const dirs: Record<string, string> = { ...engine.dirs, caster: path.join(PACKAGE, 'dist'), common: COMMON };
   const imports = Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/_beltype/common/${m}.js`]));
   const html = `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>case</title><script type="importmap">${JSON.stringify({ imports })}</script>${ciceroEngine.headHtml('/')}
-<style>@font-face { font-family: F; src: url("/fonts/CrimsonText-Regular.ttf"); } html { font: 11pt F; } p { margin: 0; } img, div { border: 3px solid red; padding: 2mm; } @page { size: A5; margin: 15mm; } .a { page: prima; border: 0; padding: 0; } .b { page: seguito; border: 0; padding: 0; } ${css}</style></head><body>${body}</body></html>`;
+<style>@font-face { font-family: F; src: url("/fonts/CrimsonText-Regular.ttf"); } html { font: 11pt/1.4 F; } p { margin: 0; } img, div { border: 3px solid red; padding: 2mm; } @page { size: A5; margin: 15mm; } .a { page: prima; border: 0; padding: 0; } .b { page: seguito; border: 0; padding: 0; } ${css}</style></head><body>${body}</body></html>`;
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
