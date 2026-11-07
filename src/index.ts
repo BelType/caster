@@ -158,6 +158,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
 
     // The gateway is the one thing that decides whether a URL may be read at all.
     const gateway = createGateway(input.manifest ?? new Map<any, any>());
+    // The `@page` images become elements of the strip here, before the survey and the walk, so each takes the road an artifact's `<img>` takes.
+    if (strip.seatPageImages && options.paintOrder === 'dom') throw new CasterError("caster: this document has an image as an @page background, and it is painted under the page's content by its paint order, which paintOrder: 'dom' does not read. Use paintOrder: 'css'.", { flag: 'paintOrder' });
+    await strip.seatPageImages?.(gateway);
 
     // 3 — needs and capability load. The walk's facts and the options decide which bundles to import; the loads run in parallel.
     const needs: ReportNeeds = surveyNeeds(doc, strip.strip, options);
