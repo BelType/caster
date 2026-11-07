@@ -122,7 +122,7 @@ const LISTS: Record<string, string> = {
 const TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rb rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
 
 test('reification', async (t) => {
-  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/counters': COUNTERS, '/marker-counter': MARKER_COUNTER, '/order': ORDER, ...Object.fromEntries(Object.entries(LISTS).map(([name, html]) => [`/list-${name}`, html])), '/quote': page('', '<p>a <q>b</q></p>'), '/plain': page('', '') };
+  const pages: Record<string, string> = { '/generated': GENERATED, '/universal': UNIVERSAL, '/letters': LETTERS, '/letters-nested': LETTERS_NESTED, '/nested': NESTED, '/nested-media': NESTED_MEDIA, '/scoped': SCOPED, '/counters': COUNTERS, '/marker-counter': MARKER_COUNTER, '/order': ORDER, ...Object.fromEntries(Object.entries(LISTS).map(([name, html]) => [`/list-${name}`, html])), '/quote': page('', '<p>a <q>b</q></p>'), '/quote-private': page('', '<p lang="x-klingon">a <q>b</q></p>'), '/plain': page('', '') };
   const serve = (host: (url: URL) => string|undefined) => http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     const text = host(url);
@@ -238,13 +238,17 @@ test('reification', async (t) => {
       assert.deepEqual(await generated('/foreign'), ['p.foreign ::before foreign']);
     });
 
-    await t.test('a quotation still refuses, though no sheet names it', async () => {
-      const tab = await open('/quote');
+    await t.test('a quotation is made real, though no sheet names it, in the marks of the page\'s language', async () => {
+      assert.deepEqual(await generated('/quote'), ['q ::after \u00bb', 'q ::before \u00ab']);
+    });
+
+    await t.test('a quotation in a language without marks of its own refuses, naming the language', async () => {
+      const tab = await open('/quote-private');
       const refused = await tab.evaluate(async () => {
         const { reify } = await import('/src/adapters/reify.js' as string);
         try { reify(document); return null; } catch (error) { return String((error as Error).message); }
       });
-      assert.match(refused ?? '', /open-quote/);
+      assert.match(refused ?? '', /lang="x-klingon"/);
     });
 
     await t.test('every way to style a first letter makes its span, and nothing else does', async () => {

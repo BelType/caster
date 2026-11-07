@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A quotation prints, with the marks the browser paints.** Any `<q>` refused the whole print, because `open-quote` and `close-quote` were words this printer could not express. They are now resolved from the pseudo's computed `quotes` with a depth the walk counts in document order (CSS Generated Content 3): an open quote paints the pair its depth picks, a close quote the pair it lands on and nothing at depth zero, `no-open-quote` and `no-close-quote` move the depth and paint nothing, and the depth is kept per style containment scope, as Blink keeps it. `quotes: auto` takes the marks of the element's language, which for a `<q>` or a `<blockquote>` is the language around it and not its own `lang` (measured in Chromium's print: `<div lang="de"><q lang="fr">` paints `„ “`), from a table read off the pinned Chromium (`src/adapters/quoteMarks.ts`, written by `scripts/quote-marks.ts`), with ICU's fallback from a tag to its shorter tag. What still refuses, by name: a language tag whose primary subtag is not two or three letters (`x-…`, `i-…`), which the table did not ask; a `quotes` value that is not `auto`, `none` or pairs of strings; a pseudo that holds a quote and also waits for a value the engine delivers; and a quote mark first generated after an earlier reification, since its depth counts quote marks that are spans by then.
+
 ## 0.2.2 — 2026-11-07
 
 - **The inline formula's known defect is healed.** With the formula read where it stands, the acceptance's entry for it excused nothing and failed the check by its own rule, so it is removed; the sequence diagram's labels and arrowheads remain the one named defect.

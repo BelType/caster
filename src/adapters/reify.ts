@@ -26,6 +26,7 @@ import { CasterError } from '../errors.ts';
 import { stylesMention } from '../colour/colorHints.ts';
 import { paintsDecoration } from '../vectors/cssBoxes.ts';
 import { ASCENT_ATTRIBUTE, SHAPE_ATTRIBUTE, SHAPE_MARKERS, markerBox } from '../vectors/listMarkers.ts';
+import { BASIC_QUOTES, QUOTE_MARKS } from './quoteMarks.ts';
 
 /** The class the guide's engine contract names, and `walk/structure.js`'s `LI` and `FENote` branches look for. */
 export const MARKER_CLASS = 'marker';
@@ -79,6 +80,17 @@ function copyStyle(view: Window, span: HTMLElement, style: CSSStyleDeclaration, 
 /** One counter in scope during the walk, and the depth of the element that created it. */
 export type Scope = { name: string, value: number, ownerDepth: number };
 
+/**
+ * The quote depth of one reification, kept per style containment scope (the root's is under `null`), and whether a quote mark was made.
+ *
+ * @remarks
+ * CSS Generated Content 3 §2.2: `open-quote` and `no-open-quote` raise the depth by one, `close-quote` and `no-close-quote` lower it, never below zero, and the mark is the pair the depth picks. Blink keeps the depth per style containment scope: a scope starts at the depth its parent scope stood at, and what it moves does not leave it (`StyleContainmentScope`). The walk passes the pseudos in document order, which is the order the depth is counted in.
+ */
+export type QuoteState = { depths: Map<Element|null, number>, made: boolean };
+
+/** The attribute on a span whose text holds a quote mark, which a later reification has to know is there. */
+const QUOTE_ATTRIBUTE = 'data-caster-quote';
+
 /** One list item's marker, made a real span. */
 export type ReifiedMarker = {
   /** The list item — an `<li>` or any element whose computed display was `list-item`; the key keeps its name so the shape is `Preparation.markers`'s. */
@@ -128,6 +140,9 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   const pseudos = namedHosts(doc, 'before|after', 'q');
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
+  // A reification after the first one finds the earlier quote marks already spans, and their depth gone with the pseudos that counted it.
+  const quotes: QuoteState = { depths: new Map(), made: false };
+  const earlierQuotes = doc.querySelector(`[${QUOTE_ATTRIBUTE}]`) !== null;
   const apply = (style: CSSStyleDeclaration, depth: number, element?: Element) => {
     const implicit = element ? implicitListItem(element, style) : null;
     const resets = pairsOf(style.counterReset);
@@ -169,15 +184,15 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   /** An element's marker, its `::before` and its first letter: what stands before its children. */
   const open = (element: Element, style: CSSStyleDeclaration, depth: number) => {
     // `::marker` is the item's first box, so it goes first; then `::before`, then the children. The element's own counters have moved before any of the three reads them.
-    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, ordinalOf, out, writes) : null;
-    const before = mayHold(pseudos, element) ? pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes) : null;
+    const marker = style.display === 'list-item' ? markerSpan(view, (element as HTMLElement), style, scopes, ordinalOf, out, writes, quotes) : null;
+    const before = mayHold(pseudos, element) ? pseudoSpan(view, element, '::before', scopes, apply, depth + 1, out, reads, writes, quotes) : null;
     if (before) writes.push(() => element.insertBefore(before, element.firstChild));
     if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
     // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
     if (!before && !marker && mayHold(letters, element)) firstLetterSpan(view, element, style, writes);
   };
   const close = (element: Element, depth: number) => {
-    const after = mayHold(pseudos, element) ? pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes) : null;
+    const after = mayHold(pseudos, element) ? pseudoSpan(view, element, '::after', scopes, apply, depth + 1, out, reads, writes, quotes) : null;
     if (after) writes.push(() => element.append(after));
   };
   /** One element: its counters, its marker and `::before`, its children, its `::after`, then the scopes it closes. */
@@ -208,6 +223,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   } else {
     walk(doc.documentElement, 0);
   }
+  if (quotes.made && earlierQuotes) throw new CasterError(`caster: a quote mark is generated after an earlier reification made others real, so its depth, which counts every quote before it, is not known here. A quote mark a paginator generates on its own pages is not one this printer can express yet; the document's own quote marks are.`);
   for (const write of writes) write();
 
   return out;
@@ -295,7 +311,7 @@ function mayHold(hosts: Set<Element>|null, element: Element) {
  * @param writes - Where the item's own write is queued.
  * @throws {CasterError} An `<li>`'s marker this printer cannot express; another list item's becomes a warning instead.
  */
-function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration, scopes: Scope[], ordinalOf: (item: Element) => number, out: Reification, writes: (() => void)[]): HTMLElement|null {
+function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration, scopes: Scope[], ordinalOf: (item: Element) => number, out: Reification, writes: (() => void)[], quotes: QuoteState): HTMLElement|null {
   if (item.querySelector(`:scope > .${MARKER_CLASS}`)) return null;
   const hangs = style.listStylePosition !== 'inside' && opensWithBlock(view, item);
   const parent = item.parentElement;
@@ -328,7 +344,7 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
     }
   } else {
     source = '::marker';
-    text = resolveGenerated(content, item, scopes, domPathish(item), '::marker');
+    text = resolveGenerated(content, item, scopes, domPathish(item), '::marker', quotes);
   }
   // The native marker goes, and `list-style-type` stays: `/ListNumbering` is read from it.
   writes.push(() => item.style.setProperty('display', 'block', 'important'));
@@ -342,6 +358,7 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   // The marker's own colour and face, as a shape marker takes them, written after the hanging box's `cssText`, which would replace them: a `::marker` set apart from its item printed in the item's paint, and an outside marker in a larger face made its line shorter than the native marker did (measured 2026-11-07, a 28 px marker on a 16 px item: 35.39 px tall natively, 22.39 px with the span in the item's face). Its line height too, which a `font` shorthand on `::marker` resets. The outside box has no block size, so its ascent pushes the line down as Blink's marker does and its descent overhangs as Blink's does: with a block size of its own the same item was 39.19 px tall. `test/reifyMarkers.test.ts` holds the sizes measured.
   copyMarkerPaint(span, markerStyle);
   span.style.setProperty('line-height', markerStyle.lineHeight);
+  if (holdsQuote(content)) span.setAttribute(QUOTE_ATTRIBUTE, '');
   out.markers.push({ li: item, text, source });
   return span;
 }
@@ -517,17 +534,19 @@ function implicitListItem(element: Element, style: CSSStyleDeclaration): { reset
  * @param writes - Where the element's own write is queued.
  * @throws {CasterError} A generated `content` this printer cannot express.
  */
-function pseudoSpan(view: Window, element: Element, which: '::before'|'::after', scopes: Scope[], apply: (style: CSSStyleDeclaration,depth: number) => void, depth: number, out: Reification, reads: string[]|null, writes: (() => void)[]): HTMLElement|null {
+function pseudoSpan(view: Window, element: Element, which: '::before'|'::after', scopes: Scope[], apply: (style: CSSStyleDeclaration,depth: number) => void, depth: number, out: Reification, reads: string[]|null, writes: (() => void)[], quotes: QuoteState): HTMLElement|null {
   if (element.classList.contains(which === '::before' ? SUPPRESS_CLASS.before : SUPPRESS_CLASS.after)) return null;
   const style = view.getComputedStyle(element, which);
   const content = style.content;
   if (!content || content === 'none' || content === 'normal') return null;
   if (reads && (READS_PAGE.test(content) || (reads.length && waitsForReads(view, element, which, content, reads)))) {
+    // Left native, it would count no depth now, and counted in the second moment it would stand at the depth of a walk that sees none of the quote marks before it.
+    if (holdsQuote(content)) throw new CasterError(`caster: content on ${domPathish(element)}${which} holds a quote mark and also reads a value the engine has not delivered yet, so the quote's depth cannot be counted where the pseudo is made real. Either alone is one this printer can express.`, { element: domPathish(element) });
     out.deferred.push(`${domPathish(element)}${which}`);
     return null;
   }
   apply(style, depth);
-  const text = resolveGenerated(content, element, scopes, domPathish(element), which);
+  const text = resolveGenerated(content, element, scopes, domPathish(element), which, quotes);
   // An empty `content` still generates a box, and one that paints, the frame `content: ""` and a border draw, is made real like any other so the box painter sees it (issue 8).
   if (text === '' && !paintsDecoration(style)) return null;
   // Such a box is sized by its used width and height, which before the run are the unpaginated page's, so it waits for the second moment as a pseudo that reads a delivered value does.
@@ -540,6 +559,7 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   span.textContent = text;
   // The pseudo's own painting, carried onto the span: without it the number would take the heading's colour and face rather than the ones the author gave the marker.
   copyStyle(view, span, style, element);
+  if (holdsQuote(content)) span.setAttribute(QUOTE_ATTRIBUTE, '');
   writes.push(() => element.classList.add(which === '::before' ? SUPPRESS_CLASS.before : SUPPRESS_CLASS.after));
   out.generated.push({ element: domPathish(element), pseudo: which, text });
   return span;
@@ -679,11 +699,12 @@ function domPathish( element: Element) {
  * A computed `content` value, resolved to the text the box paints.
  *
  * @remarks
- * Strings, `counter()`, `counters()` and `attr()` are the four this printer can express. An image, a quote pair, `element()` or an unresolved `var()` refuses by name: a hole where the author put a marker is the one outcome worse than a refusal, because the page still looks deliberate.
+ * Strings, `counter()`, `counters()`, `attr()` and the four quote words are what this printer can express. An image, `element()` or an unresolved `var()` refuses by name: a hole where the author put a marker is the one outcome worse than a refusal, because the page still looks deliberate.
  *
- * @throws {CasterError} An image, a quote pair, `element()`, an unresolved `var()`, or any other value that is not a string, `counter()`, `counters()` or `attr()`.
+ * @param quotes - The walk's quote depth, which a quote word moves; a fresh one where none is kept.
+ * @throws {CasterError} An image, `element()`, an unresolved `var()`, a quote mark {@link quoteMark} cannot name, or any other value that is not a string, `counter()`, `counters()`, `attr()` or a quote word.
  */
-export function resolveGenerated(content: string, element: Element, scopes: Scope[], domPath: string, which: string): string {
+export function resolveGenerated(content: string, element: Element, scopes: Scope[], domPath: string, which: string, quotes: QuoteState = { depths: new Map(), made: false }): string {
   let out = '';
   const pattern = /"((?:[^"\\]|\\.)*)"|([a-zA-Z-]+)\(([^()]*)\)|(\S+)/g;
   for (const match of content.matchAll(pattern)) {
@@ -705,15 +726,97 @@ export function resolveGenerated(content: string, element: Element, scopes: Scop
         continue;
       }
       if (fn === 'attr') { out += element.getAttribute(args[0]) ?? ''; continue; }
-      throw new CasterError(`caster: content: ${fn}() on ${domPath}${which} is not one this printer can express. Strings, counter(), counters() and attr() are; an image or a quote pair is not, and a marker silently dropped leaves a page that still looks deliberate.`, { element: domPath });
+      throw new CasterError(`caster: content: ${fn}() on ${domPath}${which} is not one this printer can express. Strings, counter(), counters(), attr() and the quote words are; an image is not, and a marker silently dropped leaves a page that still looks deliberate.`, { element: domPath });
     }
     const bare = match[4];
     // A computed `content` may carry an alt text after a `/` between values; the alt is the accessible name, and the painted text is what comes before it. A slash inside a string was read as a string above.
     if (bare === '/') break;
     if (bare === 'none' || bare === 'normal' || bare === '') continue;
-    throw new CasterError(`caster: content: ${bare} on ${domPath}${which} is not one this printer can express. Strings, counter(), counters() and attr() are.`, { element: domPath });
+    if (QUOTE_WORDS.has(bare)) { out += quoteMark(element, which, bare, quotes, domPath); continue; }
+    throw new CasterError(`caster: content: ${bare} on ${domPath}${which} is not one this printer can express. Strings, counter(), counters(), attr() and the quote words are.`, { element: domPath });
   }
   return out;
+}
+
+/** The four quote words of `content`. */
+const QUOTE_WORDS = new Set(['open-quote', 'close-quote', 'no-open-quote', 'no-close-quote']);
+/** Whether a computed `content` holds a quote word outside its strings. */
+const holdsQuote = (content: string) => /(?:^|\s)(?:no-)?(?:open|close)-quote(?:\s|$)/.test(content.replace(/"(?:[^"\\]|\\.)*"/g, '""'));
+
+/** The style containment scope an element's pseudo-elements count their quotes in: the nearest element up, itself included, whose `contain` holds `style`, or null for the document's. */
+function containmentOf(view: Window, element: Element|null): Element|null {
+  for (let up = element; up; up = up.parentElement) if (/\b(?:style|strict|content)\b/.test(view.getComputedStyle(up).contain)) return up;
+  return null;
+}
+
+/** The depth a scope stands at, which a scope met for the first time takes from the scope around it. */
+function depthIn(view: Window, quotes: QuoteState, scope: Element|null): number {
+  let depth = quotes.depths.get(scope);
+  if (depth === undefined) quotes.depths.set(scope, depth = scope ? depthIn(view, quotes, containmentOf(view, scope.parentElement)) : 0);
+  return depth;
+}
+
+/**
+ * The text one quote word paints, and the depth it leaves (CSS Generated Content 3 §2.2).
+ *
+ * @remarks
+ * The pairs are the pseudo's computed `quotes`: its strings, none for `none`, and for `auto` the marks Chromium renders in the element's language ({@link marksOf}). A depth past the last pair takes the last, and a `close-quote` at depth zero paints nothing, as Blink's `LayoutQuote` does.
+ *
+ * @throws {CasterError} A `quotes` value or a language this printer has no marks for.
+ */
+function quoteMark(element: Element, which: string, word: string, quotes: QuoteState, domPath: string): string {
+  const view = element.ownerDocument.defaultView as Window;
+  const scope = containmentOf(view, element);
+  const depth = depthIn(view, quotes, scope);
+  const opens = word.endsWith('open-quote');
+  quotes.depths.set(scope, opens ? depth + 1 : Math.max(0, depth - 1));
+  quotes.made = true;
+  if (word.startsWith('no-') || (!opens && depth === 0)) return '';
+  const value = view.getComputedStyle(element, which).quotes;
+  let pairs: readonly string[];
+  if (value === 'none') return '';
+  if (value === 'auto') pairs = marksOf(languageOf(element), domPath, which);
+  else {
+    pairs = [...value.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((match) => match[1]!.replace(/\\(.)/g, '$1'));
+    if (pairs.length === 0 || pairs.length % 2 !== 0) throw new CasterError(`caster: quotes: ${value} on ${domPath}${which} is not one this printer can express. auto, none and pairs of strings are.`, { element: domPath });
+  }
+  const at = Math.min(opens ? depth : depth - 1, pairs.length / 2 - 1);
+  return pairs[at * 2 + (opens ? 0 : 1)]!;
+}
+
+/**
+ * The language whose marks `quotes: auto` paints on an element's pseudos: the `lang` of the nearest element up, through a shadow root to its host, or the empty string where none is given.
+ *
+ * @remarks
+ * A `<q>` or a `<blockquote>` takes its marks from the language around it, not its own: measured 2026-11-07 in the pinned Chromium's print, `<div lang="de"><q lang="fr">` paints `„ “` and `<div lang="de"><p lang="fr">` with an `open-quote` paints `«`, and the same holds for a `<blockquote>`; a quote nested in it then speaks its language.
+ */
+function languageOf(element: Element): string {
+  const quotation = element.namespaceURI === 'http://www.w3.org/1999/xhtml' && (element.localName === 'q' || element.localName === 'blockquote');
+  const start = quotation ? element.parentElement ?? ((element.getRootNode() as ShadowRoot).host ?? null) : element;
+  for (let up: Element|null = start; up; up = up.parentElement ?? ((up.getRootNode() as ShadowRoot).host ?? null)) {
+    const lang = up.getAttribute('lang');
+    if (lang !== null) return lang;
+  }
+  return '';
+}
+
+/**
+ * The four marks `quotes: auto` paints in a language, open and close at the first depth and then the second.
+ *
+ * @remarks
+ * Looked up in the table read off Chromium (`quoteMarks.ts`, written by `scripts/quote-marks.ts`) under the tag and then under each shorter tag, as ICU falls back from a locale to its parent. No language, or one Blink has nothing for, paints `“ ” ‘ ’`. Every primary language of two and three letters was asked, so only a longer one, or a private or grandfathered tag (`x-…`, `i-…`), is a language whose marks are not known.
+ *
+ * @throws {CasterError} A primary language subtag that is not two or three letters.
+ */
+function marksOf(lang: string, domPath: string, which: string): readonly string[] {
+  const tag = lang.trim().toLowerCase().replace(/_/g, '-');
+  if (tag === '') return BASIC_QUOTES;
+  for (let at = tag; at; at = at.slice(0, Math.max(0, at.lastIndexOf('-')))) {
+    const marks = QUOTE_MARKS[at];
+    if (marks) return marks;
+  }
+  if (!/^[a-z]{2,3}(?:-|$)/.test(tag)) throw new CasterError(`caster: quotes: auto on ${domPath}${which} paints the quote marks of lang="${lang}", a language this printer has no marks for: the table read off Chromium holds every language of two and three letters. A quotes value of strings is one it can express.`, { element: domPath });
+  return BASIC_QUOTES;
 }
 
 /** A counter's value in a `list-style-type`-shaped style, without the marker suffix `counterText` adds — generated content carries its own punctuation in the author's own string. */
