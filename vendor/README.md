@@ -15,9 +15,9 @@ Each is loaded by `src/capabilities.js` through `new URL(rel, import.meta.url)`,
 | `lcms.wasm` | lcms-wasm/dist/lcms.wasm | 315910 | located by lcms.js through import.meta.url |
 | `harfbuzz.js` | harfbuzzjs 1.6.1, rebuilt | 41194 | shaping that reproduces every browser width and glyph sequence, marks included. Emscripten glue: `harfbuzz.wasm` must sit beside this file |
 | `harfbuzz.wasm` | harfbuzzjs 1.6.1, rebuilt | 456589 | located by harfbuzz.js through import.meta.url |
-| `forme.js` | forme d2ac7f2, built | 11355 | the Rust writer's glue, wasm-bindgen `--target web`: the `Writer` class `emit/forme.js` calls under `writer: 'forme'`: imported in a page by its worker, `emit/formeWorker.js`, and instantiated there from the module the page compiled, and initialised in node with the bytes the registry read |
-| `forme_bg.wasm` | forme d2ac7f2, built | 940796 | the Rust writer: the display list in, the file and the records out. Fetched by the registry; compiled once in a page and posted to the worker, handed to the glue's `initSync` in node |
-| `forme-NOTICE.txt` | forme d2ac7f2, built | 7928 | forme's `NOTICE`: the notices of the code subsetter adapts, and what forme's copies of skrifa, write-fonts, hayro-write and hayro-syntax change, which travel with the module |
+| `forme.js` | forme v0.1.0 (d2ac7f2), built | 11355 | the Rust writer's glue, wasm-bindgen `--target web`: the `Writer` class `emit/forme.js` calls under `writer: 'forme'`: imported in a page by its worker, `emit/formeWorker.js`, and instantiated there from the module the page compiled, and initialised in node with the bytes the registry read |
+| `forme_bg.wasm` | forme v0.1.0 (d2ac7f2), built | 940796 | the Rust writer: the display list in, the file and the records out. Fetched by the registry; compiled once in a page and posted to the worker, handed to the glue's `initSync` in node |
+| `forme-NOTICE.txt` | forme v0.1.0 (d2ac7f2), built | 7928 | forme's `NOTICE`: the notices of the code subsetter adapts, and what forme's copies of skrifa, write-fonts, hayro-write and hayro-syntax change, which travel with the module |
 
 ## `harfbuzz.js` and `harfbuzz.wasm` are rebuilt, not copied
 
