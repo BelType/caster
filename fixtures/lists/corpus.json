@@ -20,9 +20,9 @@
   {
    "name": "cast",
    "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
-   "sha256": "a1bb53f766281f7baa12dc44344e980537a83343c5c70471cbd77cea17ca9013",
-   "bytes": 35149,
-   "cli": "same",
+   "sha256": "e6d82af1ea35a94b7720b324b507ada6cc28461b429c02a459b92aa19689cff1",
+   "bytes": 35142,
+   "cli": "differs: first differing byte at offset 22213 (recorded 35142 bytes, now 35149), in object 31 recorded and object 31 now",
    "list": {
     "bytes": 90464,
     "blobs": [
@@ -35,8 +35,8 @@
   {
    "name": "cast-divided-row",
    "why": "a table row divided across pages",
-   "sha256": "3461f43e3af0c5be77a94fbdd22acf89a65546dbef15732f0f59d2ad8825f4ed",
-   "bytes": 22462,
+   "sha256": "40c3537d99837d36efd89cfe7c5c8d21a3cb75425c1a7121ac17098f36455f81",
+   "bytes": 22467,
    "list": {
     "bytes": 92446,
     "blobs": [

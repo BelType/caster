@@ -296,7 +296,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
 
     // From here to the end nothing adds, removes or moves an element under the strip, so every address is counted once again (`holdDomPaths`).
     holdDomPaths();
-    const order = paintOrderOf(container);
+    const order = paintOrderOf(container, strip.pages.flatMap((page) => page.flow));
 
     // One `beginChains` for the whole export. A second would capture the `transform: none` the first wrote. Declared outside the `try` so the `finally` can restore it however the export ends.
     // R5's clip, measured once per page before the chains are opened, page-local. The foot is the flow box's bottom, which is the cut's extent and so the boundary a straddling block's tail is clipped at (*R5's clip boundary is `.flow`, not `.content-area`*, S22). The head is the page box — the page element's own top, which is where page-local px begin — because that is the engine's clip there: ink above the page area and inside the page box is painted, ink above the page box is not (*R5's head is the page box and its foot is the cut*, S69).
