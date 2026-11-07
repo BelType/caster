@@ -132,13 +132,23 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
   const release = lock();
   let chains: ChainContext|null = null;
   let t = now();
-  const step = ( name: string) => { stage(report, name, now() - t); t = now(); input.onStage?.(name); };
+  /** The pages this print reads. An engine that cuts again mid-print replaces them, and nothing read after that is about the document (codeberg.org/BelType/caster issue 21). */
+  let standing: Element[] = [];
+  const replaced = () => standing.some((page) => !page.isConnected);
+  const REPLACED = 'caster: the pages were replaced while they were being printed: the engine cut the document again, which it does when a box changes size or a face arrives after the cut';
+  const step = ( name: string) => {
+    if (replaced()) throw new CasterError(`${REPLACED}.`);
+    stage(report, name, now() - t);
+    t = now();
+    input.onStage?.(name);
+  };
 
   try {
     // 1b — every page built. Cicero builds a page's content only as the reader nears it and in idle time (*only the pages near the reader are built*, 2026-10-12), and the printer reads all of them; an engine with no such door (Paged.js) has built every page already, and a host's own strip is its own.
     if (!input.strip) await ((view as unknown) as { __beltypeCicero?: { buildAll?: () => Promise<unknown> } }).__beltypeCicero?.buildAll?.();
     // 2 — adapt. The engine's DOM becomes a `PageStrip` (§5) — or the host hands one over (*`print()` takes a strip from its host*, S62), because a strip is a fact about a DOM and not about an engine: a row of sized boxes nobody paginated is one. Otherwise which engine is read off the document — each leaves one root that the other never writes — and the printer refuses a document carrying both or neither by name rather than measuring the first thing it finds.
     const strip = input.strip ?? adaptStrip(doc);
+    standing = strip.pageElements;
     report.page = { widthPt: strip.pages[0].nominal.widthPt, heightPt: strip.pages[0].nominal.heightPt };
     // THE TILING INVARIANT (S71), beside the conservation of words (which still runs after the measurement): each word of the source on exactly one page. Both adapters derive the record; a host's own strip gets it derived here, every node its own source.
     const intervals = strip.intervals ?? (input.strip ? deriveIntervals(strip) : null);
@@ -148,6 +158,9 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
 
     // The gateway is the one thing that decides whether a URL may be read at all.
     const gateway = createGateway(input.manifest ?? new Map<any, any>());
+    // The `@page` images become elements of the strip here, before the survey and the walk, so each takes the road an artifact's `<img>` takes.
+    if (strip.seatPageImages && options.paintOrder === 'dom') throw new CasterError("caster: this document has an image as an @page background, and it is painted under the page's content by its paint order, which paintOrder: 'dom' does not read. Use paintOrder: 'css'.", { flag: 'paintOrder' });
+    await strip.seatPageImages?.(gateway);
 
     // 3 — needs and capability load. The walk's facts and the options decide which bundles to import; the loads run in parallel.
     const hinted = declaresHints(doc);
@@ -562,8 +575,10 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     report.warnings.push(...unreadableFamilies(table).map((f) => `the family ${JSON.stringify(f)} is declared but its bytes could not be read; nothing resolved to it in this document, so the export continued`));
     return { bytes: emitted.bytes, report, pageStreams: emitted.pageStreams ?? [], displayList, displayListMs };
   } catch (error) {
-    recordProblem(report, error);
-    throw error;
+    // What fails on pages that are gone is only the first thing to notice, so the refusal names the cause and keeps that message beside it.
+    const refusal = replaced() && !String((error as Error | undefined)?.message).startsWith(REPLACED) ? new CasterError(`${REPLACED}. What noticed it: ${(error as Error | undefined)?.message ?? error}`) : error;
+    recordProblem(report, refusal);
+    throw refusal;
   } finally {
     // `end()` is idempotent and restores every inline transform the chain builder wrote. It ran only on the happy path, so a throw anywhere in the collectors or the measurement left `transform: none` on the author's own elements — contained today because the print frame is discarded after an export, and a leak the moment anything prints from a live document.
     chains?.end();

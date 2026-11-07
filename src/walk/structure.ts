@@ -1010,7 +1010,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const style = getComputedStyle(element);
             if ((element.textContent ?? '').trim() !== '')
                 block((element as HTMLElement), `artifact:${kind}`, descriptor.path);
-            if (kind === 'layout')
+            // A transparent box paints nothing; `parseRgb` reads it as black, which drops the alpha.
+            if (kind === 'layout' && style.backgroundColor !== 'rgba(0, 0, 0, 0)')
                 paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(style.backgroundColor) });
             // An artifact is outside the tree entirely, and so is everything in it — but it is still painted, so an image inside one is collected here and owned by the artifact. That is what a logo in a running header is: the same XObject on every page, never a Figure, never in the tree, and never asked for an /Alt it has no business carrying.
             for (const inner of element.querySelectorAll('img')) {

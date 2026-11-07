@@ -59,6 +59,23 @@ const SUPPRESS_ID = 'caster-generated-style';
  */
 const NOT_COPIED = new Set(['content', 'counter-reset', 'counter-increment', 'counter-set']);
 
+/**
+ * A pseudo's computed style, written on the span that replaces it.
+ *
+ * @remarks
+ * A computed `line-height` is a rounded reading: 13.3333 px at 1.65 lays out 21.98 px and reads `22px`, and that number written on the span makes the line a pixel taller, which moves the page before the cut and makes Cicero cut again after it (codeberg.org/BelType/caster issue 21). A line height the span would inherit anyway is therefore left to inheritance, which keeps the exact value. A pseudo that sets a different one still gets the rounded reading.
+ *
+ * @param parent - The element the span will stand in.
+ */
+function copyStyle(view: Window, span: HTMLElement, style: CSSStyleDeclaration, parent: Element): void {
+  const inherited = view.getComputedStyle(parent).lineHeight;
+  for (const property of style) {
+    if (NOT_COPIED.has(property)) continue;
+    if (property === 'line-height' && style.lineHeight === inherited) continue;
+    span.style.setProperty(property, style.getPropertyValue(property));
+  }
+}
+
 /** One counter in scope during the walk, and the depth of the element that created it. */
 export type Scope = { name: string, value: number, ownerDepth: number };
 
@@ -425,10 +442,7 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   span.className = GENERATED_CLASS;
   span.textContent = text;
   // The pseudo's own painting, carried onto the span: without it the number would take the heading's colour and face rather than the ones the author gave the marker.
-  for (const property of style) {
-    if (NOT_COPIED.has(property)) continue;
-    span.style.setProperty(property, style.getPropertyValue(property));
-  }
+  copyStyle(view, span, style, element);
   writes.push(() => element.classList.add(which === '::before' ? SUPPRESS_CLASS.before : SUPPRESS_CLASS.after));
   out.generated.push({ element: domPathish(element), pseudo: which, text });
   return span;
@@ -466,7 +480,7 @@ function firstLetterSpan(view: Window, element: Element, style: CSSStyleDeclarat
   if (!text || !match) return;
   const span = doc.createElement('span');
   span.className = FIRST_LETTER_CLASS.letter;
-  for (const property of letter) span.style.setProperty(property, letter.getPropertyValue(property));
+  copyStyle(view, span, letter, text.parentElement as Element);
   const at = text;
   writes.push(() => {
     const rest = at.splitText(match[1].length);

@@ -65,7 +65,9 @@ export function adaptPagedjs(doc: Document, { note }: { note?: (note: Derivation
   pageElements.forEach((element, index) => {
     for (const box of [element.querySelector('.pagedjs_pagebox'), element.querySelector('.pagedjs_sheet'), element]) {
       if (!box) continue;
-      const ground = groundOf(view.getComputedStyle(box).backgroundColor);
+      const style = view.getComputedStyle(box);
+      if (style.backgroundImage !== 'none') throw new CasterError(`caster: the @page background on page ${index + 1} is ${style.backgroundImage}, and this printer places a page's image only on the pages Cicero presents. A colour is placed; an image would be dropped, and a page whose ground the author chose is not one to drop in silence.`, { element: `page ${index + 1}` });
+      const ground = groundOf(style.backgroundColor);
       if (ground) { backgrounds.push({ page: index, rgb: ground }); break; }
     }
   });

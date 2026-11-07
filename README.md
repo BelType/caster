@@ -329,7 +329,7 @@ A print job cannot recover from a colour the author demanded and the exporter qu
 | Alternatives | an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, an inline `<svg>` with no `<title>`, `aria-label` or `aria-hidden`; a `role="img"` with no `aria-label`, a `role="heading"` with no `aria-level`, a `role="listitem"` outside a list |
 | Images | a 12-bit JPEG; an `<img>` the engine broke across pages; an SVG-in-`<img>` with an `object-fit` other than `fill` or `contain`, a non-default `object-position`, or bytes that are not SVG |
 | Colour | a `--pdf-*` hint that does not parse; `--pdf-background-color`, `--pdf-border-*-color`, `--pdf-fill` and `--pdf-stroke`, which the painting does not read |
-| CSS | a `list-style-type` outside the marker table; `text-transform: full-width` or `full-size-kana`; `content: url()` and quote functions in a pseudo-element; a `background-image` in `@page` |
+| CSS | a `list-style-type` outside the marker table; `text-transform: full-width` or `full-size-kana`; `content: url()` and quote functions in a pseudo-element; a `background-image` in `@page` that is not one `url()`, whose tile repeats inside the page, or that sets `background-origin`, `background-clip`, `background-attachment` or `background-blend-mode`; any under Paged.js |
 | Flags | `shaper: 'fontkit'`, `subset: 'pdf-lib'`, `convertRgb: 'endpoint'`; any unknown flag or value |
 | Run | a second `print()` while one runs; a browser that is not Blink; a document carrying both engines' roots |
 

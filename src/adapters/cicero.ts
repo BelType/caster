@@ -15,12 +15,15 @@ import { CasterError } from '../errors.ts';
 import { PX_TO_PT } from '../coordinates/units.ts';
 import { domPathOf } from '../measure/textMeasure.ts';
 import { ARTIFACT_ATTRIBUTE } from '../walk/structure.ts';
+import { backgroundTile } from '../vectors/cssBoxes.ts';
+import { lengthPercentage, shapeTokens } from '../vectors/pathData.ts';
 import { TABLE_REPEAT_ATTRIBUTE } from '../walk/tableModel.ts';
 import { deriveIntervals } from './intervals.ts';
 import { GENERATED_CLASS, pairsOf, reify, resolveGenerated } from './reify.ts';
 
 import type { PageStrip, StripPage } from './strip.ts';
 import type { DerivationNote } from './intervals.ts';
+import type { Gateway } from '../host/gateway.ts';
 
 /**
  * `<beltype-root>` as the adapter asks it: the element, and the one verb of the engine's it reads.
@@ -199,7 +202,8 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
     return page;
   };
 
-  const adapted: PageStrip = { strip, probeRoot: shadow, pageElements, pages, pageOfNode, twinOf: (element) => twins.get(element) ?? null, transparent: (element) => isEngineMark(element) && !element.hasAttribute(ARTIFACT_ATTRIBUTE), lang, pageElementOf, inMargin: (element) => marginRoots.has((topOf(element, strip) as Element)), backgrounds: pageBackgroundsOf(pages) };
+  const { backgrounds, images } = pageBackgroundsOf(pages);
+  const adapted: PageStrip = { strip, probeRoot: shadow, pageElements, pages, pageOfNode, twinOf: (element) => twins.get(element) ?? null, transparent: (element) => isEngineMark(element) && !element.hasAttribute(ARTIFACT_ATTRIBUTE), lang, pageElementOf, inMargin: (element) => marginRoots.has((topOf(element, strip) as Element)), backgrounds, ...(images.length ? { seatPageImages: (gateway: Gateway) => seatPageImages(images, strip, marginRoots, gateway) } : {}) };
   // The record (*an interval is a marked-content sequence*, DESIGN.md S71), derived from the pairing just made: an original presented whole is its own source, an element inside a clone is its twin's, and what the engine wrote itself — the Compositor's marks and its hyphen — is sourceless.
   adapted.intervals = deriveIntervals(adapted, {
     note,
@@ -616,21 +620,127 @@ function topOf(element: Element, strip: Element) {
  *
  * **A translucent background is composited against white here, not carried as an alpha.** A page's ground has nothing behind it: the sheet is the bottom of the stack, so `rgba(0, 0, 0, 0.1)` over a page is `rgb(230, 230, 230)`, and computing it at the source spares the emitter an `ExtGState` for a blend whose other operand is known.
  *
- * A `background-image` — a gradient, a texture — refuses by name. It is paintable through the raster fallback the collectors already have, and doing it properly means placing it against the page box rather than an element box; a printer that dropped it silently would hand back a page whose ground the author chose and the file does not have.
+ * A `background-image` is read here and placed by {@link seatPageImages}; {@link pageImageUrl} refuses what cannot be placed.
  *
- * @throws {CasterError} A page's `@page` background is an image.
+ * @throws {CasterError} Whatever {@link pageImageUrl} refuses.
  */
-function pageBackgroundsOf(pages: StripPage[]): { page: number; rgb: [number,number,number]; }[] {
-  const out = [];
+function pageBackgroundsOf(pages: StripPage[]): { backgrounds: { page: number; rgb: [number,number,number]; }[]; images: PageImage[]; } {
+  const backgrounds = [];
+  const images: PageImage[] = [];
   for (const page of pages) {
     const style = getComputedStyle(page.element);
-    if (style.backgroundImage && style.backgroundImage !== 'none') {
-      throw new CasterError(`caster: the @page background on page ${page.index + 1} is an image (${style.backgroundImage}), which this printer does not place against a page box yet. A colour is placed; an image would be dropped, and a page whose ground the author chose is not one to drop in silence.`, { element: `page ${page.index + 1}` });
-    }
+    const url = pageImageUrl(style, page.index);
+    if (url) images.push({ page, url, backgroundSize: style.backgroundSize, backgroundPosition: style.backgroundPosition, backgroundRepeat: style.backgroundRepeat });
     const ground = groundOf(style.backgroundColor);
-    if (ground) out.push({ page: page.index, rgb: ground });
+    if (ground) backgrounds.push({ page: page.index, rgb: ground });
   }
-  return out;
+  return { backgrounds, images };
+}
+
+/** One page's `@page` image, read before anything is written to the document. */
+type PageImage = { page: StripPage; url: string; backgroundSize: string; backgroundPosition: string; backgroundRepeat: string; };
+
+/** The background properties a page image does not model, each with the one value it honours. */
+const PAGE_IMAGE_PINNED = [['backgroundOrigin', 'background-origin', 'padding-box'], ['backgroundClip', 'background-clip', 'border-box'], ['backgroundAttachment', 'background-attachment', 'scroll'], ['backgroundBlendMode', 'background-blend-mode', 'normal']] as const;
+
+/**
+ * The URL of the one image a page's computed style paints as its background, or null where it paints none.
+ *
+ * @throws {CasterError} A background that is not one `url()` (a gradient, several layers), or one that sets a property in {@link PAGE_IMAGE_PINNED}. A printer that dropped it would hand back a page whose ground the author chose and the file does not have.
+ */
+function pageImageUrl(style: CSSStyleDeclaration, index: number): string|null {
+  const image = style.backgroundImage;
+  if (!image || image === 'none') return null;
+  const element = `page ${index + 1}`;
+  const url = /^url\("([^"]+)"\)$/.exec(image)?.[1];
+  if (!url) throw new CasterError(`caster: the @page background on page ${index + 1} is ${image}, which this printer does not place against a page box yet: it places one url() image. A colour is placed; anything else would be dropped, and a page whose ground the author chose is not one to drop in silence.`, { element });
+  for (const [property, name, value] of PAGE_IMAGE_PINNED) {
+    if (style[property] !== value) throw new CasterError(`caster: the @page background on page ${index + 1} declares ${name}: ${style[property]}, and this printer places a page's image only with ${name}: ${value}.`, { element });
+  }
+  return url;
+}
+
+/**
+ * A page image's own size in CSS px, as `background-size: auto` reads it.
+ *
+ * @remarks
+ * Not an SVG's `naturalWidth`: Chromium rounds it to a whole pixel and answers 300 by 150 for a file with no size at all, where CSS would fit that file to the page. Such a file refuses rather than land somewhere else.
+ *
+ * @throws {CasterError} An SVG with no absolute width and height.
+ */
+async function pageImageSizeOf(image: HTMLImageElement, { page, url, backgroundSize }: PageImage, gateway: Gateway): Promise<[number,number]> {
+  const { bytes, mimeType } = await gateway.getBytes(url);
+  if (mimeType !== 'image/svg+xml') return [image.naturalWidth, image.naturalHeight];
+  const svg = new DOMParser().parseFromString(new TextDecoder().decode(bytes), 'image/svg+xml').documentElement as unknown as SVGSVGElement;
+  const absolute = (length: SVGAnimatedLength|undefined) => (length && length.baseVal.unitType !== length.baseVal.SVG_LENGTHTYPE_PERCENTAGE ? length.baseVal.value : 0);
+  const [w, h] = svg.hasAttribute('width') && svg.hasAttribute('height') ? [absolute(svg.width), absolute(svg.height)] : [0, 0];
+  if (w > 0 && h > 0) return [w, h];
+  throw new CasterError(`caster: the @page background on page ${page.index + 1} is an SVG with no width and height of its own (${url}), and background-size: ${backgroundSize} asks for the image's own size. Name the size in background-size, or give the file a width and a height.`, { element: `page ${page.index + 1}` });
+}
+
+/**
+ * The size of a page image's tile, from `background-size` (CSS Backgrounds 3, §3.9).
+ *
+ * @param natural - Asked only where the rule does not name both lengths.
+ */
+async function pageImageTileSize(backgroundSize: string, area: { w: number; h: number; }, natural: () => Promise<[number,number]>): Promise<[number,number]> {
+  const tokens = shapeTokens(backgroundSize);
+  if (tokens[0] === 'contain' || tokens[0] === 'cover') {
+    const [w, h] = await natural();
+    const scale = Math[tokens[0] === 'contain' ? 'min' : 'max'](area.w / w, area.h / h);
+    return [w * scale, h * scale];
+  }
+  const named = (token: string|undefined, of: number) => (token === undefined || token === 'auto' ? null : lengthPercentage(token, of));
+  const [w, h] = [named(tokens[0], area.w), named(tokens[1], area.h)];
+  if (w !== null && h !== null) return [w, h];
+  const [ownW, ownH] = await natural();
+  return w !== null ? [w, (w * ownH) / ownW] : h !== null ? [(h * ownW) / ownH, h] : [ownW, ownH];
+}
+
+/**
+ * The `@page` images, seated on their pages as artifacts, so each takes the road an artifact's `<img>` already takes: a raster is embedded and an SVG is a drawing (*an SVG that arrives through an `<img>` is a drawing*, S44).
+ *
+ * @remarks
+ * Nothing in the DOM carries a page's background, and a drawing has to be in the document the collectors walk, so one is made, per page: a box at the tile's rectangle in the page's coordinates, holding an `<img alt="">`. It stands in the strip's light DOM, slotted into the page through the two-slot chain of a lifted margin (*the margins are lifted into the light DOM*, S57), and is margin content for the same reason a margin is: it lies outside the content area by construction, so R5's clip does not apply. It comes last in the strip so that no `:first-child` of the author's moves, and `z-index: -1` is what puts it first in the paint order, under the page's content. The box's position is absolute, so nothing on the page moves; every property is reset, `!important`, because the author's `div` and `img` rules reach this document and an image in a background obeys none of them.
+ *
+ * The positioning area is the page's nominal box, the size of the file's page, where the host stands a pixel short (*the one-pixel inset is real*, S10). The host has no padding or border of its own, since the capture puts those on `.content-area`, so its padding box and its page box are one.
+ *
+ * ponytail: one tile, on the road the gradients of `backgroundTile` take. A tile that repeats inside the page refuses; seat one box per tile when a document needs it.
+ *
+ * @throws {CasterError} A tile that repeats inside the page, and whatever {@link pageImageSizeOf} refuses.
+ */
+async function seatPageImages(images: PageImage[], strip: HTMLElement, marginRoots: Set<Element>, gateway: Gateway) {
+  const sizes: Map<string, Promise<[number,number]>> = new Map();
+  for (const entry of images) {
+    const { page, url, backgroundSize } = entry;
+    const doc = strip.ownerDocument;
+    const area = { x: 0, y: 0, w: page.declaredPx.widthPx, h: page.declaredPx.heightPx };
+    const image = doc.createElement('img');
+    image.alt = '';
+    image.src = url;
+    // A file the browser cannot show is not refused here: the gateway refuses it by name when the walk reads its bytes.
+    await image.decode().catch(() => {});
+    const [w, h] = await pageImageTileSize(backgroundSize, area, () => {
+      if (!sizes.has(url)) sizes.set(url, pageImageSizeOf(image, entry, gateway));
+      return sizes.get(url) as Promise<[number,number]>;
+    });
+    const placed = backgroundTile(entry, 0, w, h, area, area);
+    if (!placed) throw new CasterError(`caster: the @page background on page ${page.index + 1} has background-repeat: ${entry.backgroundRepeat} and a tile of ${w.toFixed(1)} by ${h.toFixed(1)} px, which repeats inside the page box. This printer places one tile; use no-repeat, or a size that covers the page.`, { element: `page ${page.index + 1}` });
+    const box = doc.createElement('div');
+    box.setAttribute(ARTIFACT_ATTRIBUTE, 'layout');
+    addWordTo(box, FRAGMENT_WORD);
+    box.style.cssText = `all: initial !important; display: block !important; position: absolute !important; z-index: -1 !important; left: ${placed.tile.x}px !important; top: ${placed.tile.y}px !important; width: ${w}px !important; height: ${h}px !important;`;
+    image.style.cssText = 'all: initial !important; display: block !important; width: 100% !important; height: 100% !important;';
+    box.append(image);
+    strip.append(box);
+    const forward = doc.createElement('slot');
+    page.element.append(forward);
+    forward.assign(box);
+    const slot = doc.createElement('slot');
+    slot.assign(forward);
+    (page.element.shadowRoot as ShadowRoot).append(slot);
+    marginRoots.add(box);
+  }
 }
 
 /**
