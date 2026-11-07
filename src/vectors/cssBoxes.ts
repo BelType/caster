@@ -240,7 +240,7 @@ export function borderSidePath(outer: Piece[], inner: Piece[], side: 0|1|2|3): P
 // --- CSS gradients ----------------------------------------------------------
 
 /** Split a comma-separated list, ignoring commas inside parentheses. */
-function splitTopLevel(text: string, separator: string = ','): string[] {
+export function splitTopLevel(text: string, separator: string = ','): string[] {
   const out: string[] = [];
   let depth = 0;
   let current = '';
@@ -259,7 +259,7 @@ function splitTopLevel(text: string, separator: string = ','): string[] {
 }
 
 /** The name and body of the outermost `name(...)`, or null. */
-function functionCall(text: string): { name: string; body: string; }|null {
+export function functionCall(text: string): { name: string; body: string; }|null {
   const match = /^([a-z-]+)\((.*)\)$/is.exec(text.trim());
   return match ? { name: match[1].toLowerCase(), body: match[2] } : null;
 }
@@ -345,8 +345,8 @@ function cornerAngle(keywords: string[], w: number, h: number): number {
   const vertical = has('top') ? 'top' : has('bottom') ? 'bottom' : '';
   const horizontal = has('left') ? 'left' : has('right') ? 'right' : '';
   if (vertical && horizontal) {
-    // The gradient line of a corner keyword is perpendicular to the diagonal between the two *other* corners, which is what makes the corner's two neighbours land on the same stop.
-    const base = (Math.atan2(w, h) * 180) / Math.PI;
+    // The gradient line of a corner keyword is perpendicular to the diagonal between the two *other* corners, which is what makes the corner's two neighbours land on the same stop. For `to top right` that diagonal runs (w, h), so the line's direction (sin θ, −cos θ) is (h, −w) and θ is atan2(h, w); the two arguments were swapped until 2026-11-07, which a square box cannot show (the page gradient's case, CHANGELOG).
+    const base = (Math.atan2(h, w) * 180) / Math.PI;
     if (vertical === 'top' && horizontal === 'right') return base;
     if (vertical === 'bottom' && horizontal === 'right') return 180 - base;
     if (vertical === 'bottom' && horizontal === 'left') return 180 + base;

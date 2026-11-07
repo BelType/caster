@@ -46,7 +46,7 @@ function bluePng(width: number, height: number): Buffer {
 const SQUARE = '<svg xmlns="http://www.w3.org/2000/svg" width="148mm" height="210mm" viewBox="0 0 148 210"><rect x="10" y="10" width="20" height="20" fill="#1f3f8f"/></svg>';
 const FILES: Record<string, string | Buffer> = { '/bg.svg': SQUARE, '/bg.png': bluePng(40, 20), '/viewbox.svg': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#1f3f8f"/></svg>' };
 
-type Printed = { doc: mupdf.Document; shots: Buffer[]; svgImages: unknown[]; tags: string[]; items: { kind: string; start?: { artifact?: { type: string } } }[] };
+type Printed = { doc: mupdf.Document; shots: Buffer[]; svgImages: unknown[]; shadings: number; deferred: unknown[]; tags: string[]; items: { kind: string; start?: { artifact?: { type: string } } }[] };
 
 /** Cuts and prints a two-page A5 document whose first page is the named page `prima`, and answers the file, what the page showed, and what the print recorded. */
 async function printCase(css: string, options: Record<string, unknown> = {}): Promise<Printed> {
@@ -90,7 +90,7 @@ async function printCase(css: string, options: Record<string, unknown> = {}): Pr
         const { bytes, report, displayList } = await caster.print({ document }, flags);
         let binary = '';
         for (const byte of bytes as Uint8Array) binary += String.fromCharCode(byte);
-        return { base64: btoa(binary), svgImages: report.svgImages, tree: report.structure.expectedTree, items: displayList.pages[0].items.map((item: { kind: string; start?: unknown }) => ({ kind: item.kind, start: item.start })) };
+        return { base64: btoa(binary), svgImages: report.svgImages, shadings: (report.paint ?? []).filter((p: { kind: string }) => p.kind === 'shading').length, deferred: report.deferred ?? [], tree: report.structure.expectedTree, items: displayList.pages[0].items.map((item: { kind: string; start?: unknown }) => ({ kind: item.kind, start: item.start })) };
       } catch (error) {
         return { refused: String((error as Error).message) };
       }
@@ -98,7 +98,7 @@ async function printCase(css: string, options: Record<string, unknown> = {}): Pr
     if ('refused' in printed) throw new Error(printed.refused);
     type Node = { tag: string; kids: Node[] };
     const tagsOf = (node: Node): string[] => [node.tag, ...node.kids.flatMap(tagsOf)];
-    return { doc: mupdf.Document.openDocument(Buffer.from(printed.base64 as string, 'base64'), 'application/pdf'), shots, svgImages: printed.svgImages as unknown[], tags: tagsOf(printed.tree as Node), items: printed.items };
+    return { doc: mupdf.Document.openDocument(Buffer.from(printed.base64 as string, 'base64'), 'application/pdf'), shots, svgImages: printed.svgImages as unknown[], shadings: printed.shadings as number, deferred: printed.deferred as unknown[], tags: tagsOf(printed.tree as Node), items: printed.items };
   } finally {
     await browser.close();
     server.close();
@@ -174,11 +174,52 @@ test('the control: a page rule with no image prints no image', async () => {
 
 for (const [name, background, refusal] of [
   ['a tile that repeats inside the page', 'url(/bg.png) 0 0 / 10mm 10mm', /background-repeat: repeat/],
-  ['a gradient', 'linear-gradient(red, blue)', /linear-gradient/],
   ['two layers', 'url(/bg.png) no-repeat, url(/bg.svg) no-repeat', /url\("[^"]*bg\.png"\), url/],
+  ['a gradient beside an image', 'linear-gradient(red, blue), url(/bg.png) no-repeat', /linear-gradient\(.*url\(/],
+  ['a conic gradient', 'conic-gradient(red, blue)', /conic-gradient/],
+  ['a gradient tile that repeats inside the page', 'linear-gradient(red, blue) 0 0 / 20mm 20mm', /background-repeat: repeat/],
   ['an SVG with no size of its own at its own size', 'url(/viewbox.svg) no-repeat', /no width and height/],
 ] as [string, string, RegExp][]) test(`${name} on a page refuses by name, and is never dropped`, async () => {
   await assert.rejects(printCase(`@page prima { background: ${background}; }`), refusal);
+});
+
+/** How many gradient layers a background list holds. */
+const splitLayers = (list: string) => (list.match(/gradient\(/g) ?? []).length;
+
+/** The page's colour at a grid of points, as the browser showed it and as the file draws it: within `tolerance` per channel at every point. */
+function assertSameGround(printed: Printed, tolerance = 10) {
+  const shown = new mupdf.Image(printed.shots[0]!).toPixmap().convertToColorSpace(mupdf.ColorSpace.DeviceRGB);
+  const drawn = renderPage(printed.doc, 0);
+  const at = [0.05, 0.3, 0.5, 0.7, 0.95];
+  let painted = 0;
+  for (const fy of at) for (const fx of at) {
+    const [x, y] = [fx * (shown.getWidth() - 1), fy * (shown.getHeight() - 1)];
+    const [a, b] = [rgbAt(shown, x, y), rgbAt(drawn, x, y)];
+    if (a.some((c) => c < 245)) painted++;
+    a.forEach((c, i) => assert.ok(Math.abs(c - b[i]!) <= tolerance, `at ${fx}, ${fy} the page shows rgb(${a}) and the file draws rgb(${b})`));
+  }
+  assert.ok(painted >= 10, `the control: the browser paints the gradient over most of the page (${painted} of 25 points)`);
+}
+
+for (const [name, background] of [
+  ['a linear gradient by a side keyword', 'linear-gradient(to bottom, #1f3f8f, #f0c060)'],
+  ['a linear gradient by an angle, with positioned stops', 'linear-gradient(135deg, #1f3f8f 10%, #ffffff 40%, #8f1f3f 90%)'],
+  ['a linear gradient to a corner', 'linear-gradient(to bottom right, #204080, #e0e0a0)'],
+  ['a radial circle at the centre', 'radial-gradient(circle at center, #1f3f8f, #f0f0f0)'],
+  ['a radial ellipse off centre', 'radial-gradient(ellipse at 30% 40%, #8f1f3f 0%, #f0c060 60%, #1f3f8f 100%)'],
+  ['a repeating linear gradient', 'repeating-linear-gradient(90deg, #1f3f8f 0, #1f3f8f 11mm, #f0c060 11mm, #f0c060 27mm)'],
+  ['two gradient layers', 'linear-gradient(to right, rgba(31, 63, 143, 0.6), transparent), linear-gradient(to bottom, #f0c060, #ffffff)'],
+]) test(`a page background of ${name} prints where the page shows it, as a shading`, async () => {
+  const printed = await printCase(`@page prima { background: ${background}; }`);
+  assertSameGround(printed);
+  assert.equal(printed.shadings, splitLayers(background), 'each layer is one shading');
+  assert.deepEqual(printed.deferred, [], 'and nothing was rasterised or set aside');
+  assert.equal(printed.items[0]!.start?.artifact?.type, 'Layout', 'the page\'s stream begins with it, in an artifact');
+  assert.equal(printed.doc.loadPage(0).toStructuredText('preserve-whitespace').asText().trim(), 'Testo.');
+});
+
+test('a page gradient over a page colour paints both, the colour under it', async () => {
+  assertSameGround(await printCase('@page prima { background: #f0c060 linear-gradient(to right, rgba(31, 63, 143, 0.8), transparent 70%); }'));
 });
 
 test('under Paged.js a page image refuses by name, where it used to be dropped', async () => {
