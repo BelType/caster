@@ -79,6 +79,10 @@ test('the marker check fails a bullet moved a pixel or recoloured, and passes on
     ['a hidden bullet beside a first line hanging by text-indent', `<style>${hide} ul.loose > li > p { text-indent: -1.5em }</style>`, '', false],
     ['a hidden bullet beside a border in the padding', `<style>${hide} ul.loose > li { padding-left: 12px; border-left: 3px solid #c00 }</style>`, '', false],
     ['a hidden bullet beside a background in the padding', `<style>${hide} ul.loose > li { padding-left: 12px; background: #ddd }</style>`, '', false],
+    // Blink hangs an outside marker against the item's border box: on main before 2026-11-07 each of these three printed its bullets where Blink paints none.
+    ['a padded item, whose bullet stays where Blink hangs it', '<style>ul.loose > li { padding-left: 12px }</style>', '', false],
+    ['an indented item, whose bullet stays where Blink hangs it', '<style>ul.loose > li { text-indent: 2em }</style>', '', false],
+    ['a right-to-left list, its bullets on the right', '<style>ul.loose { direction: rtl }</style>', '', false],
     ['a square list, compared as squares and its markers as shapes', '<style>ul.loose { list-style-type: square }</style>', '', false],
     // Five gutters: each piece of an item Cicero divides is a list item of its own, and Cicero 0.1.7 cuts the three items into five pieces on six pages (measured 2026-11-07; six pieces under the monorepo's Cicero).
     ['a hidden bullet beside a bold 30 px first line hanging by text-indent', `<style>${hide} ul.loose > li > p { text-indent: -1.5em; font-weight: bold; font-size: 30px }</style>`, '', false, 5],
