@@ -29,6 +29,7 @@ async function printCase(css: string, body: string, files: Record<string, string
 <script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
 <style>
 @font-face { font-family: "Crimson Text"; src: url("/fonts/CrimsonText-Regular.ttf"); }
+@font-face { font-family: "Crimson Text"; font-weight: bold; src: url("/fonts/CrimsonText-Bold.ttf"); }
 body { margin: 0; }
 .s { width: 120mm; height: 60mm; padding: 0; box-sizing: border-box; font: 14px/1.4 "Crimson Text"; }
 svg, img { display: block }
@@ -84,6 +85,21 @@ test('two positioned <tspan> lines of one <text> print each on its own line', as
   const { doc } = await printCase('', '<svg viewBox="0 0 300 100" width="300" height="100" role="img" aria-label="A two-line title"><text x="150" y="40" font-family="Crimson Text" font-size="20" text-anchor="middle"><tspan x="150" y="40">Province dell’Impero romano</tspan><tspan x="150" y="70">Anno 117</tspan></text></svg>');
   const lines = linesOf(doc);
   assert.ok(lines.includes('Province dell’Impero romano') && lines.includes('Anno 117'), `each tspan is its own line: ${JSON.stringify(lines)}`);
+});
+
+test('a <tspan> in another size and weight is set in its own face and size, as Chromium sets it', async () => {
+  // Before 2026-11-07 every word of a <text> was shaped in the <text>'s face and size, whatever its <tspan> said: "grande" printed in the regular face at 20 px, its glyphs crowded into the 40 px advances Chromium laid out.
+  const { doc, faces } = await printCase('', '<svg viewBox="0 0 300 100" width="300" height="100" role="img" aria-label="A label"><text x="10" y="60" font-family="Crimson Text" font-size="20">Un <tspan style="font-size: 2em; font-weight: bold">grande</tspan> titolo</text></svg>');
+  // Each character as mupdf reads it off the page: its text, the size it is set at and the face's name.
+  const chars: { c: string; size: number; font: string }[] = [];
+  doc.loadPage(0).toStructuredText('preserve-whitespace').walk({ onChar: (c: string, _origin: unknown, font: mupdf.Font, size: number) => { chars.push({ c, size, font: font.getName() }); } });
+  const word = (w: string) => { const text = chars.map((ch) => ch.c).join(''); const at = text.indexOf(w); assert.ok(at >= 0, `"${w}" is read: ${text}`); return chars.slice(at, at + w.length); };
+  const big = word('grande'), small = word('titolo');
+  // 1 px is 0.75 pt: 40 px is 30 pt, 20 px 15 pt.
+  assert.ok(big.every((ch) => Math.abs(ch.size - 30) < 0.5), `"grande" is set at 40 px, 30 pt: ${big.map((ch) => ch.size)}`);
+  assert.ok(small.every((ch) => Math.abs(ch.size - 15) < 0.5), `"titolo" stays at 20 px, 15 pt: ${small.map((ch) => ch.size)}`);
+  assert.ok(big.every((ch) => /bold/i.test(ch.font)) && small.every((ch) => !/bold/i.test(ch.font)), `"grande" alone is in the bold face: ${big[0]!.font}, ${small[0]!.font}`);
+  assert.equal(new Set(faces).size, 2, `both faces are embedded: ${faces.join(', ')}`);
 });
 
 test('a pattern-filled shape drawn through <use> prints', async () => {
