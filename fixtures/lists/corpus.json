@@ -5,11 +5,11 @@
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "f5b5a47dd0f618b758dfa0fea21fb07b6e8b2407eafd69876197e4f80e02fd72",
-   "bytes": 109728,
+   "sha256": "c5a02e25f18e5583513e8b655b3aff601a40ba24acde710e7735a24fe6975940",
+   "bytes": 109724,
    "cli": "same",
    "list": {
-    "bytes": 188320,
+    "bytes": 188318,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
