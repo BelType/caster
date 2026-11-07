@@ -23,6 +23,7 @@ import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { clampRadii, cssShapePath, lengthPercentage, pathBounds, roundedRectPath, shapeTokens, transformPath } from './pathData.ts';
 import { domPathOf } from '../measure/textMeasure.ts';
+import { CasterError } from '../errors.ts';
 import { IDENTITY, blendName, emptyNodeCommon, pageOfElement, placeBox, parseCssColor } from './vector.ts';
 
 import type { StyledBorderRecord } from './borderStyles.ts';
@@ -685,8 +686,7 @@ export function collectCssBoxes(options: CssBoxOptions): CssBoxResult {
       const children: VectorNode[] = [];
       // An ancestor's clip lives in the ancestor's own space, which is the element's space only as far as the chain they share. Mapping it through `chain(ancestor) · chain(element)⁻¹` puts it where emitting it under the element's `cm` reproduces the rectangle the engine clipped to; with no chain anywhere both matrices are the identity and the path is the one `vector-painting.md` (E9) always wrote.
       const clips = ancestorClips(element, container, containerRect, page, domPath, chains, chainCm);
-      const own = ownClip(element, style, border, radii, toPage, domPath);
-      if (own) clips.push(own);
+      clips.push(...ownClips(style, border, toPage, domPath));
 
       // 1. the shadow, which is behind everything the box paints
       if (style.boxShadow !== 'none') {
@@ -940,13 +940,41 @@ export function bboxOf(children: VectorNode[]): [number,number,number,number] {
   return [minX, minY, maxX, maxY];
 }
 
-/** The element's own `clip-path` and, when it hides its overflow, its padding box. */
-function ownClip(element: Element, style: CSSStyleDeclaration, border: Box, radii: Radii, toPage: Matrix, domPath: string): ClipSpec|null {
+/** The clips the element puts on its own painting: its `clip-path` and its `clip: rect()`. */
+function ownClips(style: CSSStyleDeclaration, border: Box, toPage: Matrix, domPath: string): ClipSpec[] {
+  const clips: ClipSpec[] = [];
   const shape = cssShapePath(style.clipPath, border);
-  if (shape) {
-    return { path: transformPath(shape.path, toPage), evenOdd: shape.evenOdd, reason: `clip-path: ${style.clipPath} on ${domPath}` };
-  }
-  return null;
+  if (shape) clips.push({ path: transformPath(shape.path, toPage), evenOdd: shape.evenOdd, reason: `clip-path: ${style.clipPath} on ${domPath}` });
+  const rect = clipRect(style, border);
+  if (rect) clips.push({ path: transformPath(roundedRectPath(rect, ZERO_RADII), toPage), evenOdd: false, reason: `clip: ${style.clip} on ${domPath}` });
+  return clips;
+}
+
+const ZERO_RADII: Radii = [[0, 0], [0, 0], [0, 0], [0, 0]];
+
+/** How far past the page an axis that does not clip reaches, in px: an unbounded edge PDF can hold, ten thousand pixels beyond any box a page has. */
+const UNBOUNDED_PX = 10000;
+
+/** Whether an `overflow-x` or `overflow-y` value clips the box's content, which `hidden` and `clip` both do (CSS Overflow 3 §3). */
+const clipsOverflow = (value: string): boolean => value === 'hidden' || value === 'clip';
+
+/**
+ * The rectangle a CSS 2 `clip: rect()` cuts the element and its descendants to, in the border box's own space, or `null` when nothing is cut.
+ *
+ * @remarks
+ * `clip` applies only to an absolutely positioned box (CSS Masking 1 §6.1), its offsets are from the border box's top-left corner, and `auto` is the border edge on that side. A rectangle whose right is left of its left, or whose bottom is above its top, is empty and clips everything, which is the screen-reader pattern `rect(0, 0, 0, 0)`.
+ */
+function clipRect(style: CSSStyleDeclaration, border: Box): Box|null {
+  if (style.position !== 'absolute' && style.position !== 'fixed') return null;
+  const match = /^rect\((.*)\)$/.exec(style.clip);
+  if (!match) return null;
+  const sides = match[1]!.split(/,\s*|\s+/);
+  const side = (i: number, auto: number) => (sides[i] === 'auto' ? auto : px(sides[i]!));
+  const top = side(0, 0);
+  const right = side(1, border.w);
+  const bottom = side(2, border.h);
+  const left = side(3, 0);
+  return { x: border.x + left, y: border.y + top, w: Math.max(0, right - left), h: Math.max(0, bottom - top) };
 }
 
 /**
@@ -962,7 +990,7 @@ export function textClips(parent: Element, container: HTMLElement, containerRect
  * Every clip an ancestor imposes on the element, outermost first.
  *
  * @remarks
- * `overflow: hidden` clips to the padding box, rounded when the ancestor has radii, which is the rule CSS Overflow 3 states and is what makes a child inside a rounded card stop at the curve rather than at the corner.
+ * `overflow: hidden` and `overflow: clip` clip to the padding box, rounded when the ancestor has radii, which is the rule CSS Overflow 3 states and is what makes a child inside a rounded card stop at the curve rather than at the corner. An absolutely positioned ancestor's `clip: rect()` clips too, which is how a visually hidden heading stays hidden.
  */
 function ancestorClips(element: Element, container: HTMLElement, containerRect: DOMRect, page: number, domPath: string, chains: ChainContext, chainCm: Matrix|null, inclusive = false): ClipSpec[] {
   const clips: ClipSpec[] = [];
@@ -970,7 +998,7 @@ function ancestorClips(element: Element, container: HTMLElement, containerRect: 
   for (let node: HTMLElement|null = inclusive ? element as HTMLElement : element.parentElement; node && node !== container.parentElement; node = node.parentElement) {
     const style = getComputedStyle(node);
     // This loop runs for every line and every box, up through every ancestor, and almost no ancestor clips, so one that clips nothing is left before its box, chain, radii and widths are worked out. Measured 2026-11-07 on the bolletta: about 20 ms of a 61-day bill's print (codeberg.org/BelType/cli issue 2).
-    if (style.clipPath === 'none' && style.overflowX !== 'hidden' && style.overflowY !== 'hidden') continue;
+    if (style.clipPath === 'none' && !clipsOverflow(style.overflowX) && !clipsOverflow(style.overflowY) && style.clip === 'auto') continue;
     const rect = node.getBoundingClientRect();
     const placement = placeBox(rect, containerRect, page);
     const box: Box = placement.box;
@@ -987,13 +1015,34 @@ function ancestorClips(element: Element, container: HTMLElement, containerRect: 
         reason: `clip-path on ${domPathOf(node, container)}, inherited by ${domPath}`,
       });
     }
-    // `overflow` does not apply to a non-replaced inline box, whatever its computed value says.
-    if ((style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflowY === 'hidden') && style.display !== 'inline') {
-      const inner = insetBox(box, radii, widths[0], widths[1], widths[2], widths[3]);
+    const cut = clipRect(style, box);
+    if (cut) {
       clips.unshift({
-        path: transformPath(roundedRectPath(inner.box, inner.radii), toPage),
+        path: transformPath(roundedRectPath(cut, ZERO_RADII), toPage),
         evenOdd: false,
-        reason: `overflow: hidden on ${domPathOf(node, container)}`,
+        reason: `clip: ${style.clip} on ${domPathOf(node, container)}, inherited by ${domPath}`,
+      });
+    }
+    // `overflow` does not apply to a non-replaced inline box, whatever its computed value says.
+    const clipX = clipsOverflow(style.overflowX);
+    const clipY = clipsOverflow(style.overflowY);
+    if ((clipX || clipY) && style.display !== 'inline') {
+      const inner = insetBox(box, radii, widths[0], widths[1], widths[2], widths[3]);
+      // `hidden` on one axis computes the other to `auto`, so both clip; `clip` leaves a `visible` axis visible, and that axis is unbounded (CSS Overflow 3 §3). A one-axis clip is a rectangle.
+      let edge = clipX && clipY ? inner : { box: { ...inner.box }, radii: ZERO_RADII };
+      if (!clipX) edge.box = { ...edge.box, x: edge.box.x - UNBOUNDED_PX, w: edge.box.w + 2 * UNBOUNDED_PX };
+      if (!clipY) edge.box = { ...edge.box, y: edge.box.y - UNBOUNDED_PX, h: edge.box.h + 2 * UNBOUNDED_PX };
+      const margin = style.overflowClipMargin;
+      if ((style.overflowX === 'clip' || style.overflowY === 'clip') && margin && margin !== '0px') {
+        // A plain length outsets the padding box; one measured from another box is a clip this printer does not draw, and it says so rather than clip at the padding box.
+        if (!/^[\d.]+px$/.test(margin)) throw new CasterError(`cssBoxes: overflow-clip-margin: ${margin} on ${domPathOf(node, container)} names a box Caster does not clip to; only a length from the padding box is printed`);
+        const m = px(margin);
+        edge = { box: { x: edge.box.x - m, y: edge.box.y - m, w: edge.box.w + 2 * m, h: edge.box.h + 2 * m }, radii: edge.radii.map(([rx, ry]) => (rx > 0 || ry > 0 ? [rx + m, ry + m] : [0, 0])) as Radii };
+      }
+      clips.unshift({
+        path: transformPath(roundedRectPath(edge.box, edge.radii), toPage),
+        evenOdd: false,
+        reason: `overflow: ${style.overflowX} ${style.overflowY} on ${domPathOf(node, container)}`,
       });
     }
     if (node === container) break;

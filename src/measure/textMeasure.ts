@@ -455,6 +455,32 @@ export function featureTagsFor(style: CSSStyleDeclaration, letterSpacingPx: numb
     const tags = [...fontVariantTags(style, context), ...cssFeatureTags(style.getPropertyValue('font-feature-settings'))];
     return letterSpacingPx === 0 ? tags : [...tags, ...LETTER_SPACED_FEATURES];
 }
+/** Per face URL, whether shaping with `smcp` changes any glyph of a lowercase sample. */
+const SMALL_CAPS_OF = new Map<string, boolean>();
+
+/** Lowercase letters a face with small capitals substitutes, which is what `smcp` covers. */
+const SMALL_CAPS_SAMPLE = 'abcdefghijklmnopqrstuvwxyz';
+
+/**
+ * Refuses a run that asks for small capitals from a face without them.
+ *
+ * @remarks
+ * Blink synthesises small capitals for a face with no `smcp` (scaled capitals) and HarfBuzz does not, so the file would print the lowercase letters the screen does not show (*`font-variant-*` is read, and a value with no feature is refused by name*, S73). The face lacks the feature when a lowercase sample shapes to the same glyphs with the tag and without it. A run with no lowercase letter prints the same either way and passes.
+ *
+ * @throws {CasterError} The run asks for `smcp`, holds a lowercase letter, and the face has no small capitals.
+ */
+function refuseMissingSmallCaps(face: FaceDescriptor, features: readonly string[], text: string, context: CasterErrorContext): void {
+    if (!features.includes('smcp') || !/\p{Ll}/u.test(text)) return;
+    let has = SMALL_CAPS_OF.get(face.url);
+    if (has === undefined) {
+        const plain = shapeWord(face.url, SMALL_CAPS_SAMPLE, 100, []).gids;
+        const caps = shapeWord(face.url, SMALL_CAPS_SAMPLE, 100, ['smcp']).gids;
+        has = plain.length !== caps.length || plain.some((gid, i) => gid !== caps[i]);
+        SMALL_CAPS_OF.set(face.url, has);
+    }
+    if (!has) throw new CasterError(`caster: ${JSON.stringify(text)} at ${context.element ?? 'an element'} asks for small capitals (smcp) from the face ${face.id} of "${face.family}", which has none. The screen fakes them with scaled capitals and the printer does not, so the PDF would print lowercase. Use a face of the family that has small capitals, or write the text in capitals.`, context);
+}
+
 /**
  * How far a colour cluster's baseline may sit from its line's, in px.
  *
@@ -964,6 +990,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                     if (match.synthesis.bold || match.synthesis.italic) {
                         throw new CasterError(`caster: ${match.face.id} would need synthesis, which the engine forbids`);
                     }
+                    if (!part.emoji) refuseMissingSmallCaps(match.face, features, part.text, { element: pathOf(parent) });
                     const instanceKey = instanceKeyOf(match.face.id, coords);
                     usedInstances.set(instanceKey, { instanceKey, faceId: match.face.id, url: match.face.url, coords });
                     if (part.emoji) {
@@ -1423,6 +1450,7 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
         const last = element.getEndPositionOfChar(end - 1);
         const [startX, startY] = apply(request.toContainer, first.x, first.y);
         const [endX] = apply(request.toContainer, last.x, last.y);
+        refuseMissingSmallCaps(match.face, features, match2.text, { element: request.domPath });
         const shaped = shapeWord(match.face.url, match2.text, sizePx, features, undefined, shaperVariations(coords));
         ctx.segments.push({
             index: ctx.segments.length,

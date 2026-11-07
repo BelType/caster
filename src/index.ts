@@ -21,7 +21,7 @@ import { createGateway } from './host/gateway.ts';
 import { buildFontTable, declaredFaces, isGenericFamily, refuseFamily, unreadableFamilies } from './host/fonts.ts';
 import { adaptCicero } from './adapters/cicero.ts';
 import { adaptPagedjs, STRIP_SELECTOR as PAGEDJS_STRIP } from './adapters/pagedjs.ts';
-import { prepare } from './adapters/prepare.ts';
+import { authorSynthesis, prepare } from './adapters/prepare.ts';
 import { reify } from './adapters/reify.ts';
 import { beginFrame, endFrame, toLocalOn } from './coordinates/frame.ts';
 import { clearPageGeometry, geometryOfPage, pageGeometries, pageGeometryFor, setPageGeometry, xToPt, yToPt } from './coordinates/pageGeometry.ts';
@@ -236,6 +236,20 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
         report.warnings.push(`caster: font-family at ${domPathOf(parent, doc.body)} names "${family}" before "${chosen}", and no @font-face declares "${family}". If this machine has it, the screen shows "${family}" and the PDF "${chosen}".`);
       }
     };
+    // A family with no bold or no italic face is faked on the author's screen and printed upright and regular, because `prepare()` forbids synthesis in the frame the printer measures. The frame and the file agree, so the print goes on; the screen the author looked at does not, so the run says so, once a family and a want.
+    const allowed = authorSynthesis(doc);
+    const synthesisWithheld = (parent: Element, request: FaceRequest, family: string) => {
+      if (!allowed) return;
+      // ponytail: an author `font-synthesis: none` below the root reads as the root's value here and warns needlessly; walk the author cascade if that ever matters.
+      const match = matchFace(table.descriptors, family, { ...request, synthesis: { weight: request.synthesis.weight || allowed.weight, style: request.synthesis.style || allowed.style } });
+      if (!match) return;
+      for (const [faked, want] of [[match.synthesis.bold, 'bold'], [match.synthesis.italic, 'italic']] as const) {
+        const key = `${family}\n${want}`;
+        if (!faked || said.has(key)) continue;
+        said.add(key);
+        report.warnings.push(`caster: "${family}" has no ${want} face, and ${domPathOf(parent, doc.body)} asks for one. The screen fakes a ${want} the printer does not, so the PDF prints this text ${want === 'bold' ? 'at the weight of the face it has' : 'upright'}. Declare a ${want} @font-face for "${family}", or set font-synthesis: none so the screen shows what prints.`);
+      }
+    };
     report.warnings.push(...table.warnings);
     for (const [url, bytes] of table.bytesByUrl) {
       const shaperStarted = now();
@@ -337,6 +351,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       familyOf: (parent, request) => {
         const family = familyFor(parent, request, table, container);
         passedOver(parent, request, family);
+        synthesisWithheld(parent, request, family);
         return family;
       },
       passedOver,
