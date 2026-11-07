@@ -20,19 +20,30 @@ const DIST = path.join(PACKAGE, 'dist');
 const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/errors')));
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 
-const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+const pageWith = (css: string, body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <script type="importmap">${JSON.stringify({ imports: Object.fromEntries(['errors', 'data-beltype', 'flags', 'mime'].map((m) => [`@beltype/common/${m}`, `/common/${m}.js`])) })}</script>
 <style>
 @font-face { font-family: "Crimson Text"; src: url("/fonts/CrimsonText-Regular.ttf"); }
 body { margin: 0; }
 .s { width: 100mm; height: 30mm; padding: 4mm; box-sizing: border-box; font: 16px/1.4 "Crimson Text"; }
-.clip { width: 30mm; overflow: hidden; white-space: nowrap; }
-</style></head><body><div class="s"><div class="clip">Decomposition temperature colonisation, a line far longer than its box.</div></div></body></html>`;
+${css}
+</style></head><body><div class="s">${body}</div></body></html>`;
 
-function serve(): Promise<http.Server> {
+const LINE = 'Decomposition temperature colonisation, a line far longer than its box.';
+const NOWRAP = 'width: 30mm; white-space: nowrap;';
+
+/** Each way an ancestor clips, and an ancestor that does not stands between the clip and the text in all but the first: the walk up leaves a non-clipping ancestor early, and must still reach the one that clips. */
+const CASES: { name: string; html: string }[] = [
+  { name: 'text in an overflow: hidden box is not painted beyond its padding box', html: pageWith(`.clip { ${NOWRAP} overflow: hidden; }`, `<div class="clip">${LINE}</div>`) },
+  { name: 'an overflow: hidden ancestor clips through a plain box and an inline', html: pageWith(`.clip { ${NOWRAP} overflow: hidden; }`, `<div class="clip"><div><em>${LINE}</em></div></div>`) },
+  { name: 'overflow-x: hidden alone clips through a plain box', html: pageWith(`.clip { ${NOWRAP} overflow-x: hidden; }`, `<div class="clip"><div>${LINE}</div></div>`) },
+  { name: 'a clip-path on an ancestor clips through a plain box', html: pageWith(`.clip { ${NOWRAP} clip-path: inset(0); }`, `<div class="clip"><div>${LINE}</div></div>`) },
+];
+
+function serve(html: string): Promise<http.Server> {
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
-    if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE);
+    if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
     const [root, rel] = url.pathname.startsWith('/common/') ? [COMMON, url.pathname.slice(8)] : url.pathname.startsWith('/fonts/') ? [FONTS, url.pathname.slice(7)] : [DIST, url.pathname.slice(1)];
     const file = path.join(root, rel);
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return void response.writeHead(404).end();
@@ -41,8 +52,8 @@ function serve(): Promise<http.Server> {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-test('text in an overflow: hidden box is not painted beyond its padding box', async () => {
-  const server = await serve();
+for (const { name, html } of CASES) test(name, async () => {
+  const server = await serve(html);
   const port = (server.address() as { port: number }).port;
   const browser = await launchBrowser();
   try {

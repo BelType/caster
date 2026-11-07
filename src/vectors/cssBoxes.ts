@@ -969,6 +969,8 @@ function ancestorClips(element: Element, container: HTMLElement, containerRect: 
   const intoElementSpace = chainCm ? invert(chainCm) : IDENTITY;
   for (let node: HTMLElement|null = inclusive ? element as HTMLElement : element.parentElement; node && node !== container.parentElement; node = node.parentElement) {
     const style = getComputedStyle(node);
+    // This loop runs for every line and every box, up through every ancestor, and almost no ancestor clips, so one that clips nothing is left before its box, chain, radii and widths are worked out. Measured 2026-11-07 on the bolletta: about 20 ms of a 61-day bill's print (codeberg.org/BelType/cli issue 2).
+    if (style.clipPath === 'none' && style.overflowX !== 'hidden' && style.overflowY !== 'hidden') continue;
     const rect = node.getBoundingClientRect();
     const placement = placeBox(rect, containerRect, page);
     const box: Box = placement.box;

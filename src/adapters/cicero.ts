@@ -169,7 +169,7 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
 
   const lang = doc.documentElement.getAttribute('lang')?.trim() ?? '';
 
-  const pageElementOf = (element: Element) => {
+  const climbToPage = (element: Element) => {
     let node: Node|null = element;
     while (node) {
       if (node instanceof Element && node.tagName === 'BELTYPE-PAGE') return (node as HTMLElement);
@@ -186,6 +186,17 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
       up = up.parentElement;
     }
     return null;
+  };
+
+  // The lift above was the adapter's last write that moves an element between pages, and a later element is a new key, so each element climbs once in a print. The walk, the chains, the boxes and the conservation check all ask. Measured 2026-11-07 on the bolletta: about 6 ms of a 61-day bill's print (codeberg.org/BelType/cli issue 2).
+  const pageOf: Map<Element,HTMLElement|null> = new Map();
+  const pageElementOf = (element: Element) => {
+    let page = pageOf.get(element);
+    if (page === undefined) {
+      page = climbToPage(element);
+      pageOf.set(element, page);
+    }
+    return page;
   };
 
   const adapted: PageStrip = { strip, probeRoot: shadow, pageElements, pages, pageOfNode, twinOf: (element) => twins.get(element) ?? null, transparent: (element) => isEngineMark(element) && !element.hasAttribute(ARTIFACT_ATTRIBUTE), lang, pageElementOf, inMargin: (element) => marginRoots.has((topOf(element, strip) as Element)), backgrounds: pageBackgroundsOf(pages) };
