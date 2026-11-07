@@ -15687,30 +15687,6 @@
          "kids": [
           {
            "tag": "TD",
-           "path": "Document/Table[0]/TBody[0]/TR[1]/TD[2]",
-           "mcids": [
-            {
-             "page": 1,
-             "mcid": 9
-            },
-            {
-             "page": 2,
-             "mcid": 2
-            },
-            {
-             "page": 3,
-             "mcid": 1
-            }
-           ],
-           "attrs": {
-            "headers": [
-             "th-1-3"
-            ]
-           },
-           "kids": []
-          },
-          {
-           "tag": "TD",
            "path": "Document/Table[0]/TBody[0]/TR[1]/TD[0]",
            "pg": 2,
            "mcids": [
@@ -15739,6 +15715,30 @@
            "attrs": {
             "headers": [
              "th-1-2"
+            ]
+           },
+           "kids": []
+          },
+          {
+           "tag": "TD",
+           "path": "Document/Table[0]/TBody[0]/TR[1]/TD[2]",
+           "mcids": [
+            {
+             "page": 1,
+             "mcid": 9
+            },
+            {
+             "page": 2,
+             "mcid": 2
+            },
+            {
+             "page": 3,
+             "mcid": 1
+            }
+           ],
+           "attrs": {
+            "headers": [
+             "th-1-3"
             ]
            },
            "kids": []

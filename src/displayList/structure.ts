@@ -2,7 +2,7 @@
  * `displayList/structure.js` — the walk's structure tree resolved into the list's: pruned, ordered, every reference an index.
  *
  * @remarks
- * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it); an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`. A foreign writer inherits none of these rules: it writes the tree it is given.
+ * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it), except a `TR`'s cells, which keep the column order the walk declared; an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`. A foreign writer inherits none of these rules: it writes the tree it is given.
  *
  * @packageDocumentation
  */
@@ -122,13 +122,15 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
       else
         previous = kidSeqs[i];
     }
-    const kidOrder = entry.kids.map((kid, index) => ({ kid, seq: kidSeqs[index], index })).sort((a, b) => a.seq - b.seq || a.index - b.index);
+    // A row's cells stand side by side, so reading order is column order, which is the order the walk declared them in. A row divided across pages starts its long cell on the earlier page, and content order would read that cell first.
+    const declared = entry.node.tag === 'TR';
+    const kidOrder = entry.kids.map((kid, index) => ({ kid, seq: kidSeqs[index], index })).sort((a, b) => declared ? a.index - b.index : a.seq - b.seq || a.index - b.index);
     entry.kids = kidOrder.map((k) => k.kid);
     const ordered: { seq: number, child: StructChild }[] = [
       ...entry.contents.map((c) => ({ seq: c.seq, child: { page: c.page, item: c.item } })),
       ...kidOrder.map(({ kid, seq }) => ({ seq, child: kid.index as number })),
       ...(entry.objr !== undefined ? [{ seq: NO_CONTENT, child: { link: entry.objr } }] : []),
-    ].sort((a, b) => a.seq - b.seq);
+    ].sort((a, b) => declared ? 0 : a.seq - b.seq);
     const { attrs, tag, path } = entry.node;
     const attributes = attributesOf(entry.node, figureBoxes[path]);
     return {

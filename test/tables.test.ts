@@ -5,6 +5,7 @@
  *
  * The DOM the model reads is duck-typed here — `tagName`, `children`, `getAttribute`, `textContent` and nothing else — because that is the whole of what `buildTableModel` asks of an element, and because a model built from a literal is a table a reader can see in the source. The half of `collectTableBorders` that reads rectangles off a live engine belongs to the browser acceptance test.
  */
+import fs from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -17,6 +18,7 @@ import {
   regularityOf,
 } from '../src/walk/tableModel.ts';
 import { resolveEdge, resolvedWidthsOf } from '../src/vectors/tableBorders.ts';
+import { resolveStructure } from '../src/displayList/structure.ts';
 import { CasterError } from '../src/errors.ts';
 import type { EdgeOrigin } from '../src/vectors/tableBorders.ts';
 
@@ -193,6 +195,30 @@ test('regularityOf names every uncovered slot', () => {
   assert.deepEqual(regularityOf([[0, 1], [2, null]]), { rectangular: false, rows: 2, columns: 2, missing: [[1, 1]] });
   assert.deepEqual(regularityOf([]), { rectangular: false, rows: 0, columns: 0, missing: [] });
   assert.equal(regularityOf([[0, 1], [2, 3]]).rectangular, true);
+});
+
+test('a row divided across pages reads its cells in column order, whatever page each starts on', () => {
+  // The divided row of `fixtures/cast-divided-row/`: the long third cell starts on the first page, the three short ones are centred on the second.
+  const n = (tag: string, path: string, kids: any[] = []): any => ({ tag, path, attrs: {}, kids });
+  const row = 'D/T/TR';
+  const tree = n('Document', 'D', [n('Table', 'D/T', [n('TR', row, [0, 1, 2, 3].map((i) => n('TD', `${row}/TD${i}`)))]), n('P', 'D/P')]);
+  const contents = [
+    { page: 0, item: 0, owner: `${row}/TD2`, seq: 0 },
+    { page: 1, item: 0, owner: `${row}/TD0`, seq: 1e6 },
+    { page: 1, item: 1, owner: `${row}/TD1`, seq: 1e6 + 1 },
+    { page: 1, item: 2, owner: `${row}/TD2`, seq: 1e6 + 2 },
+    { page: 1, item: 3, owner: `${row}/TD3`, seq: 1e6 + 3 },
+    { page: 1, item: 4, owner: 'D/P', seq: 1e6 + 4 },
+  ];
+  const { elements } = resolveStructure(tree, contents, [], {}, []).structure;
+  const tr = elements.find((e) => e.path === row) as any;
+  assert.deepEqual(tr.children.map((i: number) => elements[i].path), [0, 1, 2, 3].map((i) => `${row}/TD${i}`));
+
+  // The same, in the committed list of the fixture itself.
+  const list = JSON.parse(fs.readFileSync(new URL('../fixtures/lists/cast-divided-row.json', import.meta.url), 'utf8'));
+  const recorded = list.structure.elements;
+  const divided = recorded.find((e: any) => e.path === 'Document/Table[0]/TBody[0]/TR[1]');
+  assert.deepEqual(divided.children.map((i: number) => recorded[i].path.split('/').pop()), ['TD[0]', 'TD[1]', 'TD[2]', 'TD[3]']);
 });
 
 const candidate = (origin: EdgeOrigin, style: string, widthPx: number, color: string = 'rgb(0, 0, 0)'): any => ({ origin, style, widthPx, color, domPath: `${origin}:${style}` });
