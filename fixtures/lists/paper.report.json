@@ -1996,8 +1996,8 @@
    {
     "id": "Source Serif 4#1|opsz=10,wght=400",
     "postScriptName": "SourceSerif4Roman-Regular",
-    "usedGlyphs": 31,
-    "fontFileBytes": 14740,
+    "usedGlyphs": 30,
+    "fontFileBytes": 14564,
     "multiCharToUnicode": 0,
     "toUnicodeConflicts": 0,
     "faceId": "Source Serif 4#1",
@@ -2019,7 +2019,6 @@
      33,
      35,
      36,
-     38,
      39,
      40,
      41,
@@ -2043,13 +2042,13 @@
      671
     ],
     "sourceBytes": 1210304,
-    "subsetBytes": 14740,
-    "subsetFlateBytes": 6168,
+    "subsetBytes": 14564,
+    "subsetFlateBytes": 6060,
     "numGlyphs": 699,
-    "nonEmptyGlyphs": 69,
+    "nonEmptyGlyphs": 68,
     "hmtxInstanced": true,
     "staleAdvances": 0,
-    "subsetTag": "HXZFYZ",
+    "subsetTag": "KVKNGK",
     "cffContainer": "bare",
     "cidToText": {
      "1": [
@@ -2078,9 +2077,6 @@
      ],
      "36": [
       "i"
-     ],
-     "38": [
-      "k"
      ],
      "39": [
       "l"
@@ -2170,6 +2166,64 @@
     "fsType": "installable",
     "path": "B",
     "url": "https://print.invalid/fonts/SourceSerif4-Variable.woff2"
+   },
+   {
+    "id": "Source Serif 4#2|opsz=10,wght=400",
+    "postScriptName": "SourceSerif4Italic-Italic",
+    "usedGlyphs": 1,
+    "fontFileBytes": 2060,
+    "multiCharToUnicode": 0,
+    "toUnicodeConflicts": 0,
+    "faceId": "Source Serif 4#2",
+    "family": "Source Serif 4",
+    "sourceFormat": "woff2",
+    "outlineType": "glyf",
+    "upem": 1000,
+    "coords": {
+     "wght": 400,
+     "opsz": 10
+    },
+    "glyphsUsed": [
+     38
+    ],
+    "sourceBytes": 856048,
+    "subsetBytes": 2060,
+    "subsetFlateBytes": 1088,
+    "numGlyphs": 39,
+    "nonEmptyGlyphs": 1,
+    "hmtxInstanced": true,
+    "staleAdvances": 0,
+    "subsetTag": "SYKYIC",
+    "cffContainer": "bare",
+    "cidToText": {
+     "38": [
+      "k"
+     ]
+    },
+    "ambiguousCids": [],
+    "tables": [
+     "BASE",
+     "GDEF",
+     "GPOS",
+     "GSUB",
+     "OS/2",
+     "STAT",
+     "cmap",
+     "gasp",
+     "glyf",
+     "head",
+     "hhea",
+     "hmtx",
+     "loca",
+     "maxp",
+     "name",
+     "post"
+    ],
+    "charsetIdentity": null,
+    "charsetRetried": false,
+    "fsType": "installable",
+    "path": "B",
+    "url": "https://print.invalid/fonts/SourceSerif4-Italic-Variable.woff2"
    }
   ],
   "runs": [
@@ -3464,8 +3518,8 @@
     "index": 166,
     "page": 2,
     "line": 128,
-    "faceId": "Source Serif 4#1",
-    "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
+    "faceId": "Source Serif 4#2",
+    "instanceKey": "Source Serif 4#2|opsz=10,wght=400",
     "sizePt": 11.203,
     "color": "rgb(26, 26, 26)",
     "letterSpacingPt": 0,
@@ -3474,7 +3528,7 @@
    {
     "index": 167,
     "page": 2,
-    "line": 129,
+    "line": 128,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3485,7 +3539,7 @@
    {
     "index": 168,
     "page": 2,
-    "line": 130,
+    "line": 129,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3496,7 +3550,7 @@
    {
     "index": 169,
     "page": 2,
-    "line": 131,
+    "line": 130,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3507,7 +3561,7 @@
    {
     "index": 170,
     "page": 2,
-    "line": 132,
+    "line": 131,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3518,7 +3572,7 @@
    {
     "index": 171,
     "page": 2,
-    "line": 133,
+    "line": 132,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3529,7 +3583,7 @@
    {
     "index": 172,
     "page": 2,
-    "line": 134,
+    "line": 133,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3540,7 +3594,7 @@
    {
     "index": 173,
     "page": 2,
-    "line": 135,
+    "line": 134,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3551,7 +3605,7 @@
    {
     "index": 174,
     "page": 2,
-    "line": 136,
+    "line": 135,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3562,7 +3616,7 @@
    {
     "index": 175,
     "page": 2,
-    "line": 137,
+    "line": 136,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3573,7 +3627,7 @@
    {
     "index": 176,
     "page": 2,
-    "line": 138,
+    "line": 137,
     "faceId": "Source Serif 4#1",
     "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
     "sizePt": 11.203,
@@ -3583,6 +3637,17 @@
    },
    {
     "index": 177,
+    "page": 2,
+    "line": 138,
+    "faceId": "Source Serif 4#1",
+    "instanceKey": "Source Serif 4#1|opsz=10,wght=400",
+    "sizePt": 11.203,
+    "color": "rgb(26, 26, 26)",
+    "letterSpacingPt": 0,
+    "mcid": 0
+   },
+   {
+    "index": 178,
     "page": 2,
     "line": 139,
     "faceId": "Source Serif 4#1",
@@ -36218,9 +36283,9 @@
      0
     ],
     "advancePt": [
-     6.991
+     5.758
     ],
-    "advanceWidthPt": 6.991,
+    "advanceWidthPt": 5.758,
     "spaceBefore": false,
     "spaceEmitted": false,
     "emittedAdj": null
@@ -36228,7 +36293,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 166,
+    "runIndex": 167,
     "block": "svg-text",
     "text": "(per",
     "xPt": 95.467,
@@ -36261,12 +36326,12 @@
     "advanceWidthPt": 22.944,
     "spaceBefore": true,
     "spaceEmitted": true,
-    "emittedAdj": 110.888
+    "emittedAdj": null
    },
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 166,
+    "runIndex": 167,
     "block": "svg-text",
     "text": "year)",
     "xPt": 121.084,
@@ -36302,12 +36367,12 @@
     "advanceWidthPt": 28.613,
     "spaceBefore": true,
     "spaceEmitted": true,
-    "emittedAdj": 0.406
+    "emittedAdj": 0.365
    },
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 167,
+    "runIndex": 168,
     "block": "svg-text",
     "text": "2",
     "xPt": 115.307,
@@ -36336,7 +36401,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 168,
+    "runIndex": 169,
     "block": "svg-text",
     "text": "4",
     "xPt": 193.729,
@@ -36365,7 +36430,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 169,
+    "runIndex": 170,
     "block": "svg-text",
     "text": "6",
     "xPt": 272.15,
@@ -36394,7 +36459,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 170,
+    "runIndex": 171,
     "block": "svg-text",
     "text": "8",
     "xPt": 350.572,
@@ -36423,7 +36488,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 171,
+    "runIndex": 172,
     "block": "svg-text",
     "text": "10",
     "xPt": 425.924,
@@ -36455,7 +36520,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 172,
+    "runIndex": 173,
     "block": "svg-text",
     "text": "12",
     "xPt": 504.346,
@@ -36487,7 +36552,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 173,
+    "runIndex": 174,
     "block": "svg-text",
     "text": "0.2",
     "xPt": 97.096,
@@ -36522,7 +36587,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 174,
+    "runIndex": 175,
     "block": "svg-text",
     "text": "0.4",
     "xPt": 97.096,
@@ -36557,7 +36622,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 175,
+    "runIndex": 176,
     "block": "svg-text",
     "text": "0.6",
     "xPt": 97.096,
@@ -36592,7 +36657,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 176,
+    "runIndex": 177,
     "block": "svg-text",
     "text": "forest",
     "xPt": 396.214,
@@ -36636,7 +36701,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 176,
+    "runIndex": 177,
     "block": "svg-text",
     "text": "sites",
     "xPt": 430.773,
@@ -36677,7 +36742,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 177,
+    "runIndex": 178,
     "block": "svg-text",
     "text": "above",
     "xPt": 396.214,
@@ -36718,7 +36783,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 177,
+    "runIndex": 178,
     "block": "svg-text",
     "text": "the",
     "xPt": 432.144,
@@ -36753,7 +36818,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 177,
+    "runIndex": 178,
     "block": "svg-text",
     "text": "tree",
     "xPt": 452.687,
@@ -36791,7 +36856,7 @@
    {
     "page": 2,
     "mcid": 0,
-    "runIndex": 177,
+    "runIndex": 178,
     "block": "svg-text",
     "text": "line",
     "xPt": 477.132,
@@ -57362,5 +57427,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 109619
+ "bytes": 111781
 }
