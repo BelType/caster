@@ -100,7 +100,11 @@ export function prepare(doc: Document): Preparation {
     }
   }
 
-  // `font-synthesis: none` on the root, as an inline declaration so nothing in the cascade outranks it. The frame is Caster's; the author's document is not touched.
+  // `font-synthesis: none` on the root, as an inline declaration so nothing in the cascade outranks it. The frame is Caster's; the author's document is not touched. What the root asked for before is kept, so the print can say where the author's screen fakes a face the file does not (`authorSynthesis`).
+  if (!AUTHOR_SYNTHESIS.has(doc)) {
+    const root = view.getComputedStyle(doc.documentElement);
+    AUTHOR_SYNTHESIS.set(doc, { weight: root.getPropertyValue('font-synthesis-weight').trim() !== 'none', style: root.getPropertyValue('font-synthesis-style').trim() !== 'none' });
+  }
   doc.documentElement.style.setProperty('font-synthesis', 'none', 'important');
 
   const tasks = materialiseTasks(doc);
@@ -111,6 +115,18 @@ export function prepare(doc: Document): Preparation {
   SNAPSHOTS.set(doc, (doc.body.cloneNode(true) as HTMLElement));
 
   return { registrations, ...reified, tasks, ready: loadImageFaces(doc) };
+}
+
+const AUTHOR_SYNTHESIS = new WeakMap<Document, { weight: boolean; style: boolean }>();
+
+/**
+ * Whether the document's root allowed bold and italic synthesis before {@link prepare} forbade it, or `undefined` for a document never prepared.
+ *
+ * @remarks
+ * An element that inherits the root's value reads `none` once the frame is prepared, so its own computed style can no longer say whether the author's screen fakes a bold or an italic; the root's earlier value answers for every element that declares nothing of its own.
+ */
+export function authorSynthesis(doc: Document): { weight: boolean; style: boolean }|undefined {
+  return AUTHOR_SYNTHESIS.get(doc);
 }
 
 /**

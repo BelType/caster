@@ -38,6 +38,9 @@ const CASES: { name: string; html: string }[] = [
   { name: 'an overflow: hidden ancestor clips through a plain box and an inline', html: pageWith(`.clip { ${NOWRAP} overflow: hidden; }`, `<div class="clip"><div><em>${LINE}</em></div></div>`) },
   { name: 'overflow-x: hidden alone clips through a plain box', html: pageWith(`.clip { ${NOWRAP} overflow-x: hidden; }`, `<div class="clip"><div>${LINE}</div></div>`) },
   { name: 'a clip-path on an ancestor clips through a plain box', html: pageWith(`.clip { ${NOWRAP} clip-path: inset(0); }`, `<div class="clip"><div>${LINE}</div></div>`) },
+  { name: 'overflow: clip clips as overflow: hidden does', html: pageWith(`.clip { ${NOWRAP} overflow: clip; }`, `<div class="clip"><div>${LINE}</div></div>`) },
+  { name: 'overflow-x: clip alone clips on its own axis, as a Cicero slice clips on the block axis', html: pageWith(`.clip { ${NOWRAP} overflow-x: clip; }`, `<div class="clip"><div>${LINE}</div></div>`) },
+  { name: 'clip: rect() on an absolutely positioned ancestor clips its text, the sr-only pattern without overflow: hidden', html: pageWith(`.s { position: relative; } .clip { ${NOWRAP} position: absolute; top: 4mm; left: 4mm; height: 8mm; clip: rect(0, 30mm, 8mm, 0); }`, `<div class="clip"><div>${LINE}</div></div>`) },
 ];
 
 function serve(html: string): Promise<http.Server> {
