@@ -72,7 +72,7 @@ test('content resolves strings, counter(), counters() and attr(), and refuses ev
   assert.equal(at('"→ " / "see"'), '→ ');
 
   assert.throws(() => at('url("mark.png")'), ( e: any) => e instanceof CasterError && /url\(\) on h2::before/.test(e.message));
-  assert.throws(() => at('open-quote'), ( e: any) => e instanceof CasterError && /open-quote/.test(e.message));
+  assert.throws(() => at('element(header)'), ( e: any) => e instanceof CasterError && /element\(\) on h2::before/.test(e.message));
 });
 
 /** The `@page` ground: what a page paints under everything, read off the page host Cicero forwarded the declaration to. */

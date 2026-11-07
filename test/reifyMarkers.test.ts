@@ -205,3 +205,18 @@ for (const [name, css, body] of LIST_ITEM) test(`the list-item counter reads as 
   const { before, after } = await readsTheSame(css, body);
   assert.equal(after, before);
 });
+
+// CSS Generated Content 3 §2.2: an open quote paints the pair its depth picks and raises the depth, a close quote lowers it and paints the pair it lands on, `no-open-quote` and `no-close-quote` move it and paint nothing, and `quotes: auto` takes the marks of the element's language. Blink counts the depth per style containment scope.
+const QUOTES = [
+  ['a nested <q>', '', '<p>x <q>a <q>b <q>c</q> d</q> e</q> f</p>'],
+  ['the languages\' own marks', '', '<p lang="fr">x <q>a <q>b</q></q></p><p lang="de">x <q>a <q>b</q></q></p><p lang="de-CH">x <q>a <q>b</q></q></p><p lang="pt-BR">x <q>a</q></p><p lang="ja">x <q>a <q>b</q></q></p><p lang="zh-Hant-TW">x <q>a</q></p>'],
+  ['quotes as strings and none', '.s q { quotes: "<<" ">>" "<" ">" } .none q { quotes: none }', '<p>x <q>a <q>b <q>c</q></q></q></p><p class="none">x <q>a</q></p>'],
+  ['no-close-quote across paragraphs', 'blockquote p::before { content: open-quote } blockquote p::after { content: no-close-quote } blockquote p:last-child::after { content: close-quote } blockquote { margin: 0 }', '<blockquote><p>one <q>a</q></p><p>two <q>b</q></p><p>three</p></blockquote>'],
+  ['a close quote at depth zero, and an open one left open', '.z::before { content: close-quote "|" } .o::before { content: open-quote }', '<p class="z">a</p><p class="o">b <q>c</q></p>'],
+  ['a quotation speaks the language around it', '.o::before { content: open-quote } .c::after { content: close-quote }', '<div lang="de"><q lang="fr">a <q>b</q></q></div><div lang="de"><p lang="fr" class="o c">c</p></div><div lang="ja"><blockquote lang="fr" class="o c">d</blockquote></div><p lang="de-AT">x <q>e</q></p><p lang="en-GB">x <q>f <q>g</q></q></p>'],
+  ['a style containment scope', '.o::before { content: open-quote }', '<p class="o">a</p><div style="contain: style"><p><q>b</q> <span class="o">c</span></p></div><p><q>d</q></p><div style="container-type: inline-size"><p><q>e</q></p></div>'],
+] as const;
+for (const [name, css, body] of QUOTES) test(`a quote mark reads as the browser renders it: ${name}`, async () => {
+  const { before, after } = await readsTheSame(css, body);
+  assert.equal(after, before);
+});
