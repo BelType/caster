@@ -104,6 +104,8 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   }
 
   const reads = defer ? readNamesOf(doc) : null;
+  // Measured 2026-11-07 on the bolletta: about 21 ms of a 61-day bill's prepare and print, 11 ms of a 30-day bill's (codeberg.org/BelType/cli issue 2). A `::first-letter` read on every block, twice, was what the drop capital of issue 9 had added.
+  const letters = namedHosts(doc, 'first-letter');
   const writes: (() => void)[] = [];
   const scopes: Scope[] = [];
   const apply = ( style: CSSStyleDeclaration,  depth: number) => {
@@ -146,7 +148,7 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
     if (before) writes.push(() => element.insertBefore(before, element.firstChild));
     if (marker) writes.push(() => element.insertBefore(marker, element.firstChild));
     // A `::before` or a marker would hold the first letter, and stays its own; the letter is taken where the block's own text holds it.
-    if (!before && !marker) firstLetterSpan(view, element, style, writes);
+    if (!before && !marker && mayHold(letters, element)) firstLetterSpan(view, element, style, writes);
     for (const child of [...element.children]) {
       if (child.classList.contains(GENERATED_CLASS) || child.classList.contains(MARKER_CLASS)) continue;
       walk(child, depth + 1);
@@ -160,6 +162,50 @@ export function reify(doc: Document, { defer = false }: { defer?: boolean; } = {
   for (const write of writes) write();
 
   return out;
+}
+
+/** The rules a selector inside them is read as written, whatever their condition: an element they do not apply to now is only read for nothing. */
+const GROUPING_RULES = new Set(['CSSMediaRule', 'CSSSupportsRule', 'CSSLayerBlockRule', 'CSSContainerRule']);
+
+/**
+ * The elements a sheet's rule may give one of these pseudo-elements, or null where the sheets cannot say.
+ *
+ * @remarks
+ * A pseudo-element's style differs from what its element hands it only through a rule that names it, so an element no selector reaches needs no read: on a 61-day bolletta 1 244 elements have two rules between them. Each selector is asked of the browser with the pseudo-element replaced by a selector that matches anything, which stays valid wherever the pseudo-element stood (`.a ::before`, `::before` alone). What this cannot read as written answers null, and every element is asked as before: a sheet the page may not read, a nested rule, whose selector stands on its parent's, and any other rule that holds such a selector, `@scope` among them. A shadow tree's sheets are not read: its `:host` and `::slotted()` rules reach only a host and an assigned element, which {@link mayHold} always asks.
+ *
+ * @param names - The pseudo-elements, as a pattern's alternatives.
+ * @param always - A selector the user-agent's own sheet gives them on.
+ */
+function namedHosts(doc: Document, names: string, always?: string): Set<Element>|null {
+  const named = new RegExp(`::?(?:${names})\\b`);
+  // A selector's strings serialise in double quotes, and `[title="::before"]` has to go on matching.
+  const replaced = new RegExp(`"(?:[^"\\\\]|\\\\.)*"|${named.source}`, 'g');
+  const selectors = always ? [always] : [];
+  const read = (rules: CSSRuleList): boolean => {
+    for (const rule of rules) {
+      const { selectorText, cssRules, styleSheet } = rule as CSSStyleRule & CSSImportRule;
+      if (selectorText !== undefined) {
+        if (cssRules.length > 0 && named.test(rule.cssText)) return false;
+        if (named.test(selectorText)) selectors.push(selectorText.replace(replaced, (match) => (match[0] === '"' ? match : ':is(*)')));
+      } else if (styleSheet) {
+        if (!read(styleSheet.cssRules)) return false;
+      } else if (GROUPING_RULES.has(rule.constructor.name)) {
+        if (!read(cssRules)) return false;
+      } else if (named.test(rule.cssText)) return false;
+    }
+    return true;
+  };
+  try {
+    for (const sheet of [...doc.styleSheets, ...doc.adoptedStyleSheets]) if (!read(sheet.cssRules)) return null;
+    return new Set(selectors.length ? doc.querySelectorAll(selectors.join(', ')) : []);
+  } catch {
+    return null;
+  }
+}
+
+/** Whether an element has to be asked about the pseudo-elements {@link namedHosts} answered for. A host and an assigned element are, because the rules of a shadow tree reach them. */
+function mayHold(hosts: Set<Element>|null, element: Element) {
+  return !hosts || hosts.has(element) || element.shadowRoot !== null || element.assignedSlot !== null;
 }
 
 /**
