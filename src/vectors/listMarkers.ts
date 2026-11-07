@@ -91,6 +91,9 @@ export function collectListMarkers(markers: ShapeMarker[], { order, chains, cont
     if (!Number.isFinite(ascent) || !shape) throw new CasterError(`caster: the list marker at ${marker.domPath} carries no ${ASCENT_ATTRIBUTE}, so Blink's bullet cannot be placed`);
     const { size, top } = bulletOf(ascent);
     if (size <= 0) continue;
+    const style = getComputedStyle(element);
+    // `visibility` inherits into the span as it does into the native `::marker`, so a hidden list whose paragraphs are shown paints no bullet, and the span keeps the box the hidden marker keeps.
+    if (style.visibility !== 'visible') continue;
     const box = element.getBoundingClientRect();
     const bullet: DOMRectReadOnly = ({ left: box.left + 1, top: box.top + top, width: size, height: size } as any);
     const page = pageOfElement(element, chains);
@@ -99,7 +102,6 @@ export function collectListMarkers(markers: ShapeMarker[], { order, chains, cont
     const radius = shape === 'square' ? 0 : size / 2;
     const radii = ([[radius, radius], [radius, radius], [radius, radius], [radius, radius]] as [[number, number], [number, number], [number, number], [number, number]]);
     const path = transformPath(roundedRectPath(placement.box, radii), placement.toPage);
-    const style = getComputedStyle(element);
     const colour = parseCssColor(style.color);
     const chain = chains.chainOf(element);
     const cm = chain ? toPdfMatrix(chain.matrix, pageGeometryFor(placement.page)) : null;

@@ -294,7 +294,8 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   // An `<li>` in a `<ul>`, `<ol>` or `<menu>` reads `list-style-type` off the list, as D9 wrote it; anything else reads its own.
   const list = item.tagName === 'LI' && parent && (parent.tagName === 'UL' || parent.tagName === 'OL' || parent.tagName === 'MENU') ? parent : null;
   const listStyle = list ? view.getComputedStyle(list).listStyleType : style.listStyleType;
-  const content = view.getComputedStyle(item, '::marker').content;
+  const markerStyle = view.getComputedStyle(item, '::marker');
+  const content = markerStyle.content;
   let text;
   let source;
   // `content: none` generates no marker box at all (css-lists-3), so Blink paints nothing and there is nothing to make: the item is reified like one whose text is empty (the sixth review of the Press round: a disc list with `::marker { content: none }` printed three bullets).
@@ -304,6 +305,8 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   }
   if (!content || content === 'normal') {
     source = 'counter';
+    // `list-style-image` is the marker the browser draws where it is set, and this printer places no image there: a disc in its place would be a page that still looks deliberate.
+    if (style.listStyleImage !== 'none') throw new CasterError(`caster: list-style-image on ${domPathish(item)} is not one this printer can express. A list-style-type is, or a ::marker content string; the image would be printed as a ${listStyle} the page does not show.`, { element: domPathish(item) });
     if (SHAPE_MARKERS.includes(listStyle)) return shapeMarkerSpan(view, item, style, listStyle, hangs, out);
     try {
       text = counterText(listStyle, parent ? ordinalOf(item, itemsOf(parent)) : 1);
@@ -325,7 +328,10 @@ function markerSpan(view: Window, item: HTMLElement, style: CSSStyleDeclaration,
   span.className = MARKER_CLASS;
   span.textContent = text;
   // An outside marker hangs before the text and advances nothing, so the span is a box of no width whose text is aligned to its end and overflows toward its start: the item's words stay where the native marker left them, and the marker ends where they begin (*preparation runs in no author preview, and must not change layout*, DESIGN.md S81). No width is measured, because the frame's faces may not have loaded when this runs. `white-space: pre` is the UA's own for `::marker`, and keeps the trailing space a line end would otherwise drop. An inside marker advances, as an ordinary inline span does. An outside marker before a block is also out of the flow ({@link opensWithBlock}).
-  if (style.listStylePosition !== 'inside') span.style.cssText = `${hangs ? 'position: absolute; ' : ''}display: inline-flex; inline-size: 0; justify-content: flex-end; white-space: pre`;
+  if (style.listStylePosition !== 'inside') span.style.cssText = `${hangs ? 'position: absolute; ' : ''}display: inline-flex; inline-size: 0; block-size: 0; justify-content: flex-end; white-space: pre`;
+  // The marker's own colour and face, as a shape marker takes them, written after the hanging box's `cssText`, which would replace them: a `::marker` set apart from its item printed in the item's paint, and an outside marker in a larger face made its line shorter than the native marker did (measured 2026-11-07, a 28 px marker on a 16 px item: 35.39 px tall natively, 22.39 px with the span in the item's face). Its line height too, which a `font` shorthand on `::marker` resets. The outside box has no block size, so its ascent pushes the line down as Blink's marker does and its descent overhangs as Blink's does: with a block size of its own the same item was 39.19 px tall. `test/reifyMarkers.test.ts` holds the sizes measured.
+  copyMarkerPaint(span, markerStyle);
+  span.style.setProperty('line-height', markerStyle.lineHeight);
   out.markers.push({ li: item, text, source });
   return span;
 }
@@ -549,7 +555,7 @@ const READS_PAGE = /\bcounter\(\s*pages?\s*[,)]/;
 /**
  * The value of `name` reset on the nearest element up the flat tree, through each slot and shadow host, or null.
  *
- * @remarks For `page` and `pages` alone, which an engine may reset on a page host the light-tree walk never enters (Cicero's `setCounters`). An author counter keeps the walk's own answer.
+ * @remarks For `page` and `pages` alone, which an engine may reset on a page host the light-tree walk never enters (Cicero's `setCounters`). It is asked before the walk's scopes, which answer only where no element up the flat tree resets the counter. An author counter keeps the walk's own answer.
  */
 function flatTreeReset(element: Element, name: string): Scope|null {
   const view = element.ownerDocument.defaultView as Window;
@@ -595,7 +601,9 @@ export function resolveGenerated(content: string, element: Element, scopes: Scop
       const fn = match[2].toLowerCase();
       const args = match[3].split(',').map((a) => a.trim());
       if (fn === 'counter') {
-        const hit = innermost(scopes, args[0]) ?? (args[0] === 'page' || args[0] === 'pages' ? flatTreeReset(element, args[0]) : null);
+        // The page's own two ask the flat tree first: an engine resets them on the page host, and a reset the light-tree walk left in scope (a merged letter's `counter-reset: page 1` before a running clone that stands on another page) is not the one Chromium reads (Codeberg Caster issue 22).
+        const page = args[0] === 'page' || args[0] === 'pages';
+        const hit = (page ? flatTreeReset(element, args[0]) : null) ?? innermost(scopes, args[0]);
         out += counterValueText(hit ? hit.value : 0, args[1] ?? 'decimal');
         continue;
       }
