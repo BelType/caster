@@ -311,7 +311,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const clipToPage = ( page: number,  element: Element) => (strip.inMargin?.(element) ? null : contentAreas[page] ?? null);
     chains = beginChains(container, strip.pageElementOf);
     // The collapsed-border resolver of `tables.md` (E11), before the boxes: under `border-collapse: collapse` the border between two cells is one border resolved from up to six declarations and painted on the grid line, so every part of such a table keeps its background and loses its four sides, and `tableBorders` paints what is actually there. BelType's addendum collapses every table, so without this every table printed through the per-cell route — two strips of ink on each shared edge, at the declared width rather than the resolved one, with `empty-cells: hide` ignored.
-    const grid = collectTableBorders({ container, tables: walk.tables, order, chains });
+    const grid = collectTableBorders({ container, tables: walk.tables, order, chains, twinOf: strip.twinOf });
     const boxes = collectCssBoxes({
       container,
       order,

@@ -15790,115 +15790,13 @@
     "kind": "text"
    },
    {
-    "path": "artifact:paint:table[1]/thead[0]/tr[0]/th[0]",
+    "path": "artifact:table-borders:table[1]",
     "type": "Layout",
     "page": 1,
     "kind": "text"
    },
    {
-    "path": "artifact:paint:table[1]/thead[0]/tr[0]/th[1]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/thead[0]/tr[0]/th[2]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/thead[0]/tr[0]/th[3]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[0]/td[0]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[0]/td[1]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[0]/td[2]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[0]/td[3]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[1]/td[0]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[1]/td[1]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[1]/tbody[0]/tr[1]/td[2]",
-    "type": "Layout",
-    "page": 1,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/thead[0]/tr[0]/th[0]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/thead[0]/tr[0]/th[1]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/thead[0]/tr[0]/th[2]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/thead[0]/tr[0]/th[3]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/tbody[0]/tr[1]/td[0]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/tbody[0]/tr[1]/td[1]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/tbody[0]/tr[1]/td[2]",
-    "type": "Layout",
-    "page": 2,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[2]/tbody[0]/tr[1]/td[3]",
+    "path": "artifact:table-borders:table[2]",
     "type": "Layout",
     "page": 2,
     "kind": "text"
@@ -15911,49 +15809,7 @@
     "kind": "text"
    },
    {
-    "path": "artifact:paint:table[3]/thead[0]/tr[0]/th[0]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/thead[0]/tr[0]/th[1]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/thead[0]/tr[0]/th[2]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/thead[0]/tr[0]/th[3]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/tbody[0]/tr[1]/td[0]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/tbody[0]/tr[1]/td[1]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/tbody[0]/tr[1]/td[2]",
-    "type": "Layout",
-    "page": 3,
-    "kind": "text"
-   },
-   {
-    "path": "artifact:paint:table[3]/tbody[0]/tr[1]/td[3]",
+    "path": "artifact:table-borders:table[3]",
     "type": "Layout",
     "page": 3,
     "kind": "text"
@@ -16065,9 +15921,75 @@
     0,
     0
    ]
+  },
+  {
+   "table": "table[1]",
+   "cell": "table[1]/tbody[0]/tr[0]/td[1]",
+   "computedPx": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "specifiedPx": [
+    1,
+    1,
+    1,
+    1
+   ],
+   "resolvedPx": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "table": "table[2]",
+   "cell": "table[2]/tbody[0]/tr[1]/td[1]",
+   "computedPx": [
+    0,
+    1,
+    0,
+    1
+   ],
+   "specifiedPx": [
+    0,
+    1,
+    0,
+    1
+   ],
+   "resolvedPx": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "table": "table[3]",
+   "cell": "table[3]/tbody[0]/tr[1]/td[1]",
+   "computedPx": [
+    0,
+    1,
+    1,
+    1
+   ],
+   "specifiedPx": [
+    0,
+    1,
+    1,
+    1
+   ],
+   "resolvedPx": [
+    0,
+    0,
+    0,
+    0
+   ]
   }
  ],
- "gridLineSpreadPx": 0,
+ "gridLineSpreadPx": 780.90625,
  "paint": [
   {
    "path": "table[0]",
@@ -16286,17 +16208,137 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[0]",
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
    "kind": "fill",
-   "label": "border-top",
+   "label": "collapsed-border:row-line-0[0..4]",
    "page": 1,
-   "paintIndex": 30,
+   "paintIndex": 43.25,
    "artifact": true,
    "geometry": [
-    34.383,
-    266.388,
-    74.215,
+    34.008,
+    266.763,
+    110.902,
+    267.513
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-1[0..4]",
+   "page": 1,
+   "paintIndex": 43.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    243.876,
+    110.902,
+    244.626
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-2[0..4]",
+   "page": 1,
+   "paintIndex": 43.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    238.088,
+    110.902,
+    238.838
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-3[0..2]",
+   "page": 1,
+   "paintIndex": 43.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    114.685,
+    103.781,
+    115.435
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-3[3..4]",
+   "page": 1,
+   "paintIndex": 43.25,
+   "artifact": true,
+   "geometry": [
+    110.902,
+    114.685,
+    171.555,
+    115.435
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-0[0..3]",
+   "page": 1,
+   "paintIndex": 43.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    115.06,
+    34.758,
     267.138
    ],
    "evenOdd": false,
@@ -16310,17 +16352,17 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[0]",
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-1[0..3]",
    "page": 1,
-   "paintIndex": 30,
+   "paintIndex": 43.25,
    "artifact": true,
    "geometry": [
-    73.465,
-    244.251,
-    74.215,
+    73.84,
+    115.06,
+    74.59,
     267.138
    ],
    "evenOdd": false,
@@ -16334,41 +16376,17 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[0]",
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
    "kind": "fill",
-   "label": "border-bottom",
+   "label": "collapsed-border:column-line-2[0..3]",
    "page": 1,
-   "paintIndex": 30,
+   "paintIndex": 43.25,
    "artifact": true,
    "geometry": [
-    34.383,
-    244.251,
-    74.215,
-    245.001
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 30,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    244.251,
-    35.133,
+    103.031,
+    115.06,
+    103.781,
     267.138
    ],
    "evenOdd": false,
@@ -16382,17 +16400,17 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[1]",
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
    "kind": "fill",
-   "label": "border-top",
+   "label": "collapsed-border:column-line-3[0..3]",
    "page": 1,
-   "paintIndex": 31,
+   "paintIndex": 43.25,
    "artifact": true,
    "geometry": [
-    74.215,
-    266.388,
-    103.406,
+    171.555,
+    115.06,
+    172.305,
     267.138
    ],
    "evenOdd": false,
@@ -16406,17 +16424,17 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[1]",
+   "path": "table[1]",
+   "owner": "artifact:table-borders:table[1]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-4[0..3]",
    "page": 1,
-   "paintIndex": 31,
+   "paintIndex": 43.25,
    "artifact": true,
    "geometry": [
-    102.656,
-    244.251,
-    103.406,
+    110.152,
+    115.06,
+    110.902,
     267.138
    ],
    "evenOdd": false,
@@ -16430,18 +16448,18 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[1]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 31,
+   "label": "collapsed-border:row-line-0[0..4]",
+   "page": 2,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    74.215,
-    244.251,
-    103.406,
-    245.001
+    34.008,
+    305.399,
+    306.129,
+    306.149
    ],
    "evenOdd": false,
    "params": {
@@ -16454,18 +16472,18 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[1]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 31,
+   "label": "collapsed-border:row-line-1[0..4]",
+   "page": 2,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    74.215,
-    244.251,
-    74.965,
-    267.138
+    34.008,
+    282.513,
+    306.129,
+    283.263
    ],
    "evenOdd": false,
    "params": {
@@ -16478,18 +16496,18 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[2]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 32,
+   "label": "collapsed-border:row-line-2[3..4]",
+   "page": 2,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    103.406,
-    266.388,
-    262.301,
-    267.138
+    261.926,
+    282.513,
+    306.129,
+    283.263
    ],
    "evenOdd": false,
    "params": {
@@ -16502,18 +16520,18 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[2]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 32,
+   "label": "collapsed-border:column-line-0[0..1]",
+   "page": 2,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    261.551,
-    244.251,
-    262.301,
-    267.138
+    34.008,
+    282.888,
+    34.758,
+    305.774
    ],
    "evenOdd": false,
    "params": {
@@ -16526,1193 +16544,17 @@
    }
   },
   {
-   "path": "table[1]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[2]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 32,
+   "label": "collapsed-border:column-line-0[2..3]",
+   "page": 2,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    103.406,
-    244.251,
-    262.301,
-    245.001
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 32,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    244.251,
-    104.156,
-    267.138
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 33,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    266.388,
-    305.754,
-    267.138
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 33,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    244.251,
-    305.754,
-    267.138
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 33,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    244.251,
-    305.754,
-    245.001
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[1]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 33,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    244.251,
-    263.051,
-    267.138
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[0]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 36,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    243.501,
-    74.215,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[0]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 36,
-   "artifact": true,
-   "geometry": [
-    73.465,
-    221.364,
-    74.215,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[0]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 36,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    221.364,
-    74.215,
-    222.114
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[0]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 36,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    221.364,
-    35.133,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[1]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 37,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    243.501,
-    103.406,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[1]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 37,
-   "artifact": true,
-   "geometry": [
-    102.656,
-    221.364,
-    103.406,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[1]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 37,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    221.364,
-    103.406,
-    222.114
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[1]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 37,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    221.364,
-    74.965,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[2]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 38,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    243.501,
-    262.301,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[2]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 38,
-   "artifact": true,
-   "geometry": [
-    261.551,
-    221.364,
-    262.301,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[2]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 38,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    221.364,
-    262.301,
-    222.114
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 38,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    221.364,
-    104.156,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[3]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[3]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 39,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    243.501,
-    305.754,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[3]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 39,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    221.364,
-    305.754,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[3]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[3]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 39,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    221.364,
-    305.754,
-    222.114
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[0]/td[3]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[0]/td[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 39,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    221.364,
-    263.051,
-    244.251
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 41,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    220.614,
-    74.215,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 41,
-   "artifact": true,
-   "geometry": [
-    73.465,
+    34.008,
     34.028,
-    74.215,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 41,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    34.028,
-    74.215,
-    34.778
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 41,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    34.028,
-    35.133,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[1]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 42,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    220.614,
-    103.406,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[1]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 42,
-   "artifact": true,
-   "geometry": [
-    102.656,
-    34.028,
-    103.406,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[1]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 1,
-   "paintIndex": 42,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    34.028,
-    103.406,
-    34.778
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[1]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 42,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    34.028,
-    74.965,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[2]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 1,
-   "paintIndex": 43,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    220.614,
-    262.301,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[2]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 1,
-   "paintIndex": 43,
-   "artifact": true,
-   "geometry": [
-    261.551,
-    34.028,
-    262.301,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[1]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[1]/tbody[0]/tr[1]/td[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 1,
-   "paintIndex": 43,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    34.028,
-    104.156,
-    221.364
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 2,
-   "paintIndex": 47,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    305.024,
-    74.215,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 47,
-   "artifact": true,
-   "geometry": [
-    73.465,
-    282.888,
-    74.215,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 2,
-   "paintIndex": 47,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    282.888,
-    74.215,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 47,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    282.888,
-    35.133,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 2,
-   "paintIndex": 48,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    305.024,
-    103.406,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 48,
-   "artifact": true,
-   "geometry": [
-    102.656,
-    282.888,
-    103.406,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 2,
-   "paintIndex": 48,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    282.888,
-    103.406,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 48,
-   "artifact": true,
-   "geometry": [
-    74.215,
-    282.888,
-    74.965,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 2,
-   "paintIndex": 49,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    305.024,
-    262.301,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 49,
-   "artifact": true,
-   "geometry": [
-    261.551,
-    282.888,
-    262.301,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 2,
-   "paintIndex": 49,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    282.888,
-    262.301,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 49,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    282.888,
-    104.156,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 2,
-   "paintIndex": 50,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    305.024,
-    305.754,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 50,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    282.888,
-    305.754,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 2,
-   "paintIndex": 50,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    282.888,
-    305.754,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[2]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 50,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    282.888,
-    263.051,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 53,
-   "artifact": true,
-   "geometry": [
-    73.465,
-    34.028,
-    74.215,
+    34.758,
     282.888
    ],
    "evenOdd": false,
@@ -17726,17 +16568,41 @@
    }
   },
   {
-   "path": "table[2]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[0]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-left",
+   "label": "collapsed-border:column-line-1[0..1]",
    "page": 2,
-   "paintIndex": 53,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    34.383,
+    73.84,
+    282.888,
+    74.59,
+    305.774
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-1[2..3]",
+   "page": 2,
+   "paintIndex": 56.25,
+   "artifact": true,
+   "geometry": [
+    73.84,
     34.028,
-    35.133,
+    74.59,
     282.888
    ],
    "evenOdd": false,
@@ -17750,17 +16616,41 @@
    }
   },
   {
-   "path": "table[2]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[1]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-2[0..1]",
    "page": 2,
-   "paintIndex": 54,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    102.656,
+    103.031,
+    282.888,
+    103.781,
+    305.774
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-2[2..3]",
+   "page": 2,
+   "paintIndex": 56.25,
+   "artifact": true,
+   "geometry": [
+    103.031,
     34.028,
-    103.406,
+    103.781,
     282.888
    ],
    "evenOdd": false,
@@ -17774,17 +16664,41 @@
    }
   },
   {
-   "path": "table[2]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[1]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-left",
+   "label": "collapsed-border:column-line-3[0..1]",
    "page": 2,
-   "paintIndex": 54,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    74.215,
+    261.926,
+    282.888,
+    262.676,
+    305.774
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-3[2..3]",
+   "page": 2,
+   "paintIndex": 56.25,
+   "artifact": true,
+   "geometry": [
+    261.926,
     34.028,
-    74.965,
+    262.676,
     282.888
    ],
    "evenOdd": false,
@@ -17798,17 +16712,41 @@
    }
   },
   {
-   "path": "table[2]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[2]",
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-4[0..1]",
    "page": 2,
-   "paintIndex": 55,
+   "paintIndex": 56.25,
    "artifact": true,
    "geometry": [
-    261.551,
+    305.379,
+    282.888,
+    306.129,
+    305.774
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[2]",
+   "owner": "artifact:table-borders:table[2]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-4[2..3]",
+   "page": 2,
+   "paintIndex": 56.25,
+   "artifact": true,
+   "geometry": [
+    305.379,
     34.028,
-    262.301,
+    306.129,
     282.888
    ],
    "evenOdd": false,
@@ -17822,113 +16760,89 @@
    }
   },
   {
-   "path": "table[2]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[2]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 55,
-   "artifact": true,
-   "geometry": [
-    103.406,
-    34.028,
-    104.156,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 2,
-   "paintIndex": 56,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    282.138,
-    305.754,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 2,
-   "paintIndex": 56,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    34.028,
-    305.754,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[2]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[2]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 2,
-   "paintIndex": 56,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    34.028,
-    263.051,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-top",
+   "label": "collapsed-border:row-line-0[0..4]",
    "page": 3,
-   "paintIndex": 60,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    34.383,
-    305.024,
-    66.867,
+    34.008,
+    305.399,
+    306.129,
+    306.149
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-1[0..4]",
+   "page": 3,
+   "paintIndex": 69.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    282.513,
+    306.129,
+    283.263
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
+   "kind": "fill",
+   "label": "collapsed-border:row-line-3[0..4]",
+   "page": 3,
+   "paintIndex": 69.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    212.985,
+    306.129,
+    213.735
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-0[0..1]",
+   "page": 3,
+   "paintIndex": 69.25,
+   "artifact": true,
+   "geometry": [
+    34.008,
+    282.888,
+    34.758,
     305.774
    ],
    "evenOdd": false,
@@ -17942,377 +16856,17 @@
    }
   },
   {
-   "path": "table[3]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[0]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-0[2..3]",
    "page": 3,
-   "paintIndex": 60,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    66.117,
-    282.888,
-    66.867,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 3,
-   "paintIndex": 60,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    282.888,
-    66.867,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[0]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[0]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 60,
-   "artifact": true,
-   "geometry": [
-    34.383,
-    282.888,
-    35.133,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 3,
-   "paintIndex": 61,
-   "artifact": true,
-   "geometry": [
-    66.867,
-    305.024,
-    93.527,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 3,
-   "paintIndex": 61,
-   "artifact": true,
-   "geometry": [
-    92.777,
-    282.888,
-    93.527,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 3,
-   "paintIndex": 61,
-   "artifact": true,
-   "geometry": [
-    66.867,
-    282.888,
-    93.527,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[1]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[1]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 61,
-   "artifact": true,
-   "geometry": [
-    66.867,
-    282.888,
-    67.617,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 3,
-   "paintIndex": 62,
-   "artifact": true,
-   "geometry": [
-    93.527,
-    305.024,
-    262.301,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 3,
-   "paintIndex": 62,
-   "artifact": true,
-   "geometry": [
-    261.551,
-    282.888,
-    262.301,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 3,
-   "paintIndex": 62,
-   "artifact": true,
-   "geometry": [
-    93.527,
-    282.888,
-    262.301,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[2]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 62,
-   "artifact": true,
-   "geometry": [
-    93.527,
-    282.888,
-    94.277,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-top",
-   "page": 3,
-   "paintIndex": 63,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    305.024,
-    305.754,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 3,
-   "paintIndex": 63,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    282.888,
-    305.754,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 3,
-   "paintIndex": 63,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    282.888,
-    305.754,
-    283.638
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/thead[0]/tr[0]/th[3]",
-   "owner": "artifact:paint:table[3]/thead[0]/tr[0]/th[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 63,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    282.888,
-    263.051,
-    305.774
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[0]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 3,
-   "paintIndex": 66,
-   "artifact": true,
-   "geometry": [
-    66.117,
+    34.008,
     213.36,
-    66.867,
+    34.758,
     282.888
    ],
    "evenOdd": false,
@@ -18326,18 +16880,18 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[0]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-bottom",
+   "label": "collapsed-border:column-line-1[0..1]",
    "page": 3,
-   "paintIndex": 66,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    34.383,
-    213.36,
-    66.867,
-    214.11
+    66.492,
+    282.888,
+    67.242,
+    305.774
    ],
    "evenOdd": false,
    "params": {
@@ -18350,17 +16904,17 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[0]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[0]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-left",
+   "label": "collapsed-border:column-line-1[2..3]",
    "page": 3,
-   "paintIndex": 66,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    34.383,
+    66.492,
     213.36,
-    35.133,
+    67.242,
     282.888
    ],
    "evenOdd": false,
@@ -18374,17 +16928,41 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[1]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-2[0..1]",
    "page": 3,
-   "paintIndex": 67,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    92.777,
+    93.152,
+    282.888,
+    93.902,
+    305.774
+   ],
+   "evenOdd": false,
+   "params": {
+    "rgb": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "opacity": 1
+   }
+  },
+  {
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
+   "kind": "fill",
+   "label": "collapsed-border:column-line-2[2..3]",
+   "page": 3,
+   "paintIndex": 69.25,
+   "artifact": true,
+   "geometry": [
+    93.152,
     213.36,
-    93.527,
+    93.902,
     282.888
    ],
    "evenOdd": false,
@@ -18398,18 +16976,18 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[1]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-bottom",
+   "label": "collapsed-border:column-line-3[0..1]",
    "page": 3,
-   "paintIndex": 67,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    66.867,
-    213.36,
-    93.527,
-    214.11
+    261.926,
+    282.888,
+    262.676,
+    305.774
    ],
    "evenOdd": false,
    "params": {
@@ -18422,17 +17000,17 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[1]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[1]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-left",
+   "label": "collapsed-border:column-line-3[2..3]",
    "page": 3,
-   "paintIndex": 67,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    66.867,
+    261.926,
     213.36,
-    67.617,
+    262.676,
     282.888
    ],
    "evenOdd": false,
@@ -18446,18 +17024,18 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[2]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-right",
+   "label": "collapsed-border:column-line-4[0..1]",
    "page": 3,
-   "paintIndex": 68,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    261.551,
-    213.36,
-    262.301,
-    282.888
+    305.379,
+    282.888,
+    306.129,
+    305.774
    ],
    "evenOdd": false,
    "params": {
@@ -18470,113 +17048,17 @@
    }
   },
   {
-   "path": "table[3]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[2]",
+   "path": "table[3]",
+   "owner": "artifact:table-borders:table[3]",
    "kind": "fill",
-   "label": "border-bottom",
+   "label": "collapsed-border:column-line-4[2..3]",
    "page": 3,
-   "paintIndex": 68,
+   "paintIndex": 69.25,
    "artifact": true,
    "geometry": [
-    93.527,
+    305.379,
     213.36,
-    262.301,
-    214.11
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/tbody[0]/tr[1]/td[2]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[2]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 68,
-   "artifact": true,
-   "geometry": [
-    93.527,
-    213.36,
-    94.277,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-right",
-   "page": 3,
-   "paintIndex": 69,
-   "artifact": true,
-   "geometry": [
-    305.004,
-    213.36,
-    305.754,
-    282.888
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-bottom",
-   "page": 3,
-   "paintIndex": 69,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    213.36,
-    305.754,
-    214.11
-   ],
-   "evenOdd": false,
-   "params": {
-    "rgb": [
-     0.6,
-     0.6,
-     0.6
-    ],
-    "opacity": 1
-   }
-  },
-  {
-   "path": "table[3]/tbody[0]/tr[1]/td[3]",
-   "owner": "artifact:paint:table[3]/tbody[0]/tr[1]/td[3]",
-   "kind": "fill",
-   "label": "border-left",
-   "page": 3,
-   "paintIndex": 69,
-   "artifact": true,
-   "geometry": [
-    262.301,
-    213.36,
-    263.051,
+    306.129,
     282.888
    ],
    "evenOdd": false,
@@ -18756,33 +17238,9 @@
   },
   "streamOrder": [
    "table[0]#collapsed-borders",
-   "table[1]/thead[0]/tr[0]/th[0]#box",
-   "table[1]/thead[0]/tr[0]/th[1]#box",
-   "table[1]/thead[0]/tr[0]/th[2]#box",
-   "table[1]/thead[0]/tr[0]/th[3]#box",
-   "table[1]/tbody[0]/tr[0]/td[0]#box",
-   "table[1]/tbody[0]/tr[0]/td[1]#box",
-   "table[1]/tbody[0]/tr[0]/td[2]#box",
-   "table[1]/tbody[0]/tr[0]/td[3]#box",
-   "table[1]/tbody[0]/tr[1]/td[0]#box",
-   "table[1]/tbody[0]/tr[1]/td[1]#box",
-   "table[1]/tbody[0]/tr[1]/td[2]#box",
-   "table[2]/thead[0]/tr[0]/th[0]#box",
-   "table[2]/thead[0]/tr[0]/th[1]#box",
-   "table[2]/thead[0]/tr[0]/th[2]#box",
-   "table[2]/thead[0]/tr[0]/th[3]#box",
-   "table[2]/tbody[0]/tr[1]/td[0]#box",
-   "table[2]/tbody[0]/tr[1]/td[1]#box",
-   "table[2]/tbody[0]/tr[1]/td[2]#box",
-   "table[2]/tbody[0]/tr[1]/td[3]#box",
-   "table[3]/thead[0]/tr[0]/th[0]#box",
-   "table[3]/thead[0]/tr[0]/th[1]#box",
-   "table[3]/thead[0]/tr[0]/th[2]#box",
-   "table[3]/thead[0]/tr[0]/th[3]#box",
-   "table[3]/tbody[0]/tr[1]/td[0]#box",
-   "table[3]/tbody[0]/tr[1]/td[1]#box",
-   "table[3]/tbody[0]/tr[1]/td[2]#box",
-   "table[3]/tbody[0]/tr[1]/td[3]#box"
+   "table[1]#collapsed-borders",
+   "table[2]#collapsed-borders",
+   "table[3]#collapsed-borders"
   ],
   "figures": []
  },
@@ -19467,5 +17925,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 22467
+ "bytes": 21824
 }

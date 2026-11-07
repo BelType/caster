@@ -30,6 +30,7 @@ import type { ChainContext } from '../coordinates/ctm.ts';
 import type { PaintOrder } from '../walk/paintOrder.ts';
 import type { Box } from './pathData.ts';
 import type { ArtifactDescriptor, WalkTable } from '../walk/structure.ts';
+import { buildTableModel } from '../walk/tableModel.ts';
 import type { TableModel } from '../walk/tableModel.ts';
 import type { VectorNode, VectorRequest } from './vector.ts';
 import type { ReportCollapsedEdge, ReportComputedBorderWidth } from '../report.ts';
@@ -112,6 +113,8 @@ export type TableBorderOptions = {
   tables: WalkTable[];
   order: PaintOrder;
   chains: ChainContext;
+  /** The adapter's pairing (`PageStrip.twinOf`): a `<table>` it answers for is a copy an engine presented in place of the one the walk modelled. */
+  twinOf?: (element: Element) => Element|null;
 };
 
 /** What {@link collectTableBorders} answers: the painted edges, the record of each, and what E9 (`vector-painting.md`) must leave alone. */
@@ -139,7 +142,14 @@ export type TableBorderResult = {
  * Both sets are produced whether or not any table is collapsed, because `empty-cells: hide` is a separate-borders rule and case 5 is the table that exercises it.
  */
 export function collectTableBorders(options: TableBorderOptions): TableBorderResult {
-  const { container, tables, order, chains } = options;
+  const { container, order, chains } = options;
+  // A table an engine presents as copies, as Cicero presents a divided one (*the engine stopped showing the original*, S47), is modelled by the walk on the original, which is on no page, so its grid is read from nothing and its copies' cells reached the per-cell route, two strips of ink on each shared edge. Each copy is a real table Blink laid out and resolved its collapsed borders over on its own, so each is painted as its own grid, its repeated head with it.
+  const modelled = new Set(options.tables.flatMap((t) => t.model.fragments));
+  const copies = [...container.querySelectorAll('table')].filter((t) => !modelled.has(t) && options.twinOf?.(t) && getComputedStyle(t).display !== 'none').map((t) => {
+    const model = buildTableModel([t], (element) => domPathOf(element, container), true);
+    return { key: model.key, model, collapsed: getComputedStyle(t).borderCollapse === 'collapse' };
+  });
+  const tables: Pick<WalkTable, 'key'|'model'|'collapsed'>[] = [...options.tables, ...copies];
   const containerRect = container.getBoundingClientRect();
   const requests: VectorRequest[] = [];
   const artifacts: ArtifactDescriptor[] = [];

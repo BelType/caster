@@ -205,9 +205,10 @@ function colGroupsOf(fragment: HTMLElement): { startCol: number; endCol: number;
  *
  * @param fragments - In DOM order; the first one's key, `<colgroup>`s and DOM path stand for the table.
  * @param describe - Names an element for a message and for the report; the walker passes its own `domPathOf` so a warning about a ragged row names the row the same way every other message in the exporter names an element.
+ * @param ink - Model the table as it is drawn rather than as it is read: a repeated row is a row of the grid, as it is of the grid Blink resolves its borders over. The border painter asks for this on a table an engine presents as a copy (`vectors/tableBorders.ts`).
  * @throws {CasterError} No fragments at all; two cells covering one slot (PDF/UA-2 8.2.5.26 t1).
  */
-export function buildTableModel(fragments: HTMLElement[], describe: (element: Element) => string): TableModel {
+export function buildTableModel(fragments: HTMLElement[], describe: (element: Element) => string, ink = false): TableModel {
   if (fragments.length === 0) throw new CasterError('tableModel: buildTableModel was given no table elements');
 
   const cells: TableCell[] = [];
@@ -241,7 +242,7 @@ export function buildTableModel(fragments: HTMLElement[], describe: (element: El
       rowGroups[groupIndex].elements.push(group.element);
 
       for (const tr of group.rows) {
-        const repeated = group.repeated || isRepeated(tr);
+        const repeated = !ink && (group.repeated || isRepeated(tr));
         if (repeated) {
           // A repeated head row is ink on a continuation page and nothing else: it is not a row of the table, so it never reaches the grid, the header algorithm or the regularity check.
           rowList.push({

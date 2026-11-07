@@ -1,15 +1,15 @@
 {
- "caster": "d5a8761",
+ "caster": "1262927",
  "cicero": "11dbd15",
  "documents": [
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "42b0e88175ebb2fcdcc3b23f71fbf22444d95c6f465d630031aa507be853d7d2",
-   "bytes": 111781,
-   "cli": "differs: first differing byte at offset 48 (recorded 111781 bytes, now 109728), in object 1 recorded and object 1 now",
+   "sha256": "7568d6273ca787ce280033a87c98f00c94957df2cba62d25bb492d72efade51e",
+   "bytes": 109619,
+   "cli": "differs: first differing byte at offset 155 (recorded 109619 bytes, now 109728), in object 2 recorded and object 2 now",
    "list": {
-    "bytes": 189064,
+    "bytes": 188330,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -35,10 +35,10 @@
   {
    "name": "cast-divided-row",
    "why": "a table row divided across pages",
-   "sha256": "40c3537d99837d36efd89cfe7c5c8d21a3cb75425c1a7121ac17098f36455f81",
-   "bytes": 22467,
+   "sha256": "e8317215b0943ca7b6184cb374746a6196bba82e11d113a67728dc3e5e296ef6",
+   "bytes": 21824,
    "list": {
-    "bytes": 92446,
+    "bytes": 65632,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
