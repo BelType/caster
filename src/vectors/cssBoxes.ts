@@ -1053,6 +1053,16 @@ export function gradientTile(style: CSSStyleDeclaration, index: number, area: Bo
   const extent = (token: string|undefined, of: number) => (token === undefined || /^(auto|cover|contain)$/.test(token) ? of : lengthPercentage(token, of));
   const w = extent(sizes[0], area.w);
   const h = extent(/^(cover|contain)$/.test(sizes[0] ?? '') ? undefined : sizes[1], area.h);
+  return backgroundTile(style, index, w, h, area, paint);
+}
+
+/**
+ * One background layer's tile of a known size: where `background-position` puts it, and the box a single tile paints within.
+ *
+ * @returns `null` when the tile repeats inside the area, which one drawing cannot show.
+ */
+export function backgroundTile(style: Pick<CSSStyleDeclaration, 'backgroundPosition'|'backgroundRepeat'>, index: number, w: number, h: number, area: Box, paint: Box): { tile: Box; within: Box; }|null {
+  const at = (list: string) => { const layers = splitTopLevel(list); return layers[index % layers.length] ?? ''; };
   const positions = shapeTokens(at(style.backgroundPosition));
   const x = area.x + lengthPercentage(positions[0] ?? '0%', area.w - w);
   const y = area.y + lengthPercentage(positions[1] ?? '0%', area.h - h);

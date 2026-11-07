@@ -8,6 +8,8 @@
  * @packageDocumentation
  */
 
+import type { Gateway } from '../host/gateway.ts';
+
 /** One page of a {@link PageStrip}: its box, its flow, and what the engine cut across it. */
 export type StripPage = {
   /** The page's own element — the box whose border box is the page (Cicero's `<beltype-page>` host, Paged.js's `.pagedjs_page`, a host's sized `<div>`). */
@@ -78,7 +80,7 @@ export type Interval = {
  *
  * R6 — Furniture: not a member. The adapter stamps margin content with the walk's artifact attribute before the walk runs; `inMargin` is what R5 asks of it afterwards.
  *
- * R7 — Page-level `--pdf-*` properties: not a member. They are read off the document root (`adapters/cicero.js`'s `pageHintsOf`; *the page-level `--pdf-*` properties are read from the document root*, DESIGN.md S12), because Chromium's `@page` parser drops a custom property before the CSSOM sees it (*Chromium's `@page` parser discards a custom property*, S11); `backgrounds` is the one page-context fact the strip carries.
+ * R7 — Page-level `--pdf-*` properties: not a member. They are read off the document root (`adapters/cicero.js`'s `pageHintsOf`; *the page-level `--pdf-*` properties are read from the document root*, DESIGN.md S12), because Chromium's `@page` parser drops a custom property before the CSSOM sees it (*Chromium's `@page` parser discards a custom property*, S11); `backgrounds` and `seatPageImages` are the page-context facts the strip carries.
  *
  * R8 — The engine's own marks inside content: `transparent`, which makes an element introduce no node and no owner while its text is measured like any other.
  */
@@ -103,6 +105,8 @@ export type PageStrip = {
   inMargin?: (element: Element) => boolean;
   /** The `@page` background each page paints — see `pageBackgroundsOf`. Empty where every page is the medium's own white. */
   backgrounds: { page: number, rgb: [number, number, number] }[];
+  /** The `@page` images, seated on their pages as artifacts (`seatPageImages`), which `print()` asks for once, before anything reads the strip's elements. Asynchronous because an image's own size is known only once it is loaded. Absent where no page paints one. */
+  seatPageImages?: (gateway: Gateway) => Promise<void>;
   /** The record: every marked-content sequence the pages present, in page order. Transitional beside `twinOf`, `StripPage.continuations` and `transparent` (*an interval is a marked-content sequence*, DESIGN.md S71) — derived from today's pairing by `adapters/intervals.js`'s `deriveIntervals` and checked by the tiling invariant, consumed by nothing yet; `twinOf` and `continuations` retire when both adapters emit it from the engine's own record, and `transparent` stays. Absent on a host's own strip, for which `print()` derives it. */
   intervals?: Interval[];
 };
