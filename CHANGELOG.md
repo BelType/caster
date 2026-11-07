@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A table row divided across pages reads its cells in column order.** The structure resolver (`displayList/structure.ts`) ordered every element's children by the earliest content under each, so in a row whose long cell starts on the page before its short ones, that cell was read first: in `fixtures/cast-divided-row/` the second row read its third cell, then the first, second and fourth. A `TR`'s cells now keep the column order the walk declared them in; every other element is ordered as before. `test/tables.test.ts` holds the case and reads the fixture's list, and `fixtures/lists/cast-divided-row.{json,pdf,report.json}` and its line in `corpus.json` are recorded again; nothing else in the corpus moves.
+- **An inline formula is read where it stands in its sentence.** A KaTeX span was measured as a block of its own, so its paragraph's words were one marked-content sequence and the formula came after them, in the structure tree and in the content stream: "Inline , and on its own line:" and then a² + b² = c². A formula inside a measured block now rides that block's lines, its runs owned by the `Formula` as a link's are by the `Link`, and the paragraph's content divides around it. A display formula, or one with no measured block around it, is measured as its own block, as before. `fixtures/cast-inline-formula/` gains the page its `index.md` renders to, with KaTeX's sheet and the two faces it uses, and `test/inlineFormula.test.ts` prints it; nothing in the corpus moves.
+
 ## 0.2.1 — 2026-11-07
 
 - **The development pin moves to Cicero 0.1.7**, whose root line-height provision is a floor of zero specificity: a fixture whose root declared no `line-height` is refused at intake (`I5`), so the page background fixture says `font: 11pt/1.4 F`. The printer is unchanged.

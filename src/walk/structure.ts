@@ -1124,7 +1124,11 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             structPathByElement.set(element, self.path);
             // Every descendant belongs to the one Formula: KaTeX's rendered markup is positioned spans that mean nothing on their own, and the MathML half is not painted at all.
             for (const descendant of element.querySelectorAll('*')) ownerByElement.set(descendant, self.path);
-            block((element as HTMLElement), self.tag, self.path);
+            // An inline formula inside a measured block rides that block's lines, its runs owned by the Formula as a link's are by the Link, so the paragraph's marked content divides around it and the formula stands where it stands in the sentence. Measured as a block of its own, it came after all of the paragraph's words, in the tree and in the stream. A formula with no measured block around it, or one laid out as a block, is measured as its own block.
+            let measured = false;
+            for (let up = element.parentElement; up && up !== container && !measured; up = up.parentElement) measured = describeByBlock.has(up);
+            if (isBlockLevel(element) || !measured)
+                block((element as HTMLElement), self.tag, self.path);
             return;
         }
         // E12F (`structure-tree.md`) asked whether an `<hr>` inside an article should become a `Div` with a role instead. It should not: a horizontal rule is a separator the engine paints and carries no text, so it is a Layout artifact, which is what E5 already decided and what E12 leaves alone.
