@@ -240,7 +240,8 @@
   "colour": "auto",
   "unknownElements": "infer",
   "standard": "ua-2",
-  "writer": "pdf-lib"
+  "writer": "pdf-lib",
+  "profile": "187484 bytes"
  },
  "errors": [],
  "warnings": [
@@ -1087,14 +1088,14 @@
   ],
   "outputIntent": {
    "subtype": "GTS_PDFX",
-   "condition": "sRGB",
+   "condition": "Operator CMYK profile",
    "registryName": "http://www.color.org",
-   "info": "Compact sRGB profile (saucecontrol, CC0), standing in for a press characterisation",
-   "n": 3,
-   "profileBytes": 736,
-   "profileSha256": "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4",
-   "profileClass": "mntr",
-   "profileSpace": "RGB ",
+   "info": "The ICC profile the operator passed as the profile option",
+   "n": 4,
+   "profileBytes": 187484,
+   "profileSha256": "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+   "profileClass": "prtr",
+   "profileSpace": "CMYK",
    "profileVersion": "2.1.0"
   },
   "defaultRgbBytes": 736,
@@ -7491,5 +7492,5 @@
    "source": "element"
   }
  ],
- "bytes": 36222
+ "bytes": 174974
 }

@@ -12,7 +12,6 @@ import { createHash } from 'node:crypto';
 import { resolveOptions } from '../src/options.ts';
 import { CasterError } from '../src/errors.ts';
 import { contentType } from '@beltype/common/mime';
-import { WRITER } from './writer.ts';
 import { launchBrowser } from './launch.ts';
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
@@ -25,7 +24,7 @@ const PAGE = (body: string) => `<!doctype html><html lang="en"><head><meta chars
 <style>@font-face { font-family: "Crimson Pro"; src: url("/fonts/CrimsonPro-Variable.ttf"); font-weight: 200 900; }
 body { margin: 0; } .s { width: 120mm; height: 100mm; font: 12px "Crimson Pro"; }</style></head><body><div class="s">${body}</div></body></html>`;
 
-async function printed(body: string, profile?: number[]): Promise<{ error?: string; bytes?: number[] }> {
+async function printed(body: string, profile?: number[], writer: string = 'pdf-lib'): Promise<{ error?: string; bytes?: number[] }> {
   const server = http.createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (url.pathname === '/') return void response.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE(body));
@@ -62,7 +61,7 @@ async function printed(body: string, profile?: number[]): Promise<{ error?: stri
       } catch (e: any) {
         return { error: String(e.message) };
       }
-    }, { writer: WRITER, profile });
+    }, { writer, profile });
   } finally {
     await browser.close();
     server.close();
@@ -94,6 +93,15 @@ test('a print with no profile carries the compact sRGB profile as its output int
 test('a print with a CMYK profile carries it as its output intent', async () => {
   const cmyk = asset('test/assets/default_cmyk.icc');
   const seen = await printed('<p>Some words.</p>', [...cmyk]);
+  assert.equal(seen.error, undefined);
+  assert.equal(sha(await outputProfile(seen.bytes!)), sha(cmyk));
+});
+
+test('the Rust writer refuses a colour print with no profile, naming the option, and writes the output intent from one', async () => {
+  const none = await printed('<p>Some words.</p>', undefined, 'forme');
+  assert.match(none.error ?? '', /`profile`/);
+  const cmyk = asset('test/assets/default_cmyk.icc');
+  const seen = await printed('<p>Some words.</p>', [...cmyk], 'forme');
   assert.equal(seen.error, undefined);
   assert.equal(sha(await outputProfile(seen.bytes!)), sha(cmyk));
 });

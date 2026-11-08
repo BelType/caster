@@ -1,5 +1,5 @@
 {
- "caster": "5867b0e",
+ "caster": "b667e8b",
  "cicero": "npm 0.1.11",
  "documents": [
   {
@@ -47,15 +47,17 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "31658b1d06c790a242377729270f4d99d1a828c8cf5fec34204369a5f5a39bd5",
-   "bytes": 36222,
+   "sha256": "039d26011464587480cdf991995a373e49b3192c7a318fb2c1fdafce11c0555c",
+   "bytes": 174974,
    "options": {
-    "blackText": "100k"
+    "blackText": "100k",
+    "profile": "test/assets/default_cmyk.icc"
    },
    "list": {
-    "bytes": 34366,
+    "bytes": 34358,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "97735aeb3a12cf6d4c290e0f96b9f3b0a9b4dc37cab8f31bde522eb6e30802db",
      "ad380972598e804570a326f9be6b6c5d9ec7ba58a407a44590aa913ca11bb67d",
      "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4"
@@ -201,12 +203,16 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "93690f3d4995f9ad4370cffaf22327f55ba6aa9d3319f77b7274a511ddfba181",
-   "bytes": 149765,
+   "sha256": "2d836156962f091c9e785d68af289ab41ea7efd4bf641a1e391067021a97f6b8",
+   "bytes": 288516,
+   "options": {
+    "profile": "test/assets/default_cmyk.icc"
+   },
    "list": {
-    "bytes": 148512,
+    "bytes": 148504,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
+     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "8b75f1753b9dc80814a9c3e4c6f65fd8a1a2b68e138c150d84631f1185655dd6",
      "9b9fbed07be70434c1e98bbc3b80e0976d3f79c04fd3886e44391538503ba373",
      "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4",

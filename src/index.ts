@@ -876,8 +876,11 @@ function intrinsicsOf(request: { element: HTMLElement; }, bytesBySrc: Map<string
  * The two ICC profiles come from the `profiles` capability the registry loaded; the builder hashes them into the list's blobs. No `convertRgb` travels: a converted run's fill reaches the list as its ink, and `'endpoint'` is refused before the walk.
  *
  * @throws {CapabilityError} The `profiles` capability was not loaded.
+ * @throws {CasterError} The Rust writer was chosen and no `profile` was passed.
  */
 function colourOptions( options: CasterOptions) {
+  // forme reads the output intent's profile as CMYK only (`colorResources: the output profile is "RGB ", not CMYK`), so the sRGB intent a profile-less print carries is the pdf-lib writer's alone until forme accepts an RGB destination.
+  if (options.writer === 'forme' && !options.profile) throw new CasterError("caster: `writer: 'forme'` writes the output intent from a CMYK profile only, and this print has none. Pass the bytes of one as the `profile` option, or use `writer: 'pdf-lib'`, whose output intent can be sRGB.", { flag: 'profile' });
   const files = capability('profiles');
   return {
     profileBytes: options.profile ?? files['srgb.icc'],
