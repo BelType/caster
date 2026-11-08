@@ -276,7 +276,8 @@ export function pairTrees(clone: Element, source: Element, twins: Map<Element,El
     if (cloneEl.tagName === 'OBJECT' && cloneEl.getAttribute('is') === 'beltype-facsimile') return;
     // The Compositor's hint marks (R8) are inserted into a composed clone and exist in no original, so they have no twin to pair with (*two merges, one arrangement*, S48).
     // A repeated group's copy (the `artifact` word) has no twin, and it stands for a group the source already holds: both leave the alignment, the copy from the clone and the source's group of the same tag from the twin's children, so the rows that continue still line up with their own source rows.
-    const twinKids = [...twin.children];
+    // A fixed box or a running element written inside the block stays in the original and leaves every clone (`isCopiedPerPage`, 2026-11-08), so it leaves the twin's children too.
+    const twinKids = [...twin.children].filter((k) => !isCopiedPerPage(k));
     // The second moment of reification (S79) writes where the page answers: `content: string(family)` reads the family's name in a clone on a page and nothing in its original, which stands on none. So a clone's generated span may have no twin, and it leaves the alignment.
     const generatedHasTwin = twinKids.some((k) => k.classList.contains(GENERATED_CLASS));
     const cloneKids = [...cloneEl.children].filter((k) => !hasWordOn(k, 'break') && !hasWordOn(k, 'fill') && !hasWordOn(k, ARTIFACT_WORD) && (generatedHasTwin || !k.classList.contains(GENERATED_CLASS)));
@@ -307,6 +308,22 @@ export function pairTrees(clone: Element, source: Element, twins: Map<Element,El
 /** Whether Cicero kept a box and did not display it (*a box Cicero kept and did not display is on no page*, S67) — read off the word `away` the engine writes (it was an inline `display: none !important` until *the piece words*, 2026-10-11), so a detached tree answers as a connected one does. */
 export function isNotDisplayed( element: Element) {
   return hasWordOn(element, 'away');
+}
+
+/** The custom property the host rewrites `position: running(name)` into, the name its value (Cicero's `gcpm-encoding.js`' `RUNNING_PROP`, restated for the reason the engine's words are; `test/data-beltype.test.ts` pins it). */
+export const RUNNING_PROPERTY = '--beltype-running';
+
+/**
+ * Whether the engine copies this element of an original per page rather than flowing it: a `position: fixed` box or a running element, read off the computed style as Cicero's `word-space.js`' `isFixedBox` reads it.
+ *
+ * @remarks
+ * Egildo's ruling of 2026-11-08: the engine's intake no longer lifts such a box out of the block it was written in, so the original holds it at any depth while the engine's word space never held it and no flow fragment does (`fragments.js`' `stripFixedBoxes`). Its words are printed on every page as chrome, from the per-page copies the adapter reads in the fixed slot and the margin cells, and are checked there; the pairing and the partition leave the subtree out of the original. An element that cannot be asked is no such box.
+ */
+export function isCopiedPerPage(element: Element): boolean {
+  const win = element.ownerDocument?.defaultView;
+  if (!win || !element.isConnected) return false;
+  const style = win.getComputedStyle(element);
+  return style.position === 'fixed' || style.getPropertyValue(RUNNING_PROPERTY).trim() !== '';
 }
 
 /** Whether an element is a per-page clone of a `position: fixed` box (R9). */
@@ -465,6 +482,8 @@ export function joinedWords(root: Element): string[] {
         if (hasWordOn((child as Element), ARTIFACT_WORD)) continue;
         // Generated text is the printer's reading of a pseudo-element, not a word of the block, and the second moment writes it where the page answers (S79): in a clone and not in its original.
         if ((child as Element).classList.contains(GENERATED_CLASS)) continue;
+        // A fixed box or a running element is in the original and in no flow fragment, because the engine's word space never held it; its words are the per-page copies', checked where they are printed (`isCopiedPerPage`, 2026-11-08).
+        if (isCopiedPerPage(child as Element)) continue;
         const inline = joins((child as Element));
         if (!inline) open = false;
         walk(child);

@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ENGINE_MARKS as REGISTRY_MARKS, ARTIFACT as REGISTRY_ARTIFACT } from '@beltype/cicero/internal/data-beltype';
-import { ARTIFACT_WORD, ENGINE_MARKS, isEngineMark, isContinuation, isFirstFragment, isFixedClone, isFragment } from '../src/adapters/cicero.ts';
+import { ARTIFACT_WORD, ENGINE_MARKS, RUNNING_PROPERTY, isEngineMark, isContinuation, isFirstFragment, isFixedClone, isFragment } from '../src/adapters/cicero.ts';
 
 const el = (value: string|null) => {
   const attrs: Map<string,string> = new Map(value === null ? [] : [['data-beltype', value]]);
@@ -38,4 +38,9 @@ test('the artifact word is the engine\'s, and it is furniture rather than one of
   assert.equal(ARTIFACT_WORD, REGISTRY_ARTIFACT);
   assert.equal(isEngineMark(asElement(el(`fragment ${ARTIFACT_WORD}`))), false);
   assert.equal(isFragment(asElement(el(`fragment fixed ${ARTIFACT_WORD}`))), true, 'a fixed copy after the first is a clone too');
+});
+
+test('the property a running element is read by is the engine\'s', async () => {
+  const { RUNNING_PROP } = await import('@beltype/cicero/internal/gcpm-encoding');
+  assert.equal(RUNNING_PROPERTY, RUNNING_PROP);
 });
