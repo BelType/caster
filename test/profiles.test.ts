@@ -1,7 +1,7 @@
 /**
- * The two committed ICC profiles, checked as bytes and read through the exporter's own header readers.
+ * The committed sRGB ICC profile and the test-only CMYK fixture, checked as bytes and read through the exporter's own header readers.
  *
- * `scripts/profiles.sh` is their provenance and `profiles/README.md` states what each is for; this suite is the half of that which `npm test` runs, so a profile that is swapped, truncated or re-fetched from a moved upstream fails here rather than in a RIP. The sums are the script's, verbatim, and the fields are the three `colorResources.js` refuses on: PDF/A-4 6.2.3 t1 wants a `prtr` or `mntr` device class on the destination profile, `/OutputIntents` wants CMYK, `/DefaultRGB` wants RGB, and ICC v2 is what the whole arrangement was measured against.
+ * `profiles/README.md` is the sRGB profile's provenance and licence, and `test/assets/PROVENANCE.md` the CMYK fixture's (it is not shipped: Caster ships no CMYK profile); this suite is the half of that which `npm test` runs, so a profile that is swapped, truncated or re-fetched from a moved upstream fails here rather than in a RIP. The sums are the README's, and the fields are the three `colorResources.js` refuses on: PDF/A-4 6.2.3 t1 wants a `prtr` or `mntr` device class on the destination profile, `/OutputIntents` wants CMYK, `/DefaultRGB` wants RGB, and ICC v2 is what the whole arrangement was measured against.
  *
  * Reading them through `iccDeviceClass`/`iccColorSpace`/`iccVersion` rather than off raw offsets is deliberate: it ties the committed bytes to the code that will refuse them, so the day a reader is rewritten this suite is what says whether the profiles still pass it.
  */
@@ -13,17 +13,17 @@ import { fileURLToPath } from 'node:url';
 
 import { iccColorSpace, iccDeviceClass, iccVersion } from '../src/colour/colorResources.ts';
 
-const profile = ( name: string) => new Uint8Array(readFileSync(fileURLToPath(new URL(`../profiles/${name}`, import.meta.url))));
+const profile = ( name: string) => new Uint8Array(readFileSync(fileURLToPath(new URL(name === 'default_cmyk.icc' ? `./assets/${name}` : `../profiles/${name}`, import.meta.url))));
 const sha256 = ( bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
-test('the profiles are the bytes scripts/profiles.sh pinned', () => {
+test('the profiles are the bytes the README pinned', () => {
   assert.equal(sha256(profile('default_cmyk.icc')), '8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9');
-  assert.equal(sha256(profile('srgb.icc')), 'eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5');
+  assert.equal(sha256(profile('srgb.icc')), 'af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4');
   assert.equal(profile('default_cmyk.icc').byteLength, 187484);
-  assert.equal(profile('srgb.icc').byteLength, 2576);
+  assert.equal(profile('srgb.icc').byteLength, 736);
 });
 
-test('the CMYK profile is what PDF/A-4 6.2.3 t1 asks of a destination profile', () => {
+test('the CMYK test fixture is what PDF/A-4 6.2.3 t1 asks of a destination profile', () => {
   const bytes = profile('default_cmyk.icc');
   assert.equal(iccDeviceClass(bytes), 'prtr');
   assert.equal(iccColorSpace(bytes), 'CMYK');

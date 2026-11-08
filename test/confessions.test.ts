@@ -67,6 +67,7 @@ async function printed(route: string, options: Record<string, unknown>): Promise
     await page.goto(`http://127.0.0.1:${port}${route}`);
     await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
     return JSON.parse(await page.evaluate(async ([writer, options]: [string, Record<string, unknown>]) => {
+      if (Array.isArray(options['profile'])) options['profile'] = Uint8Array.from(options['profile']);
       const caster = await import('/src/index.js' as string);
       caster.prepare(document);
       const strip = document.querySelector('.s') as HTMLElement;
@@ -89,7 +90,7 @@ async function printed(route: string, options: Record<string, unknown>): Promise
         },
       }, { writer, ...options });
       return JSON.stringify({ confessions: out.report.confessions, boxes, page: { x: 0, y: 0, width: box.width, height: box.height } });
-    }, [WRITER, options] as [string, Record<string, unknown>]));
+    }, [WRITER, { profile: [...fs.readFileSync(path.join(PACKAGE, 'test', 'assets', 'default_cmyk.icc'))], ...options }] as [string, Record<string, unknown>]));
   } finally {
     await browser.close();
     server.close();

@@ -23,7 +23,7 @@ const DIST = path.join(PACKAGE, 'dist');
 const COMMON = path.dirname(fileURLToPath(import.meta.resolve('@beltype/common/errors')));
 const ROADS = path.join(PACKAGE, 'fixtures', 'roads');
 const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
-const profile = (name: string) => new Uint8Array(fs.readFileSync(path.join(PACKAGE, 'profiles', name)));
+const profile = (name: string) => new Uint8Array(fs.readFileSync(path.join(PACKAGE, name === 'default_cmyk.icc' ? 'test/assets' : 'profiles', name)));
 
 async function lcms() {
   // By a variable, because the bundle carries no declarations (types/vendor.d.ts).
@@ -71,8 +71,8 @@ test('convertImages defaults to none, takes none and cmyk, turns colour auto on,
   assert.equal(resolveOptions().convertImages, 'none');
   assert.throws(() => resolveOptions({ convertImages: 'rgb' as never }), (e: any) => e instanceof CasterError && e.flag === 'convertImages');
   assert.equal(colourOn({}, resolveOptions()), false);
-  assert.equal(colourOn({}, resolveOptions({ convertImages: 'cmyk' })), true);
-  assert.throws(() => resolveOptions({ convertImages: 'cmyk', colour: 'off' }), (e: any) => e instanceof CasterError && e.flag === 'convertImages' && /colour: 'off'/u.test(e.message) && /convertImages: 'cmyk'/u.test(e.message));
+  assert.equal(colourOn({}, resolveOptions({ convertImages: 'cmyk', profile: profile('default_cmyk.icc') })), true);
+  assert.throws(() => resolveOptions({ convertImages: 'cmyk', colour: 'off', profile: profile('default_cmyk.icc') }), (e: any) => e instanceof CasterError && e.flag === 'convertImages' && /colour: 'off'/u.test(e.message) && /convertImages: 'cmyk'/u.test(e.message));
 });
 
 // --- the display list at version 7 ---------------------------------------------------------------------
@@ -161,6 +161,7 @@ async function printed(options: Record<string, unknown>): Promise<Seen> {
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.evaluate(async () => { await Promise.all([...document.images].map((image) => image.decode())); });
     return await page.evaluate(async ([given, writer]: [Record<string, unknown>, string]) => {
+      if (Array.isArray(given['profile'])) given['profile'] = Uint8Array.from(given['profile']);
       const caster = await import('/src/index.js' as string);
       caster.prepare(document);
       const strip = document.querySelector('.s') as HTMLElement;
@@ -179,7 +180,7 @@ async function printed(options: Record<string, unknown>): Promise<Seen> {
         bytes: out.bytes.length,
         images: out.report.images.map((i: any) => ({ src: i.src, colorSpace: i.colorSpace, bpc: i.bpc, hasSMask: i.hasSMask, intrinsic: i.intrinsic, converted: i.converted, convertMs: i.convertMs, notConverted: i.notConverted, resampled: i.resampled, resampleMs: i.resampleMs, decodeMs: i.decodeMs })),
       };
-    }, [options, WRITER] as [Record<string, unknown>, string]);
+    }, [{ profile: [...profile('default_cmyk.icc')], ...options }, WRITER] as [Record<string, unknown>, string]);
   } finally {
     await browser.close();
     server.close();

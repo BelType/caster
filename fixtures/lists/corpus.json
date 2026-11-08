@@ -1,5 +1,5 @@
 {
- "caster": "8519c63",
+ "caster": "5867b0e",
  "cicero": "npm 0.1.11",
  "documents": [
   {
@@ -47,19 +47,18 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "dfc3f351e2069d8576b00b4c80bf402506d56f8c80644b4ed896a84c0ca239f5",
-   "bytes": 176722,
+   "sha256": "31658b1d06c790a242377729270f4d99d1a828c8cf5fec34204369a5f5a39bd5",
+   "bytes": 36222,
    "options": {
     "blackText": "100k"
    },
    "list": {
-    "bytes": 34379,
+    "bytes": 34366,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "97735aeb3a12cf6d4c290e0f96b9f3b0a9b4dc37cab8f31bde522eb6e30802db",
      "ad380972598e804570a326f9be6b6c5d9ec7ba58a407a44590aa913ca11bb67d",
-     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
+     "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4"
     ]
    }
   },
@@ -202,18 +201,17 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "3614a39f5ebeda175d7b7b1963f8afd52d93bff7e6c4f4d17081e1ea40cdbf54",
-   "bytes": 290264,
+   "sha256": "93690f3d4995f9ad4370cffaf22327f55ba6aa9d3319f77b7274a511ddfba181",
+   "bytes": 149765,
    "list": {
-    "bytes": 148525,
+    "bytes": 148512,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
      "8b75f1753b9dc80814a9c3e4c6f65fd8a1a2b68e138c150d84631f1185655dd6",
      "9b9fbed07be70434c1e98bbc3b80e0976d3f79c04fd3886e44391538503ba373",
+     "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4",
      "df728a1467754aa28528a060b170549e6af9c7bdbf758bfeb27349cb0f7644ec",
-     "eb5750d714f8f24a329e9e3815cf83f8e32d75d941928c53a712f232b9b869b2",
-     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
+     "eb5750d714f8f24a329e9e3815cf83f8e32d75d941928c53a712f232b9b869b2"
     ]
    }
   },
@@ -247,41 +245,43 @@
   {
    "name": "convert-text",
    "why": "a page of coloured text under `convertRgb: 'wasm'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted",
-   "sha256": "c1139940fca72606aa910f5d85a07ad764cc6f705d8a338466ed96b636c5d32e",
-   "bytes": 155203,
+   "sha256": "65f2621dd781d17a6df5ff7c4c75fea0576ec88fdd1c633faee3f046512ebc92",
+   "bytes": 153457,
    "options": {
-    "convertRgb": "wasm"
+    "convertRgb": "wasm",
+    "profile": "test/assets/default_cmyk.icc"
    },
    "list": {
-    "bytes": 15772,
+    "bytes": 15751,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
-     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
+     "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4"
     ]
    }
   },
   {
    "name": "convert-images",
    "why": "images under `convertImages: 'cmyk'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone",
-   "sha256": "fc6e77554e40163a7dedf6db5470dea13274f76f9df7004368acab0951615a4b",
-   "bytes": 850651,
+   "sha256": "ec62d0c7ed1d7a4b027235ccf55b0fc43d78b8cff76d876959c81ce8d3c31802",
+   "bytes": 848968,
    "options": {
-    "convertImages": "cmyk"
+    "convertImages": "cmyk",
+    "profile": "test/assets/default_cmyk.icc"
    },
    "list": {
-    "bytes": 16299,
+    "bytes": 16278,
     "blobs": [
-     "12a4e7067ff6cf7025eb341fc61ebecaa54eedf01d26152bf91ac675eca9538f",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
-     "5741d7364ab409763dc02362f4c31b9c1535f77e1216a9958630b819bd114537",
-     "73243f63842d94bad03da8a8214fa3c95af6effe448b32e5a7acc207356ed543",
+     "5aa0539a8f3de735125905680cbf760aa39097fdbb7a0e9583c70c9f6244786b",
+     "69bd6439f7ebddf41214aed21dac529150661284a88c453b74bfeaff138b0ca7",
      "792859a39b89ac830b3696970c9901f3b650e18d568119f6758179e58221b978",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+     "8cafda9e61bb66e5263addec7432c233ba2ca4a119b1e21cce1f011368879fe6",
+     "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4",
      "d1ae4679bef031899147b7b1a7a0243431211e660aa7770803bbf957a1605867",
-     "d82bb7dd0a90bbc03495c5a091f2ecb7fc0558a304dad4dd557d57e79840a6f3",
+     "d866cb69d960023519ef2f65cbb75a6a1fd7eb4c9e789cf2cf8a5d8471300e1f",
      "eaf98d9c521d03dd3bf10d62e3880b517a60712f4bb32a8ba77098f79cc38657",
-     "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5",
      "f182f3eb96a2ae850d1b2aa5a3b85d4a6f2960e8a238f5d6cf8b012579c1de54"
     ]
    }

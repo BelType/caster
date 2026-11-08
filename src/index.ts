@@ -462,11 +462,11 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     }
     step('rasters');
     // The image pass (`images/imagePass.js`): every browser decode and the opaque-photo rule's re-encode happen here, before the list, so the list holds what the writer embeds and the writer reaches no browser API. One file is prepared once however many elements paint it.
-    // `convertImages: 'cmyk'`: the images' pixels are converted in the pass, after the reduction, through the same lcms-wasm and the same two profiles as the text's (the list carries the result, not the flag; version 7).
+    // `convertImages: 'cmyk'`: the images' pixels are converted in the pass, after the reduction, through the same lcms-wasm and the same profiles as the text's (the list carries the result, not the flag; version 7).
     let imageConverter: ImageConverter | undefined;
     if (options.convertImages === 'cmyk') {
       const files = capability('profiles');
-      imageConverter = await lcmsImageConverter(capability('lcms'), files['srgb.icc'], files['default_cmyk.icc']);
+      imageConverter = await lcmsImageConverter(capability('lcms'), files['srgb.icc'], options.profile!);
     }
     const prepared = await prepareImages(measurement.images.map((image) => ({ ...walk.images[image.index], ppi: image.placement.effectiveDpi })), (src) => imageBytes.get(src), options.photoRule, { on: options.downsampleImages, resolution: options.imageResolution, threshold: options.downsampleThreshold, type: options.downsampleType }, imageConverter);
     const rasterPhotos = new Map<any, any>();
@@ -477,7 +477,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     if (options.convertRgb === 'wasm') {
       const runs = convertibleRuns(measurement.lines, options.blackText);
       const files = capability('profiles');
-      const transform = await lcmsTransform(capability('lcms'), files['srgb.icc'], files['default_cmyk.icc']);
+      const transform = await lcmsTransform(capability('lcms'), files['srgb.icc'], options.profile!);
       transform.loadMs += report.capabilities.find((c) => c.name === 'lcms')?.ms ?? 0;
       const table = wasmConversion(textWorklist(runs), transform);
       for (const run of runs) {
@@ -598,7 +598,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       ...(walk.langs.length > 0 ? { langs: walk.langs } : {})
     });
     Object.assign(report, composed);
-    report.options = ((options as unknown) as Record<string, unknown>);
+    const { profile, ...recorded } = ((options as unknown) as Record<string, unknown>);
+    report.options = profile instanceof Uint8Array ? { ...recorded, profile: `${profile.length} bytes` } : recorded;
     report.bytes = emitted.bytes.length;
     // *The printer guesses, says so, and withdraws the claim* (S90, amended 2026-11-08): every region the file was made to differ from the screen in, read off the records just composed and the requests the measurement painted, while the page geometry the regions convert through is still installed.
     const confessedRuns: ConfessedRun[] = (written.colour?.elements ?? []).flatMap((row) => {
@@ -879,10 +880,10 @@ function intrinsicsOf(request: { element: HTMLElement; }, bytesBySrc: Map<string
 function colourOptions( options: CasterOptions) {
   const files = capability('profiles');
   return {
-    profileBytes: files['default_cmyk.icc'],
+    profileBytes: options.profile ?? files['srgb.icc'],
     srgbBytes: files['srgb.icc'],
-    condition: 'Artifex CMYK SWOP Profile',
-    info: 'Ghostscript default CMYK profile, standing in for a press characterisation',
+    condition: options.profile ? 'Operator CMYK profile' : 'sRGB',
+    info: options.profile ? 'The ICC profile the operator passed as the profile option' : 'Compact sRGB profile (saucecontrol, CC0), standing in for a press characterisation',
     blackText: options.blackText
   };
 }

@@ -37,7 +37,7 @@ const num = (n: number): PDFNumber => capability('pdf').PDFNumber.of(Math.round(
 
 /** The colour half of a run's options: the profiles, the condition, and the two policies. */
 export type ColorOptions = {
-  /** The CMYK output profile, as committed under `profiles/`. */
+  /** The output intent's profile: the operator's CMYK profile, else the sRGB one. */
   profileBytes: Uint8Array;
   /** The sRGB profile `/DefaultRGB` points at. */
   srgbBytes: Uint8Array;
@@ -131,7 +131,7 @@ export class ColorResources {
   declare extGStates: Map<string, ExtGState>;
   declare srgb: PDFRef | null;
   /**
-   * @throws {CasterError} An output profile that is not CMYK, or whose device class is neither `prtr` nor `mntr` (PDF/A-4 6.2.3 t1); a `/DefaultRGB` profile that is not RGB.
+   * @throws {CasterError} An output profile that is neither CMYK nor RGB, or whose device class is neither `prtr` nor `mntr` (PDF/A-4 6.2.3 t1); a `/DefaultRGB` profile that is not RGB.
    */
   constructor(context: PDFContext, options: ColorOptions) {
     this.context = context;
@@ -141,8 +141,8 @@ export class ColorResources {
     this.srgb = null;
 
     const space = iccColorSpace(options.profileBytes);
-    if (space !== 'CMYK') {
-      throw new CasterError(`colorResources: the output profile is ${JSON.stringify(space)}, not CMYK`);
+    if (space !== 'CMYK' && space !== 'RGB ') {
+      throw new CasterError(`colorResources: the output profile is ${JSON.stringify(space)}, not CMYK or RGB`);
     }
     const deviceClass = iccDeviceClass(options.profileBytes);
     if (deviceClass !== 'prtr' && deviceClass !== 'mntr') {

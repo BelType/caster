@@ -43,3 +43,7 @@ The `arith.jpg` checksum is the one `harness/tools/images.mjs` pins against `htt
 ## `fonts/UnclassifiedMarks.ttf`
 
 A 860-byte TrueType font written for `test/unclassifiedMarks.test.ts`, with no third-party outlines: .notdef, space, Bet (U+05D1), Lamed (U+05DC) and Qamats (U+05B8), the letters and the mark as plain rectangles. The two letters are in the GDEF glyph classes as bases; the Qamats is left out of them and its width table entry is 300 of 1000 units, which is how Arial Unicode gives its Hebrew points a width while Blink's HarfBuzz zeroes them. `fonts/make-unclassified-marks.py` regenerates it (fontTools); it is released under the package's own licence.
+
+## `default_cmyk.icc`
+
+Ghostscript's default CMYK profile (`iccprofiles/default_cmyk.icc` of ArtifexSoftware/ghostpdl, SHA-256 `8472fa14…9fd1b9a9`, 187 484 bytes), which Caster no longer ships: ghostpdl's `LICENSE` puts that directory under the AGPL-3.0, and Caster is MIT. It stays here only as the test fixture a CMYK conversion and the output intent need, because the suite holds its numbers to Little-CMS's `transicc` over this very profile, and no permissively licensed CMYK profile that converts *to* CMYK was found (saucecontrol's `CGATS001Compat-v2-micro.icc` carries only an `A2B0` tag and cannot). It is read by tests and scripts from this folder and is not in the package (`files` is `dist`). Whether to keep it here waits on Egildo.

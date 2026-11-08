@@ -8,6 +8,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FLAGS, DEFAULTS, resolveOptions, colourOn, casterFlags, refuseUnbuiltTiers } from '../src/options.ts';
 import { CasterError } from '../src/errors.ts';
+import { readFileSync } from 'node:fs';
+
+const CMYK = new Uint8Array(readFileSync(new URL('./assets/default_cmyk.icc', import.meta.url)));
 
 test('every flag of the guide\'s table is present with the guide\'s default', () => {
   assert.deepEqual(DEFAULTS, {
@@ -37,7 +40,7 @@ test('colour: auto is on for a colour hint, for a black-text policy, and for a c
   assert.equal(colourOn({ colourHints: false }, auto), false);
   assert.equal(colourOn({ colourHints: true }, auto), true);
   assert.equal(colourOn({ colourHints: false }, resolveOptions({ blackText: '100k' })), true);
-  assert.equal(colourOn({ colourHints: false }, resolveOptions({ convertRgb: 'wasm' })), true);
+  assert.equal(colourOn({ colourHints: false }, resolveOptions({ convertRgb: 'wasm', profile: CMYK })), true);
   assert.equal(colourOn({ colourHints: true }, resolveOptions({ colour: 'off' })), false);
   assert.equal(colourOn({ colourHints: false }, resolveOptions({ colour: 'on' })), true);
 });
@@ -64,7 +67,7 @@ test('a tier this port does not build refuses by its own flag, and the defaults 
 });
 
 test("`convertRgb: 'wasm'` is built and no longer refused; `'endpoint'` is the one value still refused, by its own sentence", () => {
-  assert.doesNotThrow(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'wasm' })));
+  assert.doesNotThrow(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'wasm', profile: CMYK })));
   assert.throws(() => refuseUnbuiltTiers(resolveOptions({ convertRgb: 'endpoint' })), (e: any) => e.flag === 'convertRgb' && /needs a gateway with a `convertColors` method/u.test(e.message));
 });
 

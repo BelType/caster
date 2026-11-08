@@ -35,6 +35,8 @@ import { CasterError } from '../src/errors.ts';
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const FIXTURES = path.join(PACKAGE, 'fixtures');
 const LISTS = path.join(FIXTURES, 'lists');
+/** The CMYK profile the two conversion documents pass as `profile`: a path in the manifest, the bytes in the page (Caster ships no CMYK profile; the test fixture is Ghostscript's, `test/assets/PROVENANCE.md`). */
+const CMYK_PROFILE = 'test/assets/default_cmyk.icc';
 const CLI = path.resolve(process.env.BELTYPE_CLI ?? path.join(PACKAGE, '..', 'cli'));
 const SPECIMENS = path.join(path.dirname(fileURLToPath(import.meta.resolve('@beltype/specimens/package.json'))), 'specimens');
 
@@ -81,8 +83,8 @@ const CORPUS: Doc[] = [
   { name: 'vector-roads', file: path.join(FIXTURES, 'roads', 'vector-roads.html'), root: FIXTURES, why: 'every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo\'s ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend' },
   { name: 'downsample', file: path.join(FIXTURES, 'roads', 'downsample.html'), root: FIXTURES, why: 'a synthetic JPEG of 4 000 by 3 000 pixels in a box three inches wide, and a synthetic PNG of 2 400 by 1 600 placed twice, in a box 40 mm wide and in one 80 mm wide, all far above 450 ppi: the image pass reduces each to 300 ppi before the list, the PNG for its largest box (the smallest resolution over its uses), and the photo rule decides what the reduced pixels become' },
   { name: 'canvas', file: path.join(FIXTURES, 'roads', 'canvas.html'), root: FIXTURES, why: 'a `<canvas>` figure painted by a script (a gradient, a circle, a square, three lines) with an `aria-label`: the image pass reads its pixels off the element as eight-bit RGBA, past the photo rule, and the list holds them as an image; the figure\'s /Alt is the label' },
-  { name: 'convert-text', file: path.join(FIXTURES, 'roads', 'convert-text.html'), root: FIXTURES, options: { convertRgb: 'wasm' }, why: 'a page of coloured text under `convertRgb: \'wasm\'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted' },
-  { name: 'convert-images', file: path.join(FIXTURES, 'roads', 'convert-images.html'), root: FIXTURES, options: { convertImages: 'cmyk' }, why: 'images under `convertImages: \'cmyk\'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone' }
+  { name: 'convert-text', file: path.join(FIXTURES, 'roads', 'convert-text.html'), root: FIXTURES, options: { convertRgb: 'wasm', profile: CMYK_PROFILE }, why: 'a page of coloured text under `convertRgb: \'wasm\'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted' },
+  { name: 'convert-images', file: path.join(FIXTURES, 'roads', 'convert-images.html'), root: FIXTURES, options: { convertImages: 'cmyk', profile: CMYK_PROFILE }, why: 'images under `convertImages: \'cmyk\'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone' }
 ];
 
 // ---- small helpers ---------------------------------------------------------------------------------------------------
@@ -186,6 +188,7 @@ async function printInPage({ options, created }: { options: Record<string, unkno
     const load = (url: string) => import(url);
     const caster = await load('/_beltype/caster/src/index.js');
     const started = performance.now();
+    if (Array.isArray(options['profile'])) options['profile'] = Uint8Array.from(options['profile'] as number[]);
     const printed = await caster.print({ document, created }, options);
     const ms = performance.now() - started;
     return { base64: base64(printed.bytes), ...bare(printed.displayList), report: JSON.stringify(printed.report), ms };
@@ -270,7 +273,7 @@ async function throughDoor(docs: Doc[], visit: (doc: Doc, page: Page, done: { st
 /** Print every document through the door. */
 async function printCorpus(docs: Doc[], each: (doc: Doc, printed: Printed) => void | Promise<void>) {
   await throughDoor(docs, async (doc, page, { started, refuses, missing }) => {
-    const answer = await page.evaluate(printInPage, { options: { ...doc.options, ...(WRITER === 'forme' ? { writer: 'forme' } : {}) }, created: FIXED_CREATED });
+    const answer = await page.evaluate(printInPage, { options: { ...doc.options, ...(typeof doc.options?.['profile'] === 'string' ? { profile: [...fs.readFileSync(path.join(PACKAGE, doc.options['profile']))] } : {}), ...(WRITER === 'forme' ? { writer: 'forme' } : {}) }, created: FIXED_CREATED });
     if ('refused' in answer && !(refuses && answer.list)) throw new CasterError(`identity: ${doc.name}: the print refused: ${answer.refused}`);
     if (refuses && !('refused' in answer)) throw new CasterError(`identity: ${doc.name}: the print was expected to refuse in the writer, and printed`);
     if (missing.size) throw new CasterError(`identity: ${doc.name} asked for what the run cannot give it:\n  ${[...missing].join('\n  ')}`);

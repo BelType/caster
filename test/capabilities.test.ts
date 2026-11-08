@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { CAPABILITIES, neededCapabilities, capability, clearCapabilities, load } from '../src/capabilities.ts';
 import { resolveOptions } from '../src/options.ts';
 import type { ReportNeeds } from '../src/report.ts';
+import { readFileSync } from 'node:fs';
+
+const CMYK = new Uint8Array(readFileSync(new URL('./assets/default_cmyk.icc', import.meta.url)));
 
 const PACKAGE = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 
@@ -24,7 +27,7 @@ test('fast-png loads only where a decode is forced, and the profiles only where 
   assert.ok(!neededCapabilities(NOTHING, options).includes('profiles'));
   assert.ok(neededCapabilities({ ...NOTHING, colourHints: true }, options).includes('profiles'));
   assert.ok(!neededCapabilities(NOTHING, resolveOptions({ shaper: 'fontkit', subset: 'pdf-lib' })).includes('harfbuzz'));
-  assert.ok(neededCapabilities(NOTHING, resolveOptions({ convertRgb: 'wasm' })).includes('lcms'));
+  assert.ok(neededCapabilities(NOTHING, resolveOptions({ convertRgb: 'wasm', profile: CMYK })).includes('lcms'));
 });
 
 test('an unloaded capability refuses naming itself and the flag that would have loaded it — never a fallback', () => {

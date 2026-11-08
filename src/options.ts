@@ -63,10 +63,12 @@ export type CasterOptions = {
   title?: string;
   /** The catalog `/Lang`, when the DOM declares none. */
   lang?: string;
+  /** The bytes of an ICC profile, the output intent's destination for CMYK (*the output intent is sRGB until the operator passes a CMYK profile*). Absent, the output intent carries the compact sRGB profile, and `convertImages: 'cmyk'` and `convertRgb: 'wasm'` refuse naming this option: Caster ships no CMYK profile, since the only one it had was Ghostscript's, under the AGPL in an MIT package. */
+  profile?: Uint8Array;
 };
 
-/** The names {@link FLAGS} holds: every option but the two free strings the panel fills from the document. */
-export type FlagName = Exclude<keyof CasterOptions, 'title' | 'lang'>;
+/** The names {@link FLAGS} holds: every option but the two free strings the panel fills from the document and the profile's bytes. */
+export type FlagName = Exclude<keyof CasterOptions, 'title' | 'lang' | 'profile'>;
 
 /** One row of the flag table, typed from the option it validates. */
 export type FlagSpec<K extends FlagName> = {
@@ -125,7 +127,7 @@ export const DEFAULTS = (casterFlags.defaults as unknown) as CasterOptions;
  * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi` or `imageResolution`, a `downsampleThreshold` outside 1 to 10, or a value outside a flag's set — carrying `flag`.
  */
 export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOptions {
-  const { title, lang, ...flags } = given;
+  const { title, lang, profile, ...flags } = given;
   let out: Record<string,unknown>;
   try { out = { ...casterFlags.resolve(flags as never) }; }
   catch (e) {
@@ -137,6 +139,12 @@ export function resolveOptions(given: Partial<CasterOptions> = {}): CasterOption
   const threshold = out['downsampleThreshold'] as number;
   if (threshold < 1 || threshold > 10) throw new CasterError(`caster: 'downsampleThreshold' takes a number from 1 to 10; got ${JSON.stringify(threshold)}.`, { flag: 'downsampleThreshold' });
   if (out['convertImages'] === 'cmyk' && out['colour'] === 'off') throw new CasterError("caster: `convertImages: 'cmyk'` writes DeviceCMYK samples under the output intent, which `colour: 'off'` does not write; set `colour` to 'auto' or 'on', or `convertImages` to 'none'.", { flag: 'convertImages' });
+  if (profile !== undefined && !(profile instanceof Uint8Array)) throw new CasterError('caster: `profile` takes the bytes of an ICC profile, a Uint8Array.', { flag: 'profile' });
+  if (profile === undefined && (out['convertImages'] === 'cmyk' || out['convertRgb'] === 'wasm')) {
+    const road = out['convertImages'] === 'cmyk' ? "`convertImages: 'cmyk'`" : "`convertRgb: 'wasm'`";
+    throw new CasterError(`caster: ${road} converts to CMYK, and Caster ships no CMYK profile to convert to. Pass the bytes of one as the \`profile\` option.`, { flag: 'profile' });
+  }
+  if (profile !== undefined) out['profile'] = profile;
   if (title !== undefined) out['title'] = title;
   if (lang !== undefined) out['lang'] = lang;
   return (out as CasterOptions);
