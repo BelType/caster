@@ -151,7 +151,7 @@ export type WalkOptions = {
   renders?: (element: Element) => boolean;
   /** *the printer guesses, says so, and withdraws the claim* (S90): what a custom element the table does not name becomes. `'refuse'` throws {@link UnknownElementError}; `'infer'`, the default, walks it as CSS laid it out, the `<span>` rule when inline and the `<div>` rule when a block, and lists the guess in {@link WalkResult}'s `inferred`. */
   unknownElements?: 'refuse'|'infer';
-  /** *PDF/UA-2 is a flag, not a given* (S103, amended 2026-11-08): under `'none'` an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text and a link to an element that produced no structure element are each one sentence in {@link WalkResult}'s `warnings`, where under `'ua-2'`, the default, each is refused. */
+  /** *PDF/UA-2 is a flag, not a given* (S103, amended 2026-11-08): under `'none'` an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text, an inline `<svg>` with no description, an element with `role="img"` and no `aria-label`, a KaTeX formula with no TeX annotation and a link to an element that produced no structure element are each one sentence in {@link WalkResult}'s `warnings`, where under `'ua-2'`, the default, each is refused. */
   standard?: 'ua-2'|'none';
   /** Which page element an element belongs to, as an index. E11 (`tables.md`) only, and only for naming: a `/ID` has to be unique in the document and `th-<page>-<n>` is a name a human reading the file can place. With no answer every table is on page 1 and the counter alone keeps the ids apart, which is what a fixture with no page elements gets. */
   pageIndexOf?: (element: Element) => number;
@@ -971,7 +971,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         // `img`: a picture the document drew out of boxes. A raster background with a label was answered above, as a Figure with its pixels; this is the same claim with no pixels of its own, so the Figure owns what the element paints.
         const label = (element.getAttribute('aria-label') ?? '').trim();
         if (label === '') {
-            throw new CasterError(`caster: ${name} at ${domPath} carries no aria-label; an image is either described or declared decorative with aria-hidden="true", and guessing is not one of the options`, { element: domPath });
+            if (options.standard !== 'none') throw new CasterError(`caster: ${name} at ${domPath} carries no aria-label; an image is either described or declared decorative with aria-hidden="true", and guessing is not one of the options`, { element: domPath });
+            warnings.push(`caster: ${name} at ${domPath} carries no aria-label, so it printed as a Figure with no /Alt; the file does not claim PDF/UA-2`);
         }
         const self = noteLang(element, node('Figure', parent, { alt: label, ...langAttrs(element) }));
         ownerByElement.set(element, self.path);
@@ -1130,7 +1131,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const annotation = element.querySelector('annotation[encoding="application/x-tex"]');
             const alt = (annotation?.textContent ?? '').trim();
             if (alt === '') {
-                throw new CasterError(`caster: the KaTeX formula at ${domPath} carries no <annotation encoding="application/x-tex">; a Formula without /Alt is a PDF/UA-2 failure and the TeX is the only description the document has`, { element: domPath });
+                if (options.standard !== 'none') throw new CasterError(`caster: the KaTeX formula at ${domPath} carries no <annotation encoding="application/x-tex">; a Formula without /Alt is a PDF/UA-2 failure and the TeX is the only description the document has`, { element: domPath });
+                warnings.push(`caster: the KaTeX formula at ${domPath} carries no <annotation encoding="application/x-tex">, so it printed as a Formula with no /Alt; the file does not claim PDF/UA-2`);
             }
             const self = noteLang(element, node('Formula', parent, { alt, ...langAttrs(element) }));
             ownerByElement.set(element, self.path);
@@ -1183,7 +1185,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
                 return;
             }
             if (alt === '') {
-                throw new CasterError(`caster: the inline <svg> at ${domPath} carries neither a <title>, an aria-label nor a <desc>; an SVG is either described or declared decorative with aria-hidden="true", and guessing is not one of the options`);
+                if (options.standard !== 'none') throw new CasterError(`caster: the inline <svg> at ${domPath} carries neither a <title>, an aria-label nor a <desc>; an SVG is either described or declared decorative with aria-hidden="true", and guessing is not one of the options`);
+                warnings.push(`caster: the inline <svg> at ${domPath} carries neither a <title>, an aria-label nor a <desc>, so it printed as a Figure with no /Alt; the file does not claim PDF/UA-2`);
             }
             const self = node('Figure', parent, { alt });
             ownerByElement.set(element, self.path);

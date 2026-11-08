@@ -1,7 +1,7 @@
 /**
  * A `<canvas>` figure: the image pass reads its pixels off the element, so the list holds them as an image and the file carries it with its description; a canvas the browser will not let the printer read is refused naming its element.
  *
- * Under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103, amended 2026-11-08) a picture with no description, a canvas, an `<img>` or a facsimile, and a link to an element that produced no structure element print with one warning each in the report, naming the element; under the default each is refused as before.
+ * Under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103, amended 2026-11-08) a picture with no description (a canvas, an `<img>`, a facsimile, an inline `<svg>`, a `role="img"` element), a KaTeX formula with no TeX, and a link to an element that produced no structure element print with one warning each in the report, naming the element; under the default each is refused as before.
  *
  * The page cases print a strip holding canvases (a plain one, a large one far above 450 ppi and, in the refusal's case, one tainted by an image from another origin) and read the report and the written file back. The file is read with pdf-lib: an image XObject of the canvas's size, and a Figure whose `/Alt` is the `aria-label`.
  */
@@ -96,16 +96,18 @@ async function readBack(bytes: number[]) {
   const alts: string[] = [];
   let figures = 0;
   let dests = 0;
+  let formulas = 0;
   for (const [, object] of pdf.context.enumerateIndirectObjects()) {
     const dict = object instanceof PDFRawStream ? object.dict : object instanceof PDFDict ? object : undefined;
     if (!dict) continue;
     if (dict.get(PDFName.of('Subtype')) === PDFName.of('Image')) images.push([Number(String(dict.get(PDFName.of('Width')))), Number(String(dict.get(PDFName.of('Height'))))]);
     if (dict.get(PDFName.of('S')) === PDFName.of('Figure')) figures += 1;
+    if (dict.get(PDFName.of('S')) === PDFName.of('Formula')) formulas += 1;
     if (dict.get(PDFName.of('Subtype')) === PDFName.of('Link') && dict.get(PDFName.of('Dest'))) dests += 1;
     const alt = dict.get(PDFName.of('Alt'));
     if (dict.get(PDFName.of('S')) === PDFName.of('Figure') && (alt instanceof PDFHexString || alt instanceof PDFString)) alts.push(alt.decodeText());
   }
-  return { images, alts, figures, dests };
+  return { images, alts, figures, dests, formulas };
 }
 
 test('in the page: a canvas is carried as an image, with its aria-label as the figure\'s /Alt, and a large one is reduced like any image', async () => {
@@ -138,10 +140,13 @@ const UNDESCRIBED = [
   { name: 'an <img> with no alt', figure: true, body: '<img src="/roads/grey.png" style="width: 20mm">', refused: /^caster: <img src="\/roads\/grey\.png"> at .*img\[0\] has no alt attribute; every image is either described or declared decorative, and guessing is not one of the options$/, warned: /^caster: <img src="\/roads\/grey\.png"> at .*img\[0\] has no alt attribute, so it printed as a Figure with no \/Alt; the file does not claim PDF\/UA-2$/ },
   { name: 'a <canvas> with no aria-label', figure: true, body: '<canvas width="40" height="20"></canvas>', refused: /^caster: <canvas> at .*canvas\[0\] carries no aria-label; a canvas is pixels the document says nothing about, so nothing but the author can say what it depicts$/, warned: /^caster: <canvas> at .*canvas\[0\] carries no aria-label, so it printed as a Figure with no \/Alt; the file does not claim PDF\/UA-2$/ },
   { name: 'a facsimile with no alternative text', figure: true, body: '<object type="application/pdf" data="/facsimile/fixture.pdf#page=1" style="display: block; width: 40mm; height: 30mm"><img src="/roads/grey.png" alt=""></object>', refused: /^caster: <object type="application\/pdf"> at .*object\[0\] carries no alternative text \(an aria-label on the copy, an alt on the original's fallback <img>\); a page of another PDF is a picture of something, and nothing but the author can say what$/, warned: /^caster: <object type="application\/pdf"> at .*object\[0\] carries no alternative text, so it printed as a Figure with no \/Alt; the file does not claim PDF\/UA-2$/ },
+  { name: 'an inline <svg> with no description', figure: true, body: '<svg width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20" fill="#1f4e9c"/></svg>', refused: /^caster: the inline <svg> at .*svg\[0\] carries neither a <title>, an aria-label nor a <desc>; an SVG is either described or declared decorative with aria-hidden="true", and guessing is not one of the options$/, warned: /^caster: the inline <svg> at .*svg\[0\] carries neither a <title>, an aria-label nor a <desc>, so it printed as a Figure with no \/Alt; the file does not claim PDF\/UA-2$/ },
+  { name: 'an element with role="img" and no aria-label', figure: true, body: '<div role="img" style="width: 40mm; background: #dbe4f2">A box drawn out of CSS.</div>', refused: /^caster: <div role="img"> at .*div\[0\] carries no aria-label; an image is either described or declared decorative with aria-hidden="true", and guessing is not one of the options$/, warned: /^caster: <div role="img"> at .*div\[0\] carries no aria-label, so it printed as a Figure with no \/Alt; the file does not claim PDF\/UA-2$/ },
+  { name: 'a KaTeX formula with no TeX annotation', figure: false, formula: true, body: '<p>An <span class="katex"><span class="katex-html">x</span></span> unannotated.</p>', refused: /^caster: the KaTeX formula at .*span\[0\] carries no <annotation encoding="application\/x-tex">; a Formula without \/Alt is a PDF\/UA-2 failure and the TeX is the only description the document has$/, warned: /^caster: the KaTeX formula at .*span\[0\] carries no <annotation encoding="application\/x-tex">, so it printed as a Formula with no \/Alt; the file does not claim PDF\/UA-2$/ },
   { name: 'a link to an element that produced no structure element', figure: false, body: '<p><a href="#bare">To the bare element.</a></p><div id="bare"></div><p>After it.</p>', refused: /^caster: the link to "#bare" points at .*div\[0\], which produced no structure element and has no ancestor that did; PDF\/UA-2 8\.8 wants a structure destination$/, warned: /^caster: the link to "#bare" points at .*div\[0\], which produced no structure element and has no ancestor that did, so its structure destination is .*p\[2\], the next element that did; the file does not claim PDF\/UA-2$/ },
 ];
 
-for (const { name, figure, body, refused, warned } of UNDESCRIBED) {
+for (const { name, figure, formula, body, refused, warned } of UNDESCRIBED as { name: string; figure: boolean; formula?: boolean; body: string; refused: RegExp; warned: RegExp }[]) {
   test(`in the page: ${name} is refused under the default, and under standard: 'none' prints with a warning naming it`, async () => {
     const strict = await printed(body);
     assert.ok(strict.error, 'the default refused');
@@ -152,6 +157,8 @@ for (const { name, figure, body, refused, warned } of UNDESCRIBED) {
     assert.equal(none.warnings!.filter((w) => warned.test(w)).length, 1, `one warning naming the element in ${JSON.stringify(none.warnings)}`);
     const file = await readBack(none.bytes!);
     if (figure) assert.deepEqual([file.figures, file.alts], [1, []], 'the Figure is written, with no /Alt');
+    else if (formula) assert.deepEqual([file.formulas, file.alts], [1, []], 'the Formula is written, with no /Alt');
     else assert.equal(file.dests, 1, 'the link is written with its destination');
   });
 }
+
