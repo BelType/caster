@@ -17,7 +17,7 @@
  *
  * The page's own two counters wait as well. `counter(page)` and `counter(pages)` have no value before the cut, so a span frozen from either says 0 on every page: a running footer "Pagina 2 di 3" printed "Pagina 0 di 0" (the tester's administrative documents, 2026-11-03). Such a pseudo is known by its `content` alone, which `getComputedStyle` answers in specified form. After the run, the walk follows the light tree, and Cicero resets the two on the page host in the root's shadow while a running element's copy and a fragment stand in the light DOM, slotted into the page; so a `page` or `pages` counter the walk has no scope for is looked for up the flat tree, on the first element that resets it ({@link flatTreeReset}).
  *
- * 4. **Idempotent.** An element already carrying a reified span (a `.marker` or `.caster-generated` child) or the suppress class reifies nothing twice, and a reified list item is `display: block` and so no longer a list item; a second call over a prepared document answers with empty `markers` and `generated`. This is what a second moment costs: nothing.
+ * 4. **Idempotent.** An element already carrying a reified span (a `.marker` or `.caster-generated` child) or the suppress class reifies nothing twice, and a reified list item is `display: block` and so no longer a list item; a second call over a prepared document answers with empty `markers` and `generated`. This is what a second moment costs: nothing. The second moment makes nothing real in an element the pages show nowhere, so a page kept between prints, prepared and cut again, copies no number frozen by the cut before (2026-11-08).
  *
  * @packageDocumentation
  */
@@ -565,6 +565,8 @@ function pseudoSpan(view: Window, element: Element, which: '::before'|'::after',
   const style = view.getComputedStyle(element, which);
   const content = style.content;
   if (!content || content === 'none' || content === 'normal') return null;
+  // The second moment leaves alone an element the pages show nowhere: it prints nothing, and a span frozen in it would be copied by the next cut, with this run's number in it, onto every page (a running element's original, which Cicero keeps hidden inside its block). `display: contents` has no box of its own but its pseudos do.
+  if (!reads && !element.checkVisibility() && view.getComputedStyle(element).display !== 'contents') return null;
   if (reads && (READS_PAGE.test(content) || (reads.length && waitsForReads(view, element, which, content, reads)))) {
     // Left native, it would count no depth now, and counted in the second moment it would stand at the depth of a walk that sees none of the quote marks before it.
     if (holdsQuote(content)) throw new CasterError(`caster: content on ${domPathish(element)}${which} holds a quote mark and also reads a value the engine has not delivered yet, so the quote's depth cannot be counted where the pseudo is made real. Either alone is one this printer can express.`, { element: domPathish(element) });

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A page printed before prints the same file again.** A host that keeps its print page between documents prepares and cuts the same document twice, as `beltype serve`'s mail merge does when a customer's data changes nothing. Since Cicero 0.1.10 keeps a running element's original hidden inside its block, the second moment of reification reached it and froze its `counter(page)` there, as 0 or the block's reset, and the next cut copied that span onto every page: the CLI's `provvedimento-imu` printed "Pagina 1/3" on all three pages and "N. 2" where the page shows "N. 4". The second moment now makes nothing real in an element the pages show nowhere (`checkVisibility()`, a `display: contents` element excepted), so the original keeps its native pseudo and each copy takes its own page's number. `test/printed-page.test.ts` prints such a document twice in one tab and holds the second file's text to the first's.
+- **The development pin moves to Cicero 0.1.10**, whose intake leaves a running element in its block, which the case above needs.
+
 ## 0.2.4 — 2026-11-08
 
 - **Under `standard: 'none'` a picture or formula with no description and a link to a bare element warn instead of refusing.** An `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text, an inline `<svg>` with no description, an element with `role="img"` and no `aria-label`, a KaTeX formula with no TeX annotation and a link whose target produced no structure element refused the print under both values of the flag, since the structure walk never read it; under `'none'`, which claims no standard, each is now one warning in the report naming the element, the picture written as a Figure with no /Alt, the formula as a Formula with no /Alt, and the link's structure destination the next element that has one. Under the default, `'ua-2'`, each refusal is unchanged (Egildo's ruling of 2026-11-08; DESIGN.md S103, amended).
