@@ -43,7 +43,7 @@
    "kind": "black-text",
    "rect": {
     "x": 45.344,
-    "y": 66.203,
+    "y": 62.203,
     "width": 71.719,
     "height": 32.333
    },
@@ -55,9 +55,9 @@
    "kind": "black-text",
    "rect": {
     "x": 45.344,
-    "y": 126.063,
+    "y": 117.391,
     "width": 348.047,
-    "height": 38.651
+    "height": 35.323
    },
    "element": "p[0]",
    "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
@@ -67,7 +67,7 @@
    "kind": "black-text",
    "rect": {
     "x": 52.891,
-    "y": 330.235,
+    "y": 311.579,
     "width": 174.235,
     "height": 16.667
    },
@@ -75,15 +75,15 @@
    "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
   },
   {
-   "page": 2,
+   "page": 1,
    "kind": "black-text",
    "rect": {
     "x": 56.672,
-    "y": 57.672,
+    "y": 364.219,
     "width": 310.297,
-    "height": 38.651
+    "height": 35.323
    },
-   "element": "div[2]",
+   "element": "div[3]",
    "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
   },
   {
@@ -91,9 +91,9 @@
    "kind": "black-text",
    "rect": {
     "x": 45.344,
-    "y": 128.079,
+    "y": 70.781,
     "width": 119.047,
-    "height": 60.635
+    "height": 53.979
    },
    "element": "p[3]",
    "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
@@ -103,7 +103,7 @@
    "kind": "black-text",
    "rect": {
     "x": 50.391,
-    "y": 212.125,
+    "y": 144.844,
     "width": 20.703,
     "height": 16.667
    },
@@ -115,7 +115,7 @@
    "kind": "black-text",
    "rect": {
     "x": 79.921,
-    "y": 212.125,
+    "y": 144.844,
     "width": 32.032,
     "height": 16.667
    },
@@ -127,7 +127,7 @@
    "kind": "black-text",
    "rect": {
     "x": 50.109,
-    "y": 242.64,
+    "y": 172.031,
     "width": 21.125,
     "height": 16.667
    },
@@ -139,7 +139,7 @@
    "kind": "black-text",
    "rect": {
     "x": 79.921,
-    "y": 242.64,
+    "y": 172.031,
     "width": 6.641,
     "height": 16.667
    },
@@ -151,7 +151,7 @@
    "kind": "black-text",
    "rect": {
     "x": 50.109,
-    "y": 273.156,
+    "y": 199.219,
     "width": 21.281,
     "height": 16.667
    },
@@ -163,7 +163,7 @@
    "kind": "black-text",
    "rect": {
     "x": 79.921,
-    "y": 273.156,
+    "y": 199.219,
     "width": 6.641,
     "height": 16.667
    },
@@ -175,7 +175,7 @@
    "kind": "black-text",
    "rect": {
     "x": 45.344,
-    "y": 317.5,
+    "y": 240.235,
     "width": 137.375,
     "height": 24
    },
@@ -187,12 +187,24 @@
    "kind": "black-text",
    "rect": {
     "x": 45.344,
-    "y": 366.093,
+    "y": 284.828,
     "width": 310.063,
-    "height": 22.317
+    "height": 22.316
    },
    "element": "p[4]",
    "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 1,
+   "kind": "raster-shadow",
+   "rect": {
+    "x": 26.226,
+    "y": 334.772,
+    "width": 401.064,
+    "height": 86.877
+   },
+   "element": "div[3]",
+   "note": "box-shadow drawn as a raster at 300 dpi"
   },
   {
    "page": 2,
@@ -201,9 +213,9 @@
     "x": 26.226,
     "y": 26.226,
     "width": 401.064,
-    "height": 104.861
+    "height": 49.564
    },
-   "element": "div[2]",
+   "element": "div[4]",
    "note": "box-shadow drawn as a raster at 300 dpi"
   }
  ],
@@ -261,7 +273,7 @@
     "text": "Roads",
     "rectPt": [
      34.008,
-     266.254995,
+     269.254995,
      53.788999999999994,
      24.250005
     ],
@@ -284,7 +296,7 @@
     "text": "A line with",
     "rectPt": [
      34.008,
-     233.110005,
+     239.614005,
      43.33599999999999,
      12.499995
     ],
@@ -307,7 +319,7 @@
     "text": "rotated words",
     "rectPt": [
      79.348,
-     233.110005,
+     239.614005,
      58.125000000000014,
      12.499995
     ],
@@ -330,7 +342,7 @@
     "text": "inside it, and a link",
     "rectPt": [
      139.465,
-     233.110005,
+     239.614005,
      78.012,
      12.499995
     ],
@@ -352,7 +364,7 @@
     "text": "out of the file",
     "rectPt": [
      219.48,
-     233.110005,
+     239.614005,
      55.21900000000002,
      12.499995
     ],
@@ -374,7 +386,7 @@
     "text": ", one",
     "rectPt": [
      274.699,
-     233.110005,
+     239.614005,
      20.343999999999994,
      12.499995
     ],
@@ -396,7 +408,7 @@
     "text": "to",
     "rectPt": [
      297.035,
-     233.110005,
+     239.614005,
      8.671999999999969,
      12.499995
     ],
@@ -417,7 +429,7 @@
     "text": "the last section",
     "rectPt": [
      34.008,
-     216.622005,
+     225.622005,
      63.082,
      12.499995
     ],
@@ -439,7 +451,7 @@
     "text": ", and one",
     "rectPt": [
      97.09,
-     216.622005,
+     225.622005,
      38.389999999999986,
      12.499995
     ],
@@ -461,7 +473,7 @@
     "text": "relative to the document",
     "rectPt": [
      137.484,
-     216.622005,
+     225.622005,
      102.774,
      12.499995
     ],
@@ -483,7 +495,7 @@
     "text": ".",
     "rectPt": [
      240.258,
-     216.622005,
+     225.622005,
      2.495999999999981,
      12.499995
     ],
@@ -510,9 +522,9 @@
     "text": "A paragraph set in a spot ink that overprints.",
     "rectPt": [
      34.008,
-     112.126005,
+     123.622005,
      183.56199999999998,
-     12.499995
+     12.499995000000014
     ],
     "page": 0,
     "resource": "CS0"
@@ -533,7 +545,7 @@
     "text": "A paragraph on a CMYK ground.",
     "rectPt": [
      39.668,
-     79.981005,
+     93.973005,
      130.676,
      12.499995
     ],
@@ -556,11 +568,11 @@
     "text": "A box whose blurred shadow has no PDF operator and is",
     "rectPt": [
      42.504,
-     284.403005,
+     54.493005000000004,
      232.72299999999998,
-     12.499995
+     12.499994999999993
     ],
-    "page": 1,
+    "page": 0,
     "blackTextPolicy": true
    },
    {
@@ -579,11 +591,11 @@
     "text": "drawn as a raster.",
     "rectPt": [
      42.504,
-     267.915005,
+     40.501005,
      72.60900000000001,
      12.499995
     ],
-    "page": 1,
+    "page": 0,
     "blackTextPolicy": true
    },
    {
@@ -602,7 +614,7 @@
     "text": "Decomposition tem­",
     "rectPt": [
      34.008,
-     231.598005,
+     274.571005,
      85.101,
      12.499995
     ],
@@ -625,7 +637,7 @@
     "text": "perature colonisation",
     "rectPt": [
      34.008,
-     215.110005,
+     260.579005,
      89.285,
      12.499995
     ],
@@ -648,7 +660,7 @@
     "text": "incomprehensibility.",
     "rectPt": [
      34.008,
-     198.622005,
+     246.58700499999998,
      85.582,
      12.499995
     ],
@@ -671,7 +683,7 @@
     "text": "key",
     "rectPt": [
      37.793,
-     168.56300499999998,
+     219.024005,
      15.527000000000001,
      12.499995
     ],
@@ -694,7 +706,7 @@
     "text": "value",
     "rectPt": [
      59.941,
-     168.56300499999998,
+     219.024005,
      24.024,
      12.499995
     ],
@@ -717,7 +729,7 @@
     "text": "one",
     "rectPt": [
      37.582,
-     145.67700499999998,
+     198.63400499999997,
      15.844000000000001,
      12.499995
     ],
@@ -740,7 +752,7 @@
     "text": "1",
     "rectPt": [
      59.941,
-     145.67700499999998,
+     198.63400499999997,
      4.9809999999999945,
      12.499995
     ],
@@ -763,9 +775,9 @@
     "text": "two",
     "rectPt": [
      37.582,
-     122.79000500000001,
+     178.24300499999998,
      15.960999999999999,
-     12.499994999999986
+     12.499995
     ],
     "page": 1,
     "blackTextPolicy": true
@@ -786,9 +798,9 @@
     "text": "2",
     "rectPt": [
      59.941,
-     122.79000500000001,
+     178.24300499999998,
      4.9809999999999945,
-     12.499994999999986
+     12.499995
     ],
     "page": 1,
     "blackTextPolicy": true
@@ -809,7 +821,7 @@
     "text": "The last section",
     "rectPt": [
      34.008,
-     84.032,
+     141.981,
      103.03099999999998,
      18
     ],
@@ -832,7 +844,7 @@
     "text": "Text set at",
     "rectPt": [
      34.008,
-     51.259005,
+     112.208005,
      41.906,
      12.499995
     ],
@@ -855,7 +867,7 @@
     "text": "sub",
     "rectPt": [
      77.918,
-     48.849334999999996,
+     109.799335,
      12.644999999999996,
      9.916665
     ],
@@ -878,7 +890,7 @@
     "text": "and",
     "rectPt": [
      92.555,
-     51.259005,
+     112.208005,
      16.06599999999999,
      12.499995
     ],
@@ -901,7 +913,7 @@
     "text": "super",
     "rectPt": [
      110.625,
-     55.670335,
+     116.619335,
      19.675999999999988,
      9.916665
     ],
@@ -924,7 +936,7 @@
     "text": "positions,",
     "rectPt": [
      132.293,
-     51.259005,
+     112.208005,
      41.02699999999999,
      12.499995
     ],
@@ -947,7 +959,7 @@
     "text": "emphasis",
     "rectPt": [
      175.313,
-     51.259005,
+     112.208005,
      40.125,
      12.499995
     ],
@@ -970,7 +982,7 @@
     "text": "and",
     "rectPt": [
      217.43,
-     51.259005,
+     112.208005,
      16.066000000000003,
      12.499995
     ],
@@ -993,7 +1005,7 @@
     "text": "strong",
     "rectPt": [
      235.5,
-     51.259005,
+     112.208005,
      28.559000000000026,
      12.499995
     ],
@@ -1016,7 +1028,7 @@
     "text": ".",
     "rectPt": [
      264.059,
-     51.259005,
+     112.208005,
      2.495999999999981,
      12.499995
     ],
@@ -1668,6 +1680,28 @@
     "mcid": 9
    },
    {
+    "index": 32,
+    "page": 0,
+    "line": 22,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 10
+   },
+   {
+    "index": 33,
+    "page": 0,
+    "line": 23,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 10
+   },
+   {
     "index": 13,
     "page": 1,
     "line": 7,
@@ -1698,14 +1732,14 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 1
+    "mcid": 0
    },
    {
     "index": 16,
     "page": 1,
     "line": 10,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
+    "instanceKey": "Source Sans 3#1|wght=700",
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
@@ -1716,17 +1750,6 @@
     "page": 1,
     "line": 11,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
-    "sizePt": 10,
-    "color": "rgb(0, 0, 0)",
-    "letterSpacingPt": 0,
-    "mcid": 1
-   },
-   {
-    "index": 18,
-    "page": 1,
-    "line": 12,
-    "faceId": "Source Sans 3#1",
     "instanceKey": "Source Sans 3#1|wght=700",
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
@@ -1734,15 +1757,26 @@
     "mcid": 2
    },
    {
-    "index": 19,
+    "index": 18,
     "page": 1,
-    "line": 13,
+    "line": 12,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=700",
+    "instanceKey": "Source Sans 3#1|wght=400",
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
     "mcid": 3
+   },
+   {
+    "index": 19,
+    "page": 1,
+    "line": 13,
+    "faceId": "Source Sans 3#1",
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 10,
+    "color": "rgb(0, 0, 0)",
+    "letterSpacingPt": 0,
+    "mcid": 4
    },
    {
     "index": 20,
@@ -1753,7 +1787,7 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 4
+    "mcid": 5
    },
    {
     "index": 21,
@@ -1764,18 +1798,18 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 5
+    "mcid": 6
    },
    {
     "index": 22,
     "page": 1,
     "line": 16,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
-    "sizePt": 10,
+    "instanceKey": "Source Sans 3#1|wght=700",
+    "sizePt": 15,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 6
+    "mcid": 7
    },
    {
     "index": 23,
@@ -1786,18 +1820,18 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 7
+    "mcid": 8
    },
    {
     "index": 24,
     "page": 1,
     "line": 18,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=700",
-    "sizePt": 15,
+    "instanceKey": "Source Sans 3#1|wght=400",
+    "sizePt": 8.333,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 8
+    "mcid": 9
    },
    {
     "index": 25,
@@ -1808,7 +1842,7 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 9
+    "mcid": 10
    },
    {
     "index": 26,
@@ -1819,7 +1853,7 @@
     "sizePt": 8.333,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 10
+    "mcid": 11
    },
    {
     "index": 27,
@@ -1830,23 +1864,12 @@
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 11
+    "mcid": 12
    },
    {
     "index": 28,
     "page": 1,
-    "line": 22,
-    "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
-    "sizePt": 8.333,
-    "color": "rgb(0, 0, 0)",
-    "letterSpacingPt": 0,
-    "mcid": 12
-   },
-   {
-    "index": 29,
-    "page": 1,
-    "line": 23,
+    "line": 21,
     "faceId": "Source Sans 3#1",
     "instanceKey": "Source Sans 3#1|wght=400",
     "sizePt": 10,
@@ -1855,9 +1878,9 @@
     "mcid": 13
    },
    {
-    "index": 30,
+    "index": 29,
     "page": 1,
-    "line": 23,
+    "line": 21,
     "faceId": "Source Sans 3#1",
     "instanceKey": "Source Sans 3#1|wght=400",
     "sizePt": 10,
@@ -1866,37 +1889,26 @@
     "mcid": 14
    },
    {
-    "index": 31,
+    "index": 30,
     "page": 1,
-    "line": 23,
+    "line": 21,
     "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=400",
+    "instanceKey": "Source Sans 3#1|wght=700",
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
     "mcid": 15
    },
    {
-    "index": 32,
+    "index": 31,
     "page": 1,
-    "line": 23,
-    "faceId": "Source Sans 3#1",
-    "instanceKey": "Source Sans 3#1|wght=700",
-    "sizePt": 10,
-    "color": "rgb(0, 0, 0)",
-    "letterSpacingPt": 0,
-    "mcid": 16
-   },
-   {
-    "index": 33,
-    "page": 1,
-    "line": 23,
+    "line": 21,
     "faceId": "Source Sans 3#1",
     "instanceKey": "Source Sans 3#1|wght=400",
     "sizePt": 10,
     "color": "rgb(0, 0, 0)",
     "letterSpacingPt": 0,
-    "mcid": 17
+    "mcid": 16
    }
   ],
   "marginPt": 0,
@@ -1981,23 +1993,12 @@
    },
    {
     "block": "P",
-    "path": "Document/P[3]",
-    "text": "A box whose blurred shadow has no PDF operator and is drawn as a raster.",
-    "mcids": [
-     {
-      "page": 1,
-      "mcid": 0
-     }
-    ]
-   },
-   {
-    "block": "P",
     "path": "Document/P[4]",
     "text": "Decomposition temperature colonisation incomprehensibility.",
     "mcids": [
      {
       "page": 1,
-      "mcid": 1
+      "mcid": 0
      }
     ]
    },
@@ -2008,7 +2009,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 2
+      "mcid": 1
      }
     ]
    },
@@ -2019,7 +2020,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 3
+      "mcid": 2
      }
     ]
    },
@@ -2030,7 +2031,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 4
+      "mcid": 3
      }
     ]
    },
@@ -2041,7 +2042,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 5
+      "mcid": 4
      }
     ]
    },
@@ -2052,7 +2053,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 6
+      "mcid": 5
      }
     ]
    },
@@ -2063,7 +2064,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 7
+      "mcid": 6
      }
     ]
    },
@@ -2074,7 +2075,7 @@
     "mcids": [
      {
       "page": 1,
-      "mcid": 8
+      "mcid": 7
      }
     ]
    },
@@ -2083,6 +2084,10 @@
     "path": "Document/P[5]",
     "text": "Text set at sub and super positions, emphasis and strong.",
     "mcids": [
+     {
+      "page": 1,
+      "mcid": 8
+     },
      {
       "page": 1,
       "mcid": 9
@@ -2114,12 +2119,25 @@
      {
       "page": 1,
       "mcid": 16
-     },
-     {
-      "page": 1,
-      "mcid": 17
      }
     ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[3]",
+    "text": "A box whose blurred shadow has no PDF operator and is drawn as a raster.",
+    "mcids": [
+     {
+      "page": 0,
+      "mcid": 10
+     }
+    ]
+   },
+   {
+    "block": "P",
+    "path": "Document/P[3]",
+    "text": "",
+    "mcids": []
    }
   ],
   "words": [
@@ -2131,8 +2149,8 @@
     "text": "Roads",
     "xPt": 34.008,
     "rightPt": 87.797,
-    "topPt": 290.505,
-    "baselineMeasureTextPt": 270.255,
+    "topPt": 293.505,
+    "baselineMeasureTextPt": 273.255,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2172,8 +2190,8 @@
     "text": "A",
     "xPt": 34.008,
     "rightPt": 39.445,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2201,8 +2219,8 @@
     "text": "line",
     "xPt": 41.438,
     "rightPt": 56.883,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2239,8 +2257,8 @@
     "text": "with",
     "xPt": 58.863,
     "rightPt": 77.344,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2277,8 +2295,8 @@
     "text": "rotated",
     "xPt": 79.348,
     "rightPt": 109.793,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2324,8 +2342,8 @@
     "text": "words",
     "xPt": 111.785,
     "rightPt": 137.473,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2365,8 +2383,8 @@
     "text": "inside",
     "xPt": 139.465,
     "rightPt": 164.555,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2409,8 +2427,8 @@
     "text": "it,",
     "xPt": 166.547,
     "rightPt": 174.961,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2444,8 +2462,8 @@
     "text": "and",
     "xPt": 176.953,
     "rightPt": 193.008,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2479,8 +2497,8 @@
     "text": "a",
     "xPt": 195,
     "rightPt": 200.051,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2508,8 +2526,8 @@
     "text": "link",
     "xPt": 202.043,
     "rightPt": 217.477,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2546,8 +2564,8 @@
     "text": "out",
     "xPt": 219.48,
     "rightPt": 233.719,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2581,8 +2599,8 @@
     "text": "of",
     "xPt": 235.711,
     "rightPt": 244.043,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2613,8 +2631,8 @@
     "text": "the",
     "xPt": 246.023,
     "rightPt": 259.816,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2648,8 +2666,8 @@
     "text": "file",
     "xPt": 261.809,
     "rightPt": 274.699,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2686,8 +2704,8 @@
     "text": ",",
     "xPt": 274.699,
     "rightPt": 277.195,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2715,8 +2733,8 @@
     "text": "one",
     "xPt": 279.188,
     "rightPt": 295.043,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2750,8 +2768,8 @@
     "text": "to",
     "xPt": 297.035,
     "rightPt": 305.707,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2782,8 +2800,8 @@
     "text": "the",
     "xPt": 34.008,
     "rightPt": 47.789,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2817,8 +2835,8 @@
     "text": "last",
     "xPt": 49.781,
     "rightPt": 64.758,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2855,8 +2873,8 @@
     "text": "section",
     "xPt": 66.738,
     "rightPt": 97.09,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2902,8 +2920,8 @@
     "text": ",",
     "xPt": 97.09,
     "rightPt": 99.586,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2931,8 +2949,8 @@
     "text": "and",
     "xPt": 101.578,
     "rightPt": 117.645,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2966,8 +2984,8 @@
     "text": "one",
     "xPt": 119.625,
     "rightPt": 135.48,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3001,8 +3019,8 @@
     "text": "relative",
     "xPt": 137.484,
     "rightPt": 168.703,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3051,8 +3069,8 @@
     "text": "to",
     "xPt": 170.695,
     "rightPt": 179.367,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3083,8 +3101,8 @@
     "text": "the",
     "xPt": 181.359,
     "rightPt": 195.152,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3118,8 +3136,8 @@
     "text": "document",
     "xPt": 197.133,
     "rightPt": 240.258,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3168,8 +3186,8 @@
     "text": ".",
     "xPt": 240.258,
     "rightPt": 242.754,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3197,8 +3215,8 @@
     "text": "A",
     "xPt": 34.008,
     "rightPt": 39.445,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3226,8 +3244,8 @@
     "text": "paragraph",
     "xPt": 41.438,
     "rightPt": 84.48,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3279,8 +3297,8 @@
     "text": "set",
     "xPt": 86.461,
     "rightPt": 98.906,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3314,8 +3332,8 @@
     "text": "in",
     "xPt": 100.887,
     "rightPt": 108.832,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3346,8 +3364,8 @@
     "text": "a",
     "xPt": 110.824,
     "rightPt": 115.875,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3375,8 +3393,8 @@
     "text": "spot",
     "xPt": 117.855,
     "rightPt": 136.242,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3413,8 +3431,8 @@
     "text": "ink",
     "xPt": 138.223,
     "rightPt": 151.113,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3448,8 +3466,8 @@
     "text": "that",
     "xPt": 153.094,
     "rightPt": 170.215,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3486,8 +3504,8 @@
     "text": "overprints.",
     "xPt": 172.207,
     "rightPt": 217.57,
-    "topPt": 124.626,
-    "baselineMeasureTextPt": 114.126,
+    "topPt": 136.122,
+    "baselineMeasureTextPt": 125.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3545,8 +3563,8 @@
     "text": "A",
     "xPt": 39.668,
     "rightPt": 45.105,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3574,8 +3592,8 @@
     "text": "paragraph",
     "xPt": 47.098,
     "rightPt": 90.141,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3627,8 +3645,8 @@
     "text": "on",
     "xPt": 92.121,
     "rightPt": 103.02,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3659,8 +3677,8 @@
     "text": "a",
     "xPt": 105.012,
     "rightPt": 110.063,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3688,8 +3706,8 @@
     "text": "CMYK",
     "xPt": 112.055,
     "rightPt": 135.574,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3726,8 +3744,8 @@
     "text": "ground.",
     "xPt": 137.566,
     "rightPt": 170.344,
-    "topPt": 92.481,
-    "baselineMeasureTextPt": 81.981,
+    "topPt": 106.473,
+    "baselineMeasureTextPt": 95.973,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3766,15 +3784,15 @@
     "emittedAdj": 1.894
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "A",
     "xPt": 42.504,
     "rightPt": 47.941,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3795,15 +3813,15 @@
     "emittedAdj": null
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "box",
     "xPt": 49.934,
     "rightPt": 65.191,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3830,15 +3848,15 @@
     "emittedAdj": -0.002
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "whose",
     "xPt": 67.172,
     "rightPt": 94.359,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3871,15 +3889,15 @@
     "emittedAdj": 0.196
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "blurred",
     "xPt": 96.34,
     "rightPt": 127.219,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3918,15 +3936,15 @@
     "emittedAdj": 3.193
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "shadow",
     "xPt": 129.211,
     "rightPt": 162,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3962,15 +3980,15 @@
     "emittedAdj": -0.109
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "has",
     "xPt": 163.992,
     "rightPt": 178.676,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3997,15 +4015,15 @@
     "emittedAdj": 0.892
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "no",
     "xPt": 180.668,
     "rightPt": 191.566,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4029,15 +4047,15 @@
     "emittedAdj": -0.605
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "PDF",
     "xPt": 193.547,
     "rightPt": 210.316,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4064,15 +4082,15 @@
     "emittedAdj": 1.097
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "operator",
     "xPt": 212.309,
     "rightPt": 248.52,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4114,15 +4132,15 @@
     "emittedAdj": -1.204
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "and",
     "xPt": 250.512,
     "rightPt": 266.566,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4149,15 +4167,15 @@
     "emittedAdj": -1.31
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 13,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 32,
     "block": "P",
     "text": "is",
     "xPt": 268.559,
     "rightPt": 275.227,
-    "topPt": 296.903,
-    "baselineMeasureTextPt": 286.403,
+    "topPt": 66.993,
+    "baselineMeasureTextPt": 56.493,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4181,15 +4199,15 @@
     "emittedAdj": 1.295
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 14,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 33,
     "block": "P",
     "text": "drawn",
     "xPt": 42.504,
     "rightPt": 68.977,
-    "topPt": 280.415,
-    "baselineMeasureTextPt": 269.915,
+    "topPt": 53.001,
+    "baselineMeasureTextPt": 42.501,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4222,15 +4240,15 @@
     "emittedAdj": null
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 14,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 33,
     "block": "P",
     "text": "as",
     "xPt": 70.969,
     "rightPt": 80.215,
-    "topPt": 280.415,
-    "baselineMeasureTextPt": 269.915,
+    "topPt": 53.001,
+    "baselineMeasureTextPt": 42.501,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4254,15 +4272,15 @@
     "emittedAdj": 1.493
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 14,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 33,
     "block": "P",
     "text": "a",
     "xPt": 82.207,
     "rightPt": 87.258,
-    "topPt": 280.415,
-    "baselineMeasureTextPt": 269.915,
+    "topPt": 53.001,
+    "baselineMeasureTextPt": 42.501,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4283,15 +4301,15 @@
     "emittedAdj": -0.803
    },
    {
-    "page": 1,
-    "mcid": 0,
-    "runIndex": 14,
+    "page": 0,
+    "mcid": 10,
+    "runIndex": 33,
     "block": "P",
     "text": "raster.",
     "xPt": 89.25,
     "rightPt": 115.113,
-    "topPt": 280.415,
-    "baselineMeasureTextPt": 269.915,
+    "topPt": 53.001,
+    "baselineMeasureTextPt": 42.501,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4331,14 +4349,14 @@
    },
    {
     "page": 1,
-    "mcid": 1,
-    "runIndex": 15,
+    "mcid": 0,
+    "runIndex": 13,
     "block": "P",
     "text": "Decomposition",
     "xPt": 34.008,
     "rightPt": 97.5,
-    "topPt": 244.098,
-    "baselineMeasureTextPt": 233.598,
+    "topPt": 287.071,
+    "baselineMeasureTextPt": 276.571,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4396,14 +4414,14 @@
    },
    {
     "page": 1,
-    "mcid": 1,
-    "runIndex": 15,
+    "mcid": 0,
+    "runIndex": 13,
     "block": "P",
     "text": "tem­",
     "xPt": 99.492,
     "rightPt": 119.109,
-    "topPt": 244.098,
-    "baselineMeasureTextPt": 233.598,
+    "topPt": 287.071,
+    "baselineMeasureTextPt": 276.571,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4434,14 +4452,14 @@
    },
    {
     "page": 1,
-    "mcid": 1,
-    "runIndex": 16,
+    "mcid": 0,
+    "runIndex": 14,
     "block": "P",
     "text": "perature",
     "xPt": 34.008,
     "rightPt": 69.797,
-    "topPt": 227.61,
-    "baselineMeasureTextPt": 217.11,
+    "topPt": 273.079,
+    "baselineMeasureTextPt": 262.579,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4484,14 +4502,14 @@
    },
    {
     "page": 1,
-    "mcid": 1,
-    "runIndex": 16,
+    "mcid": 0,
+    "runIndex": 14,
     "block": "P",
     "text": "colonisation",
     "xPt": 71.789,
     "rightPt": 123.293,
-    "topPt": 227.61,
-    "baselineMeasureTextPt": 217.11,
+    "topPt": 273.079,
+    "baselineMeasureTextPt": 262.579,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4546,14 +4564,14 @@
    },
    {
     "page": 1,
-    "mcid": 1,
-    "runIndex": 17,
+    "mcid": 0,
+    "runIndex": 15,
     "block": "P",
     "text": "incomprehensibility.",
     "xPt": 34.008,
     "rightPt": 119.59,
-    "topPt": 211.122,
-    "baselineMeasureTextPt": 200.622,
+    "topPt": 259.087,
+    "baselineMeasureTextPt": 248.587,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4632,14 +4650,14 @@
    },
    {
     "page": 1,
-    "mcid": 2,
-    "runIndex": 18,
+    "mcid": 1,
+    "runIndex": 16,
     "block": "TH",
     "text": "key",
     "xPt": 37.793,
     "rightPt": 53.32,
-    "topPt": 181.063,
-    "baselineMeasureTextPt": 170.563,
+    "topPt": 231.524,
+    "baselineMeasureTextPt": 221.024,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4667,14 +4685,14 @@
    },
    {
     "page": 1,
-    "mcid": 3,
-    "runIndex": 19,
+    "mcid": 2,
+    "runIndex": 17,
     "block": "TH",
     "text": "value",
     "xPt": 59.941,
     "rightPt": 83.965,
-    "topPt": 181.063,
-    "baselineMeasureTextPt": 170.563,
+    "topPt": 231.524,
+    "baselineMeasureTextPt": 221.024,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4708,14 +4726,14 @@
    },
    {
     "page": 1,
-    "mcid": 4,
-    "runIndex": 20,
+    "mcid": 3,
+    "runIndex": 18,
     "block": "TD",
     "text": "one",
     "xPt": 37.582,
     "rightPt": 53.426,
-    "topPt": 158.177,
-    "baselineMeasureTextPt": 147.677,
+    "topPt": 211.134,
+    "baselineMeasureTextPt": 200.634,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4743,14 +4761,14 @@
    },
    {
     "page": 1,
-    "mcid": 5,
-    "runIndex": 21,
+    "mcid": 4,
+    "runIndex": 19,
     "block": "TD",
     "text": "1",
     "xPt": 59.941,
     "rightPt": 64.922,
-    "topPt": 158.177,
-    "baselineMeasureTextPt": 147.677,
+    "topPt": 211.134,
+    "baselineMeasureTextPt": 200.634,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4772,14 +4790,14 @@
    },
    {
     "page": 1,
-    "mcid": 6,
-    "runIndex": 22,
+    "mcid": 5,
+    "runIndex": 20,
     "block": "TD",
     "text": "two",
     "xPt": 37.582,
     "rightPt": 53.543,
-    "topPt": 135.29,
-    "baselineMeasureTextPt": 124.79,
+    "topPt": 190.743,
+    "baselineMeasureTextPt": 180.243,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4807,14 +4825,14 @@
    },
    {
     "page": 1,
-    "mcid": 7,
-    "runIndex": 23,
+    "mcid": 6,
+    "runIndex": 21,
     "block": "TD",
     "text": "2",
     "xPt": 59.941,
     "rightPt": 64.922,
-    "topPt": 135.29,
-    "baselineMeasureTextPt": 124.79,
+    "topPt": 190.743,
+    "baselineMeasureTextPt": 180.243,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4836,14 +4854,14 @@
    },
    {
     "page": 1,
-    "mcid": 8,
-    "runIndex": 24,
+    "mcid": 7,
+    "runIndex": 22,
     "block": "H2",
     "text": "The",
     "xPt": 34.008,
     "rightPt": 58.688,
-    "topPt": 102.032,
-    "baselineMeasureTextPt": 87.032,
+    "topPt": 159.981,
+    "baselineMeasureTextPt": 144.981,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4871,14 +4889,14 @@
    },
    {
     "page": 1,
-    "mcid": 8,
-    "runIndex": 24,
+    "mcid": 7,
+    "runIndex": 22,
     "block": "H2",
     "text": "last",
     "xPt": 61.676,
     "rightPt": 85.98,
-    "topPt": 102.032,
-    "baselineMeasureTextPt": 87.032,
+    "topPt": 159.981,
+    "baselineMeasureTextPt": 144.981,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4909,14 +4927,14 @@
    },
    {
     "page": 1,
-    "mcid": 8,
-    "runIndex": 24,
+    "mcid": 7,
+    "runIndex": 22,
     "block": "H2",
     "text": "section",
     "xPt": 88.969,
     "rightPt": 137.039,
-    "topPt": 102.032,
-    "baselineMeasureTextPt": 87.032,
+    "topPt": 159.981,
+    "baselineMeasureTextPt": 144.981,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4956,14 +4974,14 @@
    },
    {
     "page": 1,
-    "mcid": 9,
-    "runIndex": 25,
+    "mcid": 8,
+    "runIndex": 23,
     "block": "P",
     "text": "Text",
     "xPt": 34.008,
     "rightPt": 51.199,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4994,14 +5012,14 @@
    },
    {
     "page": 1,
-    "mcid": 9,
-    "runIndex": 25,
+    "mcid": 8,
+    "runIndex": 23,
     "block": "P",
     "text": "set",
     "xPt": 53.191,
     "rightPt": 65.625,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5029,14 +5047,14 @@
    },
    {
     "page": 1,
-    "mcid": 9,
-    "runIndex": 25,
+    "mcid": 8,
+    "runIndex": 23,
     "block": "P",
     "text": "at",
     "xPt": 67.617,
     "rightPt": 75.914,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5061,14 +5079,14 @@
    },
    {
     "page": 1,
-    "mcid": 10,
-    "runIndex": 26,
+    "mcid": 9,
+    "runIndex": 24,
     "block": "P",
     "text": "sub",
     "xPt": 77.918,
     "rightPt": 90.563,
-    "topPt": 58.766,
-    "baselineMeasureTextPt": 50.516,
+    "topPt": 119.716,
+    "baselineMeasureTextPt": 111.466,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5096,14 +5114,14 @@
    },
    {
     "page": 1,
-    "mcid": 11,
-    "runIndex": 27,
+    "mcid": 10,
+    "runIndex": 25,
     "block": "P",
     "text": "and",
     "xPt": 92.555,
     "rightPt": 108.621,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5131,14 +5149,14 @@
    },
    {
     "page": 1,
-    "mcid": 12,
-    "runIndex": 28,
+    "mcid": 11,
+    "runIndex": 26,
     "block": "P",
     "text": "super",
     "xPt": 110.625,
     "rightPt": 130.301,
-    "topPt": 65.587,
-    "baselineMeasureTextPt": 57.337,
+    "topPt": 126.536,
+    "baselineMeasureTextPt": 118.286,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5172,14 +5190,14 @@
    },
    {
     "page": 1,
-    "mcid": 13,
-    "runIndex": 29,
+    "mcid": 12,
+    "runIndex": 27,
     "block": "P",
     "text": "positions,",
     "xPt": 132.293,
     "rightPt": 173.32,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5228,14 +5246,14 @@
    },
    {
     "page": 1,
-    "mcid": 14,
-    "runIndex": 30,
+    "mcid": 13,
+    "runIndex": 28,
     "block": "P",
     "text": "emphasis",
     "xPt": 175.313,
     "rightPt": 215.438,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5278,14 +5296,14 @@
    },
    {
     "page": 1,
-    "mcid": 15,
-    "runIndex": 31,
+    "mcid": 14,
+    "runIndex": 29,
     "block": "P",
     "text": "and",
     "xPt": 217.43,
     "rightPt": 233.496,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5313,14 +5331,14 @@
    },
    {
     "page": 1,
-    "mcid": 16,
-    "runIndex": 32,
+    "mcid": 15,
+    "runIndex": 30,
     "block": "P",
     "text": "strong",
     "xPt": 235.5,
     "rightPt": 264.059,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5357,14 +5375,14 @@
    },
    {
     "page": 1,
-    "mcid": 17,
-    "runIndex": 33,
+    "mcid": 16,
+    "runIndex": 31,
     "block": "P",
     "text": ".",
     "xPt": 264.059,
     "rightPt": 266.555,
-    "topPt": 63.759,
-    "baselineMeasureTextPt": 53.259,
+    "topPt": 124.708,
+    "baselineMeasureTextPt": 114.208,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5514,11 +5532,11 @@
     {
      "tag": "P",
      "path": "Document/P[3]",
-     "pg": 1,
+     "pg": 0,
      "mcids": [
       {
-       "page": 1,
-       "mcid": 0
+       "page": 0,
+       "mcid": 10
       }
      ],
      "attrs": {},
@@ -5531,7 +5549,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 1
+       "mcid": 0
       }
      ],
      "attrs": {
@@ -5564,7 +5582,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 2
+             "mcid": 1
             }
            ],
            "attrs": {
@@ -5580,7 +5598,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 3
+             "mcid": 2
             }
            ],
            "attrs": {
@@ -5612,7 +5630,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 4
+             "mcid": 3
             }
            ],
            "attrs": {
@@ -5629,7 +5647,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 5
+             "mcid": 4
             }
            ],
            "attrs": {
@@ -5654,7 +5672,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 6
+             "mcid": 5
             }
            ],
            "attrs": {
@@ -5671,7 +5689,7 @@
            "mcids": [
             {
              "page": 1,
-             "mcid": 7
+             "mcid": 6
             }
            ],
            "attrs": {
@@ -5694,7 +5712,7 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 8
+       "mcid": 7
       }
      ],
      "attrs": {},
@@ -5707,23 +5725,23 @@
      "mcids": [
       {
        "page": 1,
-       "mcid": 9
+       "mcid": 8
       },
       {
        "page": 1,
-       "mcid": 11
+       "mcid": 10
       },
       {
        "page": 1,
-       "mcid": 13
+       "mcid": 12
       },
       {
        "page": 1,
-       "mcid": 15
+       "mcid": 14
       },
       {
        "page": 1,
-       "mcid": 17
+       "mcid": 16
       }
      ],
      "attrs": {},
@@ -5735,7 +5753,7 @@
        "mcids": [
         {
          "page": 1,
-         "mcid": 10
+         "mcid": 9
         }
        ],
        "attrs": {
@@ -5750,7 +5768,7 @@
        "mcids": [
         {
          "page": 1,
-         "mcid": 12
+         "mcid": 11
         }
        ],
        "attrs": {
@@ -5765,7 +5783,7 @@
        "mcids": [
         {
          "page": 1,
-         "mcid": 14
+         "mcid": 13
         }
        ],
        "attrs": {},
@@ -5778,7 +5796,7 @@
        "mcids": [
         {
          "page": 1,
-         "mcid": 16
+         "mcid": 15
         }
        ],
        "attrs": {},
@@ -5797,19 +5815,19 @@
     "contents": "out of the file",
     "rectPt": [
      219.48,
-     231.36,
+     237.864,
      274.699,
-     245.61
+     252.114
     ],
     "quads": [
      219.48,
-     245.61,
+     252.114,
      274.699,
-     245.61,
+     252.114,
      219.48,
-     231.36,
+     237.864,
      274.699,
-     231.36
+     237.864
     ]
    },
    {
@@ -5820,27 +5838,27 @@
     "contents": "to the last section",
     "rectPt": [
      34.008,
-     214.872,
+     223.872,
      305.707,
-     245.61
+     252.114
     ],
     "quads": [
      297.035,
-     245.61,
+     252.114,
      305.707,
-     245.61,
+     252.114,
      297.035,
-     231.36,
+     237.864,
      305.707,
-     231.36,
+     237.864,
      34.008,
-     229.122,
+     238.122,
      97.09,
-     229.122,
+     238.122,
      34.008,
-     214.872,
+     223.872,
      97.09,
-     214.872
+     223.872
     ]
    },
    {
@@ -5851,19 +5869,19 @@
     "contents": "relative to the document",
     "rectPt": [
      137.484,
-     214.872,
+     223.872,
      240.258,
-     229.122
+     238.122
     ],
     "quads": [
      137.484,
-     229.122,
+     238.122,
      240.258,
-     229.122,
+     238.122,
      137.484,
-     214.872,
+     223.872,
      240.258,
-     214.872
+     223.872
     ]
    }
   ],
@@ -5876,6 +5894,12 @@
    },
    {
     "path": "artifact:paint:div[1]",
+    "type": "Layout",
+    "page": 0,
+    "kind": "text"
+   },
+   {
+    "path": "artifact:paint:div[3]",
     "type": "Layout",
     "page": 0,
     "kind": "text"
@@ -5911,7 +5935,7 @@
     "kind": "paint"
    },
    {
-    "path": "artifact:paint:div[2]",
+    "path": "artifact:paint:div[4]",
     "type": "Layout",
     "page": 1,
     "kind": "text"
@@ -5941,12 +5965,12 @@
      "Document/P[0]/Link[2]",
      "Document/P[0]",
      "Document/P[1]",
-     "Document/P[2]"
+     "Document/P[2]",
+     "Document/P[3]"
     ]
    },
    {
     "mcidOwners": [
-     "Document/P[3]",
      "Document/P[4]",
      "Document/Table[0]/THead[0]/TR[0]/TH[0]",
      "Document/Table[0]/THead[0]/TR[0]/TH[1]",
@@ -6043,7 +6067,7 @@
    "level": 1,
    "depth": 0,
    "page": 0,
-   "topPt": 290.505,
+   "topPt": 293.505,
    "count": 1
   },
   {
@@ -6052,7 +6076,7 @@
    "level": 2,
    "depth": 1,
    "page": 1,
-   "topPt": 102.032,
+   "topPt": 159.981,
    "count": 0
   }
  ],
@@ -6073,7 +6097,7 @@
    "targetId": "last",
    "destPage": 1,
    "destLeftPt": 34.008,
-   "destTopPt": 103.532,
+   "destTopPt": 159.981,
    "destStructPath": "Document/H2[0]"
   },
   {
@@ -6195,7 +6219,7 @@
    ]
   }
  ],
- "gridLineSpreadPx": 5.684341886080802e-14,
+ "gridLineSpreadPx": 0,
  "paint": [
   {
    "path": "div[0]",
@@ -6207,9 +6231,9 @@
    "artifact": true,
    "geometry": [
     34.008,
-    169.38,
+    179.376,
     306.129,
-    203.388
+    213.384
    ],
    "reason": "the gradient has stops with alpha below one",
    "form": "Fm0",
@@ -6217,15 +6241,15 @@
     "type": 2,
     "coords": [
      45.344,
-     205.031,
+     191.703,
      408.172,
-     205.031
+     191.703
     ],
     "coordsPt": [
      34.008,
-     186.384,
+     196.38,
      306.129,
-     186.384
+     196.38
     ],
     "extend": [
      true,
@@ -6280,9 +6304,9 @@
    "artifact": true,
    "geometry": [
     34.008,
-    169.38,
+    179.376,
     306.129,
-    203.388
+    213.384
    ],
    "ctm": [
     0.75,
@@ -6296,15 +6320,15 @@
     "type": 2,
     "coords": [
      45.344,
-     205.031,
+     191.703,
      408.172,
-     205.031
+     191.703
     ],
     "coordsPt": [
      34.008,
-     186.384,
+     196.38,
      306.129,
-     186.384
+     196.38
     ],
     "extend": [
      true,
@@ -6361,9 +6385,9 @@
    "artifact": true,
    "geometry": [
     34.008,
-    135.372,
+    145.368,
     306.129,
-    169.38
+    179.376
    ],
    "ctm": [
     137.119,
@@ -6371,7 +6395,7 @@
     0,
     -137.119,
     170.068,
-    152.376
+    162.372
    ],
    "params": {
     "type": 3,
@@ -6385,10 +6409,10 @@
     ],
     "coordsPt": [
      170.068,
-     152.376,
+     162.372,
      0,
      170.068,
-     152.376,
+     162.372,
      137.119
     ],
     "extend": [
@@ -6426,7 +6450,7 @@
      0,
      -137.119,
      170.068,
-     152.376
+     162.372
     ],
     "spread": "pad",
     "periods": 1,
@@ -6437,18 +6461,46 @@
    "evenOdd": false
   },
   {
+   "path": "div[3]",
+   "owner": "artifact:paint:div[3]",
+   "kind": "raster",
+   "label": "box-shadow",
+   "page": 0,
+   "paintIndex": 11,
+   "artifact": true,
+   "geometry": [
+    19.669,
+    23.92,
+    300.798,
+    65.158
+   ],
+   "ctm": [
+    300.798,
+    0,
+    0,
+    65.158,
+    19.669,
+    23.92
+   ],
+   "reason": "box-shadow rgba(0, 0, 0, 0.4) 0px 3.77953px 11.3386px 0px on div[3]: a blur PDF has no operator for",
+   "feature": "box-shadow",
+   "dpi": 300,
+   "xobject": "Im0",
+   "hasSMask": true
+  },
+  {
    "path": "p[0]",
    "owner": "artifact:decoration:p[0]#0",
    "kind": "decoration",
    "label": "decoration:underline",
    "page": 0,
-   "paintIndex": 32.5,
+   "paintIndex": 34.5,
    "artifact": true,
    "geometry": [
     219.48,
-    234.157,
+    240.532,
     274.699,
-    234.657
+    241.032
    ],
    "evenOdd": false,
    "params": {
@@ -6466,13 +6518,13 @@
    "kind": "decoration",
    "label": "decoration:underline",
    "page": 0,
-   "paintIndex": 32.5,
+   "paintIndex": 34.5,
    "artifact": true,
    "geometry": [
     297.035,
-    234.157,
+    240.532,
     305.707,
-    234.657
+    241.032
    ],
    "evenOdd": false,
    "params": {
@@ -6490,13 +6542,13 @@
    "kind": "decoration",
    "label": "decoration:underline",
    "page": 0,
-   "paintIndex": 32.5,
+   "paintIndex": 34.5,
    "artifact": true,
    "geometry": [
     34.008,
-    217.657,
+    226.657,
     97.09,
-    218.157
+    227.157
    ],
    "evenOdd": false,
    "params": {
@@ -6514,13 +6566,13 @@
    "kind": "decoration",
    "label": "decoration:underline",
    "page": 0,
-   "paintIndex": 32.5,
+   "paintIndex": 34.5,
    "artifact": true,
    "geometry": [
     137.484,
-    217.657,
+    226.657,
     240.258,
-    218.157
+    227.157
    ],
    "evenOdd": false,
    "params": {
@@ -6533,31 +6585,31 @@
    }
   },
   {
-   "path": "div[2]",
-   "owner": "artifact:paint:div[2]",
+   "path": "div[4]",
+   "owner": "artifact:paint:div[4]",
    "kind": "raster",
    "label": "box-shadow",
    "page": 1,
-   "paintIndex": 10,
+   "paintIndex": 12,
    "artifact": true,
    "geometry": [
     19.669,
-    241.842,
+    283.314,
     300.798,
-    78.646
+    37.173
    ],
    "ctm": [
     300.798,
     0,
     0,
-    78.646,
+    37.173,
     19.669,
-    241.842
+    283.314
    ],
-   "reason": "box-shadow rgba(0, 0, 0, 0.4) 0px 3.77953px 11.3386px 0px on div[2]: a blur PDF has no operator for",
+   "reason": "box-shadow rgba(0, 0, 0, 0.4) 0px 3.77953px 11.3386px 0px on div[4]: a blur PDF has no operator for",
    "feature": "box-shadow",
    "dpi": 300,
-   "xobject": "Im0",
+   "xobject": "Im1",
    "hasSMask": true
   },
   {
@@ -6566,13 +6618,13 @@
    "kind": "fill",
    "label": "collapsed-border:row-line-0[0..2]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     34.008,
-    184.638,
+    233.598,
     87.539,
-    185.388
+    234.348
    ],
    "evenOdd": false,
    "params": {
@@ -6590,13 +6642,13 @@
    "kind": "fill",
    "label": "collapsed-border:row-line-1[0..2]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     34.008,
-    161.751,
+    213.208,
     87.539,
-    162.501
+    213.958
    ],
    "evenOdd": false,
    "params": {
@@ -6614,13 +6666,13 @@
    "kind": "fill",
    "label": "collapsed-border:row-line-2[0..2]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     34.008,
-    138.864,
+    192.817,
     87.539,
-    139.614
+    193.567
    ],
    "evenOdd": false,
    "params": {
@@ -6638,13 +6690,13 @@
    "kind": "fill",
    "label": "collapsed-border:row-line-3[0..2]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     34.008,
-    115.977,
+    172.427,
     87.539,
-    116.727
+    173.177
    ],
    "evenOdd": false,
    "params": {
@@ -6662,13 +6714,13 @@
    "kind": "fill",
    "label": "collapsed-border:column-line-0[0..3]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     34.008,
-    116.352,
+    172.802,
     34.758,
-    185.013
+    233.973
    ],
    "evenOdd": false,
    "params": {
@@ -6686,13 +6738,13 @@
    "kind": "fill",
    "label": "collapsed-border:column-line-1[0..3]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     56.367,
-    116.352,
+    172.802,
     57.117,
-    185.013
+    233.973
    ],
    "evenOdd": false,
    "params": {
@@ -6710,13 +6762,13 @@
    "kind": "fill",
    "label": "collapsed-border:column-line-2[0..3]",
    "page": 1,
-   "paintIndex": 23.25,
+   "paintIndex": 25.25,
    "artifact": true,
    "geometry": [
     86.789,
-    116.352,
+    172.802,
     87.539,
-    185.013
+    233.973
    ],
    "evenOdd": false,
    "params": {
@@ -6741,6 +6793,8 @@
   "p[1]#decoration",
   "p[2]#decoration",
   "div[2]#decoration",
+  "div[3]#decoration",
+  "div[4]#decoration",
   "p[3]#decoration",
   "table[0]#decoration",
   "table[0]/thead[0]#decoration",
@@ -6771,6 +6825,8 @@
   "p[1]#content",
   "p[2]#content",
   "div[2]#content",
+  "div[3]#content",
+  "div[4]#content",
   "p[3]#content",
   "table[0]#content",
   "table[0]/thead[0]#content",
@@ -6795,7 +6851,12 @@
  ],
  "deferred": [
   {
-   "path": "div[2]",
+   "path": "div[3]",
+   "feature": "box-shadow",
+   "paintedAs": "raster at 300 dpi"
+  },
+  {
+   "path": "div[4]",
    "feature": "box-shadow",
    "paintedAs": "raster at 300 dpi"
   }
@@ -6824,7 +6885,7 @@
     "page": 0,
     "rectPt": [
      219.4805,
-     234.157,
+     240.532,
      55.21870000000001,
      0.5
     ],
@@ -6848,7 +6909,7 @@
     "page": 0,
     "rectPt": [
      297.0352,
-     234.157,
+     240.532,
      8.671800000000019,
      0.5
     ],
@@ -6872,7 +6933,7 @@
     "page": 0,
     "rectPt": [
      34.0078,
-     217.657,
+     226.657,
      63.081999999999994,
      0.5
     ],
@@ -6896,7 +6957,7 @@
     "page": 0,
     "rectPt": [
      137.4844,
-     217.657,
+     226.657,
      102.77340000000001,
      0.5
     ],
@@ -6925,11 +6986,12 @@
   "streamOrder": [
    "div[0]#background-image",
    "div[1]#background-image",
+   "div[3]#box-shadow",
    "p[0]#decoration:underline",
    "p[0]#decoration:underline",
    "p[0]#decoration:underline",
    "p[0]#decoration:underline",
-   "div[2]#box-shadow",
+   "div[4]#box-shadow",
    "table[0]#collapsed-borders"
   ],
   "figures": []
@@ -7106,7 +7168,7 @@
      "declaredBy": "table[0]/thead[0]/tr[0]/th[0]",
      "rectPx": [
       45.344,
-      206.359,
+      141.078,
       71.375,
       1
      ],
@@ -7151,7 +7213,7 @@
      "declaredBy": "table[0]/thead[0]/tr[0]/th[0]",
      "rectPx": [
       45.344,
-      236.875,
+      168.266,
       71.375,
       1
      ],
@@ -7208,7 +7270,7 @@
      "declaredBy": "table[0]/tbody[0]/tr[0]/td[0]",
      "rectPx": [
       45.344,
-      267.391,
+      195.453,
       71.375,
       1
      ],
@@ -7253,7 +7315,7 @@
      "declaredBy": "table[0]/tbody[0]/tr[1]/td[0]",
      "rectPx": [
       45.344,
-      297.906,
+      222.641,
       71.375,
       1
      ],
@@ -7298,9 +7360,9 @@
      "declaredBy": "table[0]/thead[0]/tr[0]/th[0]",
      "rectPx": [
       45.344,
-      206.859,
+      141.578,
       1,
-      91.547
+      81.563
      ],
      "candidates": [
       {
@@ -7343,9 +7405,9 @@
      "declaredBy": "table[0]/thead[0]/tr[0]/th[0]",
      "rectPx": [
       75.156,
-      206.859,
+      141.578,
       1,
-      91.547
+      81.563
      ],
      "candidates": [
       {
@@ -7376,9 +7438,9 @@
      "declaredBy": "table[0]/thead[0]/tr[0]/th[1]",
      "rectPx": [
       115.719,
-      206.859,
+      141.578,
       1,
-      91.547
+      81.563
      ],
      "candidates": [
       {
@@ -7429,5 +7491,5 @@
    "source": "element"
   }
  ],
- "bytes": 173125
+ "bytes": 176722
 }
