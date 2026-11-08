@@ -335,7 +335,7 @@ A print job cannot recover from a colour the author demanded and the exporter qu
 
 A few things are deferrals rather than errors: `paint-order: stroke` over a gradient fill, `box-shadow: inset`, a `background-image` layer that is not a gradient. The box is still drawn, the reader still gets a page, and the report's deferred list says what was painted instead.
 
-Wherever the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, the report's `confessions` says so with the region on the page, in the presented page's CSS px: `black-text`, `cmyk-text`, `cmyk-image`, `undecodable-image`, `raster-shadow`, `raster`, `blend` and `opacity`. It is empty when there is none.
+Wherever the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, the report's `confessions` says so with the region on the page, in the presented page's CSS px: `black-text`, `cmyk-text`, `cmyk-shading`, `cmyk-image`, `undecodable-image`, `raster-shadow`, `raster`, `blend` and `opacity`. It is empty when there is none.
 
 ## The display list
 

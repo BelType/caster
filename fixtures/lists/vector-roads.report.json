@@ -40,6 +40,18 @@
  "confessions": [
   {
    "page": 2,
+   "kind": "cmyk-shading",
+   "rect": {
+    "x": 551.75,
+    "y": 73.25,
+    "width": 113.375,
+    "height": 52.906
+   },
+   "element": "div[7]/div[2]/div[0]/div[0]",
+   "note": "the gradient is painted from the device-cmyk() stops its --pdf-background hint declares, where the screen shows the RGB gradient"
+  },
+  {
+   "page": 2,
    "kind": "raster-shadow",
    "rect": {
     "x": 296.056,

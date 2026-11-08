@@ -748,9 +748,9 @@ export type Report = {
  * What the printer did that the screen does not: a closed set of words.
  *
  * @remarks
- * `black-text` is `blackText: '100k'` setting a run the browser painted pure black in one plate; `cmyk-text` is `convertRgb` writing a run's fill as the CMYK lcms answered; `cmyk-image` is an image the file carries as `DeviceCMYK` samples, its own or converted, where the browser shows its own conversion to RGB; `undecodable-image` is a file the browser refused to decode, carried whole for the reader to decode; `raster-shadow` is a `box-shadow` drawn as a raster; `raster` is any other raster fallback (a filter, a pattern, a conic gradient, a repeating gradient tile); `blend` is a blend mode composited by the reader over the page's group; `opacity` is an opacity below one made a transparency group.
+ * `black-text` is `blackText: '100k'` setting a run the browser painted pure black in one plate; `cmyk-text` is `convertRgb` writing a run's fill as the CMYK lcms answered; `cmyk-shading` is a gradient painted as a `DeviceCMYK` shading from the `device-cmyk()` stops its `--pdf-background` hint declares, where the screen shows the RGB gradient; `cmyk-image` is an image the file carries as `DeviceCMYK` samples, its own or converted, where the browser shows its own conversion to RGB; `undecodable-image` is a file the browser refused to decode, carried whole for the reader to decode; `raster-shadow` is a `box-shadow` drawn as a raster; `raster` is any other raster fallback (a filter, a pattern, a conic gradient, a repeating gradient tile); `blend` is a blend mode composited by the reader over the page's group; `opacity` is an opacity below one made a transparency group.
  */
-export type ConfessionKind = 'black-text'|'cmyk-text'|'cmyk-image'|'undecodable-image'|'raster-shadow'|'raster'|'blend'|'opacity';
+export type ConfessionKind = 'black-text'|'cmyk-text'|'cmyk-shading'|'cmyk-image'|'undecodable-image'|'raster-shadow'|'raster'|'blend'|'opacity';
 
 /**
  * One confession: what the printer did, where, and to which element.
@@ -831,6 +831,7 @@ export function confessionsOf(runs: readonly ConfessedRun[], images: readonly Re
       return;
     }
     if (node.kind === 'form') return;
+    if (node.kind === 'path' && [node.fill, node.stroke].some((paint) => paint.kind === 'shading' && paint.shading.colorSpace === 'DeviceCMYK')) push(page, 'cmyk-shading', boundsUnder(under, bboxOf([node])), node.domPath, 'the gradient is painted from the device-cmyk() stops its --pdf-background hint declares, where the screen shows the RGB gradient');
     if (node.blend !== 'Normal') push(page, 'blend', boundsUnder(under, bboxOf([node])), node.domPath, `the blend mode ${node.blend} is composited by the reader, over the page's group in sRGB`);
     if (node.kind === 'group') {
       if (node.forceForm && node.opacity < 1) push(page, 'opacity', boundsUnder(under, bboxOf([node])), node.domPath, `opacity ${node.opacity} is a transparency group the reader composites`);

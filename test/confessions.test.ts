@@ -36,9 +36,10 @@ const EVERY = [
   '<div class="b" data-k="raster-shadow" style="background: #fff; box-shadow: 6px 6px 10px rgba(0, 0, 0, .5)"></div>',
   '<div class="b" style="background: #fc0; isolation: isolate"><div data-k="blend" style="width: 60px; height: 30px; margin-left: 30px; background: #09c; mix-blend-mode: multiply"></div></div>',
   '<div class="b" data-k="opacity" style="opacity: .5; background: #09c; border: 2px solid #234"></div>',
+  '<div class="b" data-k="cmyk-shading" style="background: linear-gradient(90deg, rgb(255 51 0), rgb(0 204 153)); --pdf-background: linear-gradient(90deg, device-cmyk(0 0.8 1 0), device-cmyk(0.8 0 0.2 0.2))"></div>',
 ].join('');
 
-const NONE = '<p>Nothing guessed, nothing set in another colour.</p><div class="b" style="background: #ddd; border: 1px solid #999"></div>';
+const NONE = '<p>Nothing guessed, nothing set in another colour.</p><div class="b" style="background: #ddd; border: 1px solid #999"></div><div class="b" style="background: linear-gradient(90deg, rgb(255 51 0), rgb(0 204 153))"></div>';
 
 function serve(): Promise<http.Server> {
   const server = http.createServer((request, response) => {
@@ -101,7 +102,7 @@ const holds = (outer: Rect, inner: Rect, slack = 0.01) => outer.x <= inner.x + s
 test('in the page: each transform and guess is one confession of its kind, on its page, holding the element\'s own box in the page\'s CSS px', async () => {
   const seen = await printed('/every', { blackText: '100k', convertRgb: 'wasm' });
   const kinds = Object.keys(seen.boxes);
-  assert.deepEqual(kinds.sort(), ['black-text', 'blend', 'cmyk-image', 'cmyk-text', 'opacity', 'raster-shadow', 'undecodable-image']);
+  assert.deepEqual(kinds.sort(), ['black-text', 'blend', 'cmyk-image', 'cmyk-shading', 'cmyk-text', 'opacity', 'raster-shadow', 'undecodable-image']);
   for (const kind of kinds) {
     const found = seen.confessions.filter((c) => c.kind === kind);
     assert.equal(found.length, 1, `one ${kind} confession (${JSON.stringify(seen.confessions.map((c) => `${c.kind} ${c.element}`))})`);
@@ -120,7 +121,7 @@ test('in the page: each transform and guess is one confession of its kind, on it
   assert.ok(shadow.rect.width > seen.boxes['raster-shadow'].width + 6, 'the shadow\'s region is the raster, wider than the box');
 });
 
-test('in the page: a print with nothing transformed or guessed confesses nothing', async () => {
+test('in the page: a print with nothing transformed or guessed confesses nothing, a gradient in its own RGB stops included', async () => {
   const seen = await printed('/none', {});
   assert.deepEqual(seen.confessions, []);
 });
