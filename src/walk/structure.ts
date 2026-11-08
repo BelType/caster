@@ -1148,6 +1148,9 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         }
         // E12F (`structure-tree.md`) asked whether an `<hr>` inside an article should become a `Div` with a role instead. It should not: a horizontal rule is a separator the engine paints and carries no text, so it is a Layout artifact, which is what E5 already decided and what E12 leaves alone.
         if (tag === 'HR') {
+            // A rule with a drawn border style (the default `inset`, or `dashed`, `groove`...) is a decorated box like any other, so the border painter draws its sides; the flat rectangle below is the `solid` rule and nothing else.
+            if (hasDrawnBorder(getComputedStyle(element)))
+                return;
             const descriptor: ArtifactDescriptor = artifact((element as HTMLElement), 'layout');
             paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(getComputedStyle(element).borderTopColor) });
             return;
@@ -1319,6 +1322,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         if (tag === 'A' && element.hasAttribute('href')) {
             const self = noteLang(element, node('Link', parent, langAttrs(element)));
             ownerByElement.set(element, self.path);
+            blockIfDisplayed(element, self);
             // An anchor the engine rendered on no page has no rectangles at all, so there is nothing to annotate here (*the engine stopped showing the original*, S47). The `Link` node stands; the annotation is re-homed onto the fragment that renders it at the end of the walk, and an anchor no fragment renders on the page its block begins on is dropped — which is exactly what the page's own clip did to it before the first fragment was constructed.
             if (!options.renders || options.renders(element)) annots.push(linkRects((element as HTMLAnchorElement), self.path));
             else unrenderedAnchors.push({ element: (element as HTMLAnchorElement), path: self.path });
@@ -1567,6 +1571,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         warnings,
     };
 }
+/** Whether any side of the box has a border style that is drawn rather than filled: neither `solid`, `none` nor `hidden`. */
+function hasDrawnBorder(style: CSSStyleDeclaration): boolean {
+    return [style.borderTopStyle, style.borderRightStyle, style.borderBottomStyle, style.borderLeftStyle].some((side) => side !== 'solid' && side !== 'none' && side !== 'hidden');
+}
 /**
  * Every element in the container whose computed style puts vector ink on its own box, in DOM order.
  *
@@ -1581,8 +1589,8 @@ function decoratedElements(container: HTMLElement): HTMLElement[] {
     const consider = (element: Element) => {
         if (element.closest('svg') !== null)
             return;
-        if (element.tagName === 'HR')
-            return; // painted as its own rectangle by the HR branch above; see this function's note
+        if (element.tagName === 'HR' && !hasDrawnBorder(getComputedStyle(element)))
+            return; // a solid rule is painted as its own rectangle by the HR branch above; see this function's note
         if (!(element instanceof HTMLElement))
             return;
         const style = getComputedStyle(element);

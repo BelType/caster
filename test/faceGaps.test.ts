@@ -92,6 +92,16 @@ test('a family with a bold face, or a document that forbids synthesis itself, do
   assert.ok(!forbidden.warnings!.some((w) => /has no bold face/.test(w)), forbidden.warnings!.join('\n'));
 });
 
+test('a font-synthesis: none below the root silences the warning for its own text, and only there', async () => {
+  const below = await printed(pageWith('.s { font-synthesis: none; }', '<p>Plain and <strong>strong</strong> and <em>leaning</em>.</p>'));
+  assert.ok(!below.warnings!.some((w) => /has no (bold|italic) face/.test(w)), below.warnings!.join('\n'));
+  const weightOnly = await printed(pageWith('.s { font-synthesis-weight: none; }', '<p>Plain and <strong>strong</strong> and <em>leaning</em>.</p>'));
+  assert.ok(!weightOnly.warnings!.some((w) => /has no bold face/.test(w)), weightOnly.warnings!.join('\n'));
+  assert.ok(weightOnly.warnings!.some((w) => /has no italic face/.test(w)), 'the style synthesis is still on');
+  const elsewhere = await printed(pageWith('.quiet { font-synthesis: none; }', '<p class="quiet">Plain and <strong>quiet</strong>.</p><p>Plain and <strong>loud</strong>.</p>'));
+  assert.ok(elsewhere.warnings!.some((w) => /has no bold face/.test(w)), 'a sibling that asked for nothing still warns: ' + elsewhere.warnings!.join('\n'));
+});
+
 test('small capitals from a face without smcp refuse, naming the face', async () => {
   const { refused } = await printed(pageWith('p { font-variant: small-caps; }', '<p>Small capitals</p>'));
   assert.match(refused ?? '', /asks for small capitals \(smcp\) from the face .* of "Solo", which has none/);

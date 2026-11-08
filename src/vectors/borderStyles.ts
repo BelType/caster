@@ -3,7 +3,7 @@
  *
  * Ported from `harness/src/export/borderStyles.ts` (E12B). Guide: `docs/guide/vector-painting.md` §"Non-solid border styles (E12B)".
  *
- * WHAT THE PORT CHANGED. The port records no change here beyond the language. The module runs only under the `styledBorders` flag (`options.js`), whose default `false` keeps every recorded stream as it was.
+ * WHAT THE PORT CHANGED. The port records no change here beyond the language. The module runs only under the `styledBorders` flag (`options.js`), whose default is `true` since 2026-11-03 (the corpus holds no non-solid border, so no recorded stream moved); with the flag off every side paints solid.
  *
  * The harness's own header follows.
  *

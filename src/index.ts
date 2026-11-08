@@ -21,7 +21,7 @@ import { createGateway } from './host/gateway.ts';
 import { buildFontTable, declaredFaces, isGenericFamily, refuseFamily, unreadableFamilies } from './host/fonts.ts';
 import { adaptCicero } from './adapters/cicero.ts';
 import { adaptPagedjs, STRIP_SELECTOR as PAGEDJS_STRIP } from './adapters/pagedjs.ts';
-import { authorSynthesis, prepare } from './adapters/prepare.ts';
+import { authorSynthesis, authorSynthesisOf, prepare } from './adapters/prepare.ts';
 import { reify } from './adapters/reify.ts';
 import { beginFrame, endFrame, toLocalOn } from './coordinates/frame.ts';
 import { clearPageGeometry, geometryOfPage, pageGeometries, pageGeometryFor, setPageGeometry, xToPt, yToPt } from './coordinates/pageGeometry.ts';
@@ -240,12 +240,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     const allowed = authorSynthesis(doc);
     const synthesisWithheld = (parent: Element, request: FaceRequest, family: string) => {
       if (!allowed) return;
-      // ponytail: an author `font-synthesis: none` below the root reads as the root's value here and warns needlessly; walk the author cascade if that ever matters.
       const match = matchFace(table.descriptors, family, { ...request, synthesis: { weight: request.synthesis.weight || allowed.weight, style: request.synthesis.style || allowed.style } });
       if (!match) return;
       for (const [faked, want] of [[match.synthesis.bold, 'bold'], [match.synthesis.italic, 'italic']] as const) {
         const key = `${family}\n${want}`;
         if (!faked || said.has(key)) continue;
+        // The root's value answers first and cheaply; only a would-be warning asks the element's own cascade, because an author `font-synthesis: none` below the root reads as the root's value here.
+        const own = authorSynthesisOf(parent);
+        if (own && !(want === 'bold' ? own.weight : own.style)) continue;
         said.add(key);
         report.warnings.push(`caster: "${family}" has no ${want} face, and ${domPathOf(parent, doc.body)} asks for one. The screen fakes a ${want} the printer does not, so the PDF prints this text ${want === 'bold' ? 'at the weight of the face it has' : 'upright'}. Declare a ${want} @font-face for "${family}", or set font-synthesis: none so the screen shows what prints.`);
       }

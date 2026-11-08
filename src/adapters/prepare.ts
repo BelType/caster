@@ -130,6 +130,26 @@ export function authorSynthesis(doc: Document): { weight: boolean; style: boolea
 }
 
 /**
+ * Whether the author's own cascade lets an element's bold and italic be synthesised, which is what the screen the author looked at did.
+ *
+ * @remarks
+ * After {@link prepare} every element reads `font-synthesis: none` by inheritance, so an element's computed style cannot say whether the author set `none` below the root. The root's inline override is lifted for the length of the read and put back, so the answer is the author's cascade with the root's earlier value, which is what the screen showed.
+ */
+export function authorSynthesisOf(element: Element): { weight: boolean; style: boolean }|undefined {
+  const root = element.ownerDocument.documentElement;
+  if (!AUTHOR_SYNTHESIS.has(element.ownerDocument)) return undefined;
+  const view = element.ownerDocument.defaultView!;
+  const had = root.style.getPropertyValue('font-synthesis');
+  root.style.removeProperty('font-synthesis');
+  try {
+    const style = view.getComputedStyle(element);
+    return { weight: style.getPropertyValue('font-synthesis-weight').trim() !== 'none', style: style.getPropertyValue('font-synthesis-style').trim() !== 'none' };
+  } finally {
+    if (had) root.style.setProperty('font-synthesis', had, 'important');
+  }
+}
+
+/**
  * The two states of a task, as text (M3).
  *
  * @remarks
