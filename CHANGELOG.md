@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.5 — 2026-11-08
 
 - **A page printed before prints the same file again.** A host that keeps its print page between documents prepares and cuts the same document twice, as `beltype serve`'s mail merge does when a customer's data changes nothing. Since Cicero 0.1.10 keeps a running element's original hidden inside its block, the second moment of reification reached it and froze its `counter(page)` there, as 0 or the block's reset, and the next cut copied that span onto every page: the CLI's `provvedimento-imu` printed "Pagina 1/3" on all three pages and "N. 2" where the page shows "N. 4". The second moment now makes nothing real in an element the pages show nowhere (`checkVisibility()`, a `display: contents` element excepted), so the original keeps its native pseudo and each copy takes its own page's number. `test/printed-page.test.ts` prints such a document twice in one tab and holds the second file's text to the first's.
 - **The development pin moves to Cicero 0.1.10**, whose intake leaves a running element in its block, which the case above needs.
