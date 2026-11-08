@@ -151,6 +151,8 @@ export type WalkOptions = {
   renders?: (element: Element) => boolean;
   /** *the printer guesses, says so, and withdraws the claim* (S90): what a custom element the table does not name becomes. `'refuse'` throws {@link UnknownElementError}; `'infer'`, the default, walks it as CSS laid it out, the `<span>` rule when inline and the `<div>` rule when a block, and lists the guess in {@link WalkResult}'s `inferred`. */
   unknownElements?: 'refuse'|'infer';
+  /** *PDF/UA-2 is a flag, not a given* (S103, amended 2026-11-08): under `'none'` an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text and a link to an element that produced no structure element are each one sentence in {@link WalkResult}'s `warnings`, where under `'ua-2'`, the default, each is refused. */
+  standard?: 'ua-2'|'none';
   /** Which page element an element belongs to, as an index. E11 (`tables.md`) only, and only for naming: a `/ID` has to be unique in the document and `th-<page>-<n>` is a name a human reading the file can place. With no answer every table is on page 1 and the counter alone keeps the ids apart, which is what a fixture with no page elements gets. */
   pageIndexOf?: (element: Element) => number;
 };
@@ -692,7 +694,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         const facsimile = (facsimileOf(element) as NonNullable<ReturnType<typeof facsimileOf>>);
         const domPath = domPathOf(element, container);
         if (facsimile.alt === '') {
-            throw new CasterError(`caster: ${facsimile.form} at ${domPath} carries no alternative text (an aria-label on the copy, an alt on the original's fallback <img>); a page of another PDF is a picture of something, and nothing but the author can say what`, { element: domPath });
+            if (options.standard !== 'none') throw new CasterError(`caster: ${facsimile.form} at ${domPath} carries no alternative text (an aria-label on the copy, an alt on the original's fallback <img>); a page of another PDF is a picture of something, and nothing but the author can say what`, { element: domPath });
+            warnings.push(`caster: ${facsimile.form} at ${domPath} carries no alternative text, so it printed as a Figure with no /Alt; the file does not claim PDF/UA-2`);
         }
         if (facsimile.source === '') {
             throw new CasterError(`caster: ${facsimile.form} at ${domPath} names no PDF, so there is nothing to embed`, { element: domPath });
@@ -1194,10 +1197,12 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const domPath = domPathOf(element, container);
             const image = element;
             const alt = image.getAttribute('alt');
-            if (alt === null) {
-                throw new CasterError(`caster: <img src="${image.getAttribute('src') ?? (image as HTMLImageElement).currentSrc}"> at ${domPath} has no alt attribute; every image is either described or declared decorative, and guessing is not one of the options`);
+            const named = `<img src="${image.getAttribute('src') ?? (image as HTMLImageElement).currentSrc}"> at ${domPath} has no alt attribute`;
+            if (alt === null && options.standard !== 'none') {
+                throw new CasterError(`caster: ${named}; every image is either described or declared decorative, and guessing is not one of the options`);
             }
-            if (alt.trim() === '') {
+            if (alt === null) warnings.push(`caster: ${named}, so it printed as a Figure with no /Alt; the file does not claim PDF/UA-2`);
+            else if (alt.trim() === '') {
                 // alt="" is a claim, not an omission: the author has said the image carries nothing a reader needs, and the only honest way to paint that is as an artifact outside the tree.
                 const descriptor: ArtifactDescriptor = {
                     path: `artifact:image:${domPath}`,
@@ -1216,10 +1221,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
                 });
                 return;
             }
-            const self = node('Figure', parent, { alt });
+            const self = node('Figure', parent, alt === null ? {} : { alt });
             ownerByElement.set(image, self.path);
             structPathByElement.set(image, self.path);
-            pushImage({ path: self.path, element: (image as HTMLElement), kind: 'img', tag: 'Figure', src: currentSourceOf((image as HTMLImageElement)), alt, box: 'content', domPath });
+            pushImage({ path: self.path, element: (image as HTMLElement), kind: 'img', tag: 'Figure', src: currentSourceOf((image as HTMLImageElement)), ...(alt === null ? {} : { alt }), box: 'content', domPath });
             return;
         }
         if (tag === 'CANVAS') {
@@ -1227,7 +1232,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const canvas = element;
             const label = (canvas.getAttribute('aria-label') ?? '').trim();
             if (label === '') {
-                throw new CasterError(`caster: <canvas> at ${domPath} carries no aria-label; a canvas is pixels the document says nothing about, so nothing but the author can say what it depicts`);
+                if (options.standard !== 'none') throw new CasterError(`caster: <canvas> at ${domPath} carries no aria-label; a canvas is pixels the document says nothing about, so nothing but the author can say what it depicts`);
+                warnings.push(`caster: <canvas> at ${domPath} carries no aria-label, so it printed as a Figure with no /Alt; the file does not claim PDF/UA-2`);
             }
             const self = node('Figure', parent, { alt: label });
             ownerByElement.set(canvas, self.path);
@@ -1500,7 +1506,13 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             }
         }
         if (path === '') {
-            throw new CasterError(`caster: the link to ${JSON.stringify(annot.href)} points at ${domPathOf(target, container)}, which produced no structure element and has no ancestor that did; PDF/UA-2 8.8 wants a structure destination`);
+            const named = `the link to ${JSON.stringify(annot.href)} points at ${domPathOf(target, container)}, which produced no structure element and has no ancestor that did`;
+            if (options.standard !== 'none') throw new CasterError(`caster: ${named}; PDF/UA-2 8.8 wants a structure destination`);
+            // Under `'none'` the destination is the next element in document order that produced one, where the target's own content usually begins, and the whole document when nothing after it did.
+            // ponytail: a scan of the container per such link, which only a document with many of them would feel.
+            const next = [...container.querySelectorAll('*')].find((el) => (target.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 && structPathByElement.has(el));
+            path = next ? structPathByElement.get(next) as string : tree.path;
+            warnings.push(`caster: ${named}, so its structure destination is ${next ? `${domPathOf(next, container)}, the next element that did` : 'the document'}; the file does not claim PDF/UA-2`);
         }
         (annot.dest as { page: number, xPx: number, yPx: number, structPath: string }).structPath = path;
     }
