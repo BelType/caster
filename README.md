@@ -335,6 +335,8 @@ A print job cannot recover from a colour the author demanded and the exporter qu
 
 A few things are deferrals rather than errors: `paint-order: stroke` over a gradient fill, `box-shadow: inset`, a `background-image` layer that is not a gradient. The box is still drawn, the reader still gets a page, and the report's deferred list says what was painted instead.
 
+Wherever the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, the report's `confessions` says so with the region on the page, in the presented page's CSS px: `black-text`, `cmyk-text`, `cmyk-image`, `undecodable-image`, `raster-shadow`, `raster`, `blend` and `opacity`. It is empty when there is none.
+
 ## The display list
 
 `print()` does not write the file from the page. It builds a display list first: the document as plain data, in the order the writer paints it, every length in points, every font program, image and ICC profile a blob under its SHA-256, the structure tree already resolved, each font instance's widths, the creation date and the colour story. The writer, `emitStructure(list)`, reads that list and nothing else, and returns the file and the records of what it chose (the MCIDs, the pen adjustments, each font's subset, each image's XObject). The same list prints the same bytes, in the page and in node, on any machine (*the same list prints the same bytes*, `DESIGN.md` S102). That is what lets a second writer, in another language, be written against the list alone.

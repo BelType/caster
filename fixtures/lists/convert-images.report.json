@@ -47,6 +47,104 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 125.063,
+    "width": 288,
+    "height": 216
+   },
+   "element": "figure[0]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 2,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 45.344,
+    "width": 151.172,
+    "height": 100.781
+   },
+   "element": "figure[1]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 2,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 171.265,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[0]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 2,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 256.875,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[1]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 3,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 45.343,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[2]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 3,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 130.952,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[3]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 3,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 216.561,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[4]/img[0]",
+   "note": "the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB"
+  },
+  {
+   "page": 3,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 302.171,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "div[0]/figure[5]/img[0]",
+   "note": "https://print.invalid/roads/cmyk-adobe.jpg is carried as its own CMYK samples, which the reader converts by its own rule and the browser by another"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

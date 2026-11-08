@@ -37,6 +37,116 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 2,
+   "kind": "raster-shadow",
+   "rect": {
+    "x": 296.056,
+    "y": 366.068,
+    "width": 155.902,
+    "height": 102.502
+   },
+   "element": "div[9]/div[1]/div[0]/div[0]",
+   "note": "box-shadow drawn as a raster at 300 dpi"
+  },
+  {
+   "page": 2,
+   "kind": "opacity",
+   "rect": {
+    "x": 83.125,
+    "y": 852.844,
+    "width": 119.375,
+    "height": 58.906
+   },
+   "element": "div[12]/div[0]/div[0]/div[0]",
+   "note": "opacity 0.5 is a transparency group the reader composites"
+  },
+  {
+   "page": 2,
+   "kind": "blend",
+   "rect": {
+    "x": 317.437,
+    "y": 852.844,
+    "width": 119.375,
+    "height": 58.906
+   },
+   "element": "div[12]/div[1]/div[0]/div[0]",
+   "note": "the blend mode Difference is composited by the reader, over the page's group in sRGB"
+  },
+  {
+   "page": 1,
+   "kind": "opacity",
+   "rect": {
+    "x": 314.427,
+    "y": 416.283,
+    "width": 126.975,
+    "height": 76.185
+   },
+   "element": "div[2]/div[1]/svg[0]/g[0]",
+   "note": "opacity 0.5 is a transparency group the reader composites"
+  },
+  {
+   "page": 1,
+   "kind": "raster",
+   "rect": {
+    "x": 53.068,
+    "y": 675.788,
+    "width": 181.067,
+    "height": 117.58
+   },
+   "element": "div[4]/div[0]/svg[0]/g[0]/rect[0]",
+   "note": "filter drawn as a raster at 300 dpi"
+  },
+  {
+   "page": 1,
+   "kind": "raster",
+   "rect": {
+    "x": 287.38,
+    "y": 675.788,
+    "width": 181.067,
+    "height": 117.58
+   },
+   "element": "div[4]/div[1]/svg[0]/rect[1]",
+   "note": "filter drawn as a raster at 300 dpi"
+  },
+  {
+   "page": 1,
+   "kind": "opacity",
+   "rect": {
+    "x": 505.13,
+    "y": 685.476,
+    "width": 207.365,
+    "height": 103.292
+   },
+   "element": "div[4]/div[2]/svg[0]/g[0]",
+   "note": "opacity 0.6 is a transparency group the reader composites"
+  },
+  {
+   "page": 1,
+   "kind": "raster",
+   "rect": {
+    "x": 630.468,
+    "y": 693.565,
+    "width": 82.027,
+    "height": 82.027
+   },
+   "element": "div[4]/div[2]/svg[0]/g[0]/circle[0]",
+   "note": "filter drawn as a raster at 300 dpi"
+  },
+  {
+   "page": 1,
+   "kind": "blend",
+   "rect": {
+    "x": 335.589,
+    "y": 825.956,
+    "width": 84.65,
+    "height": 84.65
+   },
+   "element": "div[5]/div[1]/svg[0]/circle[0]",
+   "note": "the blend mode Difference is composited by the reader, over the page's group in sRGB"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

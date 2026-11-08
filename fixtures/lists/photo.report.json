@@ -37,6 +37,7 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

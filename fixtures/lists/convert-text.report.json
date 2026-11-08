@@ -42,6 +42,44 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "cmyk-text",
+   "rect": {
+    "x": 45.344,
+    "y": 66.203,
+    "width": 278.891,
+    "height": 76.333
+   },
+   "element": "h1[0]",
+   "note": "the fill is the CMYK lcms answered under convertRgb, where the screen shows the RGB"
+  },
+  {
+   "page": 1,
+   "kind": "cmyk-text",
+   "rect": {
+    "x": 45.344,
+    "y": 170.063,
+    "width": 361.14,
+    "height": 38.651
+   },
+   "element": "p[0]",
+   "note": "the fill is the CMYK lcms answered under convertRgb, where the screen shows the RGB"
+  },
+  {
+   "page": 1,
+   "kind": "cmyk-text",
+   "rect": {
+    "x": 53.891,
+    "y": 293.203,
+    "width": 342.156,
+    "height": 60.636
+   },
+   "element": "p[2]",
+   "note": "the fill is the CMYK lcms answered under convertRgb, where the screen shows the RGB"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

@@ -12,7 +12,11 @@
  * @packageDocumentation
  */
 
+import { pageGeometryFor } from './coordinates/pageGeometry.ts';
+import { PX_TO_PT, round3 } from './coordinates/units.ts';
+import { bboxOf } from './vectors/cssBoxes.ts';
 import type { ReportColor, ReportPaint } from './displayList/contract.ts';
+import type { VectorNode, VectorRequest } from './vectors/vector.ts';
 export type { ColorTarget, ResolvedColor, ReportColorElement, ReportColorSpace, ReportColorExtGState, ReportOutputIntent, ReportHintRegistration, ReportWorklistEntry, ReportColor, ReportShadingStop, ReportShadingParams, ReportPaint } from './displayList/contract.ts';
 /** A three-valued check: `match`, `mismatch`, or not applicable. */
 export type LigatureCheck = 'match'|'mismatch'|'n/a';
@@ -728,6 +732,8 @@ export type Report = {
   inferred?: { element: string, tag: string, display: string }[];
   /** *the printer guesses, says so, and withdraws the claim* (S90): what the file claims. `'pdfua2'` writes the PDF/UA-2 identification into the XMP; `'tagged'` is a tagged PDF with a guess in it, which claims nothing more. */
   conformance: 'pdfua2'|'tagged';
+  /** *the printer guesses, says so, and withdraws the claim* (S90, amended 2026-11-08): every place on a page where the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, with the region it covers. Empty when there is none. */
+  confessions: ReportConfession[];
   /** The flags the run was made with. */
   options: Record<string, unknown>;
   errors: ReportProblem[];
@@ -737,6 +743,103 @@ export type Report = {
   /** Size of the produced file. */
   bytes?: number;
 };
+
+/**
+ * What the printer did that the screen does not: a closed set of words.
+ *
+ * @remarks
+ * `black-text` is `blackText: '100k'` setting a run the browser painted pure black in one plate; `cmyk-text` is `convertRgb` writing a run's fill as the CMYK lcms answered; `cmyk-image` is an image the file carries as `DeviceCMYK` samples, its own or converted, where the browser shows its own conversion to RGB; `undecodable-image` is a file the browser refused to decode, carried whole for the reader to decode; `raster-shadow` is a `box-shadow` drawn as a raster; `raster` is any other raster fallback (a filter, a pattern, a conic gradient, a repeating gradient tile); `blend` is a blend mode composited by the reader over the page's group; `opacity` is an opacity below one made a transparency group.
+ */
+export type ConfessionKind = 'black-text'|'cmyk-text'|'cmyk-image'|'undecodable-image'|'raster-shadow'|'raster'|'blend'|'opacity';
+
+/**
+ * One confession: what the printer did, where, and to which element.
+ *
+ * @remarks
+ * The region is what the printer painted differently, in the presented page's own CSS px with the page box's top-left as origin, which is the frame a screenshot of the page element is taken in: a box's painted extent on that page (its border box, or wider where its shadow reaches, one fragment of a divided block per page), an image's painted rectangle inside its clip, a text's runs on that page joined. It is clipped to the page.
+ */
+export type ReportConfession = {
+  /** One-based. */
+  page: number;
+  kind: ConfessionKind;
+  rect: { x: number, y: number, width: number, height: number };
+  /** The DOM path, as the report's other records name it. */
+  element: string;
+  note: string;
+};
+
+/** A rectangle `[x, y, w, h]` in page points, origin bottom-left, as the page's CSS px, origin top-left, clipped to the page; null where nothing of it is on the page. */
+function pagePx(page: number, [x, y, w, h]: readonly number[]): ReportConfession['rect']|null {
+  const g = pageGeometryFor(page);
+  const left = Math.max(0, (x - g.marginPt) / PX_TO_PT);
+  const top = Math.max(0, (g.heightPt - g.marginPt - (y + h)) / PX_TO_PT);
+  const right = Math.min((g.widthPt - 2 * g.marginPt) / PX_TO_PT, (x + w - g.marginPt) / PX_TO_PT);
+  const bottom = Math.min((g.heightPt - 2 * g.marginPt) / PX_TO_PT, (g.heightPt - g.marginPt - y) / PX_TO_PT);
+  if (right <= left || bottom <= top) return null;
+  return { x: round3(left), y: round3(top), width: round3(right - left), height: round3(bottom - top) };
+}
+
+/** The bounds `[x0, y0, x1, y1]` under a `cm`, as `[x, y, w, h]`. */
+function boundsUnder(cm: readonly number[]|undefined, [x0, y0, x1, y1]: readonly number[]): [number, number, number, number] {
+  if (!cm) return [x0, y0, x1 - x0, y1 - y0];
+  const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => [cm[0] * x + cm[2] * y + cm[4], cm[1] * x + cm[3] * y + cm[5]]);
+  const xs = corners.map((c) => c[0]);
+  const ys = corners.map((c) => c[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+}
+
+/** One text run the writer set in another colour than the screen's, with the block it belongs to. */
+export type ConfessedRun = { kind: 'black-text'|'cmyk-text', page: number, element: string, rectPt: readonly number[] };
+
+/**
+ * Every confession of one print, from the records the report already holds and the vector requests the measurement painted.
+ *
+ * @remarks
+ * Read once the report is composed and while the export's page geometry is installed, since a region is converted through it. A text's runs are joined per block and page, so a paragraph set in one plate on two pages is two confessions.
+ *
+ * @param runs - The runs the writer's colour rows say were set by the black-text policy or converted, each with its block's DOM path.
+ * @param refused - Whether the browser refused to decode the image at this `src`.
+ */
+export function confessionsOf(runs: readonly ConfessedRun[], images: readonly ReportImage[], vectors: readonly VectorRequest[], refused: (src: string) => boolean): ReportConfession[] {
+  const out: ReportConfession[] = [];
+  const push = (page: number, kind: ConfessionKind, rectPt: readonly number[], element: string, note: string) => {
+    const rect = pagePx(page, rectPt);
+    if (rect) out.push({ page: page + 1, kind, rect, element, note });
+  };
+  const joined = new Map<string, { page: number, kind: ConfessionKind, element: string, box: number[] }>();
+  for (const { kind, page, element, rectPt: [x, y, w, h] } of runs) {
+    const key = `${kind}\n${page}\n${element}`;
+    const held = joined.get(key);
+    if (!held) joined.set(key, { page, kind, element, box: [x, y, x + w, y + h] });
+    else held.box = [Math.min(held.box[0], x), Math.min(held.box[1], y), Math.max(held.box[2], x + w), Math.max(held.box[3], y + h)];
+  }
+  for (const { page, kind, element, box } of joined.values()) {
+    push(page, kind, boundsUnder(undefined, box), element, kind === 'black-text' ? 'text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k' : 'the fill is the CMYK lcms answered under convertRgb, where the screen shows the RGB');
+  }
+  for (const image of images) {
+    const [x, y, w, h] = image.paintedRectPt;
+    const clip = image.clipRectPt;
+    const rectPt = clip ? [Math.max(x, clip[0]), Math.max(y, clip[1]), Math.min(x + w, clip[0] + clip[2]) - Math.max(x, clip[0]), Math.min(y + h, clip[1] + clip[3]) - Math.max(y, clip[1])] : image.paintedRectPt;
+    if (refused(image.src)) push(image.page, 'undecodable-image', rectPt, image.domPath, `the browser could not decode ${image.src}, so the file carries it whole and the reader decodes what the screen did not show`);
+    else if (image.colorSpace === 'DeviceCMYK') push(image.page, 'cmyk-image', rectPt, image.domPath, image.converted ? 'the pixels were converted to DeviceCMYK under convertImages, where the screen shows the RGB' : `${image.src} is carried as its own CMYK samples, which the reader converts by its own rule and the browser by another`);
+  }
+  const visit = (node: VectorNode, page: number, cm: readonly number[]|undefined) => {
+    const under = node.cm ?? cm;
+    if (node.kind === 'raster') {
+      const [x, y, w, h] = node.raster.rectPt;
+      push(page, node.raster.feature === 'box-shadow' ? 'raster-shadow' : 'raster', boundsUnder(under, [x, y, x + w, y + h]), node.domPath, `${node.raster.feature} drawn as a raster at ${node.raster.dpi} dpi`);
+      return;
+    }
+    if (node.kind === 'form') return;
+    if (node.blend !== 'Normal') push(page, 'blend', boundsUnder(under, bboxOf([node])), node.domPath, `the blend mode ${node.blend} is composited by the reader, over the page's group in sRGB`);
+    if (node.kind === 'group') {
+      if (node.forceForm && node.opacity < 1) push(page, 'opacity', boundsUnder(under, bboxOf([node])), node.domPath, `opacity ${node.opacity} is a transparency group the reader composites`);
+      for (const child of node.children) visit(child, page, under);
+    }
+  };
+  for (const request of vectors) visit(request.node, request.page, undefined);
+  return out;
+}
 
 /**
  * A fresh report, with every list present and empty.
@@ -750,6 +853,7 @@ export function createReport(options: Record<string,unknown> = {}): Report {
     elements: [],
     capabilities: [],
     conformance: 'pdfua2',
+    confessions: [],
     options,
     errors: [],
     warnings: [],
