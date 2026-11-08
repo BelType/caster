@@ -37,6 +37,20 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "cmyk-image",
+   "rect": {
+    "x": 45.344,
+    "y": 125.061,
+    "width": 90.703,
+    "height": 60.469
+   },
+   "element": "figure[0]/img[0]",
+   "note": "https://print.invalid/roads/cmyk-adobe.jpg is carried as its own CMYK samples, which the reader converts by its own rule and the browser by another"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

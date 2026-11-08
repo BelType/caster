@@ -32,6 +32,20 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "blend",
+   "rect": {
+    "x": 68.016,
+    "y": 136.391,
+    "width": 115.375,
+    "height": 32.234
+   },
+   "element": "div[0]/div[0]",
+   "note": "the blend mode Multiply is composited by the reader, over the page's group in sRGB"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

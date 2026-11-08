@@ -37,6 +37,176 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "black-text",
+   "rect": {
+    "x": 45.344,
+    "y": 66.203,
+    "width": 71.719,
+    "height": 32.333
+   },
+   "element": "h1[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 1,
+   "kind": "black-text",
+   "rect": {
+    "x": 45.344,
+    "y": 126.063,
+    "width": 348.047,
+    "height": 38.651
+   },
+   "element": "p[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 1,
+   "kind": "black-text",
+   "rect": {
+    "x": 52.891,
+    "y": 330.235,
+    "width": 174.235,
+    "height": 16.667
+   },
+   "element": "p[2]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 56.672,
+    "y": 57.672,
+    "width": 310.297,
+    "height": 38.651
+   },
+   "element": "div[2]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 45.344,
+    "y": 128.079,
+    "width": 119.047,
+    "height": 60.635
+   },
+   "element": "p[3]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 50.391,
+    "y": 212.125,
+    "width": 20.703,
+    "height": 16.667
+   },
+   "element": "table[0]/thead[0]/tr[0]/th[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 79.921,
+    "y": 212.125,
+    "width": 32.032,
+    "height": 16.667
+   },
+   "element": "table[0]/thead[0]/tr[0]/th[1]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 50.109,
+    "y": 242.64,
+    "width": 21.125,
+    "height": 16.667
+   },
+   "element": "table[0]/tbody[0]/tr[0]/td[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 79.921,
+    "y": 242.64,
+    "width": 6.641,
+    "height": 16.667
+   },
+   "element": "table[0]/tbody[0]/tr[0]/td[1]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 50.109,
+    "y": 273.156,
+    "width": 21.281,
+    "height": 16.667
+   },
+   "element": "table[0]/tbody[0]/tr[1]/td[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 79.921,
+    "y": 273.156,
+    "width": 6.641,
+    "height": 16.667
+   },
+   "element": "table[0]/tbody[0]/tr[1]/td[1]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 45.344,
+    "y": 317.5,
+    "width": 137.375,
+    "height": 24
+   },
+   "element": "h2[0]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "black-text",
+   "rect": {
+    "x": 45.344,
+    "y": 366.093,
+    "width": 310.063,
+    "height": 22.317
+   },
+   "element": "p[4]",
+   "note": "text the browser painted pure black is set in one plate, 0 0 0 1 k, under blackText: 100k"
+  },
+  {
+   "page": 2,
+   "kind": "raster-shadow",
+   "rect": {
+    "x": 26.226,
+    "y": 26.226,
+    "width": 401.064,
+    "height": 104.861
+   },
+   "element": "div[2]",
+   "note": "box-shadow drawn as a raster at 300 dpi"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",

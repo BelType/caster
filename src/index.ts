@@ -14,7 +14,7 @@
 
 import { CasterError, FontUnavailableError } from './errors.ts';
 import { refuseUnbuiltTiers, resolveOptions, colourOn } from './options.ts';
-import { createReport, recordProblem, stage } from './report.ts';
+import { confessionsOf, createReport, recordProblem, stage } from './report.ts';
 import { load, neededCapabilities, capability } from './capabilities.ts';
 import { lock, precheck } from './precheck.ts';
 import { createGateway } from './host/gateway.ts';
@@ -66,7 +66,7 @@ import { loadFacsimiles } from './images/facsimile.ts';
 
 import type { CasterOptions } from './options.ts';
 import type { PreparedImage } from './images/imagePass.ts';
-import type { Report, ReportConversion, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
+import type { ConfessedRun, Report, ReportConversion, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
 import type { PageStrip } from './adapters/strip.ts';
 import type { DisplayList, ImageSource, ImageUse, ListPlace } from './displayList.ts';
@@ -586,6 +586,14 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     Object.assign(report, composed);
     report.options = ((options as unknown) as Record<string, unknown>);
     report.bytes = emitted.bytes.length;
+    // *The printer guesses, says so, and withdraws the claim* (S90, amended 2026-11-08): every region the file was made to differ from the screen in, read off the records just composed and the requests the measurement painted, while the page geometry the regions convert through is still installed.
+    const confessedRuns: ConfessedRun[] = (written.colour?.elements ?? []).flatMap((row) => {
+      if (!('at' in row)) return [];
+      const origin = originAt(row.at);
+      const kind = row.blackTextPolicy ? 'black-text' as const : convertedRuns.has(origin.run) ? 'cmyk-text' as const : null;
+      return kind ? [{ kind, page: row.at.page, element: measurement.paragraphs[origin.paragraph]?.element ?? origin.path, rectPt: origin.rectPt }] : [];
+    });
+    report.confessions = confessionsOf(confessedRuns, report.images ?? [], measurement.vectors, (src) => prepared.get(src)?.refusal !== undefined);
     // An image placed below 150 ppi is a warning and never a refusal: Adobe's minimum-resolution policy ships ignored, and a line costs nothing.
     for (const image of report.images ?? []) if (image.effectiveDpi < 150) report.warnings.push(`the image at ${image.domPath} (${image.src}) prints at ${image.effectiveDpi} ppi, below 150`);
     report.warnings.push(...unreadableFamilies(table).map((f) => `the family ${JSON.stringify(f)} is declared but its bytes could not be read; nothing resolved to it in this document, so the export continued`));

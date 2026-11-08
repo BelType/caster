@@ -32,6 +32,20 @@
   }
  ],
  "conformance": "pdfua2",
+ "confessions": [
+  {
+   "page": 1,
+   "kind": "undecodable-image",
+   "rect": {
+    "x": 85.344,
+    "y": 169.063,
+    "width": 151.172,
+    "height": 50.391
+   },
+   "element": "figure[0]/img[0]",
+   "note": "the browser could not decode https://print.invalid/roads/logo-arithmetic.jpg, so the file carries it whole and the reader decodes what the screen did not show"
+  }
+ ],
  "options": {
   "shaper": "harfbuzz",
   "subset": "hb",
