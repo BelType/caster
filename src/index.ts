@@ -72,7 +72,7 @@ import type { PageStrip } from './adapters/strip.ts';
 import type { DisplayList, ImageSource, ImageUse, ListPlace } from './displayList.ts';
 import type { ImageNote, WordNote } from './displayList/records.ts';
 import type { ChainContext } from './coordinates/ctm.ts';
-import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult } from './measure/textMeasure.ts';
+import type { ImageIntrinsics, MeasuredImage, MeasuredRun, MeasureResult, PageClip } from './measure/textMeasure.ts';
 import type { FaceRequest } from './fonts/fontResolve.ts';
 import type { FaceOf } from './vectors/svgGeometry.ts';
 import type { FontTable } from './host/fonts.ts';
@@ -309,7 +309,19 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
 
     // Margin content (*the margins are lifted into the light DOM*, S57) sits outside the content area by construction — a running head above it, a folio below — so it is never a straddler's clipped tail and R5 does not apply to it.
-    const clipToPage = ( page: number,  element: Element) => (strip.inMargin?.(element) ? null : contentAreas[page] ?? null);
+    // Inside a painted slice the wrapper's own clip is the head (*the slice wrapper's clip*, S69).
+    const sliceTops = new Map<Element, number | null>();
+    const sliceTopOf = (page: number, element: Element) => {
+      const shell = element.closest('[data-beltype~="shell"]');
+      if (!shell) return null;
+      if (!sliceTops.has(shell)) sliceTops.set(shell, toLocalOn(shell.getBoundingClientRect(), page)?.yPx ?? null);
+      return sliceTops.get(shell) ?? null;
+    };
+    const clipToPage = ( page: number,  element: Element): PageClip | null => {
+      const area = strip.inMargin?.(element) ? null : contentAreas[page] ?? null;
+      const sliceTopPx = area ? sliceTopOf(page, element) : null;
+      return area && sliceTopPx !== null ? { ...area, sliceTopPx } : area;
+    };
     chains = beginChains(container, strip.pageElementOf);
     // The collapsed-border resolver of `tables.md` (E11), before the boxes: under `border-collapse: collapse` the border between two cells is one border resolved from up to six declarations and painted on the grid line, so every part of such a table keeps its background and loses its four sides, and `tableBorders` paints what is actually there. BelType's addendum collapses every table, so without this every table printed through the per-cell route — two strips of ink on each shared edge, at the declared width rather than the resolved one, with `empty-cells: hide` ignored.
     const grid = collectTableBorders({ container, tables: walk.tables, order, chains, twinOf: strip.twinOf });

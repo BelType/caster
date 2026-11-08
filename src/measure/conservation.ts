@@ -25,10 +25,15 @@ export type RenderedText = {
   /** Zero-based, the index of `pageElementOf(parent)` among the strip's pages. */
   page: number;
   /** R5's clip in viewport space, the page box's top and the flow box's bottom (*R5's head is the page box and its foot is the cut*, S69); null for margin content and for an engine that moves its overflow instead of clipping it. */
-  clip: { top: number, bottom: number }|null;
+  clip: { top: number, bottom: number, sliceTop?: number }|null;
   /** The node's client rectangles, at least one of them inside `clip`. */
   rects: DOMRect[];
 };
+
+/** Whether a client rectangle is inside R5's clip: it overlaps the page box and the cut, and inside a painted slice it belongs to the page that holds its top, so a line the wrapper's top divides is on one page and not two (*the slice wrapper's clip*, S69). */
+export function inClip(clip: NonNullable<RenderedText['clip']>, rect: DOMRect): boolean {
+  return rect.bottom > clip.top && rect.top < clip.bottom && (clip.sliceTop === undefined || rect.top >= clip.sliceTop - 0.01);
+}
 
 /**
  * The one predicate for "rendered" (*the conservation of words*, DESIGN.md S61; *an interval is a marked-content sequence*, S71): every text node under the strip a reader can see on a page — the conservation of words asks it of what no block claimed, and the tiling invariant states itself over the text nodes it returns.
@@ -61,10 +66,12 @@ export function renderedTextNodes(strip: PageStrip, skip?: (node: Text) => boole
     if (view.getComputedStyle(parent).visibility !== 'visible') continue;
     const page = strip.pageElements.indexOf(pageElement);
     const clip = strip.inMargin?.(parent) ? null : clips[page] ?? null;
+    // Inside a painted slice the wrapper's top is the head (*the slice wrapper's clip*, S69).
+    const sliceTop = clip ? parent.closest('[data-beltype~="shell"]')?.getBoundingClientRect().top : undefined;
     range.selectNodeContents(text);
     const rects = [...range.getClientRects()];
-    if (!rects.some((rect) => rect.width > 0 && rect.height > 0 && (!clip || (rect.bottom > clip.top && rect.top < clip.bottom)))) continue;
-    out.push({ node: text, parent, page, clip, rects });
+    if (!rects.some((rect) => rect.width > 0 && rect.height > 0 && (!clip || inClip(clip, rect)))) continue;
+    out.push({ node: text, parent, page, clip: clip && sliceTop !== undefined ? { ...clip, sliceTop } : clip, rects });
   }
   return out;
 }

@@ -181,6 +181,19 @@ export type MeasuredImage = {
 };
 
 /**
+ * R5's clip on a page, in page-local px: the page box at the head and the cut at the foot.
+ *
+ * @property sliceTopPx - Set inside a painted slice's wrapper (`shell`), whose own `overflow-y: clip` is the head there (*the slice wrapper's clip*, DESIGN.md S69): the wrapper's top, page-local.
+ */
+export type PageClip = { topPx: number; bottomPx: number; sliceTopPx?: number };
+
+/** Whether a rectangle lies above the head of `area`: wholly above the page box, or inside a slice and with its top above the wrapper's, because a rectangle belongs to the page that holds its top, as at the foot (*the slice wrapper's clip*, S69). */
+export function aboveClip(area: PageClip, yPx: number, hPx: number): boolean {
+  if (area.sliceTopPx !== undefined && yPx < area.sliceTopPx - 0.01) return true;
+  return yPx + hPx <= area.topPx + 0.01;
+}
+
+/**
  * What a caller hands `measureText`; every member is optional, and each absent one reproduces the experiment that preceded it.
  *
  * @remarks
@@ -227,7 +240,7 @@ export type MeasureOptions = {
   /** Run the baseline-probe pass. It inserts a zero-width `Range` and reads four rectangles per word, and everything it produces — `baselineProbePx`, `baselineAgreementPx`, `usableProbes`, the three probe flags — feeds the report and nothing else: a line's emitted baseline is `baselineAscentPx` from the colour face's own canvas ascent (`textEmit.js`'s `emitRun` reads `line.baselinePx`, and `linesOf` builds that from the ascent). It is the experiments' own cross-check of the two ways to find a baseline, and it is what a round arguing about baselines turns back on. Default off, which is what Caster runs. */
   probes?: boolean;
   /** R5: the page's own clip, in page-local px — the page box at the head, the cut at the foot (*R5's head is the page box and its foot is the cut*, DESIGN.md S69) — so a line the engine laid out and then clipped is dropped here rather than emitted below the page it overflows. */
-  clipToPage?: (page: number, element: Element) => { topPx: number, bottomPx: number }|null;
+  clipToPage?: (page: number, element: Element) => PageClip|null;
   /** An already-open chain builder, when the caller opened one itself. From the integration of E9 (`vector-painting.md`) and E10 (`coordinates-and-pages.md`) a vector pass runs *before* the text pass and has to read its rectangles in the same neutralised window: one `beginChains` for the whole export rather than one per module, because a second `beginChains` would capture the transforms the first one had already set to `none` and find no chain at all. The caller owns it; `end()` here is idempotent and restoring it twice is harmless. */
   chains?: ChainContext;
   /** The clips an element's overflow imposes on the text it holds, page-local and inside the element's chain (`textClips`, `vectors/cssBoxes.ts`). Absent, no text is clipped. Answers are kept per element and page, so a paragraph of many segments asks once. */
@@ -857,7 +870,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
         const bottomPx = topPx + heightPx;
         // The test is on the rectangle's top alone, and that is the engine's own rule rather than a tolerance. `chase.js`'s `setFlow`: the clip boundary is the cut's extent, and "a cut line box can overflow contentH while its ink starts above it, and the print text layer keeps ink". A line whose top is above the cut is a line the engine kept, whatever its box does below; a line whose top is at or below it is the continuation clone's, and the clone emits it.
         if (topPx >= area.bottomPx - 0.01) return true;
-        if (bottomPx <= area.topPx + 0.01) return true;   // wholly above the page box, which the page's own clip hides (*R5's head is the page box and its foot is the cut*, S69)
+        if (aboveClip(area, topPx, heightPx)) return true;   // wholly above the page box, which the page's own clip hides (*R5's head is the page box and its foot is the cut*, S69)
         return false;
     };
     const familyOf = options.familyOf ?? (( parent: Element,  request: FaceRequest) => request.families[0] ?? getComputedStyle(parent).fontFamily);

@@ -423,6 +423,13 @@ export function verifyPartitions(pages: StripPage[], strip: CiceroRoot) {
      * @remarks
      * Counted per word and not compared as a sequence. A block that holds a row — two table cells, two flex items — is not a sequence across pages: page one shows the head of each cell and page two the rest of each, so its fragments concatenate to the right words in an order the source never had. Which page a word is on and in what order a fragment holds its own are the engine's claims, checked where they are made (`packages/essay/lib/census.js`); what a printer must refuse is a word printed twice or not at all, and that is a count.
      */
+    // A painted slice is the whole box on every page, the page's clip showing a part of it (the shell, `fragments.js`; *the slice wrapper's clip*, S69), so its words are counted once: each fragment holds the block's words, and what a page shows of them is the placement's clip.
+    if (clones.every((c) => hasWordOn(c, 'shell'))) {
+      for (const words of [source, ...clones].map(joinedWords)) {
+        if (words.length !== all.length || words.some((w, i) => w !== all[i])) refuse(`is a painted slice and a fragment of it holds ${words.length} word(s) where the block holds ${all.length}`);
+      }
+      continue;
+    }
     const owed = new Map<any, any>();
     for (const w of all) owed.set(w, (owed.get(w) ?? 0) + 1);
     const lists = [source, ...clones].map(joinedWords);

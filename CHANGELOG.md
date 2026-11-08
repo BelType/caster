@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A two-column list taller than the page prints.** Cicero does not divide a multi-column box and paints it as a slice on each page, every page holding all its words under the wrapper's own clip, so the print refused twice: the partition counted a slice's words once per page (*the block beginning on page 2 is not partitioned by its 11 fragments*), and the tiling invariant found the same text on two pages. A block whose fragments are painted slices is now asked only that each hold the block's words, and inside the slice wrapper the head of R5's clip is the wrapper's top, a rectangle belonging to the page that holds its top, as at the foot. A line the wrapper's top divides is drawn whole on the earlier page and not on the later, where Cicero shows its lower half. The showcase's list, reduced to `fixtures/cast-column-slice/`, is `test/columnSlice.test.ts`.
+
 ## 0.2.5 — 2026-11-08
 
 - **A page printed before prints the same file again.** A host that keeps its print page between documents prepares and cuts the same document twice, as `beltype serve`'s mail merge does when a customer's data changes nothing. Since Cicero 0.1.10 keeps a running element's original hidden inside its block, the second moment of reification reached it and froze its `counter(page)` there, as 0 or the block's reset, and the next cut copied that span onto every page: the CLI's `provvedimento-imu` printed "Pagina 1/3" on all three pages and "N. 2" where the page shows "N. 4". The second moment now makes nothing real in an element the pages show nowhere (`checkVisibility()`, a `display: contents` element excepted), so the original keeps its native pseudo and each copy takes its own page's number. `test/printed-page.test.ts` prints such a document twice in one tab and holds the second file's text to the first's.

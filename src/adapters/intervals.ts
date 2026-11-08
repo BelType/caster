@@ -11,7 +11,7 @@
  */
 
 import { ARTIFACT_ATTRIBUTE } from '../walk/structure.ts';
-import { renderedTextNodes } from '../measure/conservation.ts';
+import { inClip, renderedTextNodes } from '../measure/conservation.ts';
 import { GENERATED_CLASS, MARKER_CLASS } from './reify.ts';
 
 /** The engine's `artifact` word as a selector, for a copy that is furniture (*the margins are lifted into the light DOM*, DESIGN.md S57 and *a running element's original is the element the engine hid*, S60; the artifact word). The word has one meaning, PDF's artifact, so a fixed box's copy after the first page is read like every other (S82, *an artifact is never read*). */
@@ -67,14 +67,14 @@ export function deriveIntervals(strip: PageStrip, { origin = (_, parent) => ({ s
       continue;
     }
     let raw = node.data;
-    if (clip && rects.some((r) => r.width > 0 && r.height > 0 && !(r.bottom > clip.top && r.top < clip.bottom))) {
+    if (clip && rects.some((r) => r.width > 0 && r.height > 0 && !inClip(clip, r))) {
       note?.({ what: 'clipped', label: 'cut by the page clip', parent, node });
       let lo = -1;
       let hi = -1;
       for (let i = 0; i < node.data.length; i++) {
         range.setStart(node, i);
         range.setEnd(node, i + 1);
-        if ([...range.getClientRects()].some((r) => r.width > 0 && r.height > 0 && r.bottom > clip.top && r.top < clip.bottom)) { if (lo < 0) lo = i; hi = i + 1; }
+        if ([...range.getClientRects()].some((r) => r.width > 0 && r.height > 0 && inClip(clip, r))) { if (lo < 0) lo = i; hi = i + 1; }
       }
       raw = lo < 0 ? '' : node.data.slice(lo, hi);
     }
