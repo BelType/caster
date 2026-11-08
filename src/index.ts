@@ -279,7 +279,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       transparentOf: strip.transparent,
       // Which elements the engine actually put on a page (*the engine stopped showing the original*, S47). A divided block's original is on none of them since the first fragment is constructed, so it gives the tree its element and its first fragment gives that element its ink.
       renders: (element) => strip.pageElementOf(element) !== null,
-      unknownElements: options.unknownElements
+      unknownElements: options.unknownElements,
+      standard: options.standard
     });
     // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
