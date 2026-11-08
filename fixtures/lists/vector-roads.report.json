@@ -91,7 +91,7 @@
    "kind": "opacity",
    "rect": {
     "x": 314.427,
-    "y": 416.283,
+    "y": 409.611,
     "width": 126.975,
     "height": 76.185
    },
@@ -103,7 +103,7 @@
    "kind": "raster",
    "rect": {
     "x": 53.068,
-    "y": 675.788,
+    "y": 669.116,
     "width": 181.067,
     "height": 117.58
    },
@@ -115,7 +115,7 @@
    "kind": "raster",
    "rect": {
     "x": 287.38,
-    "y": 675.788,
+    "y": 669.116,
     "width": 181.067,
     "height": 117.58
    },
@@ -127,7 +127,7 @@
    "kind": "opacity",
    "rect": {
     "x": 505.13,
-    "y": 685.476,
+    "y": 678.804,
     "width": 207.365,
     "height": 103.292
    },
@@ -139,7 +139,7 @@
    "kind": "raster",
    "rect": {
     "x": 630.468,
-    "y": 693.565,
+    "y": 686.893,
     "width": 82.027,
     "height": 82.027
    },
@@ -151,7 +151,7 @@
    "kind": "blend",
    "rect": {
     "x": 335.589,
-    "y": 825.956,
+    "y": 819.284,
     "width": 84.65,
     "height": 84.65
    },
@@ -210,7 +210,7 @@
     "text": "Vector roads",
     "rectPt": [
      28.336,
-     773.659995,
+     776.659995,
      110.098,
      24.250005
     ],
@@ -231,7 +231,7 @@
     "text": "1. A gradient stroke: a shading pattern",
     "rectPt": [
      28.336,
-     745.414995,
+     750.418995,
      125.766,
      9.850005
     ],
@@ -252,7 +252,7 @@
     "text": "2. A radial gradient stroke, userSpaceOnUse",
     "rectPt": [
      204.07,
-     745.414995,
+     750.418995,
      144.82100000000003,
      9.850005
     ],
@@ -273,7 +273,7 @@
     "text": "3. paint-order: stroke",
     "rectPt": [
      379.805,
-     745.414995,
+     750.418995,
      69.94900000000001,
      9.850005
     ],
@@ -294,7 +294,7 @@
     "text": "4. An even-odd fill",
     "rectPt": [
      28.336,
-     645.137995,
+     650.141995,
      59.602000000000004,
      9.850005
     ],
@@ -315,7 +315,7 @@
     "text": "5. An even-odd clip",
     "rectPt": [
      204.07,
-     645.137995,
+     650.141995,
      63.30500000000001,
      9.850005
     ],
@@ -336,7 +336,7 @@
     "text": "6. Plain opacity on a shape",
     "rectPt": [
      379.805,
-     645.137995,
+     650.141995,
      88.52299999999997,
      9.850005
     ],
@@ -357,7 +357,7 @@
     "text": "7. Stroke and fill opacity alone",
     "rectPt": [
      28.336,
-     544.859995,
+     549.863995,
      100.266,
      9.850005
     ],
@@ -378,7 +378,7 @@
     "text": "8. Group opacity over two shapes",
     "rectPt": [
      204.07,
-     544.859995,
+     549.863995,
      110.44999999999999,
      9.850005
     ],
@@ -399,7 +399,7 @@
     "text": "9. A luminance mask over a backdrop",
     "rectPt": [
      379.805,
-     544.859995,
+     549.863995,
      123.55000000000001,
      9.850005
     ],
@@ -420,7 +420,7 @@
     "text": "10. An alpha mask, its gradient's stops fading",
     "rectPt": [
      28.336,
-     444.582995,
+     449.586995,
      148.92200000000003,
      9.850005
     ],
@@ -441,7 +441,7 @@
     "text": "11. A mask over a form: a group of a line and its",
     "rectPt": [
      204.07,
-     444.582995,
+     449.586995,
      155.89499999999998,
      9.850005
     ],
@@ -462,7 +462,7 @@
     "text": "markers",
     "rectPt": [
      204.07,
-     434.98499499999997,
+     439.988995,
      27.317000000000007,
      9.850005
     ],
@@ -483,7 +483,7 @@
     "text": "12. A mask on the marked path itself",
     "rectPt": [
      379.805,
-     444.582995,
+     449.586995,
      120.39799999999997,
      9.850005
     ],
@@ -504,7 +504,7 @@
     "text": "13. A mask over a raster fallback: a blurred square",
     "rectPt": [
      28.336,
-     334.707995,
+     339.711995,
      164.437,
      9.850005
     ],
@@ -525,7 +525,7 @@
     "text": "14. A mask on the filtered element itself",
     "rectPt": [
      204.07,
-     334.707995,
+     339.711995,
      131.075,
      9.850005
     ],
@@ -546,7 +546,7 @@
     "text": "15. A form and a raster nested in a group's form",
     "rectPt": [
      379.805,
-     334.707995,
+     339.711995,
      155.96499999999997,
      9.850005
     ],
@@ -567,7 +567,7 @@
     "text": "16. A marker holding a marked path: a form in a",
     "rectPt": [
      28.336,
-     234.430995,
+     239.434995,
      157.16000000000003,
      9.850005
     ],
@@ -588,7 +588,7 @@
     "text": "form",
     "rectPt": [
      28.336,
-     224.83299499999998,
+     229.836995,
      15.996000000000002,
      9.850005
     ],
@@ -609,7 +609,7 @@
     "text": "17. A blend mode other than multiply: difference",
     "rectPt": [
      204.07,
-     234.430995,
+     239.434995,
      160.78199999999998,
      9.850005
     ],
@@ -630,7 +630,7 @@
     "text": "18. A radial gradient, spreadMethod reflect",
     "rectPt": [
      379.805,
-     234.430995,
+     239.434995,
      141.08199999999994,
      9.850005
     ],
@@ -651,7 +651,7 @@
     "text": "19. A linear gradient, spreadMethod repeat",
     "rectPt": [
      28.336,
-     124.55599500000001,
+     129.559995,
      141.363,
      9.850005
     ],
@@ -672,7 +672,7 @@
     "text": "20. Dashes, round caps and joins, a bevel, a miter",
     "rectPt": [
      204.07,
-     124.55599500000001,
+     129.559995,
      162.79700000000003,
      9.850005
     ],
@@ -693,9 +693,9 @@
     "text": "limit",
     "rectPt": [
      204.07,
-     114.95799500000001,
+     119.961995,
      15.317000000000007,
-     9.850005
+     9.850005000000014
     ],
     "page": 0
    },
@@ -714,7 +714,7 @@
     "text": "21. Arcs and quadratic and smooth curves",
     "rectPt": [
      379.805,
-     124.55599500000001,
+     129.559995,
      138.87899999999996,
      9.850005
     ],
@@ -2547,8 +2547,8 @@
     "text": "Vector",
     "xPt": 28.336,
     "rightPt": 84.938,
-    "topPt": 797.91,
-    "baselineMeasureTextPt": 777.66,
+    "topPt": 800.91,
+    "baselineMeasureTextPt": 780.66,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2591,8 +2591,8 @@
     "text": "roads",
     "xPt": 88.934,
     "rightPt": 138.434,
-    "topPt": 797.91,
-    "baselineMeasureTextPt": 777.66,
+    "topPt": 800.91,
+    "baselineMeasureTextPt": 780.66,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2632,8 +2632,8 @@
     "text": "1.",
     "xPt": 28.336,
     "rightPt": 34.313,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2664,8 +2664,8 @@
     "text": "A",
     "xPt": 35.895,
     "rightPt": 40.254,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2693,8 +2693,8 @@
     "text": "gradient",
     "xPt": 41.836,
     "rightPt": 69.938,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2743,8 +2743,8 @@
     "text": "stroke:",
     "xPt": 71.531,
     "rightPt": 94.23,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2790,8 +2790,8 @@
     "text": "a",
     "xPt": 95.824,
     "rightPt": 99.867,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2819,8 +2819,8 @@
     "text": "shading",
     "xPt": 101.449,
     "rightPt": 128.004,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2866,8 +2866,8 @@
     "text": "pattern",
     "xPt": 129.598,
     "rightPt": 154.102,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2913,8 +2913,8 @@
     "text": "2.",
     "xPt": 204.07,
     "rightPt": 210.047,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2945,8 +2945,8 @@
     "text": "A",
     "xPt": 211.629,
     "rightPt": 215.988,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -2974,8 +2974,8 @@
     "text": "radial",
     "xPt": 217.57,
     "rightPt": 236.684,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3018,8 +3018,8 @@
     "text": "gradient",
     "xPt": 238.266,
     "rightPt": 266.367,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3068,8 +3068,8 @@
     "text": "stroke,",
     "xPt": 267.961,
     "rightPt": 290.66,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3115,8 +3115,8 @@
     "text": "userSpaceOnUse",
     "xPt": 292.254,
     "rightPt": 348.891,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3183,8 +3183,8 @@
     "text": "3.",
     "xPt": 379.805,
     "rightPt": 385.781,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3215,8 +3215,8 @@
     "text": "paint-order:",
     "xPt": 387.363,
     "rightPt": 427.453,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3277,8 +3277,8 @@
     "text": "stroke",
     "xPt": 429.047,
     "rightPt": 449.754,
-    "topPt": 755.265,
-    "baselineMeasureTextPt": 747.015,
+    "topPt": 760.269,
+    "baselineMeasureTextPt": 752.019,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3321,8 +3321,8 @@
     "text": "4.",
     "xPt": 28.336,
     "rightPt": 34.313,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3353,8 +3353,8 @@
     "text": "An",
     "xPt": 35.895,
     "rightPt": 44.625,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3385,8 +3385,8 @@
     "text": "even-odd",
     "xPt": 46.207,
     "rightPt": 77.953,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3435,8 +3435,8 @@
     "text": "fill",
     "xPt": 79.547,
     "rightPt": 87.938,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3473,8 +3473,8 @@
     "text": "5.",
     "xPt": 204.07,
     "rightPt": 210.047,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3505,8 +3505,8 @@
     "text": "An",
     "xPt": 211.629,
     "rightPt": 220.359,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3537,8 +3537,8 @@
     "text": "even-odd",
     "xPt": 221.941,
     "rightPt": 253.688,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3587,8 +3587,8 @@
     "text": "clip",
     "xPt": 255.281,
     "rightPt": 267.375,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3625,8 +3625,8 @@
     "text": "6.",
     "xPt": 379.805,
     "rightPt": 385.781,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3657,8 +3657,8 @@
     "text": "Plain",
     "xPt": 387.363,
     "rightPt": 404.32,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3698,8 +3698,8 @@
     "text": "opacity",
     "xPt": 405.902,
     "rightPt": 430.664,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3745,8 +3745,8 @@
     "text": "on",
     "xPt": 432.246,
     "rightPt": 440.965,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3777,8 +3777,8 @@
     "text": "a",
     "xPt": 442.559,
     "rightPt": 446.602,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3806,8 +3806,8 @@
     "text": "shape",
     "xPt": 448.184,
     "rightPt": 468.328,
-    "topPt": 654.988,
-    "baselineMeasureTextPt": 646.738,
+    "topPt": 659.992,
+    "baselineMeasureTextPt": 651.742,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3847,8 +3847,8 @@
     "text": "7.",
     "xPt": 28.336,
     "rightPt": 34.313,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3879,8 +3879,8 @@
     "text": "Stroke",
     "xPt": 35.895,
     "rightPt": 57.492,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3923,8 +3923,8 @@
     "text": "and",
     "xPt": 59.086,
     "rightPt": 71.93,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3958,8 +3958,8 @@
     "text": "fill",
     "xPt": 73.523,
     "rightPt": 81.914,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -3996,8 +3996,8 @@
     "text": "opacity",
     "xPt": 83.496,
     "rightPt": 108.258,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4043,8 +4043,8 @@
     "text": "alone",
     "xPt": 109.84,
     "rightPt": 128.602,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4084,8 +4084,8 @@
     "text": "8.",
     "xPt": 204.07,
     "rightPt": 210.047,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4116,8 +4116,8 @@
     "text": "Group",
     "xPt": 211.629,
     "rightPt": 232.383,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4157,8 +4157,8 @@
     "text": "opacity",
     "xPt": 233.977,
     "rightPt": 258.738,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4204,8 +4204,8 @@
     "text": "over",
     "xPt": 260.32,
     "rightPt": 275.086,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4242,8 +4242,8 @@
     "text": "two",
     "xPt": 276.668,
     "rightPt": 289.441,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4277,8 +4277,8 @@
     "text": "shapes",
     "xPt": 291.023,
     "rightPt": 314.52,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4321,8 +4321,8 @@
     "text": "9.",
     "xPt": 379.805,
     "rightPt": 385.781,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4353,8 +4353,8 @@
     "text": "A",
     "xPt": 387.363,
     "rightPt": 391.723,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4382,8 +4382,8 @@
     "text": "luminance",
     "xPt": 393.305,
     "rightPt": 428.508,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4435,8 +4435,8 @@
     "text": "mask",
     "xPt": 430.102,
     "rightPt": 448.078,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4473,8 +4473,8 @@
     "text": "over",
     "xPt": 449.66,
     "rightPt": 464.426,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4511,8 +4511,8 @@
     "text": "a",
     "xPt": 466.008,
     "rightPt": 470.051,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4540,8 +4540,8 @@
     "text": "backdrop",
     "xPt": 471.645,
     "rightPt": 503.355,
-    "topPt": 554.71,
-    "baselineMeasureTextPt": 546.46,
+    "topPt": 559.714,
+    "baselineMeasureTextPt": 551.464,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4590,8 +4590,8 @@
     "text": "10.",
     "xPt": 28.336,
     "rightPt": 38.285,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4625,8 +4625,8 @@
     "text": "An",
     "xPt": 39.867,
     "rightPt": 48.598,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4657,8 +4657,8 @@
     "text": "alpha",
     "xPt": 50.18,
     "rightPt": 69.082,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4698,8 +4698,8 @@
     "text": "mask,",
     "xPt": 70.676,
     "rightPt": 90.738,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4739,8 +4739,8 @@
     "text": "its",
     "xPt": 92.332,
     "rightPt": 100.289,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4774,8 +4774,8 @@
     "text": "gradient's",
     "xPt": 101.871,
     "rightPt": 135.164,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4830,8 +4830,8 @@
     "text": "stops",
     "xPt": 136.746,
     "rightPt": 154.652,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4871,8 +4871,8 @@
     "text": "fading",
     "xPt": 156.234,
     "rightPt": 177.258,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4915,8 +4915,8 @@
     "text": "11.",
     "xPt": 204.07,
     "rightPt": 214.02,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4950,8 +4950,8 @@
     "text": "A",
     "xPt": 215.602,
     "rightPt": 219.961,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -4979,8 +4979,8 @@
     "text": "mask",
     "xPt": 221.543,
     "rightPt": 239.52,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5017,8 +5017,8 @@
     "text": "over",
     "xPt": 241.113,
     "rightPt": 255.867,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5055,8 +5055,8 @@
     "text": "a",
     "xPt": 257.461,
     "rightPt": 261.504,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5084,8 +5084,8 @@
     "text": "form:",
     "xPt": 263.086,
     "rightPt": 281.086,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5125,8 +5125,8 @@
     "text": "a",
     "xPt": 282.668,
     "rightPt": 286.711,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5154,8 +5154,8 @@
     "text": "group",
     "xPt": 288.305,
     "rightPt": 308.156,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5195,8 +5195,8 @@
     "text": "of",
     "xPt": 309.75,
     "rightPt": 316.406,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5227,8 +5227,8 @@
     "text": "a",
     "xPt": 318,
     "rightPt": 322.043,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5256,8 +5256,8 @@
     "text": "line",
     "xPt": 323.625,
     "rightPt": 335.988,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5294,8 +5294,8 @@
     "text": "and",
     "xPt": 337.57,
     "rightPt": 350.426,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5329,8 +5329,8 @@
     "text": "its",
     "xPt": 352.008,
     "rightPt": 359.965,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5364,8 +5364,8 @@
     "text": "markers",
     "xPt": 204.07,
     "rightPt": 231.387,
-    "topPt": 444.835,
-    "baselineMeasureTextPt": 436.585,
+    "topPt": 449.839,
+    "baselineMeasureTextPt": 441.589,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5411,8 +5411,8 @@
     "text": "12.",
     "xPt": 379.805,
     "rightPt": 389.754,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5446,8 +5446,8 @@
     "text": "A",
     "xPt": 391.336,
     "rightPt": 395.695,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5475,8 +5475,8 @@
     "text": "mask",
     "xPt": 397.277,
     "rightPt": 415.254,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5513,8 +5513,8 @@
     "text": "on",
     "xPt": 416.848,
     "rightPt": 425.566,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5545,8 +5545,8 @@
     "text": "the",
     "xPt": 427.148,
     "rightPt": 438.176,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5580,8 +5580,8 @@
     "text": "marked",
     "xPt": 439.77,
     "rightPt": 465.422,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5624,8 +5624,8 @@
     "text": "path",
     "xPt": 467.004,
     "rightPt": 482.32,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5662,8 +5662,8 @@
     "text": "itself",
     "xPt": 483.914,
     "rightPt": 500.203,
-    "topPt": 454.433,
-    "baselineMeasureTextPt": 446.183,
+    "topPt": 459.437,
+    "baselineMeasureTextPt": 451.187,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5706,8 +5706,8 @@
     "text": "13.",
     "xPt": 28.336,
     "rightPt": 38.285,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5741,8 +5741,8 @@
     "text": "A",
     "xPt": 39.867,
     "rightPt": 44.227,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5770,8 +5770,8 @@
     "text": "mask",
     "xPt": 45.809,
     "rightPt": 63.785,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5808,8 +5808,8 @@
     "text": "over",
     "xPt": 65.379,
     "rightPt": 80.133,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5846,8 +5846,8 @@
     "text": "a",
     "xPt": 81.727,
     "rightPt": 85.77,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5875,8 +5875,8 @@
     "text": "raster",
     "xPt": 87.352,
     "rightPt": 106.512,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5919,8 +5919,8 @@
     "text": "fallback:",
     "xPt": 108.094,
     "rightPt": 136.441,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -5972,8 +5972,8 @@
     "text": "a",
     "xPt": 138.023,
     "rightPt": 142.066,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6001,8 +6001,8 @@
     "text": "blurred",
     "xPt": 143.66,
     "rightPt": 168.352,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6048,8 +6048,8 @@
     "text": "square",
     "xPt": 169.934,
     "rightPt": 192.773,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6092,8 +6092,8 @@
     "text": "14.",
     "xPt": 204.07,
     "rightPt": 214.02,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6127,8 +6127,8 @@
     "text": "A",
     "xPt": 215.602,
     "rightPt": 219.961,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6156,8 +6156,8 @@
     "text": "mask",
     "xPt": 221.543,
     "rightPt": 239.52,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6194,8 +6194,8 @@
     "text": "on",
     "xPt": 241.113,
     "rightPt": 249.832,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6226,8 +6226,8 @@
     "text": "the",
     "xPt": 251.414,
     "rightPt": 262.441,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6261,8 +6261,8 @@
     "text": "filtered",
     "xPt": 264.035,
     "rightPt": 288.035,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6311,8 +6311,8 @@
     "text": "element",
     "xPt": 289.629,
     "rightPt": 317.273,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6358,8 +6358,8 @@
     "text": "itself",
     "xPt": 318.855,
     "rightPt": 335.145,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6402,8 +6402,8 @@
     "text": "15.",
     "xPt": 379.805,
     "rightPt": 389.754,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6437,8 +6437,8 @@
     "text": "A",
     "xPt": 391.336,
     "rightPt": 395.695,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6466,8 +6466,8 @@
     "text": "form",
     "xPt": 397.277,
     "rightPt": 413.285,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6504,8 +6504,8 @@
     "text": "and",
     "xPt": 414.867,
     "rightPt": 427.723,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6539,8 +6539,8 @@
     "text": "a",
     "xPt": 429.305,
     "rightPt": 433.348,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6568,8 +6568,8 @@
     "text": "raster",
     "xPt": 434.941,
     "rightPt": 454.09,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6612,8 +6612,8 @@
     "text": "nested",
     "xPt": 455.684,
     "rightPt": 478.207,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6656,8 +6656,8 @@
     "text": "in",
     "xPt": 479.801,
     "rightPt": 486.152,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6688,8 +6688,8 @@
     "text": "a",
     "xPt": 487.734,
     "rightPt": 491.777,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6717,8 +6717,8 @@
     "text": "group's",
     "xPt": 493.371,
     "rightPt": 518.18,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6764,8 +6764,8 @@
     "text": "form",
     "xPt": 519.762,
     "rightPt": 535.77,
-    "topPt": 344.558,
-    "baselineMeasureTextPt": 336.308,
+    "topPt": 349.562,
+    "baselineMeasureTextPt": 341.312,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6802,8 +6802,8 @@
     "text": "16.",
     "xPt": 28.336,
     "rightPt": 38.285,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6837,8 +6837,8 @@
     "text": "A",
     "xPt": 39.867,
     "rightPt": 44.227,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6866,8 +6866,8 @@
     "text": "marker",
     "xPt": 45.809,
     "rightPt": 69.809,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6910,8 +6910,8 @@
     "text": "holding",
     "xPt": 71.391,
     "rightPt": 96.938,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6957,8 +6957,8 @@
     "text": "a",
     "xPt": 98.531,
     "rightPt": 102.574,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -6986,8 +6986,8 @@
     "text": "marked",
     "xPt": 104.156,
     "rightPt": 129.809,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7030,8 +7030,8 @@
     "text": "path:",
     "xPt": 131.402,
     "rightPt": 148.711,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7071,8 +7071,8 @@
     "text": "a",
     "xPt": 150.293,
     "rightPt": 154.336,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7100,8 +7100,8 @@
     "text": "form",
     "xPt": 155.93,
     "rightPt": 171.926,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7138,8 +7138,8 @@
     "text": "in",
     "xPt": 173.52,
     "rightPt": 179.871,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7170,8 +7170,8 @@
     "text": "a",
     "xPt": 181.453,
     "rightPt": 185.496,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7199,8 +7199,8 @@
     "text": "form",
     "xPt": 28.336,
     "rightPt": 44.332,
-    "topPt": 234.683,
-    "baselineMeasureTextPt": 226.433,
+    "topPt": 239.687,
+    "baselineMeasureTextPt": 231.437,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7237,8 +7237,8 @@
     "text": "17.",
     "xPt": 204.07,
     "rightPt": 214.02,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7272,8 +7272,8 @@
     "text": "A",
     "xPt": 215.602,
     "rightPt": 219.961,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7301,8 +7301,8 @@
     "text": "blend",
     "xPt": 221.543,
     "rightPt": 240.797,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7342,8 +7342,8 @@
     "text": "mode",
     "xPt": 242.379,
     "rightPt": 261.75,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7380,8 +7380,8 @@
     "text": "other",
     "xPt": 263.344,
     "rightPt": 281.344,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7421,8 +7421,8 @@
     "text": "than",
     "xPt": 282.926,
     "rightPt": 298.395,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7459,8 +7459,8 @@
     "text": "multiply:",
     "xPt": 299.988,
     "rightPt": 329.883,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7512,8 +7512,8 @@
     "text": "difference",
     "xPt": 331.477,
     "rightPt": 364.852,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7565,8 +7565,8 @@
     "text": "18.",
     "xPt": 379.805,
     "rightPt": 389.754,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7600,8 +7600,8 @@
     "text": "A",
     "xPt": 391.336,
     "rightPt": 395.695,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7629,8 +7629,8 @@
     "text": "radial",
     "xPt": 397.277,
     "rightPt": 416.391,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7673,8 +7673,8 @@
     "text": "gradient,",
     "xPt": 417.973,
     "rightPt": 448.125,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7726,8 +7726,8 @@
     "text": "spreadMethod",
     "xPt": 449.707,
     "rightPt": 498.047,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7788,8 +7788,8 @@
     "text": "reflect",
     "xPt": 499.629,
     "rightPt": 520.887,
-    "topPt": 244.281,
-    "baselineMeasureTextPt": 236.031,
+    "topPt": 249.285,
+    "baselineMeasureTextPt": 241.035,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7835,8 +7835,8 @@
     "text": "19.",
     "xPt": 28.336,
     "rightPt": 38.285,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7870,8 +7870,8 @@
     "text": "A",
     "xPt": 39.867,
     "rightPt": 44.227,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7899,8 +7899,8 @@
     "text": "linear",
     "xPt": 45.809,
     "rightPt": 64.863,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7943,8 +7943,8 @@
     "text": "gradient,",
     "xPt": 66.457,
     "rightPt": 96.598,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -7996,8 +7996,8 @@
     "text": "spreadMethod",
     "xPt": 98.191,
     "rightPt": 146.52,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8058,8 +8058,8 @@
     "text": "repeat",
     "xPt": 148.113,
     "rightPt": 169.699,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8102,8 +8102,8 @@
     "text": "20.",
     "xPt": 204.07,
     "rightPt": 214.02,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8137,8 +8137,8 @@
     "text": "Dashes,",
     "xPt": 215.602,
     "rightPt": 241.57,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8184,8 +8184,8 @@
     "text": "round",
     "xPt": 243.164,
     "rightPt": 263.355,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8225,8 +8225,8 @@
     "text": "caps",
     "xPt": 264.949,
     "rightPt": 280.324,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8263,8 +8263,8 @@
     "text": "and",
     "xPt": 281.906,
     "rightPt": 294.762,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8298,8 +8298,8 @@
     "text": "joins,",
     "xPt": 296.344,
     "rightPt": 314.355,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8342,8 +8342,8 @@
     "text": "a",
     "xPt": 315.938,
     "rightPt": 319.98,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8371,8 +8371,8 @@
     "text": "bevel,",
     "xPt": 321.574,
     "rightPt": 341.707,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8415,8 +8415,8 @@
     "text": "a",
     "xPt": 343.301,
     "rightPt": 347.344,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8444,8 +8444,8 @@
     "text": "miter",
     "xPt": 348.926,
     "rightPt": 366.867,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8485,8 +8485,8 @@
     "text": "limit",
     "xPt": 204.07,
     "rightPt": 219.387,
-    "topPt": 124.808,
-    "baselineMeasureTextPt": 116.558,
+    "topPt": 129.812,
+    "baselineMeasureTextPt": 121.562,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8526,8 +8526,8 @@
     "text": "21.",
     "xPt": 379.805,
     "rightPt": 389.754,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8561,8 +8561,8 @@
     "text": "Arcs",
     "xPt": 391.336,
     "rightPt": 405.387,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8599,8 +8599,8 @@
     "text": "and",
     "xPt": 406.969,
     "rightPt": 419.824,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8634,8 +8634,8 @@
     "text": "quadratic",
     "xPt": 421.406,
     "rightPt": 453.492,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8687,8 +8687,8 @@
     "text": "and",
     "xPt": 455.086,
     "rightPt": 467.93,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8722,8 +8722,8 @@
     "text": "smooth",
     "xPt": 469.523,
     "rightPt": 495.094,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -8766,8 +8766,8 @@
     "text": "curves",
     "xPt": 496.688,
     "rightPt": 518.684,
-    "topPt": 134.406,
-    "baselineMeasureTextPt": 126.156,
+    "topPt": 139.41,
+    "baselineMeasureTextPt": 131.16,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -15235,7 +15235,7 @@
    "level": 1,
    "depth": 0,
    "page": 0,
-   "topPt": 797.91,
+   "topPt": 800.91,
    "count": 0
   }
  ],
@@ -15250,9 +15250,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    661.984,
+    666.988,
     187.066,
-    741.343
+    746.347
    ],
    "reason": "the <svg> viewport at div[0]/div[0]/svg[0]",
    "evenOdd": false
@@ -15267,9 +15267,9 @@
    "artifact": false,
    "geometry": [
     41.039,
-    677.856,
+    682.86,
     174.363,
-    741.343
+    746.347
    ],
    "ctm": [
     133.324,
@@ -15277,7 +15277,7 @@
     0,
     -47.616,
     41.039,
-    725.471
+    730.475
    ],
    "params": {
     "type": 2,
@@ -15289,9 +15289,9 @@
     ],
     "coordsPt": [
      41.039,
-     725.471,
+     730.475,
      174.363,
-     725.471
+     730.475
     ],
     "extend": [
      true,
@@ -15337,7 +15337,7 @@
      0,
      -47.616,
      41.039,
-     725.471
+     730.475
     ],
     "spread": "pad",
     "periods": 1,
@@ -15357,9 +15357,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    661.984,
+    666.988,
     362.801,
-    741.343
+    746.347
    ],
    "reason": "the <svg> viewport at div[0]/div[1]/svg[0]",
    "evenOdd": false
@@ -15374,9 +15374,9 @@
    "artifact": false,
    "geometry": [
     235.82,
-    671.507,
+    676.511,
     331.051,
-    731.82
+    736.824
    ],
    "ctm": [
     1.587,
@@ -15384,7 +15384,7 @@
     0,
     -1.587,
     204.076,
-    741.343
+    746.347
    ],
    "params": {
     "type": 3,
@@ -15398,10 +15398,10 @@
     ],
     "coordsPt": [
      283.436,
-     701.663,
+     706.667,
      0,
      283.436,
-     701.663,
+     706.667,
      34.918
     ],
     "extend": [
@@ -15439,7 +15439,7 @@
      0,
      -1.587,
      204.076,
-     741.343
+     746.347
     ],
     "spread": "pad",
     "periods": 1,
@@ -15459,9 +15459,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    661.984,
+    666.988,
     538.535,
-    741.343
+    746.347
    ],
    "reason": "the <svg> viewport at div[0]/div[2]/svg[0]",
    "evenOdd": false
@@ -15476,9 +15476,9 @@
    "artifact": false,
    "geometry": [
     430.601,
-    681.03,
+    686.034,
     487.739,
-    734.994
+    739.998
    ],
    "params": {
     "widthPt": 7.936,
@@ -15499,9 +15499,9 @@
    "artifact": false,
    "geometry": [
     430.601,
-    681.03,
+    686.034,
     487.739,
-    734.994
+    739.998
    ],
    "evenOdd": false,
    "params": {
@@ -15523,9 +15523,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    561.706,
+    566.71,
     187.066,
-    641.066
+    646.07
    ],
    "reason": "the <svg> viewport at div[1]/div[0]/svg[0]",
    "evenOdd": false
@@ -15540,9 +15540,9 @@
    "artifact": false,
    "geometry": [
     79.132,
-    580.753,
+    585.757,
     136.271,
-    634.717
+    639.721
    ],
    "evenOdd": true,
    "params": {
@@ -15564,9 +15564,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    561.706,
+    566.71,
     362.801,
-    641.066
+    646.07
    ],
    "reason": "the <svg> viewport at div[1]/div[1]/svg[0]",
    "evenOdd": false
@@ -15581,9 +15581,9 @@
    "artifact": false,
    "geometry": [
     254.866,
-    580.753,
+    585.757,
     312.005,
-    634.717
+    639.721
    ],
    "reason": "clip-path url(#star) on div[1]/div[1]/svg[0]/rect[0], userSpaceOnUse",
    "evenOdd": true
@@ -15598,9 +15598,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    561.706,
+    566.71,
     362.795,
-    641.066
+    646.07
    ],
    "ctm": [
     158.719,
@@ -15608,7 +15608,7 @@
     0,
     -79.359,
     204.076,
-    641.066
+    646.07
    ],
    "params": {
     "type": 2,
@@ -15620,9 +15620,9 @@
     ],
     "coordsPt": [
      204.076,
-     641.066,
+     646.07,
      204.076,
-     561.706
+     566.71
     ],
     "extend": [
      true,
@@ -15659,7 +15659,7 @@
      0,
      -79.359,
      204.076,
-     641.066
+     646.07
     ],
     "spread": "pad",
     "periods": 1,
@@ -15679,9 +15679,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    561.706,
+    566.71,
     538.535,
-    641.066
+    646.07
    ],
    "reason": "the <svg> viewport at div[1]/div[2]/svg[0]",
    "evenOdd": false
@@ -15696,9 +15696,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    561.706,
+    566.71,
     538.529,
-    641.066
+    646.07
    ],
    "evenOdd": false,
    "params": {
@@ -15720,9 +15720,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    561.706,
+    566.71,
     411.554,
-    641.066
+    646.07
    ],
    "evenOdd": false,
    "params": {
@@ -15744,9 +15744,9 @@
    "artifact": false,
    "geometry": [
     443.298,
-    561.706,
+    566.71,
     459.17,
-    641.066
+    646.07
    ],
    "evenOdd": false,
    "params": {
@@ -15768,9 +15768,9 @@
    "artifact": false,
    "geometry": [
     490.914,
-    561.706,
+    566.71,
     506.786,
-    641.066
+    646.07
    ],
    "evenOdd": false,
    "params": {
@@ -15806,9 +15806,9 @@
    "artifact": false,
    "geometry": [
     427.426,
-    569.642,
+    574.646,
     490.914,
-    633.13
+    638.134
    ],
    "evenOdd": false,
    "params": {
@@ -15830,9 +15830,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    461.429,
+    466.433,
     187.066,
-    540.788
+    545.792
    ],
    "reason": "the <svg> viewport at div[2]/div[0]/svg[0]",
    "evenOdd": false
@@ -15847,9 +15847,9 @@
    "artifact": false,
    "geometry": [
     28.342,
-    461.429,
+    466.433,
     187.061,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -15871,9 +15871,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    461.429,
+    466.433,
     60.086,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -15895,9 +15895,9 @@
    "artifact": false,
    "geometry": [
     91.829,
-    461.429,
+    466.433,
     107.701,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -15919,9 +15919,9 @@
    "artifact": false,
    "geometry": [
     139.445,
-    461.429,
+    466.433,
     155.317,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -15957,9 +15957,9 @@
    "artifact": false,
    "geometry": [
     52.15,
-    477.301,
+    482.305,
     163.253,
-    524.917
+    529.921
    ],
    "params": {
     "widthPt": 9.523,
@@ -15980,9 +15980,9 @@
    "artifact": false,
    "geometry": [
     52.15,
-    477.301,
+    482.305,
     163.253,
-    524.917
+    529.921
    ],
    "evenOdd": false,
    "params": {
@@ -16004,9 +16004,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    461.429,
+    466.433,
     362.801,
-    540.788
+    545.792
    ],
    "reason": "the <svg> viewport at div[2]/div[1]/svg[0]",
    "evenOdd": false
@@ -16021,9 +16021,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    461.429,
+    466.433,
     362.795,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -16045,9 +16045,9 @@
    "artifact": false,
    "geometry": [
     267.564,
-    461.429,
+    466.433,
     299.307,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -16069,9 +16069,9 @@
    "artifact": false,
    "geometry": [
     235.82,
-    472.539,
+    477.543,
     292.959,
-    529.678
+    534.682
    ],
    "evenOdd": false,
    "params": {
@@ -16093,9 +16093,9 @@
    "artifact": false,
    "geometry": [
     273.912,
-    472.539,
+    477.543,
     331.051,
-    529.678
+    534.682
    ],
    "evenOdd": false,
    "params": {
@@ -16130,9 +16130,9 @@
    "artifact": false,
    "geometry": [
     235.82,
-    472.539,
+    477.543,
     331.051,
-    529.678
+    534.682
    ],
    "reason": "group opacity 0.5 over 2 painting children",
    "form": "Fm0",
@@ -16152,9 +16152,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    461.429,
+    466.433,
     538.535,
-    540.788
+    545.792
    ],
    "reason": "the <svg> viewport at div[2]/div[2]/svg[0]",
    "evenOdd": false
@@ -16169,9 +16169,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    461.429,
+    466.433,
     538.529,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -16193,9 +16193,9 @@
    "artifact": false,
    "geometry": [
     427.426,
-    461.429,
+    466.433,
     443.298,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -16217,9 +16217,9 @@
    "artifact": false,
    "geometry": [
     475.042,
-    461.429,
+    466.433,
     490.914,
-    540.788
+    545.792
    ],
    "evenOdd": false,
    "params": {
@@ -16241,9 +16241,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    469.365,
+    474.369,
     522.657,
-    532.853
+    537.856
    ],
    "ctm": [
     126.975,
@@ -16251,7 +16251,7 @@
     0,
     -63.487,
     395.682,
-    532.853
+    537.856
    ],
    "params": {
     "type": 2,
@@ -16263,9 +16263,9 @@
     ],
     "coordsPt": [
      395.682,
-     532.853,
+     537.856,
      522.657,
-     532.853
+     537.856
     ],
     "extend": [
      true,
@@ -16302,7 +16302,7 @@
      0,
      -63.487,
      395.682,
-     532.853
+     537.856
     ],
     "spread": "pad",
     "periods": 1,
@@ -16322,9 +16322,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    469.365,
+    474.369,
     522.657,
-    532.853
+    537.856
    ],
    "reason": "mask url(#ml) on div[2]/div[2]/svg[0]/g[0], userSpaceOnUse, luminosity",
    "form": "Fm1"
@@ -16339,9 +16339,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    469.365,
+    474.369,
     522.657,
-    532.853
+    537.856
    ],
    "evenOdd": false,
    "params": {
@@ -16376,9 +16376,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    469.365,
+    474.369,
     522.657,
-    532.853
+    537.856
    ],
    "reason": "mask on div[2]/div[2]/svg[0]/g[0]",
    "form": "Fm2",
@@ -16398,9 +16398,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    361.152,
+    366.156,
     187.066,
-    440.511
+    445.515
    ],
    "reason": "the <svg> viewport at div[3]/div[0]/svg[0]",
    "evenOdd": false
@@ -16415,9 +16415,9 @@
    "artifact": false,
    "geometry": [
     28.342,
-    361.152,
+    366.156,
     187.061,
-    440.511
+    445.515
    ],
    "evenOdd": false,
    "params": {
@@ -16439,9 +16439,9 @@
    "artifact": false,
    "geometry": [
     75.957,
-    361.152,
+    366.156,
     91.829,
-    440.511
+    445.515
    ],
    "evenOdd": false,
    "params": {
@@ -16463,9 +16463,9 @@
    "artifact": false,
    "geometry": [
     123.573,
-    361.152,
+    366.156,
     139.445,
-    440.511
+    445.515
    ],
    "evenOdd": false,
    "params": {
@@ -16487,9 +16487,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    369.088,
+    374.092,
     171.189,
-    432.575
+    437.579
    ],
    "reason": "the gradient has stops with alpha below one",
    "form": "Fm3",
@@ -16503,9 +16503,9 @@
     ],
     "coordsPt": [
      44.214,
-     432.575,
+     437.579,
      171.189,
-     432.575
+     437.579
     ],
     "extend": [
      true,
@@ -16542,7 +16542,7 @@
      0,
      -63.487,
      44.214,
-     432.575
+     437.579
     ],
     "spread": "pad",
     "periods": 1,
@@ -16560,9 +16560,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    369.088,
+    374.092,
     171.189,
-    432.575
+    437.579
    ],
    "ctm": [
     126.975,
@@ -16570,7 +16570,7 @@
     0,
     -63.487,
     44.214,
-    432.575
+    437.579
    ],
    "params": {
     "type": 2,
@@ -16582,9 +16582,9 @@
     ],
     "coordsPt": [
      44.214,
-     432.575,
+     437.579,
      171.189,
-     432.575
+     437.579
     ],
     "extend": [
      true,
@@ -16621,7 +16621,7 @@
      0,
      -63.487,
      44.214,
-     432.575
+     437.579
     ],
     "spread": "pad",
     "periods": 1,
@@ -16641,9 +16641,9 @@
    "artifact": false,
    "geometry": [
     139.445,
-    384.96,
+    389.963,
     171.189,
-    416.703
+    421.707
    ],
    "evenOdd": false,
    "params": {
@@ -16665,9 +16665,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    369.088,
+    374.092,
     171.189,
-    432.575
+    437.579
    ],
    "reason": "mask url(#ma) on div[3]/div[0]/svg[0]/g[0], userSpaceOnUse, alpha",
    "form": "Fm4"
@@ -16682,9 +16682,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    369.088,
+    374.092,
     171.189,
-    432.575
+    437.579
    ],
    "evenOdd": false,
    "params": {
@@ -16719,9 +16719,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    369.088,
+    374.092,
     171.189,
-    432.575
+    437.579
    ],
    "reason": "mask on div[3]/div[0]/svg[0]/g[0]",
    "form": "Fm5",
@@ -16741,9 +16741,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    351.554,
+    356.558,
     362.801,
-    430.913
+    435.917
    ],
    "reason": "the <svg> viewport at div[3]/div[1]/svg[0]",
    "evenOdd": false
@@ -16758,9 +16758,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    351.554,
+    356.558,
     362.795,
-    430.913
+    435.917
    ],
    "evenOdd": false,
    "params": {
@@ -16782,9 +16782,9 @@
    "artifact": false,
    "geometry": [
     275.5,
-    351.554,
+    356.558,
     291.372,
-    430.913
+    435.917
    ],
    "evenOdd": false,
    "params": {
@@ -16806,9 +16806,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    351.554,
+    356.558,
     362.795,
-    430.913
+    435.917
    ],
    "ctm": [
     158.719,
@@ -16816,7 +16816,7 @@
     0,
     -79.359,
     204.076,
-    430.913
+    435.917
    ],
    "params": {
     "type": 2,
@@ -16828,9 +16828,9 @@
     ],
     "coordsPt": [
      204.076,
-     430.913,
+     435.917,
      362.795,
-     430.913
+     435.917
     ],
     "extend": [
      true,
@@ -16867,7 +16867,7 @@
      0,
      -79.359,
      204.076,
-     430.913
+     435.917
     ],
     "spread": "pad",
     "periods": 1,
@@ -16887,9 +16887,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    351.554,
+    356.558,
     362.795,
-    430.913
+    435.917
    ],
    "reason": "mask url(#mf) on div[3]/div[1]/svg[0]/g[0], userSpaceOnUse, luminosity",
    "form": "Fm6"
@@ -16904,9 +16904,9 @@
    "artifact": false,
    "geometry": [
     223.122,
-    367.426,
+    372.43,
     343.749,
-    415.042
+    420.046
    ],
    "params": {
     "widthPt": 4.762,
@@ -16978,7 +16978,7 @@
     -2.95,
     3.737,
     239.842,
-    365.459
+    370.463
    ],
    "reason": "<marker id=\"mk\"> on the start vertex of div[3]/div[1]/svg[0]/g[0]/path[0]",
    "form": "Fx0",
@@ -17007,7 +17007,7 @@
     0,
     -4.762,
     271.532,
-    426.945
+    431.949
    ],
    "reason": "<marker id=\"mk\"> on the mid vertex of div[3]/div[1]/svg[0]/g[0]/path[0]",
    "form": "Fx0",
@@ -17036,7 +17036,7 @@
     -2.95,
     -3.737,
     341.782,
-    384.145
+    389.149
    ],
    "reason": "<marker id=\"mk\"> on the end vertex of div[3]/div[1]/svg[0]/g[0]/path[0]",
    "form": "Fx0",
@@ -17068,9 +17068,9 @@
    "artifact": false,
    "geometry": [
     206.403,
-    350.707,
+    355.71,
     360.468,
-    426.945
+    431.949
    ],
    "reason": "mask on div[3]/div[1]/svg[0]/g[0]",
    "form": "Fm7",
@@ -17090,9 +17090,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    361.152,
+    366.156,
     538.535,
-    440.511
+    445.515
    ],
    "reason": "the <svg> viewport at div[3]/div[2]/svg[0]",
    "evenOdd": false
@@ -17107,9 +17107,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    361.152,
+    366.156,
     538.529,
-    440.511
+    445.515
    ],
    "evenOdd": false,
    "params": {
@@ -17131,9 +17131,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    361.152,
+    366.156,
     475.042,
-    440.511
+    445.515
    ],
    "evenOdd": false,
    "params": {
@@ -17155,9 +17155,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    361.152,
+    366.156,
     475.042,
-    440.511
+    445.515
    ],
    "reason": "mask url(#mf2) on div[3]/div[2]/svg[0]/path[0], userSpaceOnUse, luminosity",
    "form": "Fm8"
@@ -17172,9 +17172,9 @@
    "artifact": false,
    "geometry": [
     398.857,
-    377.024,
+    382.028,
     519.483,
-    424.639
+    429.643
    ],
    "params": {
     "widthPt": 4.762,
@@ -17246,7 +17246,7 @@
     -2.95,
     3.737,
     415.576,
-    375.057
+    380.061
    ],
    "reason": "<marker id=\"mk2\"> on the start vertex of div[3]/div[2]/svg[0]/path[0]",
    "form": "Fx1",
@@ -17275,7 +17275,7 @@
     0,
     -4.762,
     447.266,
-    436.543
+    441.547
    ],
    "reason": "<marker id=\"mk2\"> on the mid vertex of div[3]/div[2]/svg[0]/path[0]",
    "form": "Fx1",
@@ -17304,7 +17304,7 @@
     -2.95,
     -3.737,
     517.516,
-    393.743
+    398.747
    ],
    "reason": "<marker id=\"mk2\"> on the end vertex of div[3]/div[2]/svg[0]/path[0]",
    "form": "Fx1",
@@ -17336,9 +17336,9 @@
    "artifact": false,
    "geometry": [
     382.137,
-    360.304,
+    365.308,
     536.202,
-    436.543
+    441.547
    ],
    "reason": "mask on div[3]/div[2]/svg[0]/path[0], its markers included",
    "form": "Fm9",
@@ -17358,9 +17358,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    251.277,
+    256.281,
     187.066,
-    330.636
+    335.64
    ],
    "reason": "the <svg> viewport at div[4]/div[0]/svg[0]",
    "evenOdd": false
@@ -17375,9 +17375,9 @@
    "artifact": false,
    "geometry": [
     28.342,
-    251.277,
+    256.281,
     187.061,
-    330.636
+    335.64
    ],
    "evenOdd": false,
    "params": {
@@ -17399,9 +17399,9 @@
    "artifact": false,
    "geometry": [
     99.765,
-    251.277,
+    256.281,
     115.637,
-    330.636
+    335.64
    ],
    "evenOdd": false,
    "params": {
@@ -17423,9 +17423,9 @@
    "artifact": false,
    "geometry": [
     28.342,
-    251.277,
+    256.281,
     187.061,
-    330.636
+    335.64
    ],
    "ctm": [
     158.719,
@@ -17433,7 +17433,7 @@
     0,
     -79.359,
     28.342,
-    330.636
+    335.64
    ],
    "params": {
     "type": 2,
@@ -17445,9 +17445,9 @@
     ],
     "coordsPt": [
      28.342,
-     330.636,
+     335.64,
      187.061,
-     330.636
+     335.64
     ],
     "extend": [
      true,
@@ -17484,7 +17484,7 @@
      0,
      -79.359,
      28.342,
-     330.636
+     335.64
     ],
     "spread": "pad",
     "periods": 1,
@@ -17504,9 +17504,9 @@
    "artifact": false,
    "geometry": [
     28.342,
-    251.277,
+    256.281,
     187.061,
-    330.636
+    335.64
    ],
    "reason": "mask url(#mr) on div[4]/div[0]/svg[0]/g[0], userSpaceOnUse, luminosity",
    "form": "Fm10"
@@ -17521,7 +17521,7 @@
    "artifact": false,
    "geometry": [
     39.801,
-    246.864,
+    251.868,
     135.801,
     88.185
    ],
@@ -17531,7 +17531,7 @@
     0,
     88.185,
     39.801,
-    246.864
+    251.868
    ],
    "reason": "filter: url(\"#blur\") on div[4]/div[0]/svg[0]/g[0]/rect[0]: PDF has no filter primitives",
    "feature": "filter",
@@ -17562,9 +17562,9 @@
    "artifact": false,
    "geometry": [
     39.801,
-    246.864,
+    251.868,
     175.601,
-    335.049
+    340.053
    ],
    "reason": "mask on div[4]/div[0]/svg[0]/g[0]",
    "form": "Fm11",
@@ -17584,9 +17584,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    251.277,
+    256.281,
     362.801,
-    330.636
+    335.64
    ],
    "reason": "the <svg> viewport at div[4]/div[1]/svg[0]",
    "evenOdd": false
@@ -17601,9 +17601,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    251.277,
+    256.281,
     362.795,
-    330.636
+    335.64
    ],
    "evenOdd": false,
    "params": {
@@ -17625,7 +17625,7 @@
    "artifact": false,
    "geometry": [
     215.535,
-    246.864,
+    251.868,
     135.801,
     88.185
    ],
@@ -17635,7 +17635,7 @@
     0,
     88.185,
     215.535,
-    246.864
+    251.868
    ],
    "reason": "filter: url(\"#blur2\") on div[4]/div[1]/svg[0]/rect[1]: PDF has no filter primitives",
    "feature": "filter",
@@ -17653,9 +17653,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    251.277,
+    256.281,
     538.535,
-    330.636
+    335.64
    ],
    "reason": "the <svg> viewport at div[4]/div[2]/svg[0]",
    "evenOdd": false
@@ -17670,9 +17670,9 @@
    "artifact": false,
    "geometry": [
     379.811,
-    251.277,
+    256.281,
     538.529,
-    330.636
+    335.64
    ],
    "evenOdd": false,
    "params": {
@@ -17694,9 +17694,9 @@
    "artifact": false,
    "geometry": [
     451.234,
-    251.277,
+    256.281,
     467.106,
-    330.636
+    335.64
    ],
    "evenOdd": false,
    "params": {
@@ -17718,9 +17718,9 @@
    "artifact": false,
    "geometry": [
     395.682,
-    267.149,
+    272.153,
     475.042,
-    314.764
+    319.768
    ],
    "params": {
     "widthPt": 4.762,
@@ -17792,7 +17792,7 @@
     3.367,
     -3.367,
     378.848,
-    267.149
+    272.153
    ],
    "reason": "<marker id=\"mk3\"> on the start vertex of div[4]/div[2]/svg[0]/g[0]/path[0]",
    "form": "Fx2",
@@ -17821,7 +17821,7 @@
     -0.469,
     -4.738,
     432.625,
-    327.783
+    332.787
    ],
    "reason": "<marker id=\"mk3\"> on the mid vertex of div[4]/div[2]/svg[0]/g[0]/path[0]",
    "form": "Fx2",
@@ -17850,7 +17850,7 @@
     -3.962,
     -2.641,
     478.343,
-    283.656
+    288.66
    ],
    "reason": "<marker id=\"mk3\"> on the end vertex of div[4]/div[2]/svg[0]/g[0]/path[0]",
    "form": "Fx2",
@@ -17869,7 +17869,7 @@
    "artifact": false,
    "geometry": [
     472.851,
-    260.196,
+    265.2,
     61.52,
     61.52
    ],
@@ -17879,7 +17879,7 @@
     0,
     61.52,
     472.851,
-    260.196
+    265.2
    ],
    "reason": "filter: url(\"#blur3\") on div[4]/div[2]/svg[0]/g[0]/circle[0]: PDF has no filter primitives",
    "feature": "filter",
@@ -17910,9 +17910,9 @@
    "artifact": false,
    "geometry": [
     378.848,
-    250.314,
+    255.318,
     534.371,
-    327.783
+    332.787
    ],
    "reason": "group opacity 0.6 over 2 painting children",
    "form": "Fm12",
@@ -17932,9 +17932,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    141.402,
+    146.406,
     187.066,
-    220.761
+    225.765
    ],
    "reason": "the <svg> viewport at div[5]/div[0]/svg[0]",
    "evenOdd": false
@@ -17949,9 +17949,9 @@
    "artifact": false,
    "geometry": [
     44.214,
-    181.081,
+    186.085,
     171.189,
-    181.081
+    186.085
    ],
    "params": {
     "widthPt": 2.381,
@@ -18092,7 +18092,7 @@
     0,
     -2.381,
     32.31,
-    192.985
+    197.989
    ],
    "reason": "<marker id=\"outer\"> on the start vertex of div[5]/div[0]/svg[0]/path[0]",
    "form": "Fx4",
@@ -18121,7 +18121,7 @@
     0,
     -2.381,
     95.797,
-    192.985
+    197.989
    ],
    "reason": "<marker id=\"outer\"> on the mid vertex of div[5]/div[0]/svg[0]/path[0]",
    "form": "Fx4",
@@ -18150,7 +18150,7 @@
     0,
     -2.381,
     159.285,
-    192.985
+    197.989
    ],
    "reason": "<marker id=\"outer\"> on the end vertex of div[5]/div[0]/svg[0]/path[0]",
    "form": "Fx4",
@@ -18169,9 +18169,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    150.999,
+    156.003,
     362.801,
-    230.359
+    235.363
    ],
    "reason": "the <svg> viewport at div[5]/div[1]/svg[0]",
    "evenOdd": false
@@ -18186,9 +18186,9 @@
    "artifact": false,
    "geometry": [
     204.076,
-    150.999,
+    156.003,
     362.795,
-    230.359
+    235.363
    ],
    "evenOdd": false,
    "params": {
@@ -18210,9 +18210,9 @@
    "artifact": false,
    "geometry": [
     235.82,
-    150.999,
+    156.003,
     259.628,
-    230.359
+    235.363
    ],
    "evenOdd": false,
    "params": {
@@ -18234,9 +18234,9 @@
    "artifact": false,
    "geometry": [
     307.243,
-    150.999,
+    156.003,
     331.051,
-    230.359
+    235.363
    ],
    "evenOdd": false,
    "params": {
@@ -18271,9 +18271,9 @@
    "artifact": false,
    "geometry": [
     251.692,
-    158.935,
+    163.939,
     315.179,
-    222.423
+    227.427
    ],
    "evenOdd": false,
    "params": {
@@ -18295,9 +18295,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    150.999,
+    156.003,
     538.535,
-    230.359
+    235.363
    ],
    "reason": "the <svg> viewport at div[5]/div[2]/svg[0]",
    "evenOdd": false
@@ -18312,9 +18312,9 @@
    "artifact": false,
    "geometry": [
     387.747,
-    155.761,
+    160.765,
     530.593,
-    225.597
+    230.601
    ],
    "ctm": [
     1.587,
@@ -18322,7 +18322,7 @@
     0,
     -1.587,
     379.811,
-    230.359
+    235.363
    ],
    "params": {
     "type": 3,
@@ -18336,10 +18336,10 @@
     ],
     "coordsPt": [
      459.17,
-     190.679,
+     195.683,
      0,
      459.17,
-     190.679,
+     195.683,
      190.463
     ],
     "extend": [
@@ -18638,7 +18638,7 @@
      0,
      -1.587,
      379.811,
-     230.359
+     235.363
     ],
     "spread": "reflect",
     "periods": 29,
@@ -18658,9 +18658,9 @@
    "artifact": false,
    "geometry": [
     28.336,
-    41.124,
+    46.128,
     187.066,
-    120.484
+    125.488
    ],
    "reason": "the <svg> viewport at div[6]/div[0]/svg[0]",
    "evenOdd": false
@@ -18675,9 +18675,9 @@
    "artifact": false,
    "geometry": [
     36.278,
-    45.886,
+    50.89,
     179.125,
-    115.722
+    120.726
    ],
    "ctm": [
     1.587,
@@ -18685,7 +18685,7 @@
     0,
     -1.587,
     28.342,
-    120.484
+    125.488
    ],
    "params": {
     "type": 2,
@@ -18697,9 +18697,9 @@
     ],
     "coordsPt": [
      -122.441,
-     231.587,
+     236.591,
      234.676,
-     -6.491
+     -1.487
     ],
     "extend": [
      true,
@@ -18988,7 +18988,7 @@
      0,
      -1.587,
      28.342,
-     120.484
+     125.488
     ],
     "spread": "repeat",
     "periods": 15,
@@ -19008,9 +19008,9 @@
    "artifact": false,
    "geometry": [
     204.07,
-    31.527,
+    36.531,
     362.801,
-    110.886
+    115.89
    ],
    "reason": "the <svg> viewport at div[6]/div[1]/svg[0]",
    "evenOdd": false
@@ -19025,9 +19025,9 @@
    "artifact": false,
    "geometry": [
     212.012,
-    87.078,
+    92.082,
     283.436,
-    102.95
+    107.954
    ],
    "params": {
     "widthPt": 4.762,
@@ -19051,9 +19051,9 @@
    "artifact": false,
    "geometry": [
     291.372,
-    87.078,
+    92.082,
     354.859,
-    102.95
+    107.954
    ],
    "params": {
     "widthPt": 4.762,
@@ -19074,9 +19074,9 @@
    "artifact": false,
    "geometry": [
     219.948,
-    39.463,
+    44.467,
     346.923,
-    71.206
+    76.21
    ],
    "params": {
     "widthPt": 6.349,
@@ -19097,9 +19097,9 @@
    "artifact": false,
    "geometry": [
     379.805,
-    41.124,
+    46.128,
     538.535,
-    120.484
+    125.488
    ],
    "reason": "the <svg> viewport at div[6]/div[2]/svg[0]",
    "evenOdd": false
@@ -19114,9 +19114,9 @@
    "artifact": false,
    "geometry": [
     377.341,
-    46.415,
+    51.419,
     530.593,
-    112.548
+    117.552
    ],
    "params": {
     "widthPt": 2.381,
@@ -19137,9 +19137,9 @@
    "artifact": false,
    "geometry": [
     377.341,
-    46.415,
+    51.419,
     530.593,
-    112.548
+    117.552
    ],
    "evenOdd": false,
    "params": {
@@ -19161,9 +19161,9 @@
    "artifact": false,
    "geometry": [
     392.508,
-    91.914,
+    96.918,
     430.601,
-    110.961
+    115.965
    ],
    "evenOdd": false,
    "params": {
@@ -19185,9 +19185,9 @@
    "artifact": false,
    "geometry": [
     487.739,
-    85.566,
+    90.57,
     525.832,
-    114.135
+    119.139
    ],
    "evenOdd": false,
    "params": {
@@ -19209,9 +19209,9 @@
    "artifact": false,
    "geometry": [
     443.298,
-    49.06,
+    54.064,
     490.914,
-    49.06
+    54.064
    ],
    "params": {
     "widthPt": 3.174,
@@ -19232,9 +19232,9 @@
    "artifact": false,
    "geometry": [
     443.298,
-    49.06,
+    54.064,
     490.914,
-    49.06
+    54.064
    ],
    "evenOdd": false,
    "params": {
@@ -24211,7 +24211,7 @@
      0,
      2.11625,
      240.9453125,
-     158.0625
+     151.390625
     ],
     "bbox": [
      8,
@@ -24221,7 +24221,7 @@
     ],
     "clientRect": [
      240.9375,
-     158.0625,
+     151.390625,
      211.640625,
      105.8125
     ],
@@ -24244,7 +24244,7 @@
      0,
      2.11625,
      475.2578125,
-     158.0625
+     151.390625
     ],
     "bbox": [
      20,
@@ -24254,7 +24254,7 @@
     ],
     "clientRect": [
      475.25,
-     158.0625,
+     151.390625,
      211.640625,
      105.8125
     ],
@@ -24277,7 +24277,7 @@
      0,
      2.11625,
      709.5703125,
-     158.0625
+     151.390625
     ],
     "bbox": [
      32,
@@ -24287,7 +24287,7 @@
     ],
     "clientRect": [
      709.5625,
-     158.0625,
+     151.390625,
      211.640625,
      105.8125
     ],
@@ -24310,7 +24310,7 @@
      0,
      2.11625,
      240.9453125,
-     291.765625
+     285.09375
     ],
     "bbox": [
      32,
@@ -24320,7 +24320,7 @@
     ],
     "clientRect": [
      240.9375,
-     291.765625,
+     285.09375,
      211.640625,
      105.8125
     ],
@@ -24343,7 +24343,7 @@
      0,
      2.11625,
      475.2578125,
-     291.765625
+     285.09375
     ],
     "bbox": [
      0,
@@ -24353,7 +24353,7 @@
     ],
     "clientRect": [
      475.25,
-     291.765625,
+     285.09375,
      211.640625,
      105.8125
     ],
@@ -24376,7 +24376,7 @@
      0,
      2.11625,
      709.5703125,
-     291.765625
+     285.09375
     ],
     "bbox": [
      0,
@@ -24386,7 +24386,7 @@
     ],
     "clientRect": [
      709.5625,
-     291.765625,
+     285.09375,
      211.640625,
      105.8125
     ],
@@ -24409,7 +24409,7 @@
      0,
      2.11625,
      240.9453125,
-     425.46875
+     418.796875
     ],
     "bbox": [
      0,
@@ -24419,7 +24419,7 @@
     ],
     "clientRect": [
      240.9375,
-     425.46875,
+     418.796875,
      211.640625,
      105.8125
     ],
@@ -24442,7 +24442,7 @@
      0,
      2.11625,
      475.2578125,
-     425.46875
+     418.796875
     ],
     "bbox": [
      0,
@@ -24452,7 +24452,7 @@
     ],
     "clientRect": [
      475.25,
-     425.46875,
+     418.796875,
      211.640625,
      105.8125
     ],
@@ -24475,7 +24475,7 @@
      0,
      2.11625,
      709.5703125,
-     425.46875
+     418.796875
     ],
     "bbox": [
      0,
@@ -24485,7 +24485,7 @@
     ],
     "clientRect": [
      709.5625,
-     425.46875,
+     418.796875,
      211.640625,
      105.8125
     ],
@@ -24508,7 +24508,7 @@
      0,
      2.11625,
      240.9453125,
-     559.171875
+     552.5
     ],
     "bbox": [
      0,
@@ -24518,7 +24518,7 @@
     ],
     "clientRect": [
      240.9375,
-     559.171875,
+     552.5,
      211.640625,
      105.8125
     ],
@@ -24541,7 +24541,7 @@
      0,
      2.11625,
      475.2578125,
-     571.96875
+     565.296875
     ],
     "bbox": [
      0,
@@ -24551,7 +24551,7 @@
     ],
     "clientRect": [
      475.25,
-     571.96875,
+     565.296875,
      211.640625,
      105.8125
     ],
@@ -24574,7 +24574,7 @@
      0,
      2.11625,
      709.5703125,
-     559.171875
+     552.5
     ],
     "bbox": [
      0,
@@ -24584,7 +24584,7 @@
     ],
     "clientRect": [
      709.5625,
-     559.171875,
+     552.5,
      211.640625,
      105.8125
     ],
@@ -24607,7 +24607,7 @@
      0,
      2.11625,
      240.9453125,
-     705.671875
+     699
     ],
     "bbox": [
      0,
@@ -24617,7 +24617,7 @@
     ],
     "clientRect": [
      240.9375,
-     705.671875,
+     699,
      211.640625,
      105.8125
     ],
@@ -24640,7 +24640,7 @@
      0,
      2.11625,
      475.2578125,
-     705.671875
+     699
     ],
     "bbox": [
      0,
@@ -24650,7 +24650,7 @@
     ],
     "clientRect": [
      475.25,
-     705.671875,
+     699,
      211.640625,
      105.8125
     ],
@@ -24673,7 +24673,7 @@
      0,
      2.11625,
      709.5703125,
-     705.671875
+     699
     ],
     "bbox": [
      0,
@@ -24683,7 +24683,7 @@
     ],
     "clientRect": [
      709.5625,
-     705.671875,
+     699,
      211.640625,
      105.8125
     ],
@@ -24706,7 +24706,7 @@
      0,
      2.11625,
      240.9453125,
-     852.171875
+     845.5
     ],
     "bbox": [
      10,
@@ -24716,7 +24716,7 @@
     ],
     "clientRect": [
      240.9375,
-     852.171875,
+     845.5,
      211.640625,
      105.8125
     ],
@@ -24739,7 +24739,7 @@
      0,
      2.11625,
      475.2578125,
-     839.375
+     832.703125
     ],
     "bbox": [
      0,
@@ -24749,7 +24749,7 @@
     ],
     "clientRect": [
      475.25,
-     839.375,
+     832.703125,
      211.640625,
      105.8125
     ],
@@ -24772,7 +24772,7 @@
      0,
      2.11625,
      709.5703125,
-     839.375
+     832.703125
     ],
     "bbox": [
      5,
@@ -24782,7 +24782,7 @@
     ],
     "clientRect": [
      709.5625,
-     839.375,
+     832.703125,
      211.640625,
      105.8125
     ],
@@ -24805,7 +24805,7 @@
      0,
      2.11625,
      240.9453125,
-     985.875
+     979.203125
     ],
     "bbox": [
      5,
@@ -24815,7 +24815,7 @@
     ],
     "clientRect": [
      240.9375,
-     985.875,
+     979.203125,
      211.640625,
      105.8125
     ],
@@ -24838,7 +24838,7 @@
      0,
      2.11625,
      475.2578125,
-     998.671875
+     992
     ],
     "bbox": [
      5,
@@ -24848,7 +24848,7 @@
     ],
     "clientRect": [
      475.25,
-     998.671875,
+     992,
      211.640625,
      105.8125
     ],
@@ -24871,7 +24871,7 @@
      0,
      2.11625,
      709.5703125,
-     985.875
+     979.203125
     ],
     "bbox": [
      0.8709521889686584,
@@ -24881,7 +24881,7 @@
     ],
     "clientRect": [
      709.5625,
-     985.875,
+     979.203125,
      211.640625,
      105.8125
     ],
@@ -25231,5 +25231,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 290278
+ "bytes": 290264
 }

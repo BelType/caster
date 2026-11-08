@@ -292,10 +292,18 @@ function viaCli(doc: Doc): Buffer {
   }
 }
 
-/** The commits the corpus is printed with: this checkout's, and the Cicero checkout's the CLI's door serves (`node_modules/@beltype/cicero`, a link to the sibling), each short. */
+/**
+ * What the corpus is printed with: this checkout's commit, and the Cicero the CLI's door serves (`node_modules/@beltype/cicero`), short.
+ *
+ * @remarks A Cicero linked to a checkout of its own is named by its commit; one installed from npm is named `npm <version>`, since `git rev-parse` inside `node_modules` answers the enclosing CLI checkout's commit, which named the CLI as Cicero until 2026-11-08 (CHANGELOG).
+ */
 function heads(): { caster: string; cicero: string } {
-  const rev = (cwd: string) => execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd }).toString().trim();
-  return { caster: rev(PACKAGE), cicero: rev(fs.realpathSync(path.join(CLI, 'node_modules', '@beltype', 'cicero'))) };
+  const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  const cicero = fs.realpathSync(path.join(CLI, 'node_modules', '@beltype', 'cicero'));
+  let own = false;
+  try { own = fs.realpathSync(git(cicero, 'rev-parse', '--show-toplevel')) === cicero; } catch { /* not in any checkout */ }
+  const version = JSON.parse(fs.readFileSync(path.join(cicero, 'package.json'), 'utf8')).version;
+  return { caster: git(PACKAGE, 'rev-parse', '--short', 'HEAD'), cicero: own ? git(cicero, 'rev-parse', '--short', 'HEAD') : `npm ${version}` };
 }
 
 // ---- the verbs -------------------------------------------------------------------------------------------------------

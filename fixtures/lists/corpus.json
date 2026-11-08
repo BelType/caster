@@ -1,15 +1,15 @@
 {
- "caster": "a059f82",
- "cicero": "bdc2242",
+ "caster": "8519c63",
+ "cicero": "npm 0.1.11",
  "documents": [
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "42b0e88175ebb2fcdcc3b23f71fbf22444d95c6f465d630031aa507be853d7d2",
-   "bytes": 111781,
-   "cli": "differs: first differing byte at offset 48 (recorded 111781 bytes, now 109728), in object 1 recorded and object 1 now",
+   "sha256": "c13a0a9631e2b519b7bd9c281a563352ce893a6ec7ec2b2c63774dbe5503ce9c",
+   "bytes": 110814,
+   "cli": "same",
    "list": {
-    "bytes": 189064,
+    "bytes": 186645,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -20,11 +20,11 @@
   {
    "name": "cast",
    "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
-   "sha256": "e6d82af1ea35a94b7720b324b507ada6cc28461b429c02a459b92aa19689cff1",
-   "bytes": 35142,
-   "cli": "differs: first differing byte at offset 22213 (recorded 35142 bytes, now 35149), in object 31 recorded and object 31 now",
+   "sha256": "60d1a28f01b33767542f621f4df42993bdc6906fda9d9cbf83633591d403b0da",
+   "bytes": 34139,
+   "cli": "same",
    "list": {
-    "bytes": 90464,
+    "bytes": 89085,
     "blobs": [
      "0d19fed95fab5835ad6e85c857b6ac150cffcfeb83b75436f972300de6160697",
      "16dae91cc8620c4870c3cf3beb61f263fe648976fd4b815dff7a29b08af17752",
@@ -35,10 +35,10 @@
   {
    "name": "cast-divided-row",
    "why": "a table row divided across pages",
-   "sha256": "e8317215b0943ca7b6184cb374746a6196bba82e11d113a67728dc3e5e296ef6",
-   "bytes": 21824,
+   "sha256": "6fcb2b0515492cf5f9812470102d606990cff0a38e72ab35e44cb2d0382ca417",
+   "bytes": 20923,
    "list": {
-    "bytes": 65632,
+    "bytes": 62981,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
@@ -47,17 +47,18 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "986c7b677e2c98c3a08dcee63448cee6e702889bd0a139d759844f7fbb6dc657",
-   "bytes": 173125,
+   "sha256": "dfc3f351e2069d8576b00b4c80bf402506d56f8c80644b4ed896a84c0ca239f5",
+   "bytes": 176722,
    "options": {
     "blackText": "100k"
    },
    "list": {
-    "bytes": 33541,
+    "bytes": 34379,
     "blobs": [
-     "07cd969af98c1de73bd32427aa77bfea2e953f50779ae21694f1f5511ea7fd40",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
+     "97735aeb3a12cf6d4c290e0f96b9f3b0a9b4dc37cab8f31bde522eb6e30802db",
+     "ad380972598e804570a326f9be6b6c5d9ec7ba58a407a44590aa913ca11bb67d",
      "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5"
     ]
    }
@@ -65,10 +66,10 @@
   {
    "name": "facsimile",
    "why": "a page of another PDF, reopened by pdf-lib inside the writer",
-   "sha256": "dd6b979c0f7109421d746532247bc28dc939e37aa78596e6b8c5f703fc4fb867",
-   "bytes": 115296,
+   "sha256": "c66933be844a764bd26a88327547d776499b7b38f60cd8769857fa09479f0088",
+   "bytes": 114910,
    "list": {
-    "bytes": 4690,
+    "bytes": 4611,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "ca5f3785f28f421b2a8ecfd5ebbe9bfdf395e6832f6fa67d48ad8603faf36cbd"
@@ -78,10 +79,10 @@
   {
    "name": "webp",
    "why": "a WebP, which the image pass decodes through the browser before the list",
-   "sha256": "ef0f11e5ab300fe8fc9718128f01eb8120976e90e1529b38408a6d0d8aceb8ea",
-   "bytes": 15750,
+   "sha256": "69124f6bb2ed4a87ddab452fee95e6c96073447f20684590dfdb382fdf94d26b",
+   "bytes": 15752,
    "list": {
-    "bytes": 4591,
+    "bytes": 4592,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "fdef67ed03d9c723810020f2a8a1339850fd0202a896ceea337a2859729350c1"
@@ -91,10 +92,10 @@
   {
    "name": "arithmetic",
    "why": "an arithmetic-coded JPEG, which the browser refuses to decode, so the image pass hands the file through",
-   "sha256": "bc48b6d069eba55caf6fc787e01e660c43f01f85875f032e29e76dccee684ef8",
-   "bytes": 14233,
+   "sha256": "f8ff172caebe6021510ce99250ca9a1128e7227cdb62c0ac574843c8e7b2c755",
+   "bytes": 14237,
    "list": {
-    "bytes": 5118,
+    "bytes": 5119,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "495a93be484b5c3a4b3f1278561f179c3a121aa1104f6abef4ae39364e2ae5fc"
@@ -104,10 +105,10 @@
   {
    "name": "photo",
    "why": "an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list",
-   "sha256": "2b0bdde1b0d80346346f33fccbd4c703ade80feaeaca9c3213818113dcb00eff",
-   "bytes": 38346,
+   "sha256": "da8c5aff39144576a30751f2815b7b78315c93e4d78ce9c1d3e4dd5b019f21c8",
+   "bytes": 38351,
    "list": {
-    "bytes": 6597,
+    "bytes": 6598,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "90047c45011fc5f796e495d71874e619dc6d2d39073f5640bf127eab121c8972"
@@ -117,8 +118,8 @@
   {
    "name": "faces",
    "why": "a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2",
-   "sha256": "6159a43916d2bdef659fa90ce22ad45ade1a696615844159af5edea6ba25c50d",
-   "bytes": 35478,
+   "sha256": "cff686d2d2eae7ffe77443f5abb7752d35177cb58037b2d1484f35efe2ea72bf",
+   "bytes": 35480,
    "list": {
     "bytes": 7623,
     "blobs": [
@@ -143,10 +144,10 @@
   {
    "name": "images",
    "why": "a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel",
-   "sha256": "d05f12b03b26c7a9938fc6d7023c9375b7b0f6e4a7fd926a9e24dc56bb49c81a",
-   "bytes": 26472,
+   "sha256": "843c12ab4e4412aa6637ca5150c287d42dd218fbac6221dddebff4963e99857d",
+   "bytes": 26492,
    "list": {
-    "bytes": 13837,
+    "bytes": 13838,
     "blobs": [
      "0c9fc65dab67d463886f5e8fa01f4c19bf2d7a2f1b6e928712221338ab8d3d5c",
      "18a5c0178233370f7d628b46a29c5124c002ee40b48cd4e23606edb8cae5f379",
@@ -164,10 +165,10 @@
   {
    "name": "facsimile-pages",
    "why": "two pages of one facsimile file",
-   "sha256": "bc3fb807ada18f90bd87c9be6d31b3dc430de6d91a9879dc895a700c8187575e",
-   "bytes": 111424,
+   "sha256": "f5ed957f01810254f2f8ecf3c1069705de2796b6d2f9e78d26c2be47e11b7fb7",
+   "bytes": 111425,
    "list": {
-    "bytes": 3208,
+    "bytes": 3209,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "ca5f3785f28f421b2a8ecfd5ebbe9bfdf395e6832f6fa67d48ad8603faf36cbd"
@@ -177,10 +178,10 @@
   {
    "name": "vectors",
    "why": "an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)",
-   "sha256": "44e2e32ee98d7317109998afb2cb546a1bd730003ef0c58a7825b7cfa29602c9",
-   "bytes": 9092,
+   "sha256": "96e2683a949e533d0e05f894b6f1ce35922c850d6c85ac3e0ec75968011ff6f6",
+   "bytes": 9089,
    "list": {
-    "bytes": 8062,
+    "bytes": 8070,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
@@ -189,10 +190,10 @@
   {
    "name": "pages",
    "why": "a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)",
-   "sha256": "90b686c9c8803835cad2205270bcd75547483abc89e12d3177aa37e84133445a",
-   "bytes": 17627,
+   "sha256": "0be756fcd11d907096cc013c37d973c40e0f1493e3d1e1954be4d21d483a20eb",
+   "bytes": 17650,
    "list": {
-    "bytes": 13628,
+    "bytes": 13637,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]
@@ -201,10 +202,10 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "2ff705f3f45051c9200efda3daaf86f4531496316a2c20fa570a7737ea063bec",
-   "bytes": 290278,
+   "sha256": "3614a39f5ebeda175d7b7b1963f8afd52d93bff7e6c4f4d17081e1ea40cdbf54",
+   "bytes": 290264,
    "list": {
-    "bytes": 148651,
+    "bytes": 148525,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
@@ -219,10 +220,10 @@
   {
    "name": "downsample",
    "why": "a synthetic JPEG of 4 000 by 3 000 pixels in a box three inches wide, and a synthetic PNG of 2 400 by 1 600 placed twice, in a box 40 mm wide and in one 80 mm wide, all far above 450 ppi: the image pass reduces each to 300 ppi before the list, the PNG for its largest box (the smallest resolution over its uses), and the photo rule decides what the reduced pixels become",
-   "sha256": "98adc23cf949aa1749329ed25a0c428727ab70682c202105241bc9ce9de60c71",
-   "bytes": 73698,
+   "sha256": "bc155b174566c40770897025cba5b54bcc253b87ad1454af1624ec7d3b45e0ff",
+   "bytes": 73707,
    "list": {
-    "bytes": 8340,
+    "bytes": 8347,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "5d9435988c8f571cb3715d29707518b8264b55ca840bebd5432ad683e5dc49e6",
@@ -233,10 +234,10 @@
   {
    "name": "canvas",
    "why": "a `<canvas>` figure painted by a script (a gradient, a circle, a square, three lines) with an `aria-label`: the image pass reads its pixels off the element as eight-bit RGBA, past the photo rule, and the list holds them as an image; the figure's /Alt is the label",
-   "sha256": "a0610a1ddaf43c021ba2b5bb5cf9f04af83dfc0aec184ee3a1a65249d9e3c140",
-   "bytes": 143082,
+   "sha256": "8c8d18c758122a539b778d6d8aa2aba6bc103c4984d21d5b6e05563a8ed7981f",
+   "bytes": 143084,
    "list": {
-    "bytes": 4572,
+    "bytes": 4573,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "f00b3a5d87956d59f7087d62a135fb033e04952adfa2d7806172e1159639204f"
@@ -246,13 +247,13 @@
   {
    "name": "convert-text",
    "why": "a page of coloured text under `convertRgb: 'wasm'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted",
-   "sha256": "e9d32cfa0c34e352c4ad8dc7750f80376301c09fc1f3f4c9f1f3f2af735145ee",
-   "bytes": 155205,
+   "sha256": "c1139940fca72606aa910f5d85a07ad764cc6f705d8a338466ed96b636c5d32e",
+   "bytes": 155203,
    "options": {
     "convertRgb": "wasm"
    },
    "list": {
-    "bytes": 15781,
+    "bytes": 15772,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
      "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
@@ -263,8 +264,8 @@
   {
    "name": "convert-images",
    "why": "images under `convertImages: 'cmyk'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone",
-   "sha256": "0f057947ee8585ecb3d38346eef51446263f7f24e22066200df1328ec4583492",
-   "bytes": 850646,
+   "sha256": "fc6e77554e40163a7dedf6db5470dea13274f76f9df7004368acab0951615a4b",
+   "bytes": 850651,
    "options": {
     "convertImages": "cmyk"
    },

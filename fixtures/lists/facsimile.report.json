@@ -145,20 +145,12 @@
     24,
     453.53125,
     452.53125
-   ],
-   [
-    373.234375,
-    492.53125,
-    453.53125,
-    452.53125
    ]
   ],
   "untransformedWidthPx": [
-   453.531,
    453.531
   ],
   "offsetWidthPx": [
-   454,
    454
   ],
   "widthSource": "computed",
@@ -184,23 +176,12 @@
    ],
    "measuredWidthPx": 453.531,
    "measuredHeightPx": 452.531
-  },
-  {
-   "nominal": "",
-   "media": [
-    0,
-    0,
-    340.157,
-    340.157
-   ],
-   "measuredWidthPx": 453.531,
-   "measuredHeightPx": 452.531
   }
  ],
  "inferred": [],
  "svgImages": [],
  "emission": {
-  "pageCount": 2,
+  "pageCount": 1,
   "baselineMethod": "measureText",
   "columnWidthPx": 794,
   "kernAdjustments": 15,
@@ -544,8 +525,8 @@
     "text": "A",
     "xPt": 34.008,
     "rightPt": 45.457,
-    "topPt": 290.505,
-    "baselineMeasureTextPt": 270.255,
+    "topPt": 293.505,
+    "baselineMeasureTextPt": 273.255,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -573,8 +554,8 @@
     "text": "facsimile",
     "xPt": 49.453,
     "rightPt": 128.883,
-    "topPt": 290.505,
-    "baselineMeasureTextPt": 270.255,
+    "topPt": 293.505,
+    "baselineMeasureTextPt": 273.255,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -626,8 +607,8 @@
     "text": "page",
     "xPt": 132.879,
     "rightPt": 175.336,
-    "topPt": 290.505,
-    "baselineMeasureTextPt": 270.255,
+    "topPt": 293.505,
+    "baselineMeasureTextPt": 273.255,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -664,8 +645,8 @@
     "text": "The",
     "xPt": 34.008,
     "rightPt": 49.77,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -699,8 +680,8 @@
     "text": "figure",
     "xPt": 51.75,
     "rightPt": 75.949,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -743,8 +724,8 @@
     "text": "below",
     "xPt": 77.941,
     "rightPt": 103.559,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -784,8 +765,8 @@
     "text": "is",
     "xPt": 105.551,
     "rightPt": 112.207,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -816,8 +797,8 @@
     "text": "a",
     "xPt": 114.199,
     "rightPt": 119.25,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -845,8 +826,8 @@
     "text": "page",
     "xPt": 121.242,
     "rightPt": 141.563,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -883,8 +864,8 @@
     "text": "of",
     "xPt": 143.555,
     "rightPt": 151.887,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -915,8 +896,8 @@
     "text": "another",
     "xPt": 153.867,
     "rightPt": 186.891,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -962,8 +943,8 @@
     "text": "PDF,",
     "xPt": 188.871,
     "rightPt": 207.41,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1000,8 +981,8 @@
     "text": "copied",
     "xPt": 209.402,
     "rightPt": 237.691,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1044,8 +1025,8 @@
     "text": "into",
     "xPt": 239.672,
     "rightPt": 256.277,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1082,8 +1063,8 @@
     "text": "this",
     "xPt": 258.27,
     "rightPt": 273.75,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1120,8 +1101,8 @@
     "text": "one",
     "xPt": 275.742,
     "rightPt": 291.598,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1155,8 +1136,8 @@
     "text": "as",
     "xPt": 293.578,
     "rightPt": 302.824,
-    "topPt": 245.61,
-    "baselineMeasureTextPt": 235.11,
+    "topPt": 252.114,
+    "baselineMeasureTextPt": 241.614,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1187,8 +1168,8 @@
     "text": "a",
     "xPt": 34.008,
     "rightPt": 39.059,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1216,8 +1197,8 @@
     "text": "vector",
     "xPt": 41.039,
     "rightPt": 67.242,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1260,8 +1241,8 @@
     "text": "figure.",
     "xPt": 69.223,
     "rightPt": 95.906,
-    "topPt": 229.122,
-    "baselineMeasureTextPt": 218.622,
+    "topPt": 238.122,
+    "baselineMeasureTextPt": 227.622,
     "baselineProbePt": null,
     "baselineProbeBeforePt": null,
     "probeMoved": false,
@@ -1339,11 +1320,11 @@
     {
      "tag": "Figure",
      "path": "Document/Figure[0]",
-     "pg": 1,
+     "pg": 0,
      "mcids": [
       {
-       "page": 1,
-       "mcid": 0
+       "page": 0,
+       "mcid": 2
       }
      ],
      "attrs": {
@@ -1359,11 +1340,7 @@
    {
     "mcidOwners": [
      "Document/H1[0]",
-     "Document/P[0]"
-    ]
-   },
-   {
-    "mcidOwners": [
+     "Document/P[0]",
      "Document/Figure[0]"
     ]
    }
@@ -1400,7 +1377,7 @@
    "level": 1,
    "depth": 0,
    "page": 0,
-   "topPt": 290.505,
+   "topPt": 293.505,
    "count": 0
   }
  ],
@@ -1464,7 +1441,7 @@
    ],
    "paintedRectPt": [
     83.615,
-    136.075,
+    43.309,
     127.556,
     170.074
    ],
@@ -1474,11 +1451,11 @@
     0,
     170.074,
     83.615,
-    136.075
+    43.309
    ],
    "xobjectHash": "2715aa35d34b0650176841201bd5d9fadec9ccdec383a95f5795263fdad53d81",
    "xobjectName": "Fc0",
-   "page": 1,
+   "page": 0,
    "tag": "Figure",
    "alt": "The second page of the facsimile fixture",
    "effectiveDpi": 169.3,
@@ -1502,5 +1479,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 115296
+ "bytes": 114910
 }
