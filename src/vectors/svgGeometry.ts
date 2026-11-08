@@ -24,7 +24,8 @@ import { PX_TO_PT } from '../coordinates/units.ts';
 import { pageGeometryFor } from '../coordinates/pageGeometry.ts';
 import { cssShapePath, domMatrix, parsePath, roundedRectPath, shapePath, transformPath } from './pathData.ts';
 import { markerAttributes, markerPlacements, viewBoxMatrix } from './svgMarkers.ts';
-import { domPathOf, featureTagsFor, svgWords } from '../measure/textMeasure.ts';
+import { aboveClip, domPathOf, featureTagsFor, svgWords } from '../measure/textMeasure.ts';
+import type { PageClip } from '../measure/textMeasure.ts';
 import { glyphOutline, shapeWord, upemOf } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';
 import { blendName, clientToLocalMatrix, emptyNodeCommon, holdsOpenBlend, pageOfElement, placeBox, quantiseIfFramed, parseCssColor } from './vector.ts';
@@ -186,7 +187,7 @@ function localMatrix(element: Element): Matrix {
  * @param options - `clipToPage` is R5's clip, the same one `measureText` takes: a drawing the engine laid out and then clipped belongs to the continuation clone that carries it, and the clone is what paints it (*a drawing inside a continuation was painted on no page*, DESIGN.md S40). `chains` is the chain builder of `coordinates-and-pages.md` (E10). The transforms of every HTML ancestor between the page element and the `<svg>` are neutralised inside it, so `getScreenCTM()` answers with the SVG's own transform chain and the element's untransformed position and nothing else; the HTML chain becomes the `cm` the whole figure is painted under. SVG-internal transforms stay here, where the browser already composed them.
  * @throws {CasterError} The drawing names a marker, paint server, clip path or mask that is not in the `<svg>` or is not the element it should be, a gradient has no stops, or a raster fallback would have to set text.
  */
-export function collectSvg(options: { container: HTMLElement; order: PaintOrder; roots: SvgRoot[]; chains: ChainContext; clipToPage?: (page: number,element: Element) => { topPx: number; bottomPx: number; }|null; faceOf?: FaceOf; }): SvgResult {
+export function collectSvg(options: { container: HTMLElement; order: PaintOrder; roots: SvgRoot[]; chains: ChainContext; clipToPage?: (page: number,element: Element) => PageClip|null; faceOf?: FaceOf; }): SvgResult {
   const { container, order, roots, chains } = options;
   const containerRect = container.getBoundingClientRect();
   const out: SvgResult = {
@@ -208,7 +209,7 @@ export function collectSvg(options: { container: HTMLElement; order: PaintOrder;
     const page = placement.page;
     // R5's clip, applied to a whole drawing rather than to a line (*a drawing inside a continuation was painted on no page*, DESIGN.md S40). A straddling block's original carries its tail laid out below the cut and only clipped, so a drawing in that tail is expressed against the page the block was assigned to and lands far below it — off the media box, painted nowhere anybody can see. The copy the reader sees is inside the continuation clone, which the walk now collects; this is the other half of that, and without it the same drawing would be painted twice.
     const area = options.clipToPage?.(page, root.element) ?? null;
-    if (area && (placement.box.y >= area.bottomPx - 0.01 || placement.box.y + placement.box.h <= area.topPx + 0.01)) continue;
+    if (area && (placement.box.y >= area.bottomPx - 0.01 || aboveClip(area, placement.box.y, placement.box.h))) continue;
     const toPage = placement.toPage;
     const clientToLocal = clientToLocalMatrix(page, containerRect);
 
