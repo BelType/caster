@@ -2,7 +2,7 @@
 
 A browser can print a page to PDF. What comes out is a picture of the page with text on top: no structure a screen reader can walk, no colour a press can trust, fonts embedded however the browser saw fit. Caster is BelType's own printer. It runs inside the tab, reads the pages a paged-media engine has already laid out in the DOM, and writes a PDF 2.0 file. The file is also PDF/UA-2: real glyphs, real font programs, exact inks and a structure tree.
 
-The package is private and unpublished. Nothing declares a dependency on it: the editing tools and the CLI each look for it and offer the printer only where it resolves. Its one runtime dependency is [the common package](#the-common-package), for the error types.
+The package is published on npm as `@beltype/caster`, from `codeberg.org/BelType/caster`. The BelType command line (`codeberg.org/BelType/cli`) depends on it, pinned exactly, and prints with it by default. Its one runtime dependency is `@beltype/common`, for the error types, the `data-beltype` words and the flag grammar.
 
 Its whole content is a port. Thirteen experiments in the sibling repository `browser-to-pdf-experiments` settled each capability separately and left a guide; this package composes them once. Every module under `src/` names its harness source, its experiments and its guide chapter in its first lines.
 
@@ -251,40 +251,19 @@ So every host injects the module into the document being printed and talks to it
 
 The print frame is a separate frame, because `prepare()` alters the document and the author's live preview must not change. It is `visibility: hidden` and never `display: none`: layout has to happen or nothing can be measured.
 
-## The three doors into Caster
+## The doors into Caster
 
 | Door | Host | Engine | How the module arrives |
 | :--- | :--- | :--- | :--- |
-| The print panel | `packages/editing-tools/assets/caster-panel.js`, `printOnce()` | Cicero, in a hidden print frame | optional import-map prefix, injected into the frame |
-| The print panel under Paged.js | the same `printOnce()`, with `engine: 'pagedjs'` | Paged.js, via `paginatePaged()`, in a hidden print frame | the same |
-| The command line | `packages/engine-pagedjs/src/render-pdf.js`, `castPdf()` | Paged.js, headless | served at `/_beltype/caster/` by `casterAssets()`, imported inside the page |
+| `beltype print` | the BelType command line, `codeberg.org/BelType/cli` | Cicero, in a headless page | the CLI's pinned `@beltype/caster`, served into the page it prints |
+| `print({ strip })` | any host that lays its own pages out (*`print()` takes a strip from its host*, DESIGN.md S62) | none | the host imports it into the document it prints |
+| The print panel, and `build --pdf --printer caster` | the BelType monorepo's editing tools and its CLI (`github.com/egildo/beltype`) | Cicero or Paged.js | the monorepo's own copy, `packages/caster`, which this repository does not drive |
 
-In the editing tools the panel prints from whichever engine is active. Under Cicero the frame is dressed first (the author's stylesheets adopted, as in the live pane), because Cicero reads `@page` geometry from the CSSOM. Under Paged.js the frame is dressed too, with the author's sheets adopted for the length of `prepare()` (the Polisher inserts them only inside `preview()`, after it). The preview is not prepared in either seat, under either engine: preparation must not change layout, so the pages the author looks at are the pages the file gets, and `test/preview-unprepared.test.ts` checks it over the self-contained cast fixtures. The panel's report lists pages, bytes, capabilities, fonts, images and warnings; an export error names an element, and where the belt stamped a source position it opens the author's line.
+Under `beltype print` Caster is the default printer and Chromium's own print the other (`--printer chromium`); the CLI's README owns the flags. The preview is not prepared under any host: preparation must not change layout, so the pages the author looks at are the pages the file gets, and `test/preview-unprepared.test.ts` checks it over the self-contained cast fixtures.
 
 ```bash
-node bin/beltype.js edit packages/caster/fixtures/specimen/index.md    # then press print in the preview bar
-node bin/beltype.js build ./test/specimen.md --pdf --printer caster    # the same printer, headless
+beltype print paper/index.html                       # Cicero cuts, Caster prints
 ```
-
-```mermaid
-sequenceDiagram
-  participant O as cli orchestrator
-  participant S as dev server
-  participant P as headless Chromium page
-  participant C as Caster in the page
-  O->>O: bootstrapJs({ hostDriven: true }) and casterAssets()
-  O->>S: serve the document plus /_beltype/caster and /_beltype/common
-  O->>P: renderPdf(url, pdfPath, { printer: 'caster' })
-  P->>P: wait for __BELTYPE_STAGES_DONE__
-  P->>C: import /_beltype/caster/src/index.js
-  P->>C: prepare(document)
-  P->>P: PagedPolyfill.preview() under the 45 s guard
-  P->>C: print({ document })
-  C-->>O: bytes as base64, or a refusal
-  O->>O: write the file, or fail the run
-```
-
-`--printer` is a flag, not a config key, and takes `chromium` (the default) or `caster`. It requires `--pdf`. Under `--engine site` or `--engine cicero` it refuses by name, since neither presents pages to a headless run, and it refuses where the private package is absent from the install. A refusal inside the page is the run's failure, word for word.
 
 > **Why not fall back to Chromium's print.** A file that silently came from the other printer is not the file that was asked for. Nobody could tell afterwards which one they hold.
 
@@ -368,7 +347,7 @@ npm run identity -- browser <dir> [--out <dir>]       # each drawing a corpus pa
 
 `dir` defaults to `fixtures/lists/`. `record` and `check` need the CLI's checkout (`BELTYPE_CLI`, the sibling `../cli` by default) and Chromium; `replay` needs neither. None of them runs in `npm test`, which replays the committed lists on its own (`test/displayList.test.ts`, `test/determinism.test.ts`).
 
-`fixtures/lists/` is the corpus, committed: for each of eight documents the file the page printed (`<name>.pdf`), its display list without blobs (`<name>.json`) and its report with the timings removed (`<name>.report.json`); `blobs/` holds each blob once under its SHA-256; `corpus.json` names every file's hash and the blobs each list uses. The documents are `@beltype/specimens`' paper, the cast fixture and its divided row, and five pages under `fixtures/roads/` that take the roads the paper does not (rotated text, gradients and soft masks, spot inks, print marks, a raster fallback, a facsimile, a WebP, an arithmetic JPEG, an opaque photo).
+`fixtures/lists/` is the corpus, committed: for each of nineteen documents the file the page printed (`<name>.pdf`), its display list without blobs (`<name>.json`) and its report with the timings removed (`<name>.report.json`); `blobs/` holds each blob once under its SHA-256; `corpus.json` names every file's hash and the blobs each list uses. The documents are `@beltype/specimens`' paper, the cast fixture and its divided row, and the pages under `fixtures/roads/` that take the roads the paper does not (rotated text, gradients and soft masks, spot inks, print marks, a raster fallback, a facsimile, a WebP, an arithmetic JPEG, an opaque photo, a CFF2 face, a canvas, downsampling and the conversions to CMYK); `corpus.json` names them.
 
 ## Caster's files
 
@@ -392,18 +371,18 @@ npm run identity -- browser <dir> [--out <dir>]       # each drawing a corpus pa
 | `profiles/` | `srgb.icc`, the compact sRGB profile of saucecontrol's collection (CC0), committed; its source and licence are in `profiles/README.md` |
 | `fixtures/` | `lists/` (the committed display lists, their blobs and the files printed from them), `roads/` (the corpus's small documents), `specimen/` (the venue the printer is proved on), `default-faces/`, `margins/`, `pairing/` |
 
-Everything under `src/` is plain ESM with JSDoc types. Every module's header opens by naming its harness source and experiments (`Ported from <harness file> (E#)`) and the guide section it follows, or says `Caster's own; no harness source` and why, then what the port changed; a reader can go from any file to the experiment that settled it. The whole package is checked (`checkJs: true` in `jsconfig.json`), so a file needs no `// @ts-check` line, and `test/check.test.js` runs the check inside `npm test` and skips where `typescript` is not installed. The convention is BelType's, generalised from this package's own mode (*`npm run check` types Caster's own files*, `packages/caster/DESIGN.md` S5), and its reasons are [`.claude/decisions/project/types-live-beside-the-code.md`](../../.claude/decisions/project/types-live-beside-the-code.md). Caster checks against its siblings' real types, with no hand-written sibling stubs and no `paths` lines for them: every sibling is typed and checked, which answers that proposition's reason (untyped siblings whose errors became Caster's) at its source. The stubs had drifted as a second authority does: `isWithin`'s arguments were declared reversed, and the browser was typed `any`, which is how a puppeteer-only verb once type-checked for two days. `capability(name)` is typed by `CapabilityMap` and answers `CapabilityMap[name]` with no `| undefined`, which is "never a fallback" in a form the checker holds. pdf-lib and fast-png are typed from the declarations their packages ship; fontkit, harfbuzzjs, lcms-wasm and wawoff2 stay `any` (`types/vendor.d.ts`), because a hand-written surface would be a second version to keep in step. A cast to `any` carries a note saying why, and pdf-lib's protected internals are the expected case. `colour/hintPaints.js` and `fonts/fontkitShaper.js` are ported and tested but not reached by `print()`; the flags that would reach them refuse. `colour/rgbToCmyk.js` is reached under `convertRgb: 'wasm'` only; its endpoint half is not.
+Everything under `src/` is TypeScript under `strict` and `erasableSyntaxOnly`, run by node directly and built to `dist/` by `pnpm run build`; relative imports name `./x.ts`, and the table above names each module by its old `.js` name, which is its `.ts` file's. Every module's header opens by naming its harness source and experiments (`Ported from <harness file> (E#)`) and the guide section it follows, or says `Caster's own; no harness source` and why; a reader can go from any file to the experiment that settled it. `test/check.test.ts` runs the type check (`tsc -p tsconfig.test.json`) inside `pnpm test` and skips where `typescript` is not installed. `capability(name)` is typed by `CapabilityMap` and answers `CapabilityMap[name]` with no `| undefined`, which is "never a fallback" in a form the checker holds. fontkit, harfbuzzjs, lcms-wasm and wawoff2 stay `any` (`types/`), because a hand-written surface would be a second version to keep in step. `colour/hintPaints.ts` and `fonts/fontkitShaper.ts` are ported and tested but not reached by `print()`; the flags that would reach them refuse. `colour/rgbToCmyk.ts` is reached under `convertRgb: 'wasm'` only; its endpoint half is not.
 
 ## Running and testing Caster
 
 ```bash
-cd packages/caster
-npm test                # node --test test/*.test.js
-npm run check           # tsc -p jsconfig.json, over this package's own files (also run by npm test: test/check.test.js)
-npm run compliance -- fixtures/lists   # qpdf, veraPDF and PdfCraft over every PDF in a directory
-npm run census          # the intervals census over every document (about a minute); exits non-zero if it does not complete
-npm run bundle-vendor   # regenerate vendor/ after a dependency bump
-npm run profiles        # verify the two committed ICC profiles against their recorded checksums
+pnpm install --frozen-lockfile
+pnpm run build          # dist/, which the browser suites serve: build before every test run
+pnpm test              # node --test 'test/*.test.ts', the type check included (test/check.test.ts)
+pnpm run check         # tsc -p tsconfig.test.json
+pnpm run identity -- check            # the corpus, printed through the CLI's door (BELTYPE_CLI, ../cli by default)
+pnpm run compliance -- fixtures/lists # qpdf, veraPDF and PdfCraft over every PDF in a directory
+pnpm run bundle-vendor  # regenerate vendor/ after a dependency bump
 ```
 
 Most suites under `test/` are pure and run anywhere. The ones that need a real tab launch Chromium through `test/launch.ts` and fail with the launcher's own message where it is absent. The two acceptances below do not compare the report with itself: their oracle is the page Cicero presented, read by the check itself through the DOM and Chromium's own layout, and the file is read by pdf.js and mupdf, never by Caster. Their readings and comparisons are `test/cast-checks.ts`'s, and `test/cast-checks.test.ts` holds the words comparison to pages written by hand. A known Caster defect is named in the cast acceptance's `KNOWN` by the elements it lives in; it excuses a failure only there, and one that excuses nothing fails the check, so a healed defect asks for its removal. Since 0.2.3 the list is empty: the sequence diagram's labels, its last entry, print where the page has them. `test/read-back-yapr.ts` asks yapr, a second reader built on hayro and vendored under `test/vendor/yapr/`, the same question for `scripts/compare.ts`, so that one reader's habit cannot pass for a fact about the file, and `test/read-back-a11y.ts` runs PdfCraft's accessibility checker, Acrobat's full check compiled to WebAssembly and vendored under `test/vendor/pdfcraft-a11y/`, for `scripts/compliance.ts`.
@@ -413,11 +392,7 @@ Most suites under `test/` are pure and run anywhere. The ones that need a real t
 | `test/acceptance-cast.test.ts` | a finished document in `fixtures/` cut by Cicero and printed through `prepare()` and `print()`; the file holds the presented pages' words in order, each word where the page has it, their margins, their generated text, Blink's own bullets and their pictures |
 | `test/preview-unprepared.test.ts` | the same documents cut unprepared, as an author preview has them, and prepared, as the print has them; preparing them moves no cut and no list item's first word |
 
-`npm run census` is a deliberate act too, kept out of `npm test` for its time. It opens the specimen, the manual and the Paged.js road in Chromium and takes about a minute (it was fifty-three seconds of every test run, a third of the package's wall clock). It judges nothing it measures: stage 0's predictions are reported to a person, and the command fails only if the census itself does not complete.
-
-`npm run compliance -- <dir>` is kept out of `npm test` deliberately. veraPDF is a large Java application and qpdf a separate binary, both found on the path, and a suite that skipped itself on most machines would be a green nobody can explain. The script prints nothing: it reads every PDF in the directory, runs `qpdf --check` (well-formed, and the header says 2.0), veraPDF with `--flavour ua2` (the PDF/UA-2 profile itself), `wt1a` and `wt1r` (Well-Tagged PDF), and PdfCraft's checker, and says plainly what it could not run. A file that fails qpdf or any `ua2` rule fails the run, in any directory; over another writer's files a verdict that differs from the oracle's of the same name in `fixtures/lists/` fails too. On the corpus, `wt1a`, `wt1r` and PdfCraft are reported and do not fail: their only findings there are the oracle's two missing Well-Tagged declarations and the table summary. The last recorded pass is 2026-11-07, over the 18 files of `fixtures/lists/`: qpdf 12.4.2 clean on 18, veraPDF 1.30.0 `ua2` with zero failed rules on 18 (40 944 checks passed). The one veraPDF ua2 test inside `npm test` is `test/pdfua.test.ts`, over the paper and the canvas figure, which skips where `verapdf` is not on the path.
-
-Two preview seats in `.claude/launch.json` open the specimen: `beltype-caster` under Cicero and `beltype-caster-pagedjs` under Paged.js.
+`pnpm run compliance -- <dir>` is kept out of `pnpm test` deliberately. veraPDF is a large Java application and qpdf a separate binary, both found on the path, and a suite that skipped itself on most machines would be a green nobody can explain. The script prints nothing: it reads every PDF in the directory, runs `qpdf --check` (well-formed, and the header says 2.0), veraPDF with `--flavour ua2` (the PDF/UA-2 profile itself), `wt1a` and `wt1r` (Well-Tagged PDF), and PdfCraft's checker, and says plainly what it could not run. A file that fails qpdf or any `ua2` rule fails the run, in any directory; over another writer's files a verdict that differs from the oracle's of the same name in `fixtures/lists/` fails too. On the corpus, `wt1a`, `wt1r` and PdfCraft are reported and do not fail: their only findings there are the oracle's two missing Well-Tagged declarations and the table summary. The last recorded pass is 2026-11-07, over the 18 files of `fixtures/lists/`: qpdf 12.4.2 clean on 18, veraPDF 1.30.0 `ua2` with zero failed rules on 18 (40 944 checks passed). The one veraPDF ua2 test inside `pnpm test` is `test/pdfua.test.ts`, over the paper and the canvas figure, which skips where `verapdf` is not on the path.
 
 ## Reading further on Caster
 

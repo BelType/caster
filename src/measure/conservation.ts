@@ -106,6 +106,43 @@ export function assertConserved(claimed: Set<Text>, strip: PageStrip) {
 }
 
 /**
+ * The text standing directly beside the strip, a child of the element that holds it, that the browser lays out: words the screen shows and no page holds.
+ *
+ * @remarks
+ * The census walks the strip and asks of each node whether a block claimed it, so text the engine never took into the strip is a question it could not ask. Cicero's intake adopts the element children of the body into `<beltype-root>` and nothing else (`topLevelBoxes`, `driver.ts`), so `<body>Hello there</body>` stays in the body, laid out above the pages, and the one page it presents is empty: measured 2026-11-09, one empty page and a summary of 0 words, with no refusal. Asked of the strip's parent's own text children only, and of the browser as everywhere in the census: not whitespace, a visible parent, a rectangle with an area. A host's machinery beside the strip is elements, and an element's text is not asked.
+ */
+export function textBesideStrip(strip: PageStrip): Text[] {
+  const holder = strip.strip.parentElement;
+  if (!holder) return [];
+  const view = holder.ownerDocument.defaultView ?? window;
+  if (view.getComputedStyle(holder).visibility !== 'visible') return [];
+  const range = holder.ownerDocument.createRange();
+  return [...holder.childNodes].filter((node): node is Text => {
+    if (node.nodeType !== Node.TEXT_NODE || !/\S/u.test((node as Text).data)) return false;
+    range.selectNodeContents(node);
+    return [...range.getClientRects()].some((rect) => rect.width > 0 && rect.height > 0);
+  });
+}
+
+/**
+ * Refuse a print whose document shows words beside the strip, on no page (*the conservation of words*, DESIGN.md S61).
+ *
+ * @throws {CasterError} Any text node beside the strip is laid out, naming the word count, the element it stands in and the first five excerpts.
+ */
+export function assertNothingBeside(strip: PageStrip) {
+  const lost = textBesideStrip(strip);
+  if (lost.length === 0) return;
+  const holder = (strip.strip.parentElement as Element);
+  const tag = holder.tagName.toLowerCase();
+  const words = lost.reduce((n, node) => n + node.data.split(/\s+/u).filter(Boolean).length, 0);
+  const shown = lost.slice(0, 5).map((node) => {
+    const excerpt = node.data.trim().replace(/\s+/gu, ' ');
+    return JSON.stringify(excerpt.length > 48 ? `${excerpt.slice(0, 48)}…` : excerpt);
+  });
+  throw new CasterError(`caster: ${words} word${words === 1 ? '' : 's'} in ${lost.length} text node${lost.length === 1 ? '' : 's'} stand directly in <${tag}>, beside the pages and on none of them, so the screen shows ${words === 1 ? 'it' : 'them'} and the file would not. The engine paginates the elements the document's boxes stand in, and text with no element around it is none: wrap it in one (a <p>). The first: ${shown.join('; ')}${lost.length > shown.length ? `; and ${lost.length - shown.length} more` : ''}`, { element: tag });
+}
+
+/**
  * The generated text a reader sees on a page that no real element carries (*a pseudo that reads a value the engine delivers is made real after the run*, DESIGN.md S79): `::before` and `::after` the browser still paints from `content`.
  *
  * @remarks

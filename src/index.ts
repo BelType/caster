@@ -29,7 +29,7 @@ import { beginChains, toPdfMatrix } from './coordinates/ctm.ts';
 import { walkStructure } from './walk/structure.ts';
 import { paintOrderOf } from './walk/paintOrder.ts';
 import { defaultIntrinsics, domPathOf, holdDomPaths, measureText, releaseDomPaths } from './measure/textMeasure.ts';
-import { assertConserved, assertGeneratedConserved } from './measure/conservation.ts';
+import { assertConserved, assertGeneratedConserved, assertNothingBeside } from './measure/conservation.ts';
 import { assertTiled } from './measure/tiling.ts';
 import { deriveIntervals } from './adapters/intervals.ts';
 import { instanceCoords } from './fonts/axisMap.ts';
@@ -149,6 +149,8 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     // 2 — adapt. The engine's DOM becomes a `PageStrip` (§5) — or the host hands one over (*`print()` takes a strip from its host*, S62), because a strip is a fact about a DOM and not about an engine: a row of sized boxes nobody paginated is one. Otherwise which engine is read off the document — each leaves one root that the other never writes — and the printer refuses a document carrying both or neither by name rather than measuring the first thing it finds.
     const strip = input.strip ?? adaptStrip(doc);
     standing = strip.pageElements;
+    // THE CONSERVATION OF WORDS (S61) beside the strip: text the engine never took onto a page, which the census below, walking the strip, cannot meet.
+    assertNothingBeside(strip);
     report.page = { widthPt: strip.pages[0].nominal.widthPt, heightPt: strip.pages[0].nominal.heightPt };
     // THE TILING INVARIANT (S71), beside the conservation of words (which still runs after the measurement): each word of the source on exactly one page. Both adapters derive the record; a host's own strip gets it derived here, every node its own source.
     const intervals = strip.intervals ?? (input.strip ? deriveIntervals(strip) : null);
