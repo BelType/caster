@@ -65,7 +65,7 @@ export type Writing = {
 
 /** The colour story's objects, as the writer is to write them. */
 export type ColourWriting = {
-  /** The two ICC profiles, each a key into `blobs`: the CMYK output profile of the output intent, and the sRGB profile `/DefaultRGB` points at. From the `profiles` capability, `default_cmyk.icc` and `srgb.icc`. */
+  /** The two ICC profiles, each a key into `blobs`: the output intent's profile (the operator's CMYK profile, else the sRGB one, and then both keys name the same blob), and the sRGB profile `/DefaultRGB` points at. From `CasterOptions.profile` and the `profiles` capability's `srgb.icc`. */
   profiles: { cmyk: string, srgb: string };
   /** The output intent's `/OutputConditionIdentifier`. */
   condition: string;

@@ -40,7 +40,7 @@ export type CapabilityMap = {
   lcms: { module: any, wasm: Uint8Array };
   /** wawoff2 as `vendor/wawoff2.js` patches it (*BelType ships faces of its own, and WOFF2 is decoded*, DESIGN.md S46). */
   woff2: any;
-  /** The ICC profiles by basename: `srgb.icc`, `default_cmyk.icc`. */
+  /** The ICC profiles by basename: `srgb.icc`. The CMYK profile is the operator's (`CasterOptions.profile`). */
   profiles: Record<string, Uint8Array>;
   /** forme's wasm-bindgen glue (`--target web`) and the module's bytes, fetched once per realm and node's read through {@link fetchBytes}: in a page `emit/forme.ts` compiles the bytes and its worker instantiates them, and in node it hands them to the glue's `initSync`. */
   forme: { module: FormeGlue, wasm: Uint8Array };
@@ -78,7 +78,7 @@ export const CAPABILITIES: Record<keyof CapabilityMap,CapabilitySpec> = {
   lcms: { url: '../vendor/lcms.js', wasm: '../vendor/lcms.wasm', when: (needs, o) => o.convertRgb === 'wasm' || o.convertImages === 'cmyk', flag: 'convertRgb' },
   // *BelType ships faces of its own, and WOFF2 is decoded* (DESIGN.md S46). Loaded only for a descriptor whose only source is a WOFF2 — a CSSOM read, no byte fetched, the same shape as `forcedPngDecode`. `src: url(x.woff2), url(x.woff)` still takes the WOFF and never loads this, which is what keeps KaTeX's twenty-odd faces from paying 307 kB for a decode nobody needed. There is no flag: nothing the operator can set selects it, so a WOFF2 that reaches `decodeWoff2` without it still refuses by name through `capability()`, the way every other capability does.
   woff2: { url: '../vendor/wawoff2.js', when: (needs) => Boolean(needs.woff2Only) },
-  profiles: { files: ['../profiles/srgb.icc', '../profiles/default_cmyk.icc'], when: (needs, o) => colourOn(needs, o), flag: 'colour' },
+  profiles: { files: ['../profiles/srgb.icc'], when: (needs, o) => colourOn(needs, o), flag: 'colour' },
   // The Rust writer (`vendor/README.md` says where it was built from). Loaded only under `writer: 'forme'`, and refused by name when the module is absent: the oracle is never taken in its place.
   forme: { url: '../vendor/forme.js', wasm: '../vendor/forme_bg.wasm', when: (needs, o) => o.writer === 'forme', flag: 'writer' },
   localFonts: { reserved: 'Local Font Access — not built this round. D2: the printer embeds programs, so every face must reach it as bytes; a system font a tab cannot read is an export error naming the family.' }

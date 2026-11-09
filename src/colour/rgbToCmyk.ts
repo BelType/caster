@@ -256,7 +256,7 @@ export function textWorklist(runs: readonly MeasuredRun[]): ReportWorklistEntry[
  *
  * @param lcms - The `lcms` capability.
  * @param srgb - The bytes of `srgb.icc`.
- * @param cmyk - The bytes of `default_cmyk.icc`.
+ * @param cmyk - The bytes of the operator's CMYK profile (`CasterOptions.profile`).
  * @throws {CasterError} A profile lcms refuses to open, or a transform it cannot build.
  */
 export async function lcmsTransform(lcms: { module: any, wasm: Uint8Array }, srgb: Uint8Array, cmyk: Uint8Array): Promise<WasmTransform> {
@@ -318,7 +318,7 @@ const CHUNK_PIXELS = 1 << 18;
  *
  * @param lcms - The `lcms` capability.
  * @param srgb - The bytes of `srgb.icc`.
- * @param cmyk - The bytes of `default_cmyk.icc`.
+ * @param cmyk - The bytes of the operator's CMYK profile (`CasterOptions.profile`).
  * @throws {CasterError} A profile lcms refuses to open (here, or when an image's `convert` is called), one whose colour space is not the pixels', or a transform it cannot build.
  */
 export async function lcmsImageConverter(lcms: { module: any, wasm: Uint8Array }, srgb: Uint8Array, cmyk: Uint8Array): Promise<ImageConverter> {

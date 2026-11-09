@@ -32,7 +32,7 @@
   },
   {
    "name": "profiles",
-   "bytes": 190060,
+   "bytes": 736,
    "loaded": true
   }
  ],
@@ -180,7 +180,8 @@
   "colour": "auto",
   "unknownElements": "infer",
   "standard": "ua-2",
-  "writer": "pdf-lib"
+  "writer": "pdf-lib",
+  "profile": "187484 bytes"
  },
  "errors": [],
  "warnings": [],
@@ -1130,9 +1131,9 @@
   "extGStates": [],
   "outputIntent": {
    "subtype": "GTS_PDFX",
-   "condition": "Artifex CMYK SWOP Profile",
+   "condition": "Operator CMYK profile",
    "registryName": "http://www.color.org",
-   "info": "Ghostscript default CMYK profile, standing in for a press characterisation",
+   "info": "The ICC profile the operator passed as the profile option",
    "n": 4,
    "profileBytes": 187484,
    "profileSha256": "8472fa1493a024b800b67dee9424835ec0c41ab79490200ae8ec4a689fd1b9a9",
@@ -1140,8 +1141,8 @@
    "profileSpace": "CMYK",
    "profileVersion": "2.1.0"
   },
-  "defaultRgbBytes": 2576,
-  "defaultRgbSha256": "eddaf344b5edea13269e0d20055f335610e5e0b6e33e6e536f2701bc18c5f7d5",
+  "defaultRgbBytes": 736,
+  "defaultRgbSha256": "af4efe28f6d311799865f325ba39184a2e978b113ca74124d60af7de22b105f4",
   "blackTextPolicy": "none",
   "blackTextRuns": 0,
   "worklist": [
@@ -25231,5 +25232,5 @@
    "source": "documentElement"
   }
  ],
- "bytes": 290264
+ "bytes": 288516
 }

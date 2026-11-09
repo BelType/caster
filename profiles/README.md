@@ -1,18 +1,11 @@
-# `profiles/` — the two committed ICC profiles
+# `profiles/` — the committed sRGB ICC profile
 
-TRACKED IN GIT, not generated. `scripts/profiles.sh` is their provenance: with no arguments it verifies the recorded SHA-256 sums and prints the header fields; with `--download` it re-fetches each file from its pinned URL first, so an upstream change shows up as a checksum failure rather than as silent drift in what the output intent claims. `test/profiles.test.js` asserts the same sums and the same fields, through the exporter's own `iccDeviceClass`/`iccColorSpace`/`iccVersion`, so `npm test` checks the provenance too.
+TRACKED IN GIT, not generated. `srgb.icc` is `sRGB-v2-magic.icc` from [saucecontrol/Compact-ICC-Profiles](https://github.com/saucecontrol/Compact-ICC-Profiles) (`profiles/sRGB-v2-magic.icc`), 736 bytes, SHA-256 `af4efe28…105f4`, class `mntr`, space `RGB `, ICC version 2.1.0, description `sRGB`. `test/profiles.test.ts` asserts the sum and the header fields through the exporter's own `iccDeviceClass`/`iccColorSpace`/`iccVersion`.
 
-`src/capabilities.js` loads both as the `profiles` capability — `when: (needs, o) => colourOn(needs, o)`, so a document with no declared colour never fetches 190 KB — reaching them through `new URL('../profiles/<name>', import.meta.url)` and never a bare specifier, which is what lets a tab, a headless host and a static server all serve the same bytes.
-
-| file | source | sha256 | class | space | version | bytes | what it is for |
-| :--- | :--- | :--- | :--- | :--- | :--- | ---: | :--- |
-| `default_cmyk.icc` | [ArtifexSoftware/ghostpdl](https://raw.githubusercontent.com/ArtifexSoftware/ghostpdl/master/iccprofiles/default_cmyk.icc) | `8472fa14…9fd1b9a9` | `prtr` | `CMYK` | 2.1.0 | 187484 | `/OutputIntents`' `/DestOutputProfile`: the CMYK condition the whole file is destined for. `prtr` + CMYK + ICC v2 is what PDF/A-4 6.2.3 t1 asks of a destination profile |
-| `srgb.icc` | [ArtifexSoftware/ghostpdl](https://raw.githubusercontent.com/ArtifexSoftware/ghostpdl/master/iccprofiles/srgb.icc) | `eddaf344…18c5f7d5` | `mntr` | `RGB ` | 2.1.0 | 2576 | every page's `/DefaultRGB`, so an untagged `rg` operand means something rather than nothing |
-
-Neither is a press characterisation profile — no FOGRA39 or FOGRA51 is reachable from this environment — so the output condition identifier is the profile's own description string rather than a registered characterisation name. That is the experiments' own limit, recorded in `docs/guide/colour.md` and inherited here unchanged: a venue that has a real characterisation profile should be able to name it, and the door for that is the `profiles` capability's file list.
+`src/capabilities.ts` loads it as the `profiles` capability, `when: (needs, o) => colourOn(needs, o)`, so a document with no declared colour never fetches it, reaching it through `new URL('../profiles/srgb.icc', import.meta.url)` and never a bare specifier, which is what lets a tab, a headless host and a static server all serve the same bytes. It is every page's `/DefaultRGB`, so an untagged `rg` operand means something rather than nothing, and, when the operator passes no `profile`, the output intent's destination.
 
 ## Their licence
 
-Both profiles come from ghostpdl's `iccprofiles/`, and ghostpdl's `LICENSE` names that directory as part of GPL Ghostscript, under the AGPL-3.0, with no exemption of the kind it grants its fonts. Each profile's own copyright tag reads *Copyright Artifex Software 2011*. This package is MIT, publishes both files in `dist/profiles/`, and embeds them in a PDF that declares colour. Read on 2026-11-06; whether they stay or are replaced waits on a ruling.
+The collection's `readme.md` says: "All profiles in this collection are released to the public domain under the Creative Commons CC0 license", and its `license` file is the CC0 1.0 Universal text. Read on 2026-11-08. That replaces the two Ghostscript profiles this folder held until 0.2.7, which came from ghostpdl's `iccprofiles/`, a directory ghostpdl's `LICENSE` puts under the AGPL-3.0, in an MIT package.
 
-saucecontrol's 456-byte `sRGB-v2-micro.icc` was the fallback for the case where Ghostscript's sRGB turned out not to be v2. It is v2, so the compact profile is not committed.
+Caster ships no CMYK profile. A press characterisation (FOGRA39, FOGRA51, SWOP) is the operator's to supply as the `profile` option, and the output intent then carries it; without one the output intent is this sRGB profile and the two roads that convert to CMYK refuse. A CMYK profile the tests use stays under `test/assets/`, outside the package (see `test/assets/PROVENANCE.md`).
