@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.7 — 2026-11-10
 
 - **Text standing directly in `<body>` refuses the print, naming its words.** `<body>Hello there</body>` printed one empty page and a summary of 0 words, with no refusal. Cicero takes the body's element children into `<beltype-root>` and nothing else, so a bare text node is never cut or presented: it stays in the body, laid out above the pages, and the census of the conservation of words, which walks the root, never met it. `print()` now asks the strip's parent for text children the browser lays out and refuses naming the count and the words (*the conservation of words*, DESIGN.md S61, `assertNothingBeside` in `measure/conservation.ts`). The text is printed once Cicero presents it; until then the author wraps it in an element. `test/bareBodyText.test.ts` holds `fixtures/cast-bare-body-text/` and, as its control, the same words in a `<p>`; the corpus prints as it did.
 - **The README describes this repository.** It said the package was private and unpublished, named the monorepo's `--printer` and Paged.js road as its doors, counted eight corpus documents where there are nineteen, and listed `npm run census`, `npm run profiles`, `jsconfig.json` and `.js` tests that are not here. The doors are now `beltype print` and a host's own strip, with the monorepo's copy named as its own; the commands are this repository's `pnpm` scripts.
