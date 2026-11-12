@@ -1100,6 +1100,15 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             facsimileFigure(element, parent, element);
             return;
         }
+        // An `<object>` whose content failed to load shows its fallback, and the fallback's own elements are what the page shows: the object is the `<span>` rule around them. An object that loaded shows no fallback and stays refused below, its content being a replaced element the walk does not name.
+        if (tag === 'OBJECT') {
+            const shown = document.createRange();
+            shown.selectNodeContents(element);
+            if (shown.getClientRects().length > 0) {
+                visitAsSpan(element, parent);
+                return;
+            }
+        }
         // A declared role decides the element on every tag, native ones included (*the printer guesses, says so, and withdraws the claim*, S90).
         if (visitByRole(element, parent)) return;
 

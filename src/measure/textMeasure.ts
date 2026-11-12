@@ -19,10 +19,10 @@ import { shapeWord, upemOf } from '../fonts/hbShaper.ts';
 import { instanceKeyOf, shaperVariations } from '../fonts/axisMap.ts';
 import { COLUMN_WIDTH_PX } from '../coordinates/units.ts';
 import { matchFace, requestFor, resolveWord } from '../fonts/fontResolve.ts';
-import { apply } from '../coordinates/matrix.ts';
+import { apply, mul } from '../coordinates/matrix.ts';
 import { placeImage } from '../images/imagePlace.ts';
 import { activeFrame, toLocal, toLocalOn, toLocalY } from '../coordinates/frame.ts';
-import { beginChains, inverseRectOf, isIdentityMatrix } from '../coordinates/ctm.ts';
+import { beginChains, invert, inverseRectOf, isIdentityMatrix } from '../coordinates/ctm.ts';
 import { colorKey } from '../colour/colorHints.ts';
 import { clusterMetrics, splitForRaster } from './emoji.ts';
 import { CasterError } from '../errors.ts';
@@ -1186,9 +1186,9 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
     if (chains) {
         chains.end();
         segments.forEach((segment, i) => {
-            if (!segment.chain)
-                return;
             const origin = origins[i];
+            if (!segment.chain || !origin)
+                return;
             const [painted] = rectsOf(origin.node, origin.start, origin.end);
             if (!painted)
                 return;
@@ -1450,6 +1450,10 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
         return { style: own, sizePx, letterSpacingPx, features, match, coords, instanceKey, upem: upemOf(match.face.url), key: `${instanceKey} ${sizePx} ${letterSpacingPx} ${features.join(',')}` };
     };
     const font = (owner: Element) => { let f = fonts.get(owner); if (!f) fonts.set(owner, f = fontOf(owner)); return f; };
+    // The turn of the user space is the line's chain, as a rotated HTML line carries one: words are placed on the translated and scaled space (`placed`), unturned, and the chain `placed⁻¹ · toContainer` is the rotation about the user space's origin that the `cm` writes. A matrix with no turn leaves the chain the identity, and it is omitted.
+    const placed: Matrix = [request.scale, 0, 0, request.scale, request.toContainer[4], request.toContainer[5]];
+    const turned = mul(invert(placed), request.toContainer);
+    const turn = isIdentityMatrix(turned.map((n) => Math.round(n * 1e6) / 1e6) as Matrix) ? null : turned;
     const paragraph = ctx.paragraphs.length;
     ctx.paragraphs.push({
         block: 'svg-text',
@@ -1495,14 +1499,15 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
         // `getStartPositionOfChar` answers the alignment point, before `dominant-baseline` or `alignment-baseline` moved the glyphs; `getExtentOfChar` answers the moved cell, whose top is the alphabetic baseline less the ascent. Measured 2026-11-07 on Chromium: 16px sans-serif at y=100 starts at 100 under every baseline, its cell's top at 86 under `alphabetic`, 91 under `central`, 90.19 under `middle`. Mermaid centres every sequence-diagram label this way.
         const aligned = (paint.dominantBaseline !== 'auto' && paint.dominantBaseline !== 'alphabetic') || !['auto', 'baseline', 'alphabetic'].includes(paint.alignmentBaseline);
         const shift = aligned ? element.getExtentOfChar(start).y + ascentPx(`${own.fontStyle} ${own.fontWeight} ${own.fontSize} "${match.face.family}"`) - first.y : 0;
-        const [startX, startY] = apply(request.toContainer, first.x, first.y + shift);
-        const [endX] = apply(request.toContainer, last.x, last.y + shift);
+        const [startX, startY] = apply(placed, first.x, first.y + shift);
+        const [endX] = apply(placed, last.x, last.y + shift);
         refuseMissingSmallCaps(match.face, features, match2.text, { element: request.domPath });
         const shaped = shapeWord(match.face.url, match2.text, sizePx, features, undefined, shaperVariations(coords));
         ctx.segments.push({
             index: ctx.segments.length,
             paragraph,
             block: 'svg-text',
+            ...(turn ? { chain: turn } : {}),
             blockPath: request.domPath,
             owner: request.owner,
             page: request.page,
