@@ -91,6 +91,8 @@ export type PrintInput = {
   manifest?: ReadonlyMap<string, string>;
   /** A port to a running `emit/formeShared.js` worker (open it with `new SharedWorker(formeSharedWorkerUrl(), { type: 'module' })`), which forme writes through when `writer` is `'forme'` (*a host may keep the writer warm*, S104). Absent, a dedicated worker per write; ignored under `'pdf-lib'`, and in node. */
   formePort?: MessagePort;
+  /** Default `false`. The worker behind `formePort` keeps the blobs it has hashed between writes, font programs above all, and the page sends only those it lacks, so a later print neither copies them across nor hashes them again (`emit/formeShared.ts`'s `writeKept`; *a host may keep the writer warm*, S104, amended 2026-11-16). The file is byte for byte the same either way. Ignored without `formePort`. */
+  formeKeepsBlobs?: boolean;
   /** Progress, per capability, as it lands. */
   onCapability?: (entry: ReportCapability) => void;
   /** Progress, per pipeline step. */
@@ -525,7 +527,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
     });
     const displayListMs = now() - listStart;
     // The writer reads no DOM, so a refusal of its names the item it was writing (`listItem`); the block is named here, from the origins the list keeps beside it. Either writer is handed the same list and returns the same `WriterResult` (the `writer` flag).
-    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList, input.formePort) : emitStructure(displayList)).catch((error) => {
+    const emitted = await (options.writer === 'forme' ? writeWithForme(displayList, input.formePort, input.formeKeepsBlobs) : emitStructure(displayList)).catch((error) => {
       if (error instanceof CasterError && error.listItem && error.element === undefined) {
         const origin = origins[error.listItem.page]?.[error.listItem.item];
         if (origin) error.element = origin.path;

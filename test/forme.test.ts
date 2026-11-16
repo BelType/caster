@@ -206,3 +206,68 @@ test('a shared writer worker kept by a holder page writes node\'s bytes for thre
     server.close();
   }
 });
+
+test('a shared writer worker that keeps blobs refuses a blob that is not its name on its first arrival, writes node\'s bytes with no blob sent once it holds them, and asks again for what it forgot', async () => {
+  const cast = await writeWithForme(listOf('cast'));
+  const paper = await writeWithForme(listOf('paper'));
+  const flipped = listOf('cast');
+  const font = flipped.resources.fonts[0]!.blob;
+  flipped.resources.blobs[font] = Uint8Array.from(flipped.resources.blobs[font]!, (byte, at) => at === 0 ? byte ^ 1 : byte);
+  const refusedInNode = await writeWithForme(flipped).then(() => null, (error: CasterError) => error);
+  assert.ok(refusedInNode instanceof CasterError && refusedInNode.message.startsWith(`forme: the blob ${font} holds bytes whose SHA-256 is `));
+  const server = await serve();
+  const browser = await launchBrowser();
+  const wire = (list: DisplayList) => ({ json: JSON.stringify({ ...list, resources: { ...list.resources, blobs: {} } }), blobs: Object.fromEntries(Object.entries(list.resources.blobs).map(([key, bytes]) => [key, Array.from(bytes)])) });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${(server.address() as { port: number }).port}/`);
+    const steps = await page.evaluate(async (lists) => {
+      const load = (p: string) => import(/* webpackIgnore: true */ p);
+      const capabilities = await load('/src/capabilities.js');
+      const forme = await load('/src/emit/forme.js');
+      const caster = await load('/src/index.js');
+      await capabilities.load(['forme']);
+      const revive = ({ json, blobs }: { json: string, blobs: Record<string, number[]> }) => {
+        const list = JSON.parse(json);
+        list.resources.blobs = Object.fromEntries(Object.entries(blobs).map(([key, bytes]) => [key, new Uint8Array(bytes)]));
+        return list;
+      };
+      const worker = new SharedWorker(caster.formeSharedWorkerUrl(), { type: 'module', name: 'forme-kept' });
+      const sent: { blobs: number, module: boolean }[] = [];
+      const post = worker.port.postMessage.bind(worker.port);
+      worker.port.postMessage = (message: { blobs: unknown[], wasm?: unknown }) => { sent.push({ blobs: message.blobs.length, module: 'wasm' in message }); post(message); };
+      // A blob of 33 MiB the list names nowhere, under its own SHA-256: more than the worker keeps, so the write that hands it over leaves the worker holding nothing.
+      const big = new Uint8Array(33 * 1024 * 1024);
+      const bigKey = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', big)), (b) => b.toString(16).padStart(2, '0')).join('');
+      const withBig = () => { const list = revive(lists.cast); list.resources.blobs[bigKey] = big; return list; };
+      const steps: { name: string, sent: { blobs: number, module: boolean }[], bytes?: number[], refused?: { name: string, message: string } }[] = [];
+      for (const [name, list] of [['flipped', () => revive(lists.flipped)], ['cast', () => revive(lists.cast)], ['cast kept', () => revive(lists.cast)], ['paper', () => revive(lists.paper)], ['cast after paper', () => revive(lists.cast)], ['cast and the big blob', withBig], ['cast forgotten', () => revive(lists.cast)]] as const) {
+        sent.length = 0;
+        try { steps.push({ name, sent: [...sent], bytes: Array.from((await forme.writeWithForme(list(), worker.port, true)).bytes as Uint8Array) }); }
+        catch (error) { const e = error as { name: string, message: string }; steps.push({ name, sent: [], refused: { name: e.name, message: e.message } }); }
+        steps.at(-1)!.sent = [...sent];
+      }
+      return steps;
+    }, { flipped: wire(flipped), cast: wire(listOf('cast')), paper: wire(listOf('paper')) });
+    const at = (name: string) => steps.find((s) => s.name === name)!;
+    const same = (name: string, file: Uint8Array) => assert.ok(at(name).bytes && Buffer.from(at(name).bytes!).equals(Buffer.from(file)), `${name}: node's bytes (${JSON.stringify(at(name).refused)})`);
+    const castBlobs = Object.keys(listOf('cast').resources.blobs).length;
+    const paperBlobs = Object.keys(listOf('paper').resources.blobs).length;
+    assert.deepEqual(at('flipped').refused, { name: 'CasterError', message: refusedInNode.message }, 'the flipped blob is refused on its first arrival, with node\'s sentence');
+    assert.deepEqual(at('flipped').sent, [{ blobs: 0, module: false }, { blobs: castBlobs, module: true }], 'the keys first; the module and every blob when the worker says it lacks them');
+    same('cast', cast.bytes);
+    assert.deepEqual(at('cast').sent, [{ blobs: 0, module: false }, { blobs: castBlobs, module: false }], 'a refused write keeps no blob it had not hashed before');
+    same('cast kept', cast.bytes);
+    assert.deepEqual(at('cast kept').sent, [{ blobs: 0, module: false }], 'nothing crosses but the list');
+    same('paper', paper.bytes);
+    assert.deepEqual(at('paper').sent, [{ blobs: 0, module: false }, { blobs: paperBlobs - Object.keys(listOf('paper').resources.blobs).filter((k) => k in listOf('cast').resources.blobs).length, module: false }]);
+    same('cast after paper', cast.bytes);
+    assert.deepEqual(at('cast after paper').sent, [{ blobs: 0, module: false }]);
+    same('cast and the big blob', cast.bytes);
+    same('cast forgotten', cast.bytes);
+    assert.deepEqual(at('cast forgotten').sent, [{ blobs: 0, module: false }, { blobs: castBlobs, module: false }], 'the worker forgot past its bound, asked, and the print succeeded');
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
