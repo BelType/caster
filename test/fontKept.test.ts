@@ -61,16 +61,15 @@ test('the font table reads a kept face once, and a new face again', async () => 
       document.write(`<!doctype html>${html}`);
       document.close();
       const reseated = await table();
-      return { first: first.reads, second: second.reads, changed: changed.reads, again: again.reads, reseated: reseated.reads, kept: first.bytes === second.bytes, renewed: first.bytes !== changed.bytes, equal: first.bytes.length === changed.bytes.length, url: first.url };
+      return { first: first.reads, second: second.reads, changed: changed.reads, again: again.reads, reseated: reseated.reads, kept: first.bytes === second.bytes, sameProgram: first.bytes === changed.bytes, url: first.url };
     }, RULE('font-display: swap'));
     assert.match(seen.url, /CrimsonPro/);
     assert.equal(seen.first, 1, 'the first print reads the face');
     assert.equal(seen.second, 1, 'a second print of a kept page does not read it again');
     assert.ok(seen.kept);
     assert.equal(seen.changed, 2, 'a changed @font-face rule is a new face, and is read again');
-    assert.ok(seen.renewed);
+    assert.ok(seen.sameProgram, 'the file it reads is the same bytes, so it answers with the program already read (`readOnce`)');
     assert.equal(seen.again, 2, 'and is kept from then on');
-    assert.ok(seen.equal);
     assert.equal(seen.reseated, 3, 'a document seated in the same window has faces of its own, and reads them');
   } finally {
     await browser.close();

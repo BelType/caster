@@ -18,6 +18,7 @@ import { CasterError, FontUnavailableError } from '../errors.ts';
 import { capability } from '../capabilities.ts';
 import { platformFamilyName, parseUnicodeRange } from '../fonts/fontResolve.ts';
 import { decodeWoff, decodeWoff2, isWoff, isWoff2 } from '../fonts/woff.ts';
+import { sameBytes } from '../fonts/hbShaper.ts';
 import { sniffMimeType } from './gateway.ts';
 
 import type { Gateway, GatewayBytes } from './gateway.ts';
@@ -119,6 +120,68 @@ export function browserLoaded(doc: Document): ((face: DeclaredFace) => boolean|n
  * Keyed on the `FontFace`, because that object is what the page paints with and it lives exactly as long as the page keeps that load: a page kept between prints keeps it, and a new document or a changed `@font-face` rule makes a new one, which reads the file again. So a kept page prints the bytes it paints. Measured 2026-11-07 on the bolletta, with the decode the bytes then find remembered: about 12 ms of every print on a kept page, 30-day and 61-day alike (codeberg.org/BelType/cli issue 2).
  */
 const readByFace: WeakMap<FontFace,Map<string,GatewayBytes>> = new WeakMap();
+
+/** What one face's fetched bytes were read as. */
+type Reading = {
+  /** The bytes as the gateway answered them, before any decode. */
+  raw: Uint8Array;
+  /** The SFNT they decode to; `raw` itself for a bare SFNT. */
+  sfnt: Uint8Array;
+  format: 'ttf'|'otf'|'woff'|'woff2';
+  /** Whether a WOFF's tables matched their recorded checksums; `true` for every other format. */
+  checksumsOk: boolean;
+};
+
+/**
+ * What each face's bytes were read as, by their content, from one print to the next.
+ *
+ * @remarks
+ * A decode is a function of its bytes alone, so the same bytes answer with the same SFNT, whatever URL served them and whichever page asked. The entry is found by the bytes' length and confirmed byte for byte against the bytes it was made from ({@link sameBytes}), so other bytes at a known URL are never answered from memory: the comparison is exact, where a digest could collide, and costs no more, since a digest reads every byte too. The answer is the same `Uint8Array` every time, which is what lets the shapers' own check of the bytes they hold (`loadFont`, `registerBytes`) answer at once. Measured 2026-11-16 through `beltype serve` on the paper specimen, three WOFF2 faces on a page re-seated for each print: the decode was 19 ms of every print and the shapers' byte comparison 7 ms.
+ *
+ * Bounded by {@link HELD_BYTES}, the least recently read forgotten first, since a server prints whatever documents it is sent.
+ */
+const readByLength: Map<number,Reading> = new Map();
+
+/** How many bytes {@link readByLength} holds at most, raw and decoded counted apart: some nine documents of the paper specimen's three faces (0.94 MB fetched, 2.72 MB of SFNT), or two faces of a CJK family at some 16 MB each. A server that sees more faces than that decodes the ones it saw least recently again, which costs time and never a byte of the file. */
+const HELD_BYTES = 32 * 1024 * 1024;
+
+/** The bytes {@link readByLength} holds now. */
+let heldBytes = 0;
+
+/** The bytes one reading holds, counting a bare SFNT once. */
+const sizeOf = (r: Reading) => r.raw.length + (r.sfnt === r.raw ? 0 : r.sfnt.length);
+
+/**
+ * The reading of `raw` remembered from an earlier print, or `decode`'s, remembered from now on.
+ *
+ * @remarks
+ * A decode that throws is not remembered, and throws as it did. A reading answers only the road that made it, so bytes read as an SFNT on one source never answer for a source declared `format("woff2")`, whose decode would have refused them.
+ *
+ * @param woff2 - Whether this is the WOFF2 road.
+ */
+async function readOnce(raw: Uint8Array, woff2: boolean, decode: () => Promise<Omit<Reading,'raw'>>): Promise<Reading> {
+  const held = readByLength.get(raw.length);
+  if (held && (held.format === 'woff2') === woff2 && sameBytes(held.raw, raw)) {
+    readByLength.delete(raw.length);
+    readByLength.set(raw.length, held);
+    return held;
+  }
+  const reading = { raw, ...(await decode()) };
+  // ponytail: one entry a length, so two faces of exactly one length displace each other and both decode every print; a list a length if that is ever met.
+  const displaced = readByLength.get(raw.length);
+  if (displaced) { readByLength.delete(raw.length); heldBytes -= sizeOf(displaced); }
+  readByLength.set(raw.length, reading);
+  heldBytes += sizeOf(reading);
+  for (const [length, old] of readByLength) {
+    if (heldBytes <= HELD_BYTES || old === reading) break;
+    readByLength.delete(length);
+    heldBytes -= sizeOf(old);
+  }
+  return reading;
+}
+
+/** A program's family name and axes, read once a program: the SFNT {@link readOnce} answers is the same array from print to print, and nothing writes to it. */
+const parsedBySfnt: WeakMap<Uint8Array,{ platformFamily: string; axes: ReturnType<typeof axesOf>; }> = new WeakMap();
 
 /** Every `@font-face` rule in the document, from both sheet lists, in cascade order. */
 export function declaredFaces(doc: Document): DeclaredFace[] {
@@ -262,15 +325,14 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
       if (sniffed === 'font/woff2' || isWoff2(fetched.bytes)) { woff2Url = woff2Url || source.url; attempts.push(`${source.url} is a WOFF2`); continue; }
       const load = loadOf(source.url, face, clock() - fetchStarted, fetched.url);
       const decodeStarted = clock();
-      if (isWoff(fetched.bytes)) {
+      const reading = await readOnce(fetched.bytes, false, async () => {
+        if (!isWoff(fetched.bytes)) return { sfnt: fetched.bytes, format: sniffed === 'font/otf' ? 'otf' : 'ttf', checksumsOk: true };
         const decoded = await decodeWoff(fetched.bytes);
-        if (!decoded.checksumsOk) warnings.push(`the WOFF for ${JSON.stringify(face.family)} rebuilt into an SFNT whose table checksums do not all match the ones the WOFF recorded; the program is embedded anyway and this is the one place that says so`);
-        sfnt = decoded.bytes;
-        sourceFormatByUrl.set(source.url, 'woff');
-      } else {
-        sfnt = fetched.bytes;
-        sourceFormatByUrl.set(source.url, sniffed === 'font/otf' ? 'otf' : 'ttf');
-      }
+        return { sfnt: decoded.bytes, format: 'woff', checksumsOk: decoded.checksumsOk };
+      });
+      if (!reading.checksumsOk) warnings.push(`the WOFF for ${JSON.stringify(face.family)} rebuilt into an SFNT whose table checksums do not all match the ones the WOFF recorded; the program is embedded anyway and this is the one place that says so`);
+      sfnt = reading.sfnt;
+      sourceFormatByUrl.set(source.url, reading.format);
       load.decodeMs = round(clock() - decodeStarted);
       load.format = (sourceFormatByUrl.get(source.url) as string);
       load.sfntBytes = sfnt.length;
@@ -285,7 +347,7 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
         const fetched = await read(face, woff2Url);
         const load = loadOf(woff2Url, face, clock() - fetchStarted, fetched.url);
         const decodeStarted = clock();
-        sfnt = await decodeWoff2(fetched.bytes, face.family, woff2Url);
+        sfnt = (await readOnce(fetched.bytes, true, async () => ({ sfnt: await decodeWoff2(fetched.bytes, face.family, woff2Url), format: 'woff2', checksumsOk: true }))).sfnt;
         Object.assign(load, { format: 'woff2', decodeMs: round(clock() - decodeStarted), sfntBytes: sfnt.length });
         chosen = woff2Url;
         bytesByUrl.set(woff2Url, sfnt);
@@ -301,8 +363,9 @@ export async function buildFontTable(doc: Document, gateway: Gateway): Promise<F
       continue;
     }
     const parseStarted = clock();
-    const platformFamily = platformFamilyName(sfnt);
-    const axes = axesOf(sfnt);
+    let parsed = parsedBySfnt.get(sfnt);
+    if (!parsed) parsedBySfnt.set(sfnt, (parsed = { platformFamily: platformFamilyName(sfnt), axes: axesOf(sfnt) }));
+    const { platformFamily, axes } = parsed;
     const load = loads.get(chosen);
     if (load) load.parseMs = round(load.parseMs + clock() - parseStarted);
     descriptors.push({
