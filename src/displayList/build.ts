@@ -272,6 +272,14 @@ function textItem(line: MeasuredLine, runInLine: number, owner: string, lineInde
 }
 
 /**
+ * A font program's digest, kept with the program.
+ *
+ * @remarks
+ * A variable face is one program under many instances, and the fonts stage answers the same array for the same bytes from one print to the next (`host/fonts.ts`, `readOnce`); nothing writes to a program. Measured 2026-11-16 through `beltype serve` on the paper specimen: twelve instances over three programs, some 12 MB hashed a print, about 5.5 ms of the display list's 7.5. Programs only: a picture's bytes are made again for every print and are hashed as they come.
+ */
+const digestByProgram: WeakMap<Uint8Array,string> = new WeakMap();
+
+/**
  * The SHA-256 of some bytes, in hex.
  *
  * @remarks
@@ -800,6 +808,12 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         blobs[key] ??= bytes;
         return key;
     };
+    const programBlobOf = async (bytes: Uint8Array) => {
+        let key = digestByProgram.get(bytes);
+        if (key === undefined) digestByProgram.set(bytes, (key = await sha256Hex(bytes)));
+        blobs[key] ??= bytes;
+        return key;
+    };
     const resources: Resources = { blobs, fonts: [], images: {}, forms, rasters: {}, emoji: {} };
     const upemOf: Map<string,number> = new Map<any, any>();
     for (const segment of measurement.segments) {
@@ -826,7 +840,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         const upem = upemOf.get(instance.instanceKey);
         resources.fonts.push({
             key: instance.instanceKey,
-            blob: await blobOf(bytes),
+            blob: await programBlobOf(bytes),
             url: instance.url,
             faceId: instance.faceId,
             family: inputs.fonts.familyOf(instance.instanceKey),
