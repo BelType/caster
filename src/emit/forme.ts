@@ -22,6 +22,12 @@ import type { WriterRecords, WriterResult } from '../displayList/contract.ts';
 export type FormeWriter = {
   blob(key: string, bytes: Uint8Array): void;
   write(listJson: string): { bytes: Uint8Array, records: string };
+  /** The keys of `keys` the writer holds no bytes for; a writer kept between writes. */
+  lacks(keys: string[]): string[];
+  /** The write with the blobs of `keys` alone, hashing only those no earlier write has; a writer kept between writes. */
+  writeKept(listJson: string, keys: string[]): { bytes: Uint8Array, records: string };
+  /** Drop one blob. */
+  forget(key: string): void;
   free(): void;
 };
 
@@ -36,6 +42,17 @@ export type FormeRequest = { glue: string, module: WebAssembly.Module, list: str
 
 /** What the page posts to a shared writer worker: the glue's URL, the module's bytes (read on the first message only), the list's JSON and the blobs by key. */
 export type FormeSharedRequest = { glueSource: string, wasm: Uint8Array, list: string, blobs: [string, Uint8Array][] };
+
+/**
+ * What the page posts to a shared writer worker that keeps blobs (`PrintInput.formeKeepsBlobs`): the list's JSON, every key it names, and only the blobs and the module the worker said it lacks, which it answers with {@link FormeLacks}.
+ *
+ * @remarks
+ * The first message carries no blob and no module; a second carries what the worker lacked; a third, if the worker lacks something again (another port's write made it forget), carries every blob and the module, so the worker cannot lack anything and a write takes at most three messages.
+ */
+export type FormeKeptRequest = { keep: true, list: string, keys: string[], blobs: [string, Uint8Array][], glueSource?: string, wasm?: Uint8Array };
+
+/** What a shared worker that keeps blobs answers when it holds no bytes for some keys of the request, or no instance of the module. */
+export type FormeLacks = { lacks: string[], module?: true };
 
 /** A refusal of forme's as it crosses a realm: its sentence, and the item it names as `[page, item]`. */
 export type FormeRefusal = { message: string, listItem?: [number, number] };
@@ -80,11 +97,12 @@ function casterErrorOf({ message, listItem }: FormeRefusal): CasterError {
  * Write the list with forme: through `port` to a shared writer worker in a page that has one, in a dedicated worker in a page that has none, by a direct call in node.
  *
  * @param port - A port to a running `emit/formeShared.js` (*a host may keep the writer warm*, S104); ignored in node.
+ * @param keepBlobs - The worker behind `port` keeps the blobs it has hashed between writes and the page sends only those it lacks ({@link FormeKeptRequest}); ignored without a port.
  * @throws {CasterError} Every refusal of forme's, its validator's first, in forme's sentence, with `listItem` where it names an item.
  * @throws {CapabilityError} The `forme` capability was not loaded (the flag is `writer`), or, in a page, the module could not be compiled or its worker could not start.
  */
-export async function writeWithForme(list: DisplayList, port?: MessagePort): Promise<WriterResult> {
-  return typeof document === 'undefined' ? writeHere(list) : port ? writeThroughPort(list, port) : writeInWorker(list);
+export async function writeWithForme(list: DisplayList, port?: MessagePort, keepBlobs = false): Promise<WriterResult> {
+  return typeof document === 'undefined' ? writeHere(list) : port ? (keepBlobs ? writeKeptThroughPort(list, port) : writeThroughPort(list, port)) : writeInWorker(list);
 }
 
 /** The write on the calling thread, for a realm with no frame. */
@@ -122,34 +140,61 @@ export const SHARED_WORKER = new URL('./formeShared.js', import.meta.url);
 /** How long a port may stay silent before it is refused. */
 const PORT_TIMEOUT_MS = 60_000;
 
-/** The write through a port to a shared worker the host keeps alive; the worker keeps the instance, never the list. */
 /** The glue's text, fetched once by the page: a shared worker's own requests reach no host route (Playwright serves none of them), so the worker imports the glue from a blob URL it makes itself. */
 let glueSource: Promise<string> | null = null;
 
-async function writeThroughPort(list: DisplayList, port: MessagePort): Promise<WriterResult> {
-  const { wasm } = capability('forme');
-  let source: string;
-  try { source = await (glueSource ??= fetch(GLUE).then((response) => { if (!response.ok) throw new Error(`${GLUE.pathname} answered ${response.status}`); return response.text(); })); }
+/** The glue's text, or the refusal of a worker that could not be given it. */
+async function glueText(): Promise<string> {
+  try { return await (glueSource ??= fetch(GLUE).then((response) => { if (!response.ok) throw new Error(`${GLUE.pathname} answered ${response.status}`); return response.text(); })); }
   catch (error) {
     glueSource = null;
     throw cannotStartPort(`its glue could not be read: ${String(error)}`);
   }
+}
+
+/** One message through the port and its answer. */
+async function ask<Reply>(port: MessagePort, request: FormeSharedRequest | FormeKeptRequest): Promise<Reply> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const reply = await new Promise<FormeReply>((resolve, reject) => {
-      port.onmessage = (event: MessageEvent<FormeReply>) => resolve(event.data);
+    return await new Promise<Reply>((resolve, reject) => {
+      port.onmessage = (event: MessageEvent<Reply>) => resolve(event.data);
       port.onmessageerror = () => reject(cannotStartPort('its answer could not be read'));
       timer = setTimeout(() => reject(new CapabilityError(`caster: the port to the 'forme' writer worker answered nothing within ${PORT_TIMEOUT_MS / 1000} s; the host's shared worker (${SHARED_WORKER.pathname}) is not running or is stuck, and there is no fallback to the main thread. The flag that asked for it is 'writer'.`, { capability: 'forme', flag: 'writer' })), PORT_TIMEOUT_MS);
-      const request: FormeSharedRequest = { glueSource: source, wasm: wasm as Uint8Array, list: listJson(list), blobs: Object.entries(list.resources.blobs) };
       port.postMessage(request);
     });
-    if ('start' in reply) throw cannotStartPort(reply.start);
-    if ('refusal' in reply) throw casterErrorOf(reply.refusal);
-    return { bytes: reply.bytes, records: JSON.parse(reply.records) as WriterRecords };
   } finally {
     clearTimeout(timer);
     port.onmessage = null;
     port.onmessageerror = null;
+  }
+}
+
+/** The worker's answer as `writeWithForme` returns it. */
+function resultOf(reply: FormeReply): WriterResult {
+  if ('start' in reply) throw cannotStartPort(reply.start);
+  if ('refusal' in reply) throw casterErrorOf(reply.refusal);
+  return { bytes: reply.bytes, records: JSON.parse(reply.records) as WriterRecords };
+}
+
+/** The write through a port to a shared worker the host keeps alive; the worker keeps the instance, never the list. */
+async function writeThroughPort(list: DisplayList, port: MessagePort): Promise<WriterResult> {
+  const { wasm } = capability('forme');
+  const source = await glueText();
+  return resultOf(await ask<FormeReply>(port, { glueSource: source, wasm: wasm as Uint8Array, list: listJson(list), blobs: Object.entries(list.resources.blobs) }));
+}
+
+/** The write through a port to a shared worker that keeps blobs: the keys first, then what the worker says it lacks, then everything ({@link FormeKeptRequest}). */
+async function writeKeptThroughPort(list: DisplayList, port: MessagePort): Promise<WriterResult> {
+  const json = listJson(list);
+  const keys = Object.keys(list.resources.blobs);
+  let lacking: FormeLacks = { lacks: [] };
+  for (let attempt = 0; ; attempt++) {
+    const all = attempt >= 2;
+    const request: FormeKeptRequest = { keep: true, list: json, keys, blobs: (all ? keys : lacking.lacks).map((key) => [key, list.resources.blobs[key]!]) };
+    if (all || lacking.module) Object.assign(request, { glueSource: await glueText(), wasm: capability('forme').wasm as Uint8Array });
+    const reply = await ask<FormeReply | FormeLacks>(port, request);
+    if (!('lacks' in reply)) return resultOf(reply);
+    lacking = reply;
   }
 }
 

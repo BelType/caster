@@ -2,13 +2,13 @@
  * `scripts/bundle-forme.js` — builds `vendor/forme.js` and `vendor/forme_bg.wasm`, the Rust writer, from a forme checkout, and copies its `NOTICE` beside them as `vendor/forme-NOTICE.txt`.
  *
  * @remarks
- * forme is `codeberg.org/BelType/forme`; the checkout is `FORME`, the sibling `../forme` by default, as `scripts/identity.ts` reads `BELTYPE_CLI`. The build is the recipe forme's README records, and it is load-bearing: cargo performs no LTO on a library whose crate types include `rlib`, so the module is built as a `cdylib` alone (`cargo rustc --lib --crate-type cdylib`, the `wasm` profile), or it is about 134 kB larger; the two `--remap-path-prefix` flags keep the builder's home directory out of the panic locations. Then wasm-bindgen writes the glue (`--target web`, which the capability registry imports, and which `emit/forme.ts` instantiates in a worker in a page and initialises with the bytes the registry read in node), and `wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int` shrinks the module; without the two flags `wasm-opt` refuses it, because rustc 1.99 emits both features. wasm-bindgen's command line must be the version forme's `Cargo.lock` pins, or the glue and the module disagree; this refuses another.
+ * forme is `codeberg.org/BelType/forme`; the checkout is `FORME`, the sibling `../forme` by default, as `scripts/identity.ts` reads `BELTYPE_CLI`. The build is the recipe forme's README records, and it is load-bearing: cargo performs no LTO on a library whose crate types include `rlib`, so the module is built as a `cdylib` alone (`cargo rustc --lib --crate-type cdylib`, the `wasm` profile), or it is about 134 kB larger; the two `--remap-path-prefix` flags keep the builder's home directory out of the panic locations. Then wasm-bindgen writes the glue (`--target web`, which the capability registry imports, and which `emit/forme.ts` instantiates in a worker in a page and initialises with the bytes the registry read in node), and `wasm-opt -O3 --enable-bulk-memory --enable-nontrapping-float-to-int` optimises the module for speed, as forme's `wasm` profile builds it (`opt-level = 3`); without the two flags `wasm-opt` refuses it, because rustc 1.99 emits both features. wasm-bindgen's command line must be the version forme's `Cargo.lock` pins, or the glue and the module disagree; this refuses another.
  *
  * Nothing is fetched at run time; the build fetches crates, as `pnpm install` fetches packages. It rewrites the forme rows of `vendor/README.md` and its section on forme, with the commit, the toolchain and the sizes; `scripts/bundle-vendor.js` keeps both as they are.
  *
  *     node scripts/bundle-forme.js        (FORME=<checkout> to name another)
  *
- * The module's size is held to the bytes forme lets Caster delete, `vendor/harfbuzz-subset.wasm` and `vendor/pdf-lib.js` (1 061 704); the script prints it beside the budget.
+ * The module and its glue are held to 1 600 000 bytes, and the script prints them beside the budget. The module is built for speed (Egildo's ruling of 2026-11-16): a server loads it once and keeps it warm, so the write is paid on every print and the size once. Measured 2026-11-16 (indicative, a busy machine), the write fell 22 % on the paper specimen and 25 % on a bill of 61 rows, every file byte for byte the size build's; the module grew from 940 796 to 1 519 698 bytes, and the budget, which was the 1 061 704 bytes forme let Caster delete (`harfbuzz-subset.wasm` and `pdf-lib.js`), is the speed build with about 69 kB of headroom.
  *
  * @packageDocumentation
  */
@@ -24,8 +24,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const vendorDir = path.join(here, '..', 'vendor');
 const FORME = path.resolve(process.env.FORME ?? path.join(here, '..', '..', 'forme'));
 
-/** The bytes forme lets Caster delete: `harfbuzz-subset.wasm` and `pdf-lib.js`. */
-export const BUDGET = 1061704;
+/** The module and its glue, built for speed, with about 69 kB of headroom (2026-11-16). */
+export const BUDGET = 1600000;
 
 /** The heading of `vendor/README.md`'s section on forme, which this script writes and `bundle-vendor.js` keeps. */
 export const SECTION = '## `forme.js` and `forme_bg.wasm` are built from forme, not copied';
@@ -57,7 +57,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'caster-forme-'));
   try {
     run('wasm-bindgen', ['--target', 'web', '--no-typescript', '--out-dir', work, '--out-name', 'forme', path.join(FORME, 'target', 'wasm32-unknown-unknown', 'wasm', 'forme.wasm')]);
-    run('wasm-opt', ['-Oz', '--enable-bulk-memory', '--enable-nontrapping-float-to-int', path.join(work, 'forme_bg.wasm'), '-o', path.join(vendorDir, 'forme_bg.wasm')]);
+    run('wasm-opt', ['-O3', '--enable-bulk-memory', '--enable-nontrapping-float-to-int', path.join(work, 'forme_bg.wasm'), '-o', path.join(vendorDir, 'forme_bg.wasm')]);
     const header = `/* forme ${tag ?? 'untagged'} at ${commit}, wasm-bindgen ${pinned} --target web. GENERATED by scripts/bundle-forme.js; do not edit. Regenerate: node scripts/bundle-forme.js */\n`;
     fs.writeFileSync(path.join(vendorDir, 'forme.js'), header + fs.readFileSync(path.join(work, 'forme.js'), 'utf8'));
   } finally {
@@ -84,8 +84,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     '',
     `- forme ${tag ? `tag \`${tag}\`, ` : 'untagged, '}commit \`${commit}\`, with its own copies of skrifa, write-fonts, hayro-write and hayro-syntax under \`vendor/\` (\`forme-NOTICE.txt\` says what each changes).`,
     `- ${rustc}; wasm-bindgen ${pinned} (\`--target web --no-typescript\`), the version forme's \`Cargo.lock\` pins; ${wasmOpt}.`,
-    '- The recipe: `cargo rustc --lib --profile wasm --target wasm32-unknown-unknown --crate-type cdylib`, with `RUSTFLAGS` remapping crates.io\'s source folder to `crates` and the checkout to `forme`, then wasm-bindgen, then `wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int` on the module. The crate type is named because cargo performs no LTO on a library that is also an `rlib`.',
-    `- The module is ${module} bytes and its glue ${glue}, ${module + glue} together, against the ${BUDGET} bytes forme lets Caster delete (\`harfbuzz-subset.wasm\` and \`pdf-lib.js\`).`,
+    '- The recipe: `cargo rustc --lib --profile wasm --target wasm32-unknown-unknown --crate-type cdylib`, with `RUSTFLAGS` remapping crates.io\'s source folder to `crates` and the checkout to `forme`, then wasm-bindgen, then `wasm-opt -O3 --enable-bulk-memory --enable-nontrapping-float-to-int` on the module. The crate type is named because cargo performs no LTO on a library that is also an `rlib`.',
+    `- The module is ${module} bytes and its glue ${glue}, ${module + glue} together, against a budget of ${BUDGET}: the module is built for speed (\`opt-level = 3\`, \`wasm-opt -O3\`), since a server loads it once and keeps it warm (Egildo's ruling of 2026-11-16).`,
     ''
   ];
   fs.writeFileSync(readmePath, [...kept, ...section].join('\n'));

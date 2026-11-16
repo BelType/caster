@@ -151,6 +151,8 @@ export function collectTableBorders(options: TableBorderOptions): TableBorderRes
   });
   const tables: Pick<WalkTable, 'key'|'model'|'collapsed'>[] = [...options.tables, ...copies];
   const containerRect = container.getBoundingClientRect();
+  // An element's side is asked once for every unit edge it borders, and the collector writes no style, so one answer holds for the whole call. Measured 2026-11-16 through `beltype serve` on a bill of 61 rows: some 5 800 computed styles a print, `sideOf` over half of the collector's 14 ms.
+  const sides: Map<Element, Partial<Record<'Top'|'Right'|'Bottom'|'Left', Omit<Candidate, 'origin'>>>> = new Map();
   const requests: VectorRequest[] = [];
   const artifacts: ArtifactDescriptor[] = [];
   const edges: ReportCollapsedEdge[] = [];
@@ -258,8 +260,8 @@ export function collectTableBorders(options: TableBorderOptions): TableBorderRes
         const list: Candidate[] = [];
         const add = (element: HTMLElement|undefined, origin: EdgeOrigin, side: 'Top'|'Right'|'Bottom'|'Left') => {
           if (!element) return;
-          const style = getComputedStyle(element);
-          list.push({ origin, ...sideOf(style, side), domPath: domPathOf(element, container) });
+          const known = sides.get(element) ?? sides.set(element, {}).get(element)!;
+          list.push({ origin, ...(known[side] ??= { ...sideOf(getComputedStyle(element), side), domPath: domPathOf(element, container) }) });
         };
         if (axis === 'h') {
           const above = line > 0 ? model.grid[line - 1]?.[slot] ?? null : null;
