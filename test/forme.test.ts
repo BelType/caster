@@ -22,6 +22,10 @@ import { recordsOf } from '../src/displayList/records.ts';
 import { CasterError } from '../src/errors.ts';
 import { contentType } from '@beltype/common/mime';
 import { launchBrowser } from './launch.ts';
+import { loadWriters } from './writer.ts';
+import { emitStructure } from '../src/emit/structureEmit.ts';
+import { validateList } from '../src/displayList/validate.ts';
+import * as mupdf from 'mupdf';
 
 import type { DisplayList } from '../src/displayList.ts';
 
@@ -61,6 +65,54 @@ function brokenCast(): { list: DisplayList, dropped: number, key: string } {
 test('a refusal of forme\'s that names an item crosses as a CasterError carrying it', async () => {
   const { list, dropped, key } = brokenCast();
   await assert.rejects(writeWithForme(list), (error: unknown) => error instanceof CasterError && error.message.includes(`glyph ${dropped} of ${key}`) && error.listItem !== undefined && Number.isInteger(error.listItem.page) && Number.isInteger(error.listItem.item));
+});
+
+/** What a file's structure tree says of its namespaces and references: the root's `/Namespaces` in order, and each element's `/S`, `/NS` URI and `/Ref` as the `/S` of what it names, depth first. */
+function namesOf(bytes: Uint8Array): { namespaces: string[]; elements: string[] } {
+  const doc = mupdf.Document.openDocument(Buffer.from(bytes), 'application/pdf') as mupdf.PDFDocument;
+  const root = doc.getTrailer().get('Root').get('StructTreeRoot');
+  const namespaces: string[] = [];
+  root.get('Namespaces').forEach((ns: mupdf.PDFObject) => { namespaces.push(ns.get('NS').asString()); });
+  const elements: string[] = [];
+  const visit = (e: mupdf.PDFObject) => {
+    if (!e.isDictionary() || e.get('Type').asName() !== 'StructElem') return;
+    const refs: string[] = [];
+    if (e.get('Ref').isArray()) e.get('Ref').forEach((r: mupdf.PDFObject) => { refs.push(r.get('S').asName()); });
+    elements.push(`${e.get('S').asName()} ${e.get('NS').get('NS').asString()}${refs.length ? ` -> ${refs.join(',')}` : ''}`);
+    const kids = e.get('K');
+    if (kids.isArray()) kids.forEach((k: mupdf.PDFObject) => visit(k)); else visit(kids);
+  };
+  root.get('K').forEach((k: mupdf.PDFObject) => visit(k));
+  return { namespaces, elements };
+}
+
+test('forme writes a list\'s older namespace and its /Ref as the oracle does, and a list without them as it was; it refuses a bad namespace or ref in the oracle\'s sentence', async () => {
+  await loadWriters();
+  const plain = listOf('cast');
+  const before = namesOf((await writeWithForme(plain)).bytes);
+  assert.deepEqual(before.namespaces, ['http://iso.org/pdf2/ssn'], 'a list without an older type: one namespace');
+  const older = () => {
+    const list = listOf('cast');
+    const [a, b] = [1, 2];
+    list.structure.elements[a].namespace = 'http://iso.org/pdf/ssn';
+    list.structure.elements[a].refs = [b];
+    list.structure.elements[b].refs = [a, 0];
+    return list;
+  };
+  const ours = namesOf((await writeWithForme(older())).bytes);
+  const oracle = namesOf((await emitStructure(older())).bytes);
+  assert.deepEqual(ours, oracle, 'the two writers write the same namespaces and references');
+  assert.deepEqual(ours.namespaces, ['http://iso.org/pdf2/ssn', 'http://iso.org/pdf/ssn']);
+  assert.equal(ours.elements.filter((e) => e.includes('http://iso.org/pdf/ssn')).length, 1);
+  assert.equal(ours.elements.filter((e) => e.includes(' -> ')).length, 2);
+  for (const change of [(l: DisplayList) => { l.structure.elements[1].namespace = 'urn:x'; }, (l: DisplayList) => { l.structure.elements[1].refs = []; }, (l: DisplayList) => { l.structure.elements[1].refs = [999]; }]) {
+    const list = listOf('cast');
+    change(list);
+    let sentence = '';
+    try { validateList(list); } catch (error) { sentence = (error as Error).message; }
+    assert.ok(sentence !== '', 'the oracle refuses it');
+    await assert.rejects(writeWithForme(list), (error: unknown) => error instanceof CasterError && error.message === sentence, sentence);
+  }
 });
 
 /** A static server over `dist/`, `@beltype/common` and the committed lists, the page sent with `policy` as its Content-Security-Policy. */

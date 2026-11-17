@@ -433,6 +433,9 @@ test('validateList refuses, with a sentence each, a list the writer could not wr
   refused(/lists child \d+, which is not an element below the root/, (list) => { list.structure.elements[0].children.push(list.structure.elements.length); });
   refused(/which is not a content start/, (list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object'))!; e.children[e.children.findIndex((c) => typeof c === 'object')] = { page: 0, item: list.pages[0].items.findIndex((i) => i.kind === 'text') }; });
   refused(/is in no element's children/, (list) => { const e = list.structure.elements.find((x) => x.children.some((c) => typeof c === 'object' && 'page' in c))!; e.children = e.children.filter((c) => !(typeof c === 'object' && 'page' in c)); });
+  refused(/names the namespace "http:\/\/example\.com\/ns"; an element is in the PDF 2\.0 namespace or names http:\/\/iso\.org\/pdf\/ssn/, (list) => { list.structure.elements[1].namespace = 'http://example.com/ns'; });
+  refused(/carries an empty refs; an element that refers to none carries none/, (list) => { list.structure.elements[1].refs = []; });
+  refused(/the Ref of structure element 1 \(.*\) names structure element 999/, (list) => { list.structure.elements[1].refs = [999]; });
   refused(/carries an attribute object with the key Placement, which the schema does not name/, (list) => { const e = list.structure.elements.find((x) => x.attributes)!; (e.attributes![0] as any).Placement = 'Block'; }, 'paper');
   refused(/the link at place \d+ among the document.s links has order \d+; the orders run 0, 1, 2/, (list) => { list.pages.flatMap((p) => p.items).filter((i): i is LinkItem => i.kind === 'link').at(-1)!.order += 1; }, 'paper');
   const pngSamples = (list: DisplayList) => Object.values(list.resources.images).find((i) => i.samples?.colorSpace === 'Indexed')!.samples!;

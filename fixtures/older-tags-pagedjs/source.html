@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A footnote and its call</title>
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+@page { size: 120mm 100mm; margin: 15mm; }
+body { font: 10pt/1.35 'Source Sans 3', sans-serif; }
+.footnote { float: footnote; font-size: 8pt; }
+</style>
+</head>
+<body>
+<p>A sentence that calls a note<span class="footnote">The note's own words, at the foot of the page.</span> and goes on after the call.</p>
+<p>A second paragraph, calling a second note<span class="footnote">The second note.</span> before its end.</p>
+</body>
+</html>

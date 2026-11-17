@@ -349,6 +349,8 @@ function reportAttrs(element: StructElement): ReportStructureNode['attrs'] {
     }
     else if ('TextPosition' in attribute)
       attrs.textPosition = attribute.TextPosition;
+    else if (attribute.O === 'FENote')
+      attrs.noteType = attribute.NoteType;
   }
   if (element.lang)
     attrs.lang = element.lang;

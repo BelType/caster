@@ -20,6 +20,8 @@
  *
  * VERSION 7 (brief 4 of the image round, `.claude/plans/image-handling/`, Egildo's rulings 4, 9 and 10 of 2026-11-03 and the amendment of *the same list prints the same bytes* in `codeberg.org/BelType/decisions`). `ImageSamples.colorSpace` gains `DeviceCMYK`: under `convertImages: 'cmyk'` the image pass converts an RGB or grey image through lcms-wasm to the output intent's CMYK, after the reduction, and the list carries the result as four components a pixel, with the alpha beside them, never with a `palette` or an `icc` (the output intent is the profile). A writer of version 6 must refuse such a list, so the definition is cut at 7; the report says that an image was converted, which the list does not (`original` gains no member). Nothing else in the list moved.
  *
+ * VERSION 7, AMENDED WITHOUT A NEW NUMBER (*the older tag names are written in the older namespace*, `codeberg.org/BelType/decisions`, 2026-11-17). A structure element may name its `namespace` where it is not the PDF 2.0 one, and the elements it refers to (`refs`); an `FENote` may carry an attribute object `{ O: 'FENote', NoteType }`. All three are optional and absent from every list that holds no quotation, code, contents, internal link or footnote, so every list recorded before reads as it did and writes the same file; the number was kept so that those lists stay what they are. A writer that predates the amendment reads such a list and writes the older types in the wrong namespace, which veraPDF refuses: the writers move in lockstep (Caster vendors forme), and that is the price named.
+ *
  * @packageDocumentation
  */
 
@@ -545,8 +547,10 @@ export type Structure = {
 
 /** One structure element, as its dictionary is written. */
 export type StructElement = {
-  /** The PDF 2.0 standard-namespace structure type, `/S`. */
+  /** The structure type, `/S`: a type of the PDF 2.0 standard namespace, or of the PDF 1.7 one where `namespace` names it. */
   type: string;
+  /** `/NS`, where it is not the PDF 2.0 standard namespace: `http://iso.org/pdf/ssn`, the PDF 1.7 one, which a PDF 2.0 file may use under ISO/TS 32005 and which holds the types PDF 2.0 left out of its own (`BlockQuote`, `Code`, `Quote`, `TOC`, `TOCI`, `Reference`). Absent, the element is in the 2.0 namespace. Version 7, optional. */
+  namespace?: string;
   /** The walk's structure path, e.g. `Document/Sect[0]/P[2]`. Only the report reads it. */
   path: string;
   /** `/Lang`, a byte string. Each of the four entries is present only when it is written: the builder leaves out an empty one. */
@@ -559,6 +563,8 @@ export type StructElement = {
   id?: string;
   /** `/A`: the attribute objects in the order they are written; one is written as the dictionary itself, more than one as an array. Absent when there is none. */
   attributes?: StructAttribute[];
+  /** `/Ref`: the elements this one refers to, by index, in the order written: a `Reference` its target's element, a footnote's `FENote` each of its calls. Absent when it refers to none; never empty. Version 7, optional. */
+  refs?: number[];
   /** `/K` in reading order. The order is data: the writer writes `/K` in it. */
   children: StructChild[];
 };
@@ -567,12 +573,13 @@ export type StructElement = {
  * One attribute object of `/A`, keyed as its dictionary is written (`/O` first).
  *
  * @remarks
- * Every string value is a PDF name except each entry of `Headers`, which is a byte string (the `/ID` of a header cell). `BBox` is a PDF rectangle `[llx lly urx ury]` in page points, to thousandths. A `Table` object is a cell's: `Scope` on a `TH`, `Headers` where its header set is not empty, `RowSpan` and `ColSpan` only above 1.
+ * Every string value is a PDF name except each entry of `Headers`, which is a byte string (the `/ID` of a header cell). `BBox` is a PDF rectangle `[llx lly urx ury]` in page points, to thousandths. A `Table` object is a cell's: `Scope` on a `TH`, `Headers` where its header set is not empty, `RowSpan` and `ColSpan` only above 1. An `FENote` object is a footnote's `NoteType` (ISO 14289-2, 8.2.5.14.2).
  */
 export type StructAttribute = { O: 'List', ListNumbering: string }
   | { O: 'Layout', BBox: [number, number, number, number] }
   | { O: 'Table', Scope?: 'Column' | 'Row' | 'Both', Headers?: string[], RowSpan?: number, ColSpan?: number }
-  | { O: 'Layout', TextPosition: 'Sub' | 'Sup' };
+  | { O: 'Layout', TextPosition: 'Sub' | 'Sup' }
+  | { O: 'FENote', NoteType: 'Footnote' | 'Endnote' | 'None' };
 
 /** One entry of an element's `/K`: another element by its index in `elements`; a marked-content sequence by the page and the index in that page's `items` of the `tag` item that opens it; or the annotation of the `link` item whose `order` this is, as an `/OBJR`. */
 export type StructChild = number | { page: number, item: number } | { link: number };

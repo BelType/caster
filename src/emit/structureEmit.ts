@@ -37,7 +37,7 @@ import { buildToUnicode } from '../fonts/toUnicode.ts';
 import { samplesFromRgba, samplesOf } from '../images/samples.ts';
 import { MARK_STROKE_PT, circleSegments } from '../coordinates/printMarks.ts';
 import { buildOutline } from './outline.ts';
-import { ATTRIBUTE_KEYS, validateList } from '../displayList/validate.ts';
+import { ATTRIBUTE_KEYS, PDF_1_7_NAMESPACE, validateList } from '../displayList/validate.ts';
 
 /** What wrote the file, for the Info dictionary and the XMP packet alike. Named once here rather than at the two call sites, so the two can never disagree — a reader is entitled to consult either. */
 const PRODUCER = 'BelType Caster';
@@ -77,7 +77,7 @@ export type BuildResult = {
 function textString(value: string): PDFString|PDFHexString {
     return /^[\x20-\x7e]*$/.test(value) && !/[()\\]/.test(value) ? pdf().PDFString.of(value) : pdf().PDFHexString.fromText(value);
 }
-/** The PDF 2.0 standard structure namespace; every element points at it. */
+/** The PDF 2.0 standard structure namespace; every element points at it but one whose `namespace` names the PDF 1.7 one. */
 export const PDF_2_NAMESPACE = 'http://iso.org/pdf2/ssn';
 /** Annotation flag bit 3, Print. Required of every annotation by PDF/UA. */
 const ANNOTATION_PRINT_FLAG = 4;
@@ -534,7 +534,7 @@ function elementOf(elements: StructElement[], index: number, what: string): Stru
  * Write the structure tree, the ParentTree, the link annotations and the catalog entries that point at them.
  *
  * @remarks
- * The tree is the list's, resolved by the builder (`displayList/structure.js`): the writer prunes, orders and looks up nothing. Refs are allocated in the array's order before any dictionary is filled, because the tree is doubly linked: an element names its parent and its parent lists its kids. What the writer derives, it derives from the children: `/P`; `/Pg` with bare MCIDs where all of an element's content is on one page, `/MCR` dictionaries otherwise; the ParentTree, one array per page indexed by MCID, then one entry per link an element ends with; the `/IDTree`.
+ * The tree is the list's, resolved by the builder (`displayList/structure.js`): the writer prunes, orders and looks up nothing. Refs are allocated in the array's order before any dictionary is filled, because the tree is doubly linked: an element names its parent and its parent lists its kids. What the writer derives, it derives from the children: `/P`; `/Pg` with bare MCIDs where all of an element's content is on one page, `/MCR` dictionaries otherwise; the ParentTree, one array per page indexed by MCID, then one entry per link an element ends with; the `/IDTree`. What it writes as given: each element's `/NS`, the PDF 1.7 namespace object only in a file where an element names it, and `/Ref` only on an element that refers to some.
  *
  * @param mcidAt - Each page's MCIDs, by the index of the content start in its items.
  * @param linkItems - The list's link items with the page each sits on, in `order`.
@@ -547,6 +547,8 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     const parent = elements.map(() => -1);
     elements.forEach((element, index) => element.children.forEach((child) => { if (typeof child === 'number') parent[child] = index; }));
     const namespaceRef = context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
+    // *the older tag names are written in the older namespace*: the PDF 1.7 namespace object only in a file one element names it in, allocated right after the 2.0 one, so a file with none is the file it was.
+    const olderRef = elements.some((element) => element.namespace) ? context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_1_7_NAMESPACE) })) : null;
     const annotRefs: PDFRef[] = [];
     const pendingDestinations: { dict: PDFDict; dest: NonNullable<LinkTarget['dest']>; }[] = [];
     for (const { item: annot, page: annotPage } of linkItems) {
@@ -607,7 +609,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         context.assign(ref, context.obj({
             Type: 'StructElem',
             S: element.type,
-            NS: namespaceRef,
+            NS: element.namespace ? olderRef as PDFRef : namespaceRef,
             P: parent[index] === -1 ? rootRef : refs[parent[index]],
             ...(onePage ? { Pg: pages[contents[0].page].ref } : {}),
             ...(element.lang ? { Lang: pdf().PDFString.of(element.lang) } : {}),
@@ -619,6 +621,8 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
             // `/A` is the dictionary itself when there is one, which is byte for byte what E5 through E10 (`coordinates-and-pages.md`) wrote, and an array when there is more than one.
             ...(attributes.length === 1 ? { A: attributes[0] } : {}),
             ...(attributes.length > 1 ? { A: attributes } : {}),
+            // 14.7.2, Table 355: `/Ref`, the elements this one refers to, only where it refers to some.
+            ...(element.refs ? { Ref: element.refs.map((index) => refs[index]) } : {}),
             K: kids,
         }));
     });
@@ -642,7 +646,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     context.assign(rootRef, context.obj({
         Type: 'StructTreeRoot',
         K: [refs[0]],
-        Namespaces: [namespaceRef],
+        Namespaces: olderRef ? [namespaceRef, olderRef] : [namespaceRef],
         ParentTree: parentTreeRef,
         ParentTreeNextKey: pageCount + parentsByAnnot.length,
         ...(idTreeRef ? { IDTree: idTreeRef } : {}),

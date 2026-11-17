@@ -2,7 +2,7 @@
  * `displayList/validate.js` — `validateList(list)`: the refusals of a list a writer could not write, each a sentence, before a byte is written.
  *
  * @remarks
- * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; each image's samples in a shape the schema names, as many bytes as it says (version 6; `DeviceCMYK` at four components and with neither palette nor profile, version 7); the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); under a PDF/UA-2 claim, no word gap of a face with no space glyph (S103); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
+ * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; each image's samples in a shape the schema names, as many bytes as it says (version 6; `DeviceCMYK` at four components and with neither palette nor profile, version 7); the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); under a PDF/UA-2 claim, no word gap of a face with no space glyph (S103); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names, a namespace that is the PDF 1.7 one where one is named, every `refs` index in range and none empty). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
  *
  * @packageDocumentation
  */
@@ -15,7 +15,10 @@ import type { DisplayList, Item, LinkItem, StructElement } from '../displayList.
 export const LIST_VERSION = 7;
 
 /** The keys an attribute object of `/A` may carry: `StructAttribute`'s, which the writer writes in this order. */
-export const ATTRIBUTE_KEYS = ['O', 'ListNumbering', 'BBox', 'Scope', 'Headers', 'RowSpan', 'ColSpan', 'TextPosition'] as const;
+export const ATTRIBUTE_KEYS = ['O', 'ListNumbering', 'BBox', 'Scope', 'Headers', 'RowSpan', 'ColSpan', 'TextPosition', 'NoteType'] as const;
+
+/** The PDF 1.7 standard structure namespace, the one other namespace an element may name (*the older tag names are written in the older namespace*). */
+export const PDF_1_7_NAMESPACE = 'http://iso.org/pdf/ssn';
 
 /**
  * Refuse a list the writer could not write.
@@ -197,6 +200,13 @@ function checkTree(list: DisplayList) {
       const stray = Object.keys(attribute).find((key) => !(ATTRIBUTE_KEYS as readonly string[]).includes(key));
       if (stray !== undefined)
         throw new CasterError(`caster: ${where} carries an attribute object with the key ${stray}, which the schema does not name`);
+    }
+    if (element.namespace !== undefined && element.namespace !== PDF_1_7_NAMESPACE)
+      throw new CasterError(`caster: ${where} names the namespace ${JSON.stringify(element.namespace)}; an element is in the PDF 2.0 namespace or names ${PDF_1_7_NAMESPACE}`);
+    if (element.refs !== undefined) {
+      if (element.refs.length === 0)
+        throw new CasterError(`caster: ${where} carries an empty refs; an element that refers to none carries none`);
+      for (const ref of element.refs) elementAt(elements, ref, `the Ref of ${where}`);
     }
     for (const child of element.children) {
       if (typeof child === 'number') {

@@ -5,11 +5,11 @@
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "c13a0a9631e2b519b7bd9c281a563352ce893a6ec7ec2b2c63774dbe5503ce9c",
-   "bytes": 110814,
+   "sha256": "6935629513c56dba47aeea12975d5a62e2ebf8f8c263ac46fd24b364d5544905",
+   "bytes": 111036,
    "cli": "same",
    "list": {
-    "bytes": 186645,
+    "bytes": 186970,
     "blobs": [
      "33cef46663f05a068aba34bdcbde9118f316c0f0c7ef8e087feeada37d8783d8",
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79",
@@ -191,10 +191,10 @@
   {
    "name": "pages",
    "why": "a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)",
-   "sha256": "0be756fcd11d907096cc013c37d973c40e0f1493e3d1e1954be4d21d483a20eb",
-   "bytes": 17650,
+   "sha256": "27d6439f3d93b41a4474bfd5d9fd91c2ad09d32fb249d5b6e24b1112e9f8c6c7",
+   "bytes": 17771,
    "list": {
-    "bytes": 13637,
+    "bytes": 13711,
     "blobs": [
      "38fe21b70996fca02d9b8c74f907e02e0fe346414ec74bf87ef5de5c981ffe79"
     ]

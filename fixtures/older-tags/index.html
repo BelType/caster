@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The older tag names</title>
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+body { margin: 0; width: 160mm; padding: 10mm; font: 10pt/1.35 'Source Sans 3', sans-serif; }
+code, kbd { font-family: 'Source Sans 3', sans-serif; font-weight: 600; }
+.toc-list { list-style: none; padding: 0; margin: 0; }
+.toc-list .toc-list { padding-left: 1.2em; }
+.toc-entry a { display: flex; justify-content: space-between; text-decoration: none; color: inherit; }
+table { border-collapse: collapse; }
+td, th { border: 1px solid #999; padding: 2px 4px; }
+</style>
+</head>
+<body>
+<section>
+<h1 id="first">First, with <code>code</code></h1>
+<nav class="toc-page"><h2 class="toc-title">Contents</h2><ul class="toc-list"><li class="toc-entry toc-level-1"><a href="#first"><span class="toc-text">First</span></a><ul class="toc-list"><li class="toc-entry toc-level-2"><a href="#second"><span class="toc-text">Second</span></a></li></ul></li></ul></nav>
+<p>Inline <code>x = 1</code>, a key <kbd>Ctrl</kbd>, and <q>a short quotation</q>.<span class="footnote">A note nothing calls.</span></p>
+<blockquote><p>A block quotation, quoted from elsewhere.</p></blockquote>
+<pre><code>let a = 1;</code></pre>
+<p>See <a href="#second">the second</a>, <a href="https://example.com/">an address</a>, <a href="mailto:someone@example.com">a mail</a>, and <a href="#first"><code>first</code></a> again.</p>
+<table><tr><th>Head</th></tr><tr><td><code>cell</code> and <q>a quotation in a cell</q></td></tr><tr><td><blockquote><p>Quoted in a cell.</p></blockquote></td></tr></table>
+<ul><li><q>A quotation in a list item.</q></li></ul>
+<h2 id="second">Second</h2>
+<nav role="doc-toc"><ol><li><a href="#first">Again, <code>first</code></a></li><li><a href="#second">Second</a></li></ol></nav>
+</section>
+</body>
+</html>

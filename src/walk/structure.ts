@@ -5,7 +5,7 @@
  *
  * WHAT THE PORT CHANGED — the tag table is v2 (P7). v1 refuses anything it does not name, which is right and is why the table can grow safely; BelType's belt emits a wider vocabulary than the fixture of `structure-tree.md` (E5) did (`docs/syntax.md` lists every construct, and `packages/core/src/plugins/` says what each emits). v1's mappings are kept exactly, except one correction the plan states and this port takes in half (*veraPDF folds a `Div`*, S25): a `<figure>` whose content is one image keeps v1's `Figure`, with the `Caption` inside it where ISO 14289-2 8.2.5.27 wants it, and a `<figure>` holding a table or a code block becomes an `Aside` with its `Caption`, or a `Div` with none, instead of throwing (`visitAsFigure`). v1 required a `<figure>` to hold an `<img>` and threw otherwise; the half-correction lets a figure hold something that is not a raster without moving a Caption out from under the rule that governs it.
  *
- * The additions, each with what emits it: `<blockquote>` -> `Div` (`BlockQuote` is not in the PDF 2.0 standard namespace — `structure-tree.md` §"What is not in the PDF 2.0 standard namespace"); `<pre>` -> `P`; `<dl>`/`<dt>`/`<dd>` -> `L` with `Lbl`/`LBody` per item; `<details>`/`<summary>` -> `Div`/`P`; `<nav>` -> `Div` around its lists; `<del>`/`<s>`/`<mark>`/`<ins>`/`<u>`/`<i>`/`<b>`/`<small>`/`<cite>`/`<q>`/`<var>`/`<samp>`/`<time>`/`<data>`/`<bdi>`/`<bdo>`/`<ruby>` -> `Span`; a `.footnote` span (the belt's `inline-footnotes.js`) -> `FENote`; a KaTeX span (`rehype-katex`) -> `Formula` with `/Alt` from its `<annotation encoding="application/x-tex">` and its inner HTML transparent; a mermaid `<svg>` -> the SVG rule of E9 (`vector-painting.md`) unchanged.
+ * The additions, each with what emits it: `<blockquote>` -> `BlockQuote`, `<code>` -> `Code`, `<q>` -> `Quote`, a link inside the document -> `Reference` and a contents (`role="doc-toc"`, the belt's `nav.toc-page`) -> `TOC` of `TOCI`, each a type of the PDF 1.7 namespace that a PDF 2.0 file may use under ISO/TS 32005 (*the older tag names are written in the older namespace*, 2026-11-17, which withdrew the `Div` and `Span` they were written as); `<pre>` -> `P`; `<dl>`/`<dt>`/`<dd>` -> `L` with `Lbl`/`LBody` per item; `<details>`/`<summary>` -> `Div`/`P`; `<nav>` -> `Div` around its lists; `<del>`/`<s>`/`<mark>`/`<ins>`/`<u>`/`<i>`/`<b>`/`<small>`/`<cite>`/`<var>`/`<samp>`/`<time>`/`<data>`/`<bdi>`/`<bdo>`/`<ruby>` -> `Span`; a `.footnote` span (the belt's `inline-footnotes.js`) -> `FENote` with `/NoteType /Footnote`, it and each link to it naming the other by `/Ref`; a KaTeX span (`rehype-katex`) -> `Formula` with `/Alt` from its `<annotation encoding="application/x-tex">` and its inner HTML transparent; a mermaid `<svg>` -> the SVG rule of E9 (`vector-painting.md`) unchanged.
  *
  * And two rules that are an engine's rather than the vocabulary's, each answered by the adapter through `WalkOptions` and never by a class the walk names. R8: an element the adapter calls transparent (`transparentOf`) introduces no node and no owner, and its text is measured like any other — Cicero's `__beltype-fill`, `__beltype-break` and `__beltype-slice`, Paged.js's content wrapper. R4: an element the adapter pairs with a twin (`twinOf`) continues that twin's structure element rather than opening a second one. And a custom element — a `bt-` element, a `<beltype-*>`, anything with a hyphen in its tag — is an error by name, because the printer has no way to know what it means and guessing is the failure mode the whole design refuses.
  *
@@ -99,7 +99,7 @@ export type StructureNode = {
   tag: string;
   /** Stable path through the tree, e.g. `Document/Sect[0]/P[2]/Em[0]`. */
   path: string;
-  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, expansion?: string, textPosition?: 'Sub'|'Sup' };
+  attrs: { lang?: string, listNumbering?: string, alt?: string, scope?: 'Column'|'Row'|'Both', id?: string, headers?: string[], rowSpan?: number, colSpan?: number, expansion?: string, textPosition?: 'Sub'|'Sup', noteType?: 'Footnote', refs?: string[] };
   kids: StructureNode[];
 };
 /** Something painted outside the tree, and the artifact type it is written as. */
@@ -265,6 +265,10 @@ const CONTENT_OWNERS = new Set([
     // v2 (P7). `FENote` owns the note's own text — a `.footnote` span the belt relocated is a run of prose, not a wrapper. `Formula` owns the marked content of a KaTeX span, whose inner markup is transparent, so the content items have nowhere else to belong. `Sub` is not here and never will be: a subscript is a `Span` carrying `/TextPosition`, because 32000-2's `Sub` element is a sub-division of a block.
     'FENote',
     'Formula',
+    // *the older tag names are written in the older namespace* (2026-11-17): `Code` and `Quote` own their words as the `Span` they replace did, and a `Reference` owns its link's words as a `Link` does.
+    'Code',
+    'Quote',
+    'Reference',
 ]);
 /**
  * Table elements that survive with no content of their own.
@@ -278,9 +282,9 @@ const KEEP_WHEN_EMPTY = new Set(['TH', 'TD']);
  * v2 (P7): the inline elements that all come out as a `Span` and differ only in what the `Span` carries.
  *
  * @remarks
- * `<del>`, `<s>` and `<ins>` are edits; `<mark>` is a highlight; `<u>` and `<i>` and `<b>` and `<small>` are presentational; `<cite>`, `<q>`, `<var>`, `<samp>`, `<time>`, `<data>`, `<bdi>`, `<bdo>` and `<ruby>` each mean something HTML can say and PDF 2.0's standard namespace cannot. None of them earns an element of its own, and inventing one would fail ISO 14289-2:2024 8.2.4 t1 the way `Code` does. `<em>`, `<strong>`, `<abbr>`, `<sub>`, `<sup>`, `<code>` and `<kbd>` are not here: each has its own branch above, because each carries something a `Span` has to be told.
+ * `<del>`, `<s>` and `<ins>` are edits; `<mark>` is a highlight; `<u>` and `<i>` and `<b>` and `<small>` are presentational; `<cite>`, `<var>`, `<samp>`, `<time>`, `<data>`, `<bdi>`, `<bdo>` and `<ruby>` each mean something HTML can say and neither standard namespace has a type for. None of them earns an element of its own, and inventing one would fail ISO 14289-2:2024 8.2.4 t1. `<em>`, `<strong>`, `<abbr>`, `<sub>`, `<sup>`, `<code>`, `<kbd>` and `<q>` are not here: each has its own branch, because each carries something a `Span` has to be told or is a type of its own (`<code>` a `Code`, `<q>` a `Quote`, in the PDF 1.7 namespace).
  */
-const INLINE_SPANS = new Set(['DEL', 'S', 'INS', 'MARK', 'U', 'I', 'B', 'SMALL', 'CITE', 'Q', 'VAR', 'SAMP', 'TIME', 'DATA', 'BDI', 'BDO', 'RUBY', 'RT', 'RP', 'WBR', 'DFN']);
+const INLINE_SPANS = new Set(['DEL', 'S', 'INS', 'MARK', 'U', 'I', 'B', 'SMALL', 'CITE', 'VAR', 'SAMP', 'TIME', 'DATA', 'BDI', 'BDO', 'RUBY', 'RT', 'RP', 'WBR', 'DFN']);
 /**
  * `rgb(204, 0, 0)` and friends, as PDF `rg` operands.
  *
@@ -330,9 +334,15 @@ function isBlockLevel(element: Element): boolean {
  * ARIA roles with a standard PDF structure type, honoured on every element in both modes (*the printer guesses, says so, and withdraws the claim*, S90).
  *
  * @remarks
- * A declared role is a declaration, not a guess, and ARIA's own rule is that it overrides the element's native semantics, so a `<p role="heading" aria-level="2">` is an `H2` and a `<div role="list">` an `L`. `heading` takes its level from `aria-level`, and `img` its `/Alt` from `aria-label`; neither is guessed. `presentation` and `none` make the element transparent. ARIA's `note` is not here: PDF 2.0's standard namespace has no `Note`, only `FENote`, which is a note with a reference elsewhere in the flow and is not what the role says. A role this table does not name is a warning, and the element keeps its own tag.
+ * A declared role is a declaration, not a guess, and ARIA's own rule is that it overrides the element's native semantics, so a `<p role="heading" aria-level="2">` is an `H2` and a `<div role="list">` an `L`. `heading` takes its level from `aria-level`, and `img` its `/Alt` from `aria-label`; neither is guessed. `presentation` and `none` make the element transparent. DPUB-ARIA's `doc-toc` makes a table of contents, `TOC` (`visitAsToc`). ARIA's `note` is not here: PDF 2.0's standard namespace has no `Note`, only `FENote`, which is a note with a reference elsewhere in the flow and is not what the role says. A role this table does not name is a warning, and the element keeps its own tag.
  */
-const ARIA_TAGS: Record<string,'P'|'H'|'L'|'LI'|'Figure'|'transparent'> = { paragraph: 'P', heading: 'H', list: 'L', listitem: 'LI', figure: 'Figure', img: 'Figure', presentation: 'transparent', none: 'transparent' };
+const ARIA_TAGS: Record<string,'P'|'H'|'L'|'LI'|'Figure'|'TOC'|'transparent'> = { paragraph: 'P', heading: 'H', list: 'L', listitem: 'LI', figure: 'Figure', img: 'Figure', 'doc-toc': 'TOC', presentation: 'transparent', none: 'transparent' };
+/** The Markdown belt's own table of contents (`core/src/plugins/toc.js`: `nav.toc-page > h2.toc-title + ul.toc-list`), which counts as `role="doc-toc"` (*the older tag names are written in the older namespace*). */
+const BELT_TOC = 'nav.toc-page';
+/** The types that may hold a `TOC`, of those the walk makes (ISO/TS 32005:2023, Table 5). */
+const HOLDS_TOC = new Set(['Document', 'Sect', 'Aside', 'BlockQuote', 'TOC', 'TOCI']);
+/** The lists whose items a contents' entries are. */
+const TOC_LISTS = new Set(['UL', 'OL', 'MENU']);
 /** The role each element already has natively; a role that restates it changes nothing. */
 const NATIVE_ROLE: Record<string,string> = { P: 'paragraph', H1: 'heading', H2: 'heading', H3: 'heading', H4: 'heading', H5: 'heading', H6: 'heading', UL: 'list', OL: 'list', MENU: 'list', LI: 'listitem', FIGURE: 'figure' };
 /** Elements whose own branch decides what they are and reads the attributes it needs, so the role table is not asked: a picture's description is its `alt`, `<title>` or label. */
@@ -788,6 +798,57 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visit(child, body);
         }
     };
+    /** The node a node stands in, by its path. */
+    const parentNodeOf = (child: StructureNode): StructureNode|null => nodeByPath.get(child.path.slice(0, child.path.lastIndexOf('/'))) ?? null;
+    /**
+     * A table of contents: `role="doc-toc"` on any element, or the belt's `nav.toc-page`, is a `TOC` (ISO 14289-2, 8.2.5.8), its lists transparent, each item a `TOCI` (`visitAsTocItem`).
+     *
+     * @remarks
+     * A `TOC` may hold only `TOC`, `TOCI` and a `Caption` (ISO/TS 32005, Table 5), so the contents' own title, the belt's `h2.toc-title`, and anything else in the element that is not a list or an item are walked beside the `TOC`, under its parent: the title stays a heading in the outline, where a reader navigates by it. Where the element stands somewhere a `TOC` may not (a list item, a table cell, a caption, a note), the element is walked by its own tag as before. A `Div` is folded in that test as veraPDF folds it, and so is a `BlockQuote`, which the builder may still flatten to a `Div` (`displayList/structure.js`), so a contents in a quotation is a `TOC` only where it would also be one without the quotation.
+     *
+     * @returns Whether the element became a `TOC`.
+     */
+    const visitAsToc = (element: Element, parent: StructureNode): boolean => {
+        let holder: StructureNode|null = parent;
+        while (holder && (holder.tag === 'Div' || holder.tag === 'BlockQuote')) holder = parentNodeOf(holder);
+        if (!holder || !HOLDS_TOC.has(holder.tag)) return false;
+        const toc = noteLang(element, node('TOC', parent, langAttrs(element)));
+        for (const child of element.children) {
+            const listLike = TOC_LISTS.has(child.tagName) || child.tagName === 'LI' || roleOf(child) === 'list' || roleOf(child) === 'listitem';
+            visit(child, listLike ? toc : parent);
+        }
+        return true;
+    };
+    /** A list met inside a contents: transparent in a `TOC`, whose items it holds, and a `TOC` of its own inside an entry (*a list nested in an entry is a `TOC` nested in the `TOCI`*). */
+    const visitTocList = (element: Element, parent: StructureNode) => {
+        const self = parent.tag === 'TOCI' ? noteLang(element, node('TOC', parent, langAttrs(element))) : parent;
+        // Registered either way, so a continuation of the list (a Paged.js shell) puts its fresh items into the same `TOC`.
+        structPathByElement.set(element, self.path);
+        for (const child of element.children) visit(child, self);
+    };
+    /**
+     * One entry of a contents: a `TOCI` holding the entry's internal link, which is a `Reference` carrying a `/Ref` to its target's element (the A branch), a nested list as a `TOC`, a reified marker as its `Lbl`, and every other word of the entry in a `P`.
+     *
+     * @remarks
+     * A `TOCI` may hold no marked content and no `Link` (ISO/TS 32005, Table 5), so the entry's own words outside its link are a paragraph, pruned where there are none, and a link out of the document is walked inside that paragraph. The belt's entry is one link and, under it, a nested list.
+     */
+    const visitAsTocItem = (element: Element, parent: StructureNode) => {
+        const self = noteLang(element, node('TOCI', parent, langAttrs(element)));
+        const marker = (element.querySelector(':scope > .marker') as HTMLElement|null);
+        if (marker && isLabelled(marker)) {
+            const label = node('Lbl', self);
+            ownerByElement.set(marker, label.path);
+            if (marker.hasAttribute(SHAPE_ATTRIBUTE)) shapes.push({ element: marker, owner: label.path, domPath: domPathOf(marker, container) });
+        }
+        const words = node('P', self);
+        ownerByElement.set(element, words.path);
+        block((element as HTMLElement), self.tag, self.path);
+        for (const child of element.children) {
+            if (child === marker) continue;
+            const inEntry = TOC_LISTS.has(child.tagName) || roleOf(child) === 'list' || (child.tagName === 'A' && (child.getAttribute('href') ?? '').startsWith('#'));
+            visit(child, inEntry ? self : words);
+        }
+    };
     /** The `<figcaption>` of `figure`, if it has one, as the last child of `self`: 8.2.5.27 t1 asks a Caption first or last of what it captions, and DOM order puts it last only by a coincidence of authoring. */
     const captionInto = (figure: Element, self: StructureNode) => {
         const figcaption = (figure.querySelector(':scope > figcaption') as HTMLElement|null);
@@ -910,6 +971,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
     };
     /** The role an element declares that the walk honours: the first token of `role` that {@link ARIA_TAGS} names, else the first token, else `''`. */
     const roleOf = (element: Element): string => {
+        if (element.matches(BELT_TOC)) return 'doc-toc';
         const tokens = (element.getAttribute('role') ?? '').trim().toLowerCase().split(/\s+/u).filter(Boolean);
         return tokens.find((t) => t in ARIA_TAGS) ?? tokens[0] ?? '';
     };
@@ -946,6 +1008,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visitAsHeading(element, parent, Number(level));
             return true;
         }
+        if (mapped === 'L' && (parent.tag === 'TOC' || parent.tag === 'TOCI')) {
+            visitTocList(element, parent);
+            return true;
+        }
         if (mapped === 'L') {
             // A list of plain boxes paints no marker, and `None` is the numbering of a list whose items carry no `Lbl`; a reified marker in an item says otherwise, and then the computed style names the numbering as it does for a `<ul>`.
             const labelled = [...element.children].some((child) => { const marker = child.querySelector('.marker'); return marker !== null && isLabelled(marker); });
@@ -955,6 +1021,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
                 throw new CasterError(`caster: list-style-type ${JSON.stringify(listStyle)} on ${name} at ${domPath} has no /ListNumbering name; a list whose items carry Lbl kids may not be None`, { element: domPath });
             }
             visitAsList(element, parent, listNumbering);
+            return true;
+        }
+        if (mapped === 'LI' && parent.tag === 'TOC') {
+            visitAsTocItem(element, parent);
             return true;
         }
         if (mapped === 'LI') {
@@ -968,6 +1038,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visitAsFigure(element, parent);
             return true;
         }
+        if (mapped === 'TOC')
+            return visitAsToc(element, parent);
         // `img`: a picture the document drew out of boxes. A raster background with a label was answered above, as a Figure with its pixels; this is the same claim with no pixels of its own, so the Figure owns what the element paints.
         const label = (element.getAttribute('aria-label') ?? '').trim();
         if (label === '') {
@@ -1112,9 +1184,9 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         // A declared role decides the element on every tag, native ones included (*the printer guesses, says so, and withdraws the claim*, S90).
         if (visitByRole(element, parent)) return;
 
-        // The belt's relocated footnote (`core/src/plugins/inline-footnotes.js` emits `<span class="footnote">`). PDF 2.0's `FENote` is exactly this: a note whose reference is elsewhere in the flow. It owns its own text.
+        // The belt's relocated footnote (`core/src/plugins/inline-footnotes.js` emits `<span class="footnote">`). PDF 2.0's `FENote` is exactly this: a note whose reference is elsewhere in the flow. It owns its own text, and says it is a footnote (`/NoteType /Footnote`, ISO 14289-2, 8.2.5.14.2). Each link to it is a call: the call's `Reference` and the note name each other with `/Ref` once the destinations are resolved, at the end of the walk; a note nothing links to carries no `/Ref`.
         if (element.classList.contains('footnote')) {
-            const self = noteLang(element, node('FENote', parent, langAttrs(element)));
+            const self = noteLang(element, node('FENote', parent, { ...langAttrs(element), noteType: 'Footnote' }));
             // The note's number, the way the `LI` branch below takes an item's: a paginator that lays the note out as `display: list-item` with a `::marker` reading its counter gets that marker reified into a leading `span.marker` (`adapters/reify.js`, its second moment), and the marker is the note's `Lbl`. An empty marker is no marker, for the reason the `LI` branch gives.
             const marker = (element.querySelector('.marker') as HTMLElement|null);
             if (marker && isLabelled(marker)) {
@@ -1315,6 +1387,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             return;
         }
         // `<menu>` is HTML's other unordered list.
+        if ((tag === 'UL' || tag === 'OL' || tag === 'MENU') && (parent.tag === 'TOC' || parent.tag === 'TOCI')) {
+            visitTocList(element, parent);
+            return;
+        }
         if (tag === 'UL' || tag === 'OL' || tag === 'MENU') {
             const listStyle = getComputedStyle(element).listStyleType;
             const listNumbering = LIST_NUMBERING[listStyle];
@@ -1324,12 +1400,17 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             visitAsList(element, parent, listNumbering);
             return;
         }
+        if (tag === 'LI' && parent.tag === 'TOC') {
+            visitAsTocItem(element, parent);
+            return;
+        }
         if (tag === 'LI') {
             visitAsListItem(element, parent);
             return;
         }
+        // A link inside the document is a `Reference`, in the PDF 1.7 namespace, and a link out of it a `Link` (ISO 14289-2, 8.2.5.20: `Reference` "should be used for intra-document targets"; *the older tag names are written in the older namespace*). Inside is decided by the test that makes its annotation a structure destination rather than a `/URI` (`linkRects`: an `href` that begins with `#`). The `Reference` carries a `/Ref` to its target's element (8.8), set at the end of the walk; where the builder finds a `Reference` forbidden in its position (`displayList/structure.js`) it is written a `Link`, its `/Ref` kept.
         if (tag === 'A' && element.hasAttribute('href')) {
-            const self = noteLang(element, node('Link', parent, langAttrs(element)));
+            const self = noteLang(element, node((element.getAttribute('href') ?? '').startsWith('#') ? 'Reference' : 'Link', parent, langAttrs(element)));
             ownerByElement.set(element, self.path);
             blockIfDisplayed(element, self);
             // An anchor the engine rendered on no page has no rectangles at all, so there is nothing to annotate here (*the engine stopped showing the original*, S47). The `Link` node stands; the annotation is re-homed onto the fragment that renders it at the end of the walk, and an anchor no fragment renders on the page its block begins on is dropped — which is exactly what the page's own clip did to it before the first fragment was constructed.
@@ -1353,7 +1434,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         //
         // `<sub>` and `<sup>` carry the Layout attribute `/TextPosition`. The 2.0 standard namespace does have a `Sub` element, and it is not this: 32000-2 defines `Sub` as a *sub-division of a block*, so tagging a subscript with it would say the run is a section of the paragraph. `/TextPosition` is the attribute that means what CSS means, and both `/Sub` and `/Sup` passed the same probe.
         //
-        // `<code>` and `<kbd>` carry nothing at all. `Code` exists in the PDF 1.7 namespace and was dropped from the 2.0 one, and veraPDF says so: a `Code` element under `http://iso.org/pdf2/ssn` fails ISO 14289-2:2024 8.2.4 t1 with "Non-standard structure type ... is not mapped to a standard type", and a `/RoleMap` on the StructTreeRoot does not rescue it because a 2.0 namespace maps through its own `/RoleMapNS`. A `Span` is what is left, and the monospaced face is what a sighted reader has.
+        // `<code>` is a `Code` (ISO 14289-2, 8.2.5.32: a fragment of computer code "shall" be one), in the PDF 1.7 namespace, which a PDF 2.0 file may use under ISO/TS 32005 (*the older tag names are written in the older namespace*, 2026-11-17, withdrawing the finding that put it in a `Span`: `Code` fails only when it is written in the 2.0 namespace, which never held it). A `<pre>` stays the `P` it is, so a fenced block is a `P` holding a `Code`. Where the type may not stand (in a contents entry's `Reference`, inside another `Code`), the builder writes it a `Span`. `<kbd>` and `<samp>` stay a `Span`: the standard leaves what counts as code to the author, and a key to press or a program's output is not a fragment of a program.
         if (tag === 'ABBR') {
             const expansion = (element.getAttribute('title') ?? '').trim();
             const self = noteLang(element, node('Span', parent, { ...langAttrs(element), ...(expansion ? { expansion } : {}) }));
@@ -1371,8 +1452,9 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
                 visit(child, self);
             return;
         }
-        if (tag === 'CODE' || tag === 'KBD') {
-            const self = noteLang(element, node('Span', parent, langAttrs(element)));
+        // `<q>` is a `Quote` (8.2.5.18), in the PDF 1.7 namespace, for the same reason.
+        if (tag === 'CODE' || tag === 'KBD' || tag === 'Q') {
+            const self = noteLang(element, node(tag === 'CODE' ? 'Code' : tag === 'Q' ? 'Quote' : 'Span', parent, langAttrs(element)));
             ownerByElement.set(element, self.path);
             blockIfDisplayed(element, self);
             for (const child of element.children)
@@ -1385,9 +1467,9 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         }
         // ---- v2: BelType's emitted vocabulary (P7) ----------------------------
 
-        // `BlockQuote` is not in the PDF 2.0 standard namespace (`structure-tree.md` §"What is not in the PDF 2.0 standard namespace"), and a non-standard type under `http://iso.org/pdf2/ssn` fails ISO 14289-2:2024 8.2.4 t1 with no `/RoleMap` able to rescue it — the same finding that put `<code>` into a `Span`. A quotation is a group of blocks, so `Div` is what is left and it is honest.
+        // A block quotation "shall" be a `BlockQuote` (ISO 14289-2, 8.2.5.7), a type PDF 2.0 left out of its own namespace and a PDF 2.0 file writes in the PDF 1.7 one (*the older tag names are written in the older namespace*, 2026-11-17, withdrawing the `Div` this branch wrote: the type fails veraPDF only in the 2.0 namespace). Where ISO/TS 32005 forbids it (a table cell, a paragraph) the builder writes it a `Div`.
         if (tag === 'BLOCKQUOTE') {
-            const self = noteLang(element, node('Div', parent, langAttrs(element)));
+            const self = noteLang(element, node('BlockQuote', parent, langAttrs(element)));
             visitGrouped(element, self);
             return;
         }
@@ -1513,6 +1595,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
     // Every internal destination, resolved now that every element exists: the nearest structure element at or above the target, because a link that points at a styling `div` still has to land somewhere a reader can name.
     for (const { annot, target } of internalTargets) {
         let path = '';
+        let fallback = false;
         let node: Element|null = target;
         for (; node && node !== container.parentElement; node = node.parentElement) {
             const found = structPathByElement.get(node);
@@ -1528,9 +1611,16 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             // ponytail: a scan of the container per such link, which only a document with many of them would feel.
             const next = [...container.querySelectorAll('*')].find((el) => (target.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 && structPathByElement.has(el));
             path = next ? structPathByElement.get(next) as string : tree.path;
+            fallback = true;
             warnings.push(`caster: ${named}, so its structure destination is ${next ? `${domPathOf(next, container)}, the next element that did` : 'the document'}; the file does not claim PDF/UA-2`);
         }
         (annot.dest as { page: number, xPx: number, yPx: number, structPath: string }).structPath = path;
+        // 8.8: the link's element names its target's by `/Ref`, beside the structure destination; a footnote names each of its calls back (8.2.5.14). Not where the destination is a fallback, which names an element the author did not.
+        const source = nodeByPath.get(annot.ownerPath);
+        const found = nodeByPath.get(path);
+        if (!source || !found || fallback) continue;
+        if (!(source.attrs.refs ??= []).includes(path)) source.attrs.refs.push(path);
+        if (found.tag === 'FENote' && !(found.attrs.refs ??= []).includes(source.path)) found.attrs.refs.push(source.path);
     }
     // Headings do not skip a level on the way down. No PDF/UA-2 rule says so — the walker asserts it because a tree whose levels jump is a document outline a reader cannot navigate, and the fixture is where that is caught.
     headings.forEach((h, i) => {

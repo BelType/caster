@@ -2,12 +2,13 @@
  * `displayList/structure.js` — the walk's structure tree resolved into the list's: pruned, ordered, every reference an index.
  *
  * @remarks
- * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it), except a `TR`'s cells, which keep the column order the walk declared; an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`. A foreign writer inherits none of these rules: it writes the tree it is given.
+ * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it), except a `TR`'s cells, which keep the column order the walk declared; an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`; each element is written as its type, or as the flat type of an older one where ISO/TS 32005 forbids it there (`writtenTypes`), the older types in the PDF 1.7 namespace, and an element's `/Ref`s resolve to indices (*the older tag names are written in the older namespace*, DESIGN.md S108). A foreign writer inherits none of these rules: it writes the tree it is given.
  *
  * @packageDocumentation
  */
 
 import { CasterError } from '../errors.ts';
+import { PDF_1_7_NAMESPACE } from './validate.ts';
 import { keepWhenEmpty } from '../walk/structure.ts';
 import { round3 } from '../coordinates/units.ts';
 
@@ -60,6 +61,59 @@ type Entry = {
 /** No content anywhere under an element: such an element has no place in reading order of its own. */
 const NO_CONTENT = Number.MAX_SAFE_INTEGER;
 
+/** The types PDF 2.0 left out of its standard namespace that the walk makes, each written in the PDF 1.7 namespace (*the older tag names are written in the older namespace*). */
+const PDF_1_7_TYPES = new Set(['BlockQuote', 'Code', 'Quote', 'TOC', 'TOCI', 'Reference']);
+/** The type of the 2.0 namespace each older type is written as where ISO/TS 32005 forbids it: the type the walk wrote before 2026-11-17. `TOC` and `TOCI` have none: the walk decides a contents' position before it builds one (`visitAsToc`). */
+const FLAT: Record<string, string> = { BlockQuote: 'Div', Code: 'Span', Quote: 'Span', Reference: 'Link' };
+const HEADINGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+/** Of the types the walk makes, what each older type may hold (ISO/TS 32005:2023, 7.2, Table 5), `content` being marked content of its own. A `Div` is not listed: it is folded, as veraPDF folds it. */
+const HOLDS: Record<string, Set<string>> = {
+  BlockQuote: new Set(['Sect', 'TOC', 'BlockQuote', 'P', 'Code', ...HEADINGS, 'Lbl', 'Link', 'Reference', 'FENote', 'L', 'Table', 'Caption', 'Figure', 'Formula', 'content']),
+  Code: new Set(['Em', 'Strong', 'Span', 'Link', 'Reference', 'FENote', 'content']),
+  Quote: new Set(['Code', 'Lbl', 'Em', 'Strong', 'Span', 'Quote', 'Link', 'Reference', 'FENote', 'Figure', 'Formula', 'content']),
+  Reference: new Set(['Lbl', 'Em', 'Strong', 'Span', 'Link', 'FENote', 'Figure', 'content']),
+};
+/** Of the types the walk makes, what may hold each older type that has a flat one (the same table, read by parent). */
+const HELD_BY: Record<string, Set<string>> = {
+  BlockQuote: new Set(['Document', 'Sect', 'Aside', 'BlockQuote', 'LBody', 'Caption', 'Figure', 'Formula', 'FENote']),
+  Code: new Set(['Document', 'Sect', 'Aside', 'BlockQuote', 'P', ...HEADINGS, 'Lbl', 'LBody', 'TH', 'TD', 'Caption', 'Figure', 'Formula', 'FENote', 'Link', 'Span', 'Em', 'Strong', 'Quote']),
+  Quote: new Set(['P', ...HEADINGS, 'Lbl', 'LBody', 'TH', 'TD', 'Caption', 'Figure', 'Formula', 'FENote', 'Link', 'Span', 'Em', 'Strong', 'Quote']),
+  Reference: new Set(['Aside', 'BlockQuote', 'P', ...HEADINGS, 'Lbl', 'LBody', 'TH', 'TD', 'Caption', 'Figure', 'Formula', 'FENote', 'Link', 'Span', 'Em', 'Strong', 'Code', 'Quote', 'TOCI']),
+};
+
+/**
+ * The type each kept element is written as: the walk's, except an older type that stands where ISO/TS 32005 forbids it, which is written as its flat type.
+ *
+ * @remarks
+ * Containment is a fact of the written tree, so it is decided here, after the pruning, where the walk cannot see it. A `Div` is folded both ways, as veraPDF folds it (*veraPDF folds a `Div`*, S25), so a quotation in a `Div` in a table cell stands in the cell. The elements are taken in the walk's order, parents first, until nothing changes: an element whose parent forbids it is flattened, and so is one holding a child it may not hold, the parent yielding to the child (a link holding code is a `Link` holding a `Code`, since the code is a "shall" and the `Reference` a "should"), except a `Reference` in a contents entry, which carries the entry's `/Ref` and keeps its type while its child is flattened instead. The path stays the walk's, which names the element and not its type.
+ */
+function writtenTypes(kept: Entry[]): Map<Entry, string> {
+  const type = new Map(kept.map((entry) => [entry, entry.node.tag]));
+  const parent = new Map<Entry, Entry>();
+  for (const entry of kept) for (const kid of entry.kids) parent.set(kid, entry);
+  const holder = (entry: Entry): string => {
+    let up = parent.get(entry);
+    while (up && type.get(up) === 'Div') up = parent.get(up);
+    return up ? type.get(up) as string : '';
+  };
+  const held = (entry: Entry): string[] => entry.kids.flatMap((kid) => (type.get(kid) === 'Div' ? held(kid) : [type.get(kid) as string]));
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const entry of kept) {
+      const now = type.get(entry) as string;
+      if (!(now in FLAT)) continue;
+      const above = holder(entry);
+      const forbidden = !HELD_BY[now].has(above)
+        || (!(now === 'Reference' && above === 'TOCI') && [...held(entry), ...(entry.contents.length > 0 ? ['content'] : [])].some((kid) => !HOLDS[now].has(kid)));
+      if (forbidden) {
+        type.set(entry, FLAT[now]);
+        changed = true;
+      }
+    }
+  }
+  return type;
+}
+
 /**
  * Resolve the walk's tree against the content and the links a list's pages hold.
  *
@@ -108,9 +162,18 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
     entry.kids.forEach(allocate);
   };
   allocate(root);
+  const written = writtenTypes(kept);
   const seqOf = (entry: Entry): number => {
     entry.seq ??= Math.min(...entry.contents.map((c) => c.seq), ...entry.kids.map(seqOf), NO_CONTENT);
     return entry.seq;
+  };
+  const keptIndex = new Map(kept.map((entry) => [entry.node.path, entry.index as number]));
+  /** The index of the kept element a `/Ref` names. */
+  const indexOfRef = (ref: string, from: string): number => {
+    const index = keptIndex.get(ref);
+    if (index === undefined)
+      throw new CasterError(`caster: the element at ${from} refers to ${ref}, which was pruned, so no /Ref can name it`);
+    return index;
   };
   const elements: StructElement[] = kept.map((entry) => {
     // Kids are ordered by the earliest content anywhere under them, which is content order and therefore reading order. An element with no content anywhere under it (an empty `TD`, E11, `tables.md`) has no place in content order at all, so it takes the place of the last sibling that had one and keeps the position it was declared in.
@@ -131,16 +194,19 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
       ...kidOrder.map(({ kid, seq }) => ({ seq, child: kid.index as number })),
       ...(entry.objr !== undefined ? [{ seq: NO_CONTENT, child: { link: entry.objr } }] : []),
     ].sort((a, b) => declared ? 0 : a.seq - b.seq);
-    const { attrs, tag, path } = entry.node;
+    const { attrs, path } = entry.node;
+    const type = written.get(entry) as string;
     const attributes = attributesOf(entry.node, figureBoxes[path]);
     return {
-      type: tag,
+      type,
+      ...(PDF_1_7_TYPES.has(type) ? { namespace: PDF_1_7_NAMESPACE } : {}),
       path,
       ...(attrs.lang ? { lang: attrs.lang } : {}),
       ...(attrs.alt ? { alt: attrs.alt } : {}),
       ...(attrs.expansion ? { expansion: attrs.expansion } : {}),
       ...(attrs.id ? { id: attrs.id } : {}),
       ...(attributes.length > 0 ? { attributes } : {}),
+      ...(attrs.refs && attrs.refs.length > 0 ? { refs: attrs.refs.map((ref) => indexOfRef(ref, path)) } : {}),
       children: ordered.map((o) => o.child),
     };
   });
@@ -205,6 +271,8 @@ function attributesOf(node: StructureNode, box: [number, number, number, number]
     attributes.push(table);
   if (node.attrs.textPosition)
     attributes.push({ O: 'Layout', TextPosition: node.attrs.textPosition });
+  if (node.attrs.noteType)
+    attributes.push({ O: 'FENote', NoteType: node.attrs.noteType });
   return attributes;
 }
 
