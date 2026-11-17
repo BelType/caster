@@ -21,7 +21,7 @@ const ROOTS = ['emit/structureEmit.ts', 'emit/forme.ts', 'vectors/vectorEmit.ts'
 
 /** Every module the writer may reach, relative to `src/`. */
 const ALLOWED = new Set([
-  'capabilities.ts', 'errors.ts', 'options.ts',
+  'capabilities.ts', 'errors.ts', 'options.ts', 'sha256.ts',
   'colour/colorResources.ts',
   'coordinates/matrix.ts', 'coordinates/printMarks.ts', 'coordinates/units.ts',
   'displayList/records.ts', 'displayList/validate.ts',

@@ -20,6 +20,8 @@
  * @packageDocumentation
  */
 import { capability } from '../capabilities.ts';
+import { CasterError } from '../errors.ts';
+import { sha256Bytes } from '../sha256.ts';
 /**
  * The subclass, built on first use.
  *
@@ -57,12 +59,56 @@ function writerClass(): any {
             };
         }
         async computeBufferSize() {
+            // The identifier is laid out as a placeholder of its final length, so every size and offset the base class computes holds; `serializeToBuffer` writes the digest over it.
+            const { PDFHexString } = capability('pdf');
+            this.context.trailerInfo.ID = this.context.obj([PDFHexString.of(PLACEHOLDER), PDFHexString.of(PLACEHOLDER)]);
             const info = await super.computeBufferSize();
             const header = this.context.header;
             return { ...info, header, size: info.size + header.sizeInBytes() - info.header.sizeInBytes() };
         }
+        async serializeToBuffer() {
+            const bytes: Uint8Array = await super.serializeToBuffer();
+            await writeFileId(bytes);
+            return bytes;
+        }
     };
     return Subclass;
+}
+
+/** 32 hex digits, the identifier's 16 bytes before the digest is known. */
+const PLACEHOLDER = '0'.repeat(32);
+
+/**
+ * Write the trailer's `/ID` over its placeholder: both entries the first 16 bytes of a SHA-256 over the file up to the cross-reference table, as forme derives it, so the identifier is a function of the list.
+ *
+ * @remarks
+ * ISO 32000-2 §7.5.5 requires an `/ID` of every PDF 2.0 file, and PDF/A-4 tests it (veraPDF's 6.1.3-1). The trailer follows the cross-reference table, so writing it moves no offset. The digest is `crypto.subtle`'s, and {@link sha256Bytes}'s in a realm with none (a page on an origin that is not a secure context), which agrees with it and is slower (32 ms on the 849 kB `convert-images` file in node 25, measured 2026-11-17).
+ */
+async function writeFileId(bytes: Uint8Array): Promise<void> {
+    const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 64)));
+    const xref = Number(/startxref\s+(\d+)\s+%%EOF\s*$/u.exec(tail)?.[1]);
+    const head = bytes.subarray(0, xref);
+    let digest: Uint8Array;
+    // A page on an origin that is not a secure context has no `crypto.subtle`, so the call throws there.
+    try { digest = new Uint8Array(await crypto.subtle.digest('SHA-256', head as BufferSource)); }
+    catch { digest = sha256Bytes(head); }
+    const id = new TextEncoder().encode(Array.from(digest.subarray(0, 16), (b) => b.toString(16).padStart(2, '0')).join(''));
+    const placeholder = new TextEncoder().encode(`<${PLACEHOLDER}>`);
+    let at = xref;
+    for (let found = 0; found < 2; found++) {
+        at = indexOf(bytes, placeholder, at);
+        bytes.set(id, at + 1);
+        at += placeholder.length;
+    }
+}
+
+/** Where `needle` first stands in `bytes` at or after `from`. */
+function indexOf(bytes: Uint8Array, needle: Uint8Array, from: number): number {
+    outer: for (let i = from; i <= bytes.length - needle.length; i++) {
+        for (let j = 0; j < needle.length; j++) if (bytes[i + j] !== needle[j]) continue outer;
+        return i;
+    }
+    throw new CasterError('caster: the trailer lost the file identifier the writer laid out for it');
 }
 
 /** The writer's one door: `PDFWriter`'s constructor is protected in pdf-lib's declarations, so instantiation happens through `create`. */

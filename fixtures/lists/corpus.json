@@ -5,8 +5,8 @@
   {
    "name": "paper",
    "why": "the large document: `@beltype/specimens` paper, four pages of running text, notes, a table, three variable faces",
-   "sha256": "6935629513c56dba47aeea12975d5a62e2ebf8f8c263ac46fd24b364d5544905",
-   "bytes": 111036,
+   "sha256": "c4c8f7bbff16f4441d1ee695dcf2f4fdc401e21910595f269e3849df6cba5e07",
+   "bytes": 111114,
    "cli": "same",
    "list": {
     "bytes": 186970,
@@ -20,8 +20,8 @@
   {
    "name": "cast",
    "why": "a hand-written document with margin boxes, a page counter, a figure and a passed-through PNG",
-   "sha256": "60d1a28f01b33767542f621f4df42993bdc6906fda9d9cbf83633591d403b0da",
-   "bytes": 34139,
+   "sha256": "63d3d90194af495f3d23dc525dc879b4dd2fb1a95814c055a083a8d923b427ed",
+   "bytes": 34217,
    "cli": "same",
    "list": {
     "bytes": 89085,
@@ -35,8 +35,8 @@
   {
    "name": "cast-divided-row",
    "why": "a table row divided across pages",
-   "sha256": "6fcb2b0515492cf5f9812470102d606990cff0a38e72ab35e44cb2d0382ca417",
-   "bytes": 20923,
+   "sha256": "b17a977dd1e5cc8d09d41f46bda908441d8de1d44c6671aee7f3a04e4a9b0ddf",
+   "bytes": 21001,
    "list": {
     "bytes": 62981,
     "blobs": [
@@ -47,8 +47,8 @@
   {
    "name": "roads",
    "why": "rotated text, a gradient with a soft mask, a radial shading, a spot ink with overprint, a CMYK ground, print marks with a bleed, a blurred shadow (the raster fallback), hyphenation, sub and superscript, internal and external links, `blackText: 100k`",
-   "sha256": "039d26011464587480cdf991995a373e49b3192c7a318fb2c1fdafce11c0555c",
-   "bytes": 174974,
+   "sha256": "3d04b1ebf900b95258722f00ab44e178455e6edf5d3cc0f4d182f2159cea9aa7",
+   "bytes": 175062,
    "options": {
     "blackText": "100k",
     "profile": "test/assets/default_cmyk.icc"
@@ -67,8 +67,8 @@
   {
    "name": "facsimile",
    "why": "a page of another PDF, reopened by pdf-lib inside the writer",
-   "sha256": "c66933be844a764bd26a88327547d776499b7b38f60cd8769857fa09479f0088",
-   "bytes": 114910,
+   "sha256": "63014ccf9b087794fcc8ef6e2ddd81f2663b87ccc8028089c3030dda1d648caa",
+   "bytes": 114988,
    "list": {
     "bytes": 4611,
     "blobs": [
@@ -80,8 +80,8 @@
   {
    "name": "webp",
    "why": "a WebP, which the image pass decodes through the browser before the list",
-   "sha256": "69124f6bb2ed4a87ddab452fee95e6c96073447f20684590dfdb382fdf94d26b",
-   "bytes": 15752,
+   "sha256": "efd4b579f8e75b51a63fc68fbc2b13bf8392d4994ecc91cfcd1276c4ca62dc17",
+   "bytes": 15830,
    "list": {
     "bytes": 4592,
     "blobs": [
@@ -93,8 +93,8 @@
   {
    "name": "arithmetic",
    "why": "an arithmetic-coded JPEG, which the browser refuses to decode, so the image pass hands the file through",
-   "sha256": "f8ff172caebe6021510ce99250ca9a1128e7227cdb62c0ac574843c8e7b2c755",
-   "bytes": 14237,
+   "sha256": "7b23abb41e84ecbcd47a45885547f7b0838c180058555fb2ae4a2634f9c08ba1",
+   "bytes": 14315,
    "list": {
     "bytes": 5119,
     "blobs": [
@@ -106,8 +106,8 @@
   {
    "name": "photo",
    "why": "an opaque 8-bit RGB PNG of 255 000 pixels, which the photo rule of the image pass re-encodes through the browser before the list",
-   "sha256": "da8c5aff39144576a30751f2815b7b78315c93e4d78ce9c1d3e4dd5b019f21c8",
-   "bytes": 38351,
+   "sha256": "87213cd8c32962b26c3328b33c34398085f3ad0b623d71fac9781d588f2b6d98",
+   "bytes": 38429,
    "list": {
     "bytes": 6598,
     "blobs": [
@@ -119,8 +119,8 @@
   {
    "name": "faces",
    "why": "a static TrueType face (Crimson Text Regular, `glyf`) and a static CFF face (Source Sans Pro Regular, `CFF `), neither variable nor unwrapped from WOFF2",
-   "sha256": "cff686d2d2eae7ffe77443f5abb7752d35177cb58037b2d1484f35efe2ea72bf",
-   "bytes": 35480,
+   "sha256": "a06e77c787f82ee15c04fedf858e73ac57305f504c38858fc640f7a1aa376b00",
+   "bytes": 35558,
    "list": {
     "bytes": 7623,
     "blobs": [
@@ -145,8 +145,8 @@
   {
    "name": "images",
    "why": "a CMYK JPEG with the Adobe marker, a JPEG with an ICC profile, and PNGs with alpha, Adam7 interlace, a palette with `tRNS`, 16 bits a sample, 16 bits with alpha and one grey channel",
-   "sha256": "843c12ab4e4412aa6637ca5150c287d42dd218fbac6221dddebff4963e99857d",
-   "bytes": 26492,
+   "sha256": "ddd98f2d2e30152ddaaeebe955f237610a460382c3359116c51455b5cf5ce149",
+   "bytes": 26570,
    "list": {
     "bytes": 13838,
     "blobs": [
@@ -166,8 +166,8 @@
   {
    "name": "facsimile-pages",
    "why": "two pages of one facsimile file",
-   "sha256": "f5ed957f01810254f2f8ecf3c1069705de2796b6d2f9e78d26c2be47e11b7fb7",
-   "bytes": 111425,
+   "sha256": "8715eea5cc22d1d9d3a51d9cd1e80c9ce9a2b251d480a3eb438e6253c89f8179",
+   "bytes": 111503,
    "list": {
     "bytes": 3209,
     "blobs": [
@@ -179,8 +179,8 @@
   {
    "name": "vectors",
    "why": "an SVG marker (a form), `mix-blend-mode` inside `isolation: isolate` (an isolated group with a blend mode), an SVG `<mask>` (a soft mask), an `<hr>` (a `rect` item)",
-   "sha256": "96e2683a949e533d0e05f894b6f1ce35922c850d6c85ac3e0ec75968011ff6f6",
-   "bytes": 9089,
+   "sha256": "cd76e4f67f470c31cacb271bc05230552a978f2f1e47a9e21878f57f77914740",
+   "bytes": 9167,
    "list": {
     "bytes": 8070,
     "blobs": [
@@ -191,8 +191,8 @@
   {
    "name": "pages",
    "why": "a `--pdf-page-label` run with a prefix and a start (`/PageLabels`), an outline three levels deep, a link whose text wraps (two rectangles)",
-   "sha256": "27d6439f3d93b41a4474bfd5d9fd91c2ad09d32fb249d5b6e24b1112e9f8c6c7",
-   "bytes": 17771,
+   "sha256": "1e9e9f54cee6fbde7f6d4f5ded6c769a28f16e522bd955fc3cbfec2088d58ae2",
+   "bytes": 17849,
    "list": {
     "bytes": 13711,
     "blobs": [
@@ -203,8 +203,8 @@
   {
    "name": "vector-roads",
    "why": "every vector road the first vectors document does not take, each drawn once and named by its `data-drawing` (Egildo's ruling 13 of the Rust writer): gradient strokes (patterns), `paint-order: stroke`, even-odd fills and clips, plain and stroke opacity, group opacity, luminance and alpha masks, masks over a form and over a raster fallback, a form and a raster nested in a form, a marker in a marker, a blend mode, spread methods, caps, joins and dashes, curves, `<use>` of a `<symbol>`, SVG transforms, a CMYK shading under the colour story, CSS transforms one by one and in a chain, styled borders, radii, `clip-path`, repeating and elliptical gradients, box opacity and blend",
-   "sha256": "2d836156962f091c9e785d68af289ab41ea7efd4bf641a1e391067021a97f6b8",
-   "bytes": 288516,
+   "sha256": "884a29e4bdceecb58d8b7e1d3c6c8cc304c8e019702e3cc291cf00b12f2698a0",
+   "bytes": 288744,
    "options": {
     "profile": "test/assets/default_cmyk.icc"
    },
@@ -224,8 +224,8 @@
   {
    "name": "downsample",
    "why": "a synthetic JPEG of 4 000 by 3 000 pixels in a box three inches wide, and a synthetic PNG of 2 400 by 1 600 placed twice, in a box 40 mm wide and in one 80 mm wide, all far above 450 ppi: the image pass reduces each to 300 ppi before the list, the PNG for its largest box (the smallest resolution over its uses), and the photo rule decides what the reduced pixels become",
-   "sha256": "bc155b174566c40770897025cba5b54bcc253b87ad1454af1624ec7d3b45e0ff",
-   "bytes": 73707,
+   "sha256": "b9e6bb4257a6d331806b67021e7dab8638a8eccca5f9f8f74b582e212dfcfdd5",
+   "bytes": 73785,
    "list": {
     "bytes": 8347,
     "blobs": [
@@ -238,8 +238,8 @@
   {
    "name": "canvas",
    "why": "a `<canvas>` figure painted by a script (a gradient, a circle, a square, three lines) with an `aria-label`: the image pass reads its pixels off the element as eight-bit RGBA, past the photo rule, and the list holds them as an image; the figure's /Alt is the label",
-   "sha256": "8c8d18c758122a539b778d6d8aa2aba6bc103c4984d21d5b6e05563a8ed7981f",
-   "bytes": 143084,
+   "sha256": "25fa4fc318b222e4478bcc078b421d5176c25e2499a9142a3e75313d053f32de",
+   "bytes": 143162,
    "list": {
     "bytes": 4573,
     "blobs": [
@@ -251,8 +251,8 @@
   {
    "name": "convert-text",
    "why": "a page of coloured text under `convertRgb: 'wasm'`: black, blue, red (twice), green and grey runs are converted by the vendored lcms-wasm before the list and reach it as CMYK inks, written `k`; a run with a declared ink, a tinted ground and a border are not converted",
-   "sha256": "65f2621dd781d17a6df5ff7c4c75fea0576ec88fdd1c633faee3f046512ebc92",
-   "bytes": 153457,
+   "sha256": "2984b585cd02036af40e622194f10e64b475364a1ffca0ab58ea076ba40832fb",
+   "bytes": 153535,
    "options": {
     "convertRgb": "wasm",
     "profile": "test/assets/default_cmyk.icc"
@@ -269,8 +269,8 @@
   {
    "name": "convert-images",
    "why": "images under `convertImages: 'cmyk'`: a JPEG and a PNG far above 450 ppi (reduced, then converted), an 8-bit and a 16-bit PNG with alpha, a grey PNG, a palette PNG with `tRNS` (expanded) and a JPEG with an ICC profile are converted by the vendored lcms-wasm in the image pass and reach the list as `DeviceCMYK` samples (version 7); a CMYK JPEG is left alone",
-   "sha256": "ec62d0c7ed1d7a4b027235ccf55b0fc43d78b8cff76d876959c81ce8d3c31802",
-   "bytes": 848968,
+   "sha256": "cf5c1c9cdf4f9de961362d104e9d4aee046c4c5e699514bc69ad0ed941521756",
+   "bytes": 849046,
    "options": {
     "convertImages": "cmyk",
     "profile": "test/assets/default_cmyk.icc"

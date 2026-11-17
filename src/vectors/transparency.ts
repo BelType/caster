@@ -158,7 +158,7 @@ export class TransparencyBuilder {
    * A transparency-group form XObject.
    *
    * @remarks
-   * `colourSpace` is the group's blending space, `/DeviceRGB` unless the caller names one: the isolation boundary of a blend names the document's sRGB profile (Egildo's ruling 15a of the Rust writer).
+   * `colourSpace` is the group's blending space, `/DeviceRGB` unless the caller names one: under a colour story every group names the document's sRGB profile, the managed colour space (*an archival claim is kept or refused*, 2026-11-17), as the isolation boundary of a blend did first (Egildo's ruling 15a of the Rust writer).
    *
    * `/I true` — an isolated group — is what makes the group composite against a transparent backdrop rather than against whatever is already on the page, which is the difference between "these shapes, then faded" and "these shapes blended with the page, then faded". `/K false` is non-knockout, which is what a group of overlapping shapes means everywhere outside a print workflow.
    */

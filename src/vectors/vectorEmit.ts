@@ -102,7 +102,7 @@ export type VectorEmitContext = {
   resources: Pick<Resources, 'forms' | 'rasters'>;
   /** Everything painted, recorded for the report. */
   records: ReportPaint[];
-  /** The document's sRGB profile as a colour space, for the group a blend mixes in; absent with no colour story, where `/DeviceRGB` stands. */
+  /** The document's sRGB profile as a colour space, the `/CS` of every transparency group (an opacity group, a soft mask's, a blend's) and of a page a blend mixes in; absent with no colour story, where `/DeviceRGB` stands. Every group named it since *an archival claim is kept or refused* (2026-11-17); a group that held no blend said `/DeviceRGB` before, under colour management too. */
   blendingSpace?: () => unknown;
 };
 
@@ -246,7 +246,7 @@ function softMaskForm(node: VectorItem, ctx: VectorEmitContext, info: EmitInfo):
   const operators: PDFOperator[] = [];
   for (const child of node.softMask.items) emitItem(child, ctx, inner, operators, info);
   const content = operators.map((op) => op.toString()).join('\n');
-  const form = ctx.transparency.form(node.softMask.bbox, content, inner.dictionary(ctx.context));
+  const form = ctx.transparency.form(node.softMask.bbox, content, inner.dictionary(ctx.context), ctx.blendingSpace?.());
   ctx.records.push({
     path: node.origin.domPath,
     owner: info.item.owner,
@@ -283,7 +283,7 @@ function alphaMaskForm(spec: ShadingSpec, path: Path, evenOdd: boolean, ctx: Vec
     PDFOperator.of(Ops.ShadingFill, [PDFName.of(alpha.name)]),
     PDFOperator.of(Ops.PopGraphicsState),
   ];
-  const form = ctx.transparency.form(bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context));
+  const form = ctx.transparency.form(bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), ctx.blendingSpace?.());
   ctx.records.push({
     path: domPath,
     owner: info.item.owner,
@@ -367,8 +367,7 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
       const inner = new ResourceScope();
       const operators: PDFOperator[] = [];
       for (const child of node.items) emitItem(child, ctx, inner, operators, info);
-      const space = ctx.blendingSpace && node.items.some(holdsOpenBlend) ? ctx.blendingSpace() : undefined;
-      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), space);
+      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), ctx.blendingSpace?.());
       scope.xobjects.set(form.name, form.ref);
       out.push(
         ...stateFor(
