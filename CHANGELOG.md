@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.8 — 2026-11-17
 
 - **A host may ask the shared writer worker to keep blobs** (2026-11-16, Egildo's ruling of that day, *we can flag an option to keep fonts*; *a host may keep the writer warm*, S104, amended). `PrintInput.formeKeepsBlobs`, default `false`, beside `formePort`: the worker keeps one forme `Writer` and the blobs it has checked, up to 32 MiB, least recently written forgotten first; the page sends the list and its keys, and then only what the worker says it lacks, the module included, so a later print neither copies the font programs across nor has forme hash them again. A blob is still hashed, and refused with forme's sentence, on its first arrival. The vendored module is forme `84b8ab9` (`Writer.lacks`, `writeKept`, `forget`), 1 547 817 bytes and its glue 14 976. Measured 2026-11-16 through `beltype serve`, paper and bolletta in turn on one kept page, twelve rounds twice, load average 6 to 17 (indicative): the emit step on the paper 28 ms without the option and 16 to 17 with it, on the bolletta 12 and 8 to 9, every file byte for byte the same with and without it and the same as before this round. `test/forme.test.ts` holds the refusal on first arrival, the message that carries no blob, and the worker that forgot past its bound and asked again.
 
