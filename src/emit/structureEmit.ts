@@ -126,12 +126,13 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
     // Every image is embedded before a page is written, because a page's /Resources /XObject has to name the streams the page's content refers to, and dedupe means one stream can be named by three pages. The list names each image by the walk's own index, and an item says which one it paints — by the index rather than by position since *the raster half of a continuation's drawing* (S42), because the measurement drops a picture that fell inside a straddling block's clipped tail. A resource no item paints is exactly that picture: nothing on any page refers to its stream, so nothing is embedded for it and its slot stays empty, which is what keeps `embeddedImages[image.index]` an answer.
     const imageContext = createImageContext(context);
     const embeddedImages: (EmbeddedImage|null)[] = [];
-    // What each painted image is interpolated by: the item says, and the last item to paint an image decides, as the last measurement did.
+    // What each painted image is interpolated by: the item says, and the last item to paint an image decides, as the last measurement did. Under the archival claim nothing is, a raster fallback and a colour cluster included (PDF/A-4 6.2.7.1, veraPDF's 6.2.7.1-3; S109).
+    const smooth = list.info.archival === undefined;
     const interpolateOf: Map<number,boolean> = new Map<any, any>();
     for (const page of list.pages)
         for (const item of page.items)
             if (item.kind === 'image')
-                interpolateOf.set(item.source, item.interpolate);
+                interpolateOf.set(item.source, item.interpolate && smooth);
     const facsimileSlots: { index: number; loaded: LoadedFacsimile; }[] = [];
     for (const [key, request] of Object.entries(list.resources.images)) {
         const index = Number(key);
@@ -166,8 +167,8 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             continue;
         const samples = samplesFromRgba(blobOf(list, spec.blob), (spec.width as number), (spec.height as number));
         rasterImages.set(Number(key), await embedImage(imageContext, spec.jpeg
-            ? { kind: 'jpeg', jpeg: blobOf(list, spec.jpeg), interpolate: true, format: 'canvas', gammaOnly: false }
-            : { kind: 'samples', samples, interpolate: true, label: `${spec.feature}@${spec.dpi}dpi` }));
+            ? { kind: 'jpeg', jpeg: blobOf(list, spec.jpeg), interpolate: smooth, format: 'canvas', gammaOnly: false }
+            : { kind: 'samples', samples, interpolate: smooth, label: `${spec.feature}@${spec.dpi}dpi` }));
     }
     // E12A (`images.md`): one XObject per colour cluster, through the writer of E7 like every other image, so the `/SMask` and the dedupe are the ones E7 decided. Two occurrences of the same emoji at the same size are the same pixels and therefore the same object, which is the dedupe doing its job rather than a rule of E12's own. Untested: the `emoji` option is dormant in `print()`.
     const emojiImages: Map<number,EmbeddedImage> = new Map<any, any>();
@@ -175,7 +176,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         if (cluster.blob === undefined)
             continue;
         const samples = samplesFromRgba(blobOf(list, cluster.blob), (cluster.width as number), (cluster.height as number));
-        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: true, label: `emoji:${cluster.text}@${cluster.sizePx}px` }));
+        emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: smooth, label: `emoji:${cluster.text}@${cluster.sizePx}px` }));
     }
     const shadings = new ShadingBuilder(context);
     const transparency = new TransparencyBuilder(context);
@@ -362,7 +363,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
     }
     const faces: CidFontStats[] = list.resources.fonts.map((instance) => fonts.get(instance.key).finish());
     // The colour resources go on last: a resource name is allocated the first time an element asks for it, so the complete set is only known once every page has been emitted.
-    const colourRecord = colour ? await colour.finish(pages, pdfDoc.catalog) : undefined;
+    const colourRecord = colour ? await colour.finish(pages, pdfDoc.catalog, !smooth) : undefined;
     const info = {
         language: list.info.lang,
         title: list.info.title,
@@ -371,6 +372,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         creator: PRODUCER,
         // *The printer guesses, says so, and withdraws the claim* (S90): a guess in the tree withdraws the claim.
         conformance: list.info.conformance,
+        archival: !smooth,
         created: list.info.created,
     };
     setInfo(pdfDoc, info);

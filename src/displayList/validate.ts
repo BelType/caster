@@ -2,14 +2,15 @@
  * `displayList/validate.js` — `validateList(list)`: the refusals of a list a writer could not write, each a sentence, before a byte is written.
  *
  * @remarks
- * Pure and synchronous: it reads the list and nothing else, imports only the error, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; each image's samples in a shape the schema names, as many bytes as it says (version 6; `DeviceCMYK` at four components and with neither palette nor profile, version 7); the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); under a PDF/UA-2 claim, no word gap of a face with no space glyph (S103); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names, a namespace that is the PDF 1.7 one where one is named, every `refs` index in range and none empty). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
+ * Pure and synchronous: it reads the list and nothing else, imports only the error and the JPEG header reader, and returns nothing when the list is one the writer can write. The writer calls it first (`emitStructure`), the replay of the identity gate calls it on every saved list, and a foreign writer's reader is tested against the same list of refusals. What it holds: the version; every blob key a resource names; each image's samples in a shape the schema names, as many bytes as it says (version 6; `DeviceCMYK` at four components and with neither palette nor profile, version 7); the font instances (unique keys, sorted widths, a width for every glyph a text item shows and every space glyph it names); under a PDF/UA-2 claim, no word gap of a face with no space glyph (S103); under the archival claim a colour story, no facsimile, and no CMYK colour without a CMYK output profile (S109); every image, raster and colour-cluster key an item names; the marked content of each page (no end without a start, none left open); the links (`order` running 0, 1, 2 … over the document, a destination or a URI on each); the structure tree (an element index anywhere in range, one parent each, no cycle, a content child that is a content start naming its element back, every content start some element's child, a link child owned by the link's element, the attribute keys the schema names, a namespace that is the PDF 1.7 one where one is named, every `refs` index in range and none empty). What it leaves to the writer is what only writing finds: a font program the subsetter refuses, an image no filter reads, a malformed `info.created`. Glyph 0 needs no width: a `.notdef` is refused by the ToUnicode map, which names the item it was painted in. The checks of the tree moved here from the writer's `checkTree` with their sentences (stage 5 of `.claude/plans/the-rust-writer/plan-close-the-list.md`, in the BelType monorepo).
  *
  * @packageDocumentation
  */
 
 import { CasterError } from '../errors.ts';
+import { parseJpeg } from '../images/jpeg.ts';
 
-import type { DisplayList, Item, LinkItem, StructElement } from '../displayList.ts';
+import type { DisplayList, Item, LinkItem, Paint, StructElement, VectorItem } from '../displayList.ts';
 
 /** The version this module and the writer read. */
 export const LIST_VERSION = 7;
@@ -32,6 +33,7 @@ export function validateList(list: DisplayList): void {
   checkSamples(list);
   checkFonts(list);
   checkGaps(list);
+  checkArchival(list);
   checkItems(list);
   checkLinks(list);
   checkTree(list);
@@ -121,6 +123,59 @@ export function checkGaps(list: DisplayList): void {
     const family = list.resources.fonts.find((instance) => instance.key === item.font)?.family || item.font;
     throw new CasterError(`caster: the face ${family} (${item.font}) has no space glyph, so the word gap in text item ${at} of page ${p + 1} would be glyph 0, .notdef, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9); give the text a face with a space, or print with \`standard: 'none'\`, which claims no standard and writes the gap as positioning with no glyph`, { listItem: { page: p, item: at } });
   }));
+}
+
+/**
+ * A list that claims PDF/A-4 is one the file can keep the claim for, or it is refused by name (*an archival claim is kept or refused*, S109).
+ *
+ * @remarks
+ * It carries a colour story, so its device colour has an output intent; it places no page of another PDF, which the writer copies as it is and does not read; and no colour in it is CMYK unless the output profile is a CMYK one. CMYK is a declared ink, process or spot (whose alternate is CMYK), on a run or a rectangle; black text under `blackText: '100k'`; a vector paint or gradient in CMYK, a group's children and a mask's content among it; print marks, in the `/All` separation; and an image whose samples are `DeviceCMYK` or whose file is a four-component JPEG. It is not converted: a silent conversion would change the ink the author asked for. The facsimiles are read by image key, then the pages' items in order, then the forms by name. The builder calls this too, since it knows the flag.
+ *
+ * @throws {CasterError} carrying `listItem` where an item broke the claim.
+ */
+export function checkArchival(list: DisplayList): void {
+  if (list.info.archival === undefined) return;
+  const story = list.writing.colour;
+  if (!story)
+    throw new CasterError('caster: the display list claims PDF/A-4 and carries no colour story, so no output intent would say what its colours mean (ISO 19005-4, 6.2.4.3)');
+  for (const image of Object.values(list.resources.images)) {
+    if (image.facsimile)
+      throw new CasterError(`caster: the facsimile at ${image.domPath} is page ${image.facsimile.page} of ${image.facsimile.url}, a page of another PDF, which Caster copies as it is and does not read, so it cannot stand behind it under PDF/A-4; print without \`a-4\` in \`standard\`, or place the page as an image`);
+  }
+  if (String.fromCharCode(...list.resources.blobs[story.profiles.cmyk].subarray(16, 20)) === 'CMYK') return;
+  const refuse = (what: string, page: number, item: number) => new CasterError(`caster: ${what}, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which PDF/A-4 asks of every colour (ISO 19005-4, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without \`a-4\` in \`standard\``, { listItem: { page, item } });
+  list.pages.forEach((page, p) => page.items.forEach((item, at) => {
+    if (item.kind === 'text' && story.blackText === '100k' && !item.fill.ink && item.fill.rgb.every((c) => c === 0))
+      throw refuse(`text item ${at} of page ${p + 1} is painted in CMYK, by \`blackText: '100k'\``, p, at);
+    const cmyk = item.kind === 'text' ? item.fill.ink !== undefined
+      : item.kind === 'shape' && 'rect' in item ? item.fill.ink !== undefined
+        : item.kind === 'marks' ? true
+          : item.kind === 'image' ? imageCmyk(list, item.source)
+            : item.kind === 'shape' || item.kind === 'group' || item.kind === 'form' || (item.kind === 'raster' && item.table === 'rasters') ? vectorCmyk(item as VectorItem)
+              : false;
+    if (cmyk) throw refuse(`${item.kind} item ${at} of page ${p + 1} is painted in CMYK`, p, at);
+  }));
+  for (const [name, form] of Object.entries(list.resources.forms)) {
+    if (form.items.some(vectorCmyk))
+      throw new CasterError(`caster: the form ${name} is painted in CMYK, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which PDF/A-4 asks of every colour (ISO 19005-4, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without \`a-4\` in \`standard\``);
+  }
+}
+
+/** Whether an image's samples or file are CMYK: `DeviceCMYK` samples, or a JPEG of four components. */
+function imageCmyk(list: DisplayList, source: number): boolean {
+  const image = list.resources.images[source];
+  if (!image) return false;
+  if (image.samples?.colorSpace === 'DeviceCMYK') return true;
+  return image.blob !== undefined && image.mime === 'image/jpeg' && parseJpeg(list.resources.blobs[image.blob]).components === 4;
+}
+
+/** Whether a vector item paints in CMYK, its children and its mask among it; a form item is read where its definition is, by name. */
+function vectorCmyk(item: VectorItem): boolean {
+  const paint = (p: Paint | undefined) => p !== undefined && ('cmyk' in p || ('gradient' in p && p.gradient.colorSpace === 'DeviceCMYK'));
+  const own = item.kind === 'shape' ? paint(item.fill) || paint(item.stroke?.paint)
+    : item.kind === 'group' ? item.items.some(vectorCmyk)
+      : false;
+  return own || (item.softMask?.items.some(vectorCmyk) ?? false);
 }
 
 /** Every resource key a page item names, and each page's marked content opened and closed in turn. */

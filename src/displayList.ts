@@ -22,6 +22,8 @@
  *
  * VERSION 7, AMENDED WITHOUT A NEW NUMBER (*the older tag names are written in the older namespace*, `codeberg.org/BelType/decisions`, 2026-11-17). A structure element may name its `namespace` where it is not the PDF 2.0 one, and the elements it refers to (`refs`); an `FENote` may carry an attribute object `{ O: 'FENote', NoteType }`. All three are optional and absent from every list that holds no quotation, code, contents, internal link or footnote, so every list recorded before reads as it did and writes the same file; the number was kept so that those lists stay what they are. A writer that predates the amendment reads such a list and writes the older types in the wrong namespace, which veraPDF refuses: the writers move in lockstep (Caster vendors forme), and that is the price named.
  *
+ * VERSION 7, AMENDED AGAIN WITHOUT A NEW NUMBER (*the standard is a list* and *an archival claim is kept or refused*, `codeberg.org/BelType/decisions`, 2026-11-17; S109). `info.archival`, `pdfa4`, is the archival claim beside `info.conformance`, the accessibility one; it is optional and absent from every list that makes no such claim, so every list recorded before reads as it did and writes the same file. forme before the amendment refuses such a list, since its reader denies a member it does not know; the writers move in lockstep, as the last amendment said.
+ *
  * @packageDocumentation
  */
 
@@ -50,6 +52,8 @@ export type DocumentInfo = {
   title: string;
   /** `tagged` under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103), or once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90): the file then claims nothing in its XMP. */
   conformance: 'pdfua2' | 'tagged';
+  /** The archival claim, `pdfa4` under `standard` with `a-4` (*an archival claim is kept or refused*, S109): the file then carries the PDF/A-4 identification in its XMP, no document information dictionary, no image or raster fallback asking to be smoothed, and the archive's output intent beside the print shop's on the one profile. A guess in the tree does not touch it. Absent, the file makes no archival claim. Version 7, optional. */
+  archival?: 'pdfa4';
   pageCount: number;
   /** The moment the file says it was made: an ISO 8601 instant in UTC, `YYYY-MM-DDTHH:mm:ss` with optional fractional seconds and a final `Z`, as `Date.prototype.toISOString` writes it. Set by `print()` from the host's `created`, or from the wall clock when the host gives none; the writer writes it at whole seconds into both `/CreationDate` and `/ModDate`, and reads no clock. Version 3. */
   created: string;

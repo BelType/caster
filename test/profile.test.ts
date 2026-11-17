@@ -97,9 +97,11 @@ test('a print with a CMYK profile carries it as its output intent', async () => 
   assert.equal(sha(await outputProfile(seen.bytes!)), sha(cmyk));
 });
 
-test('the Rust writer refuses a colour print with no profile, naming the option, and writes the output intent from one', async () => {
+test('the Rust writer writes the output intent from the sRGB profile with no profile, and from a CMYK one', async () => {
+  // It refused a print with no profile until forme wrote an RGB destination (*an archival claim is kept or refused*, S109).
   const none = await printed('<p>Some words.</p>', undefined, 'forme');
-  assert.match(none.error ?? '', /`profile`/);
+  assert.equal(none.error, undefined);
+  assert.equal(sha(await outputProfile(none.bytes!)), sha(asset('profiles/srgb.icc')));
   const cmyk = asset('test/assets/default_cmyk.icc');
   const seen = await printed('<p>Some words.</p>', [...cmyk], 'forme');
   assert.equal(seen.error, undefined);

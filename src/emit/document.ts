@@ -30,6 +30,8 @@ export type DocumentInfo = {
   creator: string;
   /** Whether the XMP claims PDF/UA-2 (*the printer guesses, says so, and withdraws the claim*, S90). `'tagged'` writes no `pdfuaid` block: the file is tagged, and a tag the printer guessed is not a claim it makes. */
   conformance: 'pdfua2'|'tagged';
+  /** Whether the file claims PDF/A-4 (*an archival claim is kept or refused*, S109): the XMP carries the PDF/A identification and the file no document information dictionary. */
+  archival: boolean;
   /** The display list's `info.created`, an ISO 8601 instant in UTC. */
   created: string;
 };
@@ -47,10 +49,12 @@ export async function createDocument(): Promise<PDFDocument> {
     return pdfDoc;
 }
 /**
- * Write the catalog `/Lang` and the Info dictionary's title, producer, creator and both dates.
+ * Write the catalog `/Lang` and the Info dictionary's title, producer, creator and both dates; under the archival claim, remove the Info dictionary.
  *
  * @remarks
  * pdf-lib stamps `/CreationDate` and `/ModDate` with its own clock when the document is created; both are set again here from `info.created`, in the slots pdf-lib's dictionary already holds, so the dictionary's key order is the one it always was and only the two values are the list's.
+ *
+ * PDF/A-4 allows no Info dictionary but under a `PieceInfo` the catalog does not hold (veraPDF's 6.1.3-4), so under the claim it is deleted from the file and from the trailer once `setTitle` has written the window-title flag beside it; the title is the XMP's, and the cross-reference table skips the object number it held. A file that makes no such claim keeps it, since older viewers and file managers read the title from it.
  *
  * @throws {CasterError} `info.created` is not an ISO 8601 instant in UTC.
  */
@@ -63,6 +67,10 @@ export function setInfo(pdfDoc: PDFDocument, info: DocumentInfo) {
     const infoDict = pdfDoc.context.lookup(pdfDoc.context.trailerInfo.Info, pdf().PDFDict);
     infoDict.set(pdf().PDFName.of('ModDate'), date);
     infoDict.set(pdf().PDFName.of('CreationDate'), date);
+    if (info.archival) {
+        pdfDoc.context.delete(pdfDoc.context.trailerInfo.Info as PDFRef);
+        delete pdfDoc.context.trailerInfo.Info;
+    }
 }
 /**
  * An ISO 8601 instant in UTC as a PDF date string (ISO 32000-2 §7.9.4) at whole seconds, `D:YYYYMMDDHHmmssZ`: the form pdf-lib's own `PDFString.fromDate` writes, made from the text alone, with no clock and no `Date`.
@@ -78,7 +86,7 @@ export function pdfDate(iso: string): string {
 /** Escape `&`, `<` and `>` for XML text content. */
 const escapeXml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 /**
- * XMP packet carrying dc:title, the producing tool, the PDF/UA-2 identification when the file claims it, and the language.
+ * XMP packet carrying dc:title, the producing tool, the PDF/UA-2 identification when the file claims it, the PDF/A-4 identification when it claims that (part 4 and rev 2020 with no conformance level, as veraPDF's rules 6.7.3-1 to -6 read ISO 19005-4; S109), and the language.
  *
  * @remarks
  * Forced by veraPDF PDF/UA-2 rule 8.11.1 t2: the catalog needs a Metadata key whose stream dictionary has Type /Metadata and Subtype /XML. pdf-lib's setTitle only writes the Info dictionary, so the packet is built by hand. `xmp:CreatorTool` and `pdf:Producer` restate what `setInfo` puts in the Info dictionary, because a PDF 2.0 reader is entitled to consult only the packet.
@@ -105,6 +113,10 @@ export function addXmpMetadata(pdfDoc: PDFDocument, info: DocumentInfo) {
     <rdf:Description rdf:about="" xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
       <pdfuaid:part>2</pdfuaid:part>
       <pdfuaid:rev>2024</pdfuaid:rev>
+    </rdf:Description>` : ''}${info.archival ? `
+    <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
+      <pdfaid:part>4</pdfaid:part>
+      <pdfaid:rev>2020</pdfaid:rev>
     </rdf:Description>` : ''}
   </rdf:RDF>
 </x:xmpmeta>

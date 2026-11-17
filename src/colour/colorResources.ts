@@ -310,24 +310,25 @@ export class ColorResources {
    * The document's output intent.
    *
    * @remarks
-   * `/S /GTS_PDFX` is the subtype every PDF/A and PDF/X output intent has carried since PDF 1.4 and is what veraPDF's PDF/A-4 profile looks for; the newer `/S /GTS_PDFA1` exists but is not what the A-4 rules key on. The condition identifier is the profile's own description rather than a standard characterisation name, because no characterisation profile is reachable from this environment; the exit notes say so.
+   * `/S /GTS_PDFX` is the print shop's intent. Under the archival claim a `/S /GTS_PDFA1` intent stands beside it on the same profile object (*an archival claim is kept or refused*, S109): veraPDF's PDF/A-4 profile reads only that one as the archive's, which corrects what this comment said until 2026-11-17, that it keyed on `GTS_PDFX`, and it holds every intent of a file to one `DestOutputProfile` (6.2.3-2). The condition identifier is the profile's own description rather than a standard characterisation name, because no characterisation profile is reachable from this environment; the exit notes say so.
    *
+   * @param archival - The list claims PDF/A-4.
    * @returns With `profileSha256` still empty: the digest is asynchronous and {@link ColorEmitter.finish} fills it in.
    */
-  addOutputIntent(catalog: PDFDict): ReportOutputIntent {
+  addOutputIntent(catalog: PDFDict, archival = false): ReportOutputIntent {
     const { PDFName, PDFString } = capability('pdf');
     const space = iccColorSpace(this.options.profileBytes);
     const n = iccComponents(space);
     const profileRef = this.context.register(this.context.flateStream(this.options.profileBytes, { N: n }));
-    const intent = this.context.obj({
+    const intent = (subtype: string) => this.context.obj({
       Type: 'OutputIntent',
-      S: 'GTS_PDFX',
+      S: subtype,
       OutputConditionIdentifier: PDFString.of(this.options.condition),
       RegistryName: PDFString.of('http://www.color.org'),
       Info: PDFString.of(this.options.info),
       DestOutputProfile: profileRef,
     });
-    catalog.set(PDFName.of('OutputIntents'), this.context.obj([intent]));
+    catalog.set(PDFName.of('OutputIntents'), this.context.obj(archival ? [intent('GTS_PDFX'), intent('GTS_PDFA1')] : [intent('GTS_PDFX')]));
     return {
       subtype: 'GTS_PDFX',
       condition: this.options.condition,
@@ -530,9 +531,9 @@ export class ColorEmitter {
    * @remarks
    * It runs after emission on purpose: a resource name is allocated the first time an element asks for it, and the page that asks first may be the last page in the file.
    */
-  async finish(pages: PDFPage[], catalog: PDFDict): Promise<WrittenColour> {
+  async finish(pages: PDFPage[], catalog: PDFDict, archival = false): Promise<WrittenColour> {
     for (const page of pages) this.resources.ensurePageResources(page);
-    const outputIntent = this.resources.addOutputIntent(catalog);
+    const outputIntent = this.resources.addOutputIntent(catalog, archival);
     outputIntent.profileSha256 = await sha256Hex(this.options.profileBytes);
     return {
       elements: this.elements,

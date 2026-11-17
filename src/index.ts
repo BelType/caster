@@ -13,7 +13,7 @@
  */
 
 import { CasterError, FontUnavailableError } from './errors.ts';
-import { refuseUnbuiltTiers, resolveOptions, colourOn } from './options.ts';
+import { refuseUnbuiltTiers, resolveOptions, colourOn, claimsOf } from './options.ts';
 import { confessionsOf, createReport, recordProblem, stage } from './report.ts';
 import { load, neededCapabilities, capability } from './capabilities.ts';
 import { lock, precheck } from './precheck.ts';
@@ -64,7 +64,7 @@ import { photoRuleRecord } from './images/photoRule.ts';
 import { inlineSvgImages } from './images/svgInline.ts';
 import { loadFacsimiles } from './images/facsimile.ts';
 
-import type { CasterOptions } from './options.ts';
+import type { CasterOptions, GivenOptions } from './options.ts';
 import type { PreparedImage } from './images/imagePass.ts';
 import type { ConfessedRun, Report, ReportConversion, ReportPhotoRule, ReportCapability, ReportEmission, ReportImage, ReportNeeds, ReportPageBox, ReportSkipInk, ReportStructure, ReportWord } from './report.ts';
 import type { PageMarks } from './coordinates/printMarks.ts';
@@ -121,7 +121,7 @@ export type PrintResult = {
  * @throws {CasterError} The document has no window; not Blink; a print already running; an engine's DOM the adapter cannot read; a flag this port does not compose (`shaper: 'fontkit'`, `convertRgb` other than `'none'`, `subset: 'pdf-lib'`); a word rendered and never measured (*the conservation of words*, DESIGN.md S61).
  * @throws {FontUnavailableError} The document declares no `@font-face`, or a run resolves to a family nothing supplies bytes for (D2).
  */
-export async function print(input: PrintInput, given: Partial<CasterOptions> = {}): Promise<PrintResult> {
+export async function print(input: PrintInput, given: GivenOptions = {}): Promise<PrintResult> {
   const options = resolveOptions(given);
   const report = createReport(((options as unknown) as Record<string, unknown>));
   const doc = input.document;
@@ -286,11 +286,13 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       // Which elements the engine actually put on a page (*the engine stopped showing the original*, S47). A divided block's original is on none of them since the first fragment is constructed, so it gives the tree its element and its first fragment gives that element its ink.
       renders: (element) => strip.pageElementOf(element) !== null,
       unknownElements: options.unknownElements,
-      standard: options.standard
+      // The walk asks one thing of the list of claims: whether PDF/UA-2 is on it, which makes a missing description a refusal (S103, amended 2026-11-08).
+      standard: claimsOf(options.standard).includes('ua-2') ? 'ua-2' : 'none'
     });
     // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
-    report.conformance = options.standard === 'none' || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
+    // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own.
+    report.conformance = !claimsOf(options.standard).includes('ua-2') || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
     report.warnings.push(...walk.warnings);
     // The image bytes, before the measurement rather than after it. The order of `coordinates-and-pages.md` (E10) puts everything that is not a measurement outside the neutralised window, and this is outside it in both directions: fetching reads no layout at all. It has to happen first because only the file says what an image's stored pixel size and EXIF orientation are — `naturalWidth` is the size after the engine applied the orientation, so a sideways-stored JPEG measured from the DOM was placed with the identity orientation and printed on its side, with the file's own tag in the report saying otherwise.
     const imageBytes = await fetchImages(walk.images, gateway);
@@ -508,6 +510,7 @@ export async function print(input: PrintInput, given: Partial<CasterOptions> = {
       },
       paintOrder: options.paintOrder,
       conformance: report.conformance,
+      ...(claimsOf(options.standard).includes('a-4') ? { archival: true } : {}),
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
       outline: true,
@@ -880,11 +883,9 @@ function intrinsicsOf(request: { element: HTMLElement; }, bytesBySrc: Map<string
  * The two ICC profiles come from the `profiles` capability the registry loaded; the builder hashes them into the list's blobs. No `convertRgb` travels: a converted run's fill reaches the list as its ink, and `'endpoint'` is refused before the walk.
  *
  * @throws {CapabilityError} The `profiles` capability was not loaded.
- * @throws {CasterError} The Rust writer was chosen and no `profile` was passed.
  */
 function colourOptions( options: CasterOptions) {
-  // forme reads the output intent's profile as CMYK only (`colorResources: the output profile is "RGB ", not CMYK`), so the sRGB intent a profile-less print carries is the pdf-lib writer's alone until forme accepts an RGB destination.
-  if (options.writer === 'forme' && !options.profile) throw new CasterError("caster: `writer: 'forme'` writes the output intent from a CMYK profile only, and this print has none. Pass the bytes of one as the `profile` option, or use `writer: 'pdf-lib'`, whose output intent can be sRGB.", { flag: 'profile' });
+  // forme writes an RGB destination since a19f882 (2026-11-17, S109), so the sRGB intent a profile-less print carries is both writers'; until then this was a refusal under `writer: 'forme'`.
   const files = capability('profiles');
   return {
     profileBytes: options.profile ?? files['srgb.icc'],

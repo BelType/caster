@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>An archival document in CMYK</title>
+<!-- *An archival claim is kept or refused* (DESIGN.md S109): the archival document with one run in a declared CMYK ink. `test/pdfa.test.ts` prints it under `ua-2` with `a-4` with a CMYK profile, where it passes, and with none, where the ink has nothing behind it and the print is refused by name. -->
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+body { margin: 0; width: 160mm; padding: 10mm; font: 10pt/1.35 'Source Sans 3', sans-serif; color: #222; }
+img { display: block; width: 30mm; height: auto; }
+.faded { opacity: 0.5; }
+.faded span { display: inline-block; width: 12mm; height: 8mm; margin-right: -4mm; background: #c03; }
+.faded span + span { background: #06c; }
+.ink { --pdf-color: device-cmyk(0 1 0.65 0.15); }
+.fade { height: 8mm; background: linear-gradient(to right, rgba(0, 102, 204, 1), rgba(0, 102, 204, 0)); }
+table { border-collapse: collapse; }
+td, th { border: 1px solid #999; padding: 2px 4px; }
+</style>
+</head>
+<body>
+<section>
+<h1 id="top">An archival document</h1>
+<p><span class="ink">This run is in CMYK.</span> This file is meant to be kept. See <a href="#table">the table</a>, or <a href="https://example.com/">an address</a>.</p>
+<img src="../cast/logo.png" alt="The logo">
+<div class="faded"><span></span><span></span></div>
+<div class="fade"></div>
+<h2 id="table">A table</h2>
+<table><tr><th>Kept</th><th>Read</th></tr><tr><td>by the archive</td><td>by everyone</td></tr></table>
+</section>
+</body>
+</html>

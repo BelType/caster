@@ -18,7 +18,7 @@ import { toPdfMatrix } from '../coordinates/ctm.ts';
 import { outlineTableOf } from '../fonts/fontProgram.ts';
 import { rgbaOf } from '../images/samples.ts';
 import { spaceGlyph } from '../measure/textMeasure.ts';
-import { checkGaps } from './validate.ts';
+import { checkArchival, checkGaps } from './validate.ts';
 import { sha256Bytes } from '../sha256.ts';
 import { glyphAdvance } from '../fonts/hbShaper.ts';
 import { shaperVariations } from '../fonts/axisMap.ts';
@@ -52,6 +52,8 @@ export type BuildInputs = {
   writing: Omit<Writing, 'colour'> & { colour?: Omit<ColourWriting, 'profiles'> & { profileBytes: Uint8Array, srgbBytes: Uint8Array } };
   /** The list's `info.conformance`: `tagged` under `standard: 'none'` or once a guess withdrew the claim (S90, S103), as `print()` decided it for the report. */
   conformance: DocumentInfo['conformance'];
+  /** The list's `info.archival`: `standard` claims `a-4` (S109). */
+  archival?: boolean;
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
   paintOrder?: 'dom' | 'css';
   /** The `@page` ground each page paints, already resolved. */
@@ -896,6 +898,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
             lang: walk.lang,
             title: inputs.title,
             conformance: inputs.conformance,
+            ...(inputs.archival ? { archival: 'pdfa4' as const } : {}),
             pageCount: measurement.pageCount,
             created: inputs.created,
         },
@@ -908,6 +911,8 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
     };
     // *PDF/UA-2 is a flag, not a given* (S103): the builder knows the flag, so a gap PDF/UA-2 forbids is refused here, before either writer is asked; the writers' validators hold the same rule for a list that reaches them some other way.
     checkGaps(list);
+    // *An archival claim is kept or refused* (S109): likewise, a list the file could not keep PDF/A-4 for is refused here, by name.
+    checkArchival(list);
     return { list, origins };
 }
 
