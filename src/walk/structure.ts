@@ -1627,8 +1627,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         if (!(source.attrs.refs ??= []).includes(path)) source.attrs.refs.push(path);
         if (found.tag === 'FENote' && !(found.attrs.refs ??= []).includes(source.path)) found.attrs.refs.push(source.path);
     }
-    // Headings do not skip a level on the way down. No PDF/UA-2 rule says so — the walker asserts it because a tree whose levels jump is a document outline a reader cannot navigate, and the fixture is where that is caught. Under PDF/UA-1, which has the rule, the file is printed as written and the claim is withdrawn instead (*a broken heading sequence withdraws PDF/UA-1*, S111; `headingBreaks`).
-    if (options.standard !== 'ua-1') headings.forEach((h, i) => {
+    // Headings do not skip a level on the way down. No PDF/UA-2 rule says so — the walker asserts it because a tree whose levels jump is a document outline a reader cannot navigate, and the fixture is where that is caught. PDF/UA-1, which has the rule, keeps the refusal like every other value (*a broken heading sequence withdraws PDF/UA-1*, amended 2026-11-19); what it adds, a first heading that is not an H1, withdraws the claim instead (S111; `headingBreaks`).
+    headings.forEach((h, i) => {
         if (i > 0 && h.level > headings[i - 1].level + 1) {
             throw new CasterError(`caster: heading level jumps from H${headings[i - 1].level} to H${h.level} at ${h.path}`);
         }
@@ -1716,20 +1716,16 @@ export const keepWhenEmpty = (tag: string): boolean => KEEP_WHEN_EMPTY.has(tag);
 export { isRepeated };
 
 /**
- * The headings that break PDF/UA-1's sequence, one warning each (*a broken heading sequence withdraws PDF/UA-1*, S111).
+ * The break of PDF/UA-1's heading sequence that the walk does not refuse, a first heading that is not an H1, as one warning (*a broken heading sequence withdraws PDF/UA-1*, S111, amended 2026-11-19).
  *
  * @remarks
- * ISO 14289-1, 7.4.2: where heading tags are used, `H1` is the first, and a descending sequence skips no level. So two breaks are counted: a first heading that is not an `H1`, and a heading more than one level below the one before it. A heading that climbs any number of levels, or repeats one, breaks nothing. Nothing is renumbered: the level is the author's statement of the outline.
+ * ISO 14289-1, 7.4.2: where heading tags are used, `H1` is the first, and a descending sequence skips no level. A skip never reaches this function: the walk refuses it under every value of `standard` (amended 2026-11-19, Egildo's "Refuse, as everywhere"). What is left to count is a first heading that is not an `H1`. Nothing is renumbered: the level is the author's statement of the outline.
  *
  * @param outline - The walk's headings with their text, in reading order.
  */
 export function headingBreaks(outline: readonly { path: string, level: number, title: string }[]): string[] {
-  return outline.flatMap((h, i) => {
-    const named = `H${h.level} ${JSON.stringify(h.title)} at ${h.path}`;
-    if (i === 0 && h.level !== 1)
-      return [`caster: the first heading, ${named}, is not an H1, and PDF/UA-1 asks a document's headings to begin at H1 (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make the first heading an H1 to keep the claim`];
-    if (i > 0 && h.level > outline[i - 1].level + 1)
-      return [`caster: the heading ${named} follows an H${outline[i - 1].level} and skips a level, which PDF/UA-1 forbids (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make it an H${outline[i - 1].level + 1} or higher to keep the claim`];
-    return [];
-  });
+  const h = outline[0];
+  if (!h || h.level === 1) return [];
+  const named = `H${h.level} ${JSON.stringify(h.title)} at ${h.path}`;
+  return [`caster: the first heading, ${named}, is not an H1, and PDF/UA-1 asks a document's headings to begin at H1 (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make the first heading an H1 to keep the claim`];
 }

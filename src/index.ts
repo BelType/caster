@@ -293,14 +293,14 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
       // Which elements the engine actually put on a page (*the engine stopped showing the original*, S47). A divided block's original is on none of them since the first fragment is constructed, so it gives the tree its element and its first fragment gives that element its ink.
       renders: (element) => strip.pageElementOf(element) !== null,
       unknownElements: options.unknownElements,
-      // The walk asks two things of the list of claims: whether a PDF/UA claim is on it, which makes a missing description a refusal (S103, amended 2026-11-08), and whether it is PDF/UA-1, under which a skipped heading level withdraws the claim and is not refused (S111).
+      // The walk asks two things of the list of claims: whether a PDF/UA claim is on it, which makes a missing description a refusal (S103, amended 2026-11-08), and whether it is PDF/UA-1, under which a first heading that is not an H1 withdraws the claim (S111).
       standard: accessible,
       // In a 1.7 file a guess costs the claims about meaning it can make (S111); a PDF 2.0 file keeps the sentence it had.
       ...(pdf17 ? { guessCosts: `the file ${[accessible === 'ua-1' ? 'does not claim PDF/UA-1' : '', archival === 'a-2a' ? 'claims PDF/A-2u in place of PDF/A-2a' : ''].filter(Boolean).join(', and ') || 'makes no claim about its tags'}` } : {})
     });
     // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
-    // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own. Under PDF/UA-1 a guess, or a heading sequence that breaks ISO 14289-1 7.4.2, withdraws it (S111), and under PDF/A-2a a guess lowers the claim to PDF/A-2u: the report names what the file claims, never what was asked.
+    // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own. Under PDF/UA-1 a guess, or a first heading that is not an H1 (ISO 14289-1, 7.4.2), withdraws it (S111), and under PDF/A-2a a guess lowers the claim to PDF/A-2u: the report names what the file claims, never what was asked.
     const breaks = accessible === 'ua-1' ? headingBreaks(walk.outline) : [];
     report.conformance = accessible === 'none' || walk.inferred.length > 0 || breaks.length > 0 ? 'tagged' : accessible === 'ua-2' ? 'pdfua2' : 'pdfua1';
     if (archival === 'a-4') report.archival = 'pdfa4';

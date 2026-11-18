@@ -253,30 +253,22 @@ test('under a-2a a guessed tag lowers the claim to PDF/A-2u with the guess\'s ow
   }
 });
 
-test('the heading sequence PDF/UA-1 asks for: the first heading H1, no level skipped on the way down, climbing and repeating free', () => {
+test('the heading sequence PDF/UA-1 asks for: the first heading an H1; a skip is the walk\'s refusal, never counted here', () => {
   const h = (...levels: number[]) => levels.map((level, i) => ({ path: `Document/H${level}[${i}]`, level, title: `h${i}` }));
   assert.equal(headingBreaks(h(2, 3)).length, 1, 'an h2 first breaks once');
   assert.match(headingBreaks(h(2, 3))[0], /^caster: the first heading, H2 "h0" at Document\/H2\[0\], is not an H1, and PDF\/UA-1 asks a document's headings to begin at H1 \(ISO 14289-1, 7\.4\.2\); the file is tagged and does not claim PDF\/UA-1/u);
-  assert.deepEqual(headingBreaks(h(1, 2, 4)), ['caster: the heading H4 "h2" at Document/H4[2] follows an H2 and skips a level, which PDF/UA-1 forbids (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make it an H3 or higher to keep the claim'], 'h2 to h4 breaks at the h4');
-  assert.equal(headingBreaks(h(1, 2, 1, 3)).length, 1, 'h1, h2, h1, h3 breaks once, at the h3');
-  assert.match(headingBreaks(h(1, 2, 1, 3))[0], /H3 "h3" .* follows an H1/u);
   assert.deepEqual(headingBreaks(h(1, 2, 3, 4, 1, 2, 2, 1)), [], 'climbing any number of levels, or repeating one, breaks nothing');
-  assert.deepEqual(headingBreaks(h(1, 2, 3, 1, 5)).length, 1);
   assert.deepEqual(headingBreaks([]), [], 'no heading, nothing to break');
 });
 
-test('under ua-1 a broken sequence prints as written, withdraws PDF/UA-1 with a warning per heading, and leaves PDF/A-2a standing; ua-2 refuses the skip as before', async (t) => {
-  const inject = '<h1>One</h1><p>Text.</p><h2>Two</h2><p>Text.</p><h4>Four</h4><p>Text.</p>';
-  const printed = await printDoc('headings/index.html', { standard: ['ua-1', 'a-2a'] }, { inject });
+test('under ua-1 a first heading that is no H1 prints as written, withdraws PDF/UA-1 with one warning and leaves PDF/A-2a standing; a skipped level is refused under ua-1 as under every value', async (t) => {
+  const printed = await printDoc('headings/index.html', { standard: ['ua-1', 'a-2a'] }, { inject: '<h2>Two</h2><p>Text.</p><h3>Three</h3><p>Text.</p>' });
   assert.ok(printed.bytes, printed.refused);
-  assert.equal(printed.conformance, 'tagged');
+  assert.equal(printed.conformance, 'tagged', 'a first heading that is no H1 withdraws the claim');
   assert.equal(printed.archival, 'pdfa2a', 'PDF/A-2a asks for tags, not a sequence');
   assert.deepEqual(printed.warnings?.filter((w) => w.includes('ISO 14289-1, 7.4.2')).length, 1);
-  assert.ok(printed.list?.structure.elements.some((e) => e.type === 'H4'), 'the H4 is written as the author wrote it');
+  assert.ok(printed.list?.structure.elements.some((e) => e.type === 'H2'), 'the H2 is written as the author wrote it');
   assert.equal(claimsIn(printed.bytes).ua1, false);
-  const first = await printDoc('headings/index.html', { standard: 'ua-1' }, { inject: '<h2>Two</h2><p>Text.</p><h3>Three</h3><p>Text.</p>' });
-  assert.equal(first.conformance, 'tagged', 'a first heading that is no H1 withdraws the claim');
-  assert.equal(first.warnings?.filter((w) => w.includes('ISO 14289-1, 7.4.2')).length, 1);
   const kept = await printDoc('headings/index.html', { standard: 'ua-1' }, { inject: '<h1>One</h1><p>Text.</p><h2>Two</h2><p>Text.</p><h3>Three</h3><p>Text.</p><h1>Again</h1><p>Text.</p><h2>Two</h2><p>Text.</p>' });
   assert.equal(kept.conformance, 'pdfua1', 'a sequence that climbs keeps the claim');
   for (const [name, file, flavour, expected] of [['broken-2a', printed.bytes, '2a', []], ['kept-ua1', kept.bytes, 'ua1', []]] as const) {
@@ -286,8 +278,11 @@ test('under ua-1 a broken sequence prints as written, withdraws PDF/UA-1 with a 
     assert.deepEqual(failed, expected, `veraPDF -f ${flavour} on ${name}`);
     PASSES.push(`${name} -f ${flavour}`);
   }
-  const refused = await printDoc('headings/index.html', { standard: 'ua-2' }, { inject });
-  assert.match(refused.refused ?? '', /^caster: heading level jumps from H2 to H4 at /u, 'outside PDF/UA-1 the walk refuses a skip, as it did');
+  const skip = '<h1>One</h1><p>Text.</p><h2>Two</h2><p>Text.</p><h4>Four</h4><p>Text.</p>';
+  for (const standard of ['ua-1', 'ua-2'] as const) {
+    const refused = await printDoc('headings/index.html', { standard }, { inject: skip });
+    assert.match(refused.refused ?? '', /^caster: heading level jumps from H2 to H4 at /u, `${standard} refuses a skip, as every value does`);
+  }
 });
 
 test('under a PDF/A-2 claim with a CMYK intent, a gradient and a transparency group in RGB name the sRGB profile themselves, and a run in a CMYK ink is kept', async (t) => {
