@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.12 — 2026-11-18
 
 - **Transparent text is invisible text, and the display list is version 8** (2026-11-18, Egildo's ruling of that day; DESIGN.md S110). `color: transparent` text printed black and translucent text opaque, because the computed colour's alpha was dropped and the run's colour was read from `color` rather than `-webkit-text-fill-color`, which is what Chromium paints glyphs with. A run at alpha 0 is now written in text render mode 3 (`3 Tr`, put back with `0 Tr` after it), its words still in the text layer, tagged and claimed; a run between 0 and 1 is painted under the shared `/ExtGState` for that `/ca` and put back under `/ca 1`; the paint colour is `-webkit-text-fill-color`; a solid `<hr>` or a layout artifact's background in a transparent colour paints nothing, and a translucent one paints under `/ca`. A declared ink keeps its colour and takes the alpha. Overprint and alpha are two states set in order, overprint first, put back in reverse. `Fill` gains `alpha`, the list is version 8, and `validateList` refuses an alpha outside 0 to 1; every committed list was moved to version 8 and writes the file it wrote before, byte for byte, under both writers. forme vendored at 8636301.
 
