@@ -107,6 +107,8 @@ export type PageStrip = {
   backgrounds: { page: number, rgb: [number, number, number] }[];
   /** The `@page` images, seated on their pages as artifacts (`seatPageImages`), which `print()` asks for once, before anything reads the strip's elements. Asynchronous because an image's own size is known only once it is loaded. Absent where no page paints one. */
   seatPageImages?: (gateway: Gateway) => Promise<void>;
+  /** Takes back what the adapter wrote into the engine's presentation (a margin's text lifted into the light DOM, a page's background box, the artifact attribute), so the pages stand as the engine presented them and may be printed again. `print()` calls it after the export on a strip it adapted itself; a host that adapts a strip of its own calls it when it is done with it. Absent where the adapter writes nothing it need take back. */
+  restore?: () => void;
   /** The record: every marked-content sequence the pages present, in page order. Transitional beside `twinOf`, `StripPage.continuations` and `transparent` (*an interval is a marked-content sequence*, DESIGN.md S71) — derived from today's pairing by `adapters/intervals.js`'s `deriveIntervals` and checked by the tiling invariant, consumed by nothing yet; `twinOf` and `continuations` retire when both adapters emit it from the engine's own record, and `transparent` stays. Absent on a host's own strip, for which `print()` derives it. */
   intervals?: Interval[];
 };

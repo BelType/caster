@@ -136,6 +136,8 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
   let t = now();
   /** The pages this print reads. An engine that cuts again mid-print replaces them, and nothing read after that is about the document (codeberg.org/BelType/caster issue 21). */
   let standing: Element[] = [];
+  /** The strip this call adapted itself, whose writes into the presentation it takes back; a host's own strip is the host's. */
+  let adapted: PageStrip|undefined;
   const replaced = () => standing.some((page) => !page.isConnected);
   const REPLACED = 'caster: the pages were replaced while they were being printed: the engine cut the document again, which it does when a box changes size or a face arrives after the cut';
   const step = ( name: string) => {
@@ -149,7 +151,7 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
     // 1b — every page built. Cicero builds a page's content only as the reader nears it and in idle time (*only the pages near the reader are built*, 2026-10-12), and the printer reads all of them; an engine with no such door (Paged.js) has built every page already, and a host's own strip is its own.
     if (!input.strip) await ((view as unknown) as { __beltypeCicero?: { buildAll?: () => Promise<unknown> } }).__beltypeCicero?.buildAll?.();
     // 2 — adapt. The engine's DOM becomes a `PageStrip` (§5) — or the host hands one over (*`print()` takes a strip from its host*, S62), because a strip is a fact about a DOM and not about an engine: a row of sized boxes nobody paginated is one. Otherwise which engine is read off the document — each leaves one root that the other never writes — and the printer refuses a document carrying both or neither by name rather than measuring the first thing it finds.
-    const strip = input.strip ?? adaptStrip(doc);
+    const strip = input.strip ?? (adapted = adaptStrip(doc));
     standing = strip.pageElements;
     // THE CONSERVATION OF WORDS (S61) beside the strip: text the engine never took onto a page, which the census below, walking the strip, cannot meet.
     assertNothingBeside(strip);
@@ -629,6 +631,8 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
   } finally {
     // `end()` is idempotent and restores every inline transform the chain builder wrote. It ran only on the happy path, so a throw anywhere in the collectors or the measurement left `transform: none` on the author's own elements — contained today because the print frame is discarded after an export, and a leak the moment anything prints from a live document.
     chains?.end();
+    // What the adapter wrote into the engine's presentation is taken back, so a host that keeps the pages prints them again as the engine presented them (`PageStrip.restore`).
+    adapted?.restore?.();
     endFrame();
     clearPageGeometry();
     releaseDomPaths();
