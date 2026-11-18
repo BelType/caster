@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invisible text</title>
+<!-- *Transparent text is invisible text* (DESIGN.md S110): nothing on this page is painted, and every word of it is in the text layer. `test/textAlpha.test.ts` prints it and holds every pixel of the file to white. -->
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+body { margin: 0; width: 160mm; padding: 10mm; font: 12pt/1.4 'Source Sans 3', sans-serif; color: transparent; }
+.fill-clear { color: #06c; -webkit-text-fill-color: transparent; }
+hr { border: 0; border-top: 2px solid transparent; }
+</style>
+</head>
+<body>
+<h1>Nothing to see</h1>
+<p>Hidden words stay searchable.</p>
+<hr>
+<p class="fill-clear">Filled clear.</p>
+</body>
+</html>

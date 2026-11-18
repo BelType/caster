@@ -24,6 +24,8 @@
  *
  * VERSION 7, AMENDED AGAIN WITHOUT A NEW NUMBER (*the standard is a list* and *an archival claim is kept or refused*, `codeberg.org/BelType/decisions`, 2026-11-17; S109). `info.archival`, `pdfa4`, is the archival claim beside `info.conformance`, the accessibility one; it is optional and absent from every list that makes no such claim, so every list recorded before reads as it did and writes the same file. forme before the amendment refuses such a list, since its reader denies a member it does not know; the writers move in lockstep, as the last amendment said.
  *
+ * VERSION 8 (Egildo's ruling of 2026-11-18, *transparent text is invisible text*, S110). `Fill` gains `alpha`, the paint's alpha from 0 up to but not including 1, absent when the paint is opaque: for a run, the alpha of the colour the browser paints its glyphs with (`-webkit-text-fill-color`, which computes to `color` where it is unset), for a measured rectangle the alpha of its computed colour. A run at alpha 0 is written in text render mode 3, invisible, with its glyphs, ToUnicode, marked content and structure exactly those of a visible run, so its words stay searchable, tagged and claimed; a run or a rectangle between 0 and 1 is painted under an `/ExtGState` carrying `/ca`, shared by value with the vector items' states. A declared ink keeps its own colour and the computed alpha still applies to it. A writer of version 7 would paint such a list's transparent words black, so the definition is cut at 8; a list with no alpha anywhere writes the same file as at version 7.
+ *
  * @packageDocumentation
  */
 
@@ -33,7 +35,7 @@ export { recordsOf } from './displayList/records.ts';
 
 /** The whole document, as the writer needs it and nothing else. */
 export type DisplayList = {
-  version: 7;
+  version: 8;
   info: DocumentInfo;
   writing: Writing;
   resources: Resources;
@@ -322,6 +324,8 @@ export type Fill = {
   ink?: { cmyk: [number, number, number, number] } | { spot: string, alternate: [number, number, number, number], tint: number };
   /** From `run.overprint`. */
   overprint?: 'fill' | 'stroke' | 'both';
+  /** The paint's alpha, from 0 up to but not including 1; absent when the paint is opaque. 0 writes a run invisible (`3 Tr`) and a rectangle not at all; between 0 and 1 the paint is set under an `/ExtGState` with `/ca` (*transparent text is invisible text*, S110). The ink, when there is one, is painted at the same alpha. From `run.alpha` or `paint.alpha`. Version 8. */
+  alpha?: number;
 };
 
 /** What only the report reads of a run, and the colour emitter's record of it. The writer draws none of it, so it is not in the list: `buildDisplayList` hands it back beside the list, and `print()` joins it to the writer's records by the item (`origins[page][item]`), which is how the report's runs, words, paragraphs and colour rows learn what the measurement knows. */

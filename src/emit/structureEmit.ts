@@ -216,6 +216,12 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
                 operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.EndText), ...lineWrap(openLine.transform, openLine.clips).close);
             openLine = null;
         };
+        // A paint's constant alpha (*transparent text is invisible text*, S110): the vector items' shared `/ExtGState` for that `/ca`, named on the page.
+        const alphaState = (alpha: number): PDFOperator => {
+            const state = transparency.state({ ca: alpha });
+            pageScopes[page].extGStates.set(state.name, state.ref);
+            return pdf().PDFOperator.of(pdf().PDFOperatorNames.SetGraphicsStateParams, [pdf().PDFName.of(state.name)]);
+        };
         for (const [at, item] of items.entries()) {
             if (item.kind !== 'tag' && item.kind !== 'text' && item.kind !== 'link')
                 closeLine();
@@ -245,7 +251,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
             }
             if (item.kind === 'shape' && 'rect' in item) {
                 // A rectangle: a measured paint, in the colour the engine computed for it or, from E8 (`colour.md`) on, the colour the author declared, inside the overprint state the author asked for; or the page's own ground (`@page { background: … }`), which paints the page box and nothing in the DOM carries, goes first, and is not the colour emitter's to decide.
-                operators.push(...rectOperators(item, item.paint ? colour : null));
+                operators.push(...rectOperators(item, item.paint ? colour : null, alphaState));
                 continue;
             }
             if (item.kind === 'marks') {
@@ -311,6 +317,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
                         actualTextSpans += 1;
                     },
                     ...(colour ? { colorOperators: (textItem) => colour.runOperators(textItem, { page, item: at }) } : {}),
+                    alphaOperators: (alpha) => ({ set: alphaState(alpha), reset: alphaState(1) }),
                 });
                 pens.push({ page, item: at, adjustments });
                 continue;
@@ -499,15 +506,18 @@ function artifactProperties(artifact: ArtifactDescriptor): string {
  * One filled rectangle: a measured paint, or the page's own ground.
  *
  * @remarks
- * In the colour the engine computed for it — or, from E8 (`colour.md`) on, in the colour the author declared for it, inside the overprint state the author asked for. The ground passes no colour emitter and is `rg` always. The rectangle's numbers are the builder's, already to thousandths.
+ * In the colour the engine computed for it — or, from E8 (`colour.md`) on, in the colour the author declared for it, inside the overprint state the author asked for. The ground passes no colour emitter and is `rg` always. The rectangle's numbers are the builder's, already to thousandths. A fill alpha below 1 is set after the overprint state, inside the `q … Q` that puts it back (*transparent text is invisible text*, S110).
+ *
+ * @param alphaState - The `gs` of the shared `/ExtGState` for one `/ca`.
  */
-function rectOperators(item: RectItem, colour: ColorEmitter|null): PDFOperator[] {
+function rectOperators(item: RectItem, colour: ColorEmitter|null, alphaState: (alpha: number) => PDFOperator): PDFOperator[] {
     const [x, bottom, width, height] = item.rect;
     const fill = item.fill;
     const colours = colour?.paintOperators(item, [x, bottom, width, height]);
     return [
         pdf().PDFOperator.of(pdf().PDFOperatorNames.PushGraphicsState),
         ...(colours?.setup ?? []),
+        ...(fill.alpha !== undefined ? [alphaState(fill.alpha)] : []),
         ...(colours ? colours.fill : [pdf().PDFOperator.of(pdf().PDFOperatorNames.NonStrokingColorRgb, fill.rgb.map((c) => pdf().PDFNumber.of(round3(c))))]),
         pdf().PDFOperator.of(pdf().PDFOperatorNames.AppendRectangle, [
             pdf().PDFNumber.of(x),

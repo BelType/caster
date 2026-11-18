@@ -130,6 +130,8 @@ export type PaintRequest = {
   element: HTMLElement;
   /** Fill colour, as PDF `rg` operands. */
   rgb: [number, number, number];
+  /** The computed colour's alpha, between 0 and 1 exclusive; absent when it is opaque. A colour at alpha 0 asks for no rectangle at all (*transparent text is invisible text*, S110). */
+  alpha?: number;
   /** The computed CSS colour `rgb` came from, for the E8b (`colour.md`) work list. */
   color?: string;
   /** E8 (`colour.md`): which paint of the element this rectangle is. */
@@ -157,6 +159,8 @@ export type MeasuredPaint = {
   wPx: number;
   hPx: number;
   rgb: [number, number, number];
+  /** As {@link PaintRequest.alpha}. */
+  alpha?: number;
   /** The computed CSS colour `rgb` came from, for the E8b (`colour.md`) work list. */
   color?: string;
   /** E8 (`colour.md`): which paint of the element this rectangle is. */
@@ -275,10 +279,12 @@ export type MeasuredSegment = {
   /** Font URL, which is also the shaper's cache key. */
   url: string;
   sizePx: number;
-  /** Computed colour, as `getComputedStyle` reports it. */
+  /** The colour the glyphs are painted with, as `getComputedStyle` reports it: `-webkit-text-fill-color`, which computes to `color` where it is unset (*transparent text is invisible text*, S110). */
   color: string;
   /** The same colour as PDF `rg` operands. */
   rgb: [number, number, number];
+  /** The same colour's alpha, from 0 up to but not including 1; absent when it is opaque. 0 is a run written invisible, its words still in the text layer (S110). */
+  alpha?: number;
   /** E8 (`colour.md`): the `--pdf-color` hint verbatim, as the computed style returned it. */
   hint?: string;
   /** E8 (`colour.md`): the hint parsed; absent means the segment is painted `rg`. */
@@ -342,6 +348,8 @@ export type MeasuredRun = {
   sizePx: number;
   color: string;
   rgb: [number, number, number];
+  /** As {@link MeasuredSegment.alpha}; the run splits where `color` changes, so every segment shares it. */
+  alpha?: number;
   /** E8 (`colour.md`): the `--pdf-color` hint verbatim, shared by every segment of the run. */
   hint?: string;
   /** E8 (`colour.md`): the hint parsed; absent means the run is painted `rg`. */
@@ -511,6 +519,21 @@ function parseRgb(color: string): [number,number,number] {
     if (!numbers || numbers.length < 3)
         throw new CasterError(`caster: cannot parse colour ${color}`);
     return [Number(numbers[0]) / 255, Number(numbers[1]) / 255, Number(numbers[2]) / 255];
+}
+/**
+ * A computed colour's alpha: the fourth number of `rgba(…)`, 1 for `rgb(…)`.
+ *
+ * @remarks
+ * {@link parseRgb} keeps the first three numbers and drops this one, which is how `color: transparent`, computed `rgba(0, 0, 0, 0)`, printed black (*transparent text is invisible text*, S110).
+ */
+export function alphaOf(color: string): number {
+    const numbers = color.startsWith('rgba(') ? color.match(/[\d.]+/g) : null;
+    return numbers && numbers.length >= 4 ? Number(numbers[3]) : 1;
+}
+/** `{ alpha }` where a computed colour is not opaque, nothing where it is. */
+export function alphaField(color: string): { alpha?: number } {
+    const alpha = alphaOf(color);
+    return alpha < 1 ? { alpha } : {};
 }
 const ascentCache = new Map<any, any>();
 /**
@@ -1089,8 +1112,10 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                             instanceKey,
                             url: match.face.url,
                             sizePx,
-                            color: style.color,
-                            rgb: parseRgb(style.color),
+                            // Chromium paints a run's glyphs in `-webkit-text-fill-color`, which computes to `color` where it is unset (S110).
+                            color: style.webkitTextFillColor || style.color,
+                            rgb: parseRgb(style.webkitTextFillColor || style.color),
+                            ...alphaField(style.webkitTextFillColor || style.color),
                             ...(declaredColor?.declared ? { hint: declaredColor.declared } : {}),
                             ...(declaredColor?.color ? { colorHint: declaredColor.color } : {}),
                             ...(declaredColor?.overprint ? { overprint: declaredColor.overprint } : {}),
@@ -1130,6 +1155,7 @@ export function measureText(container: HTMLElement, table: FaceDescriptor[], opt
                 : {}),
             ...pageRectOf(request.element.getBoundingClientRect(), containerRect, ownedPage(request.element)),
             rgb: request.rgb,
+            ...(request.alpha !== undefined ? { alpha: request.alpha } : {}),
             ...(request.color ? { color: request.color } : {}),
             ...(request.target ? { target: request.target } : {}),
             ...(request.hint ? { hint: request.hint } : {}),
@@ -1370,6 +1396,7 @@ function groupLines(segments: MeasuredSegment[]): MeasuredLine[] {
                 sizePx: segment.sizePx,
                 color: segment.color,
                 rgb: segment.rgb,
+                ...(segment.alpha !== undefined ? { alpha: segment.alpha } : {}),
                 ...(segment.hint ? { hint: segment.hint } : {}),
                 ...(segment.colorHint ? { colorHint: segment.colorHint } : {}),
                 ...(segment.overprint ? { overprint: segment.overprint } : {}),
@@ -1522,6 +1549,7 @@ function measureSvgText(request: SvgTextRequest, ctx: { claimed: Set<Text>; cont
             sizePx,
             color,
             rgb: parseRgb(color),
+            ...alphaField(color),
             element,
             letterSpacingPx,
             xPx: startX - columnOffset,

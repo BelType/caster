@@ -45,6 +45,8 @@ export type RunContext = {
   onActualText?: (text: string) => void;
   /** The colour switch of `colour.md` (E8). When present, what it returns replaces the run's `rg` and may wrap the run in an overprint graphics state. Absent, the run is painted `rg` from the computed style exactly as E3 (`text-emission.md`) wrote it, which is what keeps the content streams of E3, E4 (`font-embedding.md`) and E5 (`structure-tree.md`) byte-identical. */
   colorOperators?: (item: TextItem) => RunColorOperators;
+  /** The `gs` that sets a constant fill alpha and the `gs` that puts it back to 1, for a run whose `fill.alpha` is between 0 and 1 (*transparent text is invisible text*, S110): the document's shared `/ExtGState` for that `/ca`, the vector items' own. */
+  alphaOperators: (alpha: number) => { set: PDFOperator; reset: PDFOperator };
 };
 /** The colour a run is painted in, as the operators around and instead of its `rg` (`colour.md`, E8). */
 export type RunColorOperators = {
@@ -290,7 +292,11 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
     const leadingSpace = item.leadingSpace && gap;
     const startPt = round3(item.segments.x[0] - (leadingSpace ? spaceAdvPt + tcPt : 0));
     const colour = ctx.colorOperators?.(item);
-    operators.push(...(colour?.setup ?? []), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetFontAndSize, [ctx.name, pdf().PDFNumber.of(round3(sizePt))]), ...(colour ? colour.fill : [pdf().PDFOperator.of(pdf().PDFOperatorNames.NonStrokingColorRgb, item.fill.rgb.map((c) => pdf().PDFNumber.of(round3(c))))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetCharacterSpacing, [pdf().PDFNumber.of(round3(tcPt))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextMatrix, [
+    // *Transparent text is invisible text* (S110): a run at alpha 0 is written in text render mode 3, its glyphs, ToUnicode, marked content and structure exactly a visible run's, and one between 0 and 1 under a `/ca` state. Both outlive the run, inside the text object and past its `ET`, and a `q … Q` may not straddle a text object, so each is put back after the run, the alpha before the overprint state that was set before it.
+    const alpha = item.fill.alpha;
+    const translucent = alpha !== undefined && alpha > 0 ? ctx.alphaOperators(alpha) : null;
+    const invisible = alpha === 0;
+    operators.push(...(colour?.setup ?? []), ...(translucent ? [translucent.set] : []), ...(invisible ? [pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextRenderingMode, [pdf().PDFNumber.of(3)])] : []), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetFontAndSize, [ctx.name, pdf().PDFNumber.of(round3(sizePt))]), ...(colour ? colour.fill : [pdf().PDFOperator.of(pdf().PDFOperatorNames.NonStrokingColorRgb, item.fill.rgb.map((c) => pdf().PDFNumber.of(round3(c))))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetCharacterSpacing, [pdf().PDFNumber.of(round3(tcPt))]), pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextMatrix, [
         pdf().PDFNumber.of(1),
         pdf().PDFNumber.of(0),
         pdf().PDFNumber.of(0),
@@ -374,6 +380,10 @@ export function emitRun(operators: PDFOperator[], item: TextItem, ctx: RunContex
     });
     // PDFOperatorArg admits a PDFArray, and PDFContext.obj passes PDFObject members through untouched, so the TJ operand is built as an ordinary array of hex strings and numbers rather than through a pdf-lib text helper.
     flush();
+    if (invisible)
+        operators.push(pdf().PDFOperator.of(pdf().PDFOperatorNames.SetTextRenderingMode, [pdf().PDFNumber.of(0)]));
+    if (translucent)
+        operators.push(translucent.reset);
     if (colour)
         operators.push(...colour.reset);
     return adjustments;

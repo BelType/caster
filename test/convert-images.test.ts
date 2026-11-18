@@ -85,9 +85,9 @@ function listOf(name: string): DisplayList {
   return list;
 }
 
-test('the recorded convert-images list is version 7, validateList holds its CMYK samples to four components, and a list of version 6 is refused in the version\'s sentence', () => {
+test('the recorded convert-images list is version 8 (its CMYK samples date from 7), validateList holds its CMYK samples to four components, and a list of version 6 is refused in the version\'s sentence', () => {
   const list = listOf('convert-images');
-  assert.equal(list.version, 7);
+  assert.equal(list.version, 8);
   validateList(list);
   const cmyk = Object.values(list.resources.images).filter((i) => i.samples?.colorSpace === 'DeviceCMYK');
   assert.equal(cmyk.length, 7);
@@ -102,7 +102,7 @@ test('the recorded convert-images list is version 7, validateList holds its CMYK
   assert.throws(() => validateList(withIcc), (e: any) => e instanceof CasterError && /DeviceCMYK at 8 bits with a profile, a shape the schema does not name/u.test(e.message));
   const old = listOf('convert-images');
   (old as { version: number }).version = 6;
-  assert.throws(() => validateList(old), (e: any) => e instanceof CasterError && /reads a display list of version 7, and this one is version 6/u.test(e.message));
+  assert.throws(() => validateList(old), (e: any) => e instanceof CasterError && /reads a display list of version 8, and this one is version 6/u.test(e.message));
 });
 
 // --- the recorded document, read back -------------------------------------------------------------------

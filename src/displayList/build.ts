@@ -176,14 +176,14 @@ function runRect(run: MeasuredRun, page: number): [number,number,number,number] 
 }
 
 /** What a run or a measured rectangle is painted with. */
-function fillOf(source: { rgb: [number,number,number]; colorHint?: MeasuredRun['colorHint']; overprint?: MeasuredRun['overprint']; }): Fill {
+function fillOf(source: { rgb: [number,number,number]; alpha?: number; colorHint?: MeasuredRun['colorHint']; overprint?: MeasuredRun['overprint']; }): Fill {
     const hint = source.colorHint;
     let ink: Fill['ink'];
     if (hint?.kind === 'cmyk')
         ink = { cmyk: [...hint.values] };
     else if (hint)
         ink = { spot: hint.kind === 'spot' ? hint.name : hint.kind === 'all' ? 'All' : 'None', alternate: [...hint.alternate], tint: hint.tint };
-    return { rgb: [...source.rgb], ...(ink ? { ink } : {}), ...(source.overprint ? { overprint: source.overprint } : {}) };
+    return { rgb: [...source.rgb], ...(ink ? { ink } : {}), ...(source.overprint ? { overprint: source.overprint } : {}), ...(source.alpha !== undefined ? { alpha: source.alpha } : {}) };
 }
 
 /** A measured rectangle as a shape: its four edges in points, by the expressions the writer used. */
@@ -893,7 +893,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         ...(colour ? { colour: { profiles: { cmyk: await blobOf(colour.profileBytes), srgb: await blobOf(colour.srgbBytes) }, condition: colour.condition, info: colour.info, blackText: colour.blackText } } : {}),
     };
     const list: DisplayList = {
-        version: 7,
+        version: 8,
         info: {
             lang: walk.lang,
             title: inputs.title,

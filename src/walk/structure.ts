@@ -27,7 +27,7 @@ import { paintsDecoration } from '../vectors/cssBoxes.ts';
 import { SHAPE_ATTRIBUTE } from '../vectors/listMarkers.ts';
 import { assignHeaders, scopeNameOf } from './tableHeaders.ts';
 import { buildTableModel, isRepeated, regularityOf, TABLE_FRAGMENT_ATTRIBUTE } from './tableModel.ts';
-import { domPathOf, pageRectOf } from '../measure/textMeasure.ts';
+import { alphaField, alphaOf, domPathOf, pageRectOf } from '../measure/textMeasure.ts';
 import { UnknownElementError, CasterError } from '../errors.ts';
 
 import type { PaintRequest } from '../measure/textMeasure.ts';
@@ -1096,9 +1096,9 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const style = getComputedStyle(element);
             if ((element.textContent ?? '').trim() !== '')
                 block((element as HTMLElement), `artifact:${kind}`, descriptor.path);
-            // A transparent box paints nothing; `parseRgb` reads it as black, which drops the alpha.
-            if (kind === 'layout' && style.backgroundColor !== 'rgba(0, 0, 0, 0)')
-                paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(style.backgroundColor) });
+            // A transparent box paints nothing, and a translucent one paints at its alpha (*transparent text is invisible text*, S110); `parseRgb` drops the alpha, so it is read beside it.
+            if (kind === 'layout' && alphaOf(style.backgroundColor) > 0)
+                paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(style.backgroundColor), ...alphaField(style.backgroundColor) });
             // An artifact is outside the tree entirely, and so is everything in it — but it is still painted, so an image inside one is collected here and owned by the artifact. That is what a logo in a running header is: the same XObject on every page, never a Figure, never in the tree, and never asked for an /Alt it has no business carrying.
             for (const inner of element.querySelectorAll('img')) {
                 pushImage({
@@ -1233,7 +1233,10 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             if (hasDrawnBorder(getComputedStyle(element)))
                 return;
             const descriptor: ArtifactDescriptor = artifact((element as HTMLElement), 'layout');
-            paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(getComputedStyle(element).borderTopColor) });
+            // A rule in a transparent colour paints nothing, and a translucent one paints at its alpha (S110).
+            const ruleColor = getComputedStyle(element).borderTopColor;
+            if (alphaOf(ruleColor) > 0)
+                paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(ruleColor), ...alphaField(ruleColor) });
             return;
         }
         if (tag === 'BR')

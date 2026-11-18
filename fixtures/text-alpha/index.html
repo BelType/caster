@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Text and its alpha</title>
+<!-- *Transparent text is invisible text* (DESIGN.md S110): a transparent run, a translucent run beside an opaque one on one line, a run whose fill colour is transparent while its colour is not, a run whose fill colour is red while its colour is blue, a solid rule in a transparent colour, which paints nothing, and one at a quarter, which paints its rectangle under `/ca`. `test/textAlpha.test.ts` prints it. -->
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+body { margin: 0; width: 160mm; padding: 10mm; font: 12pt/1.4 'Source Sans 3', sans-serif; color: #222; }
+.clear { color: transparent; }
+.half { color: rgba(0, 102, 204, 0.5); }
+.fill-clear { color: #06c; -webkit-text-fill-color: transparent; }
+.fill-red { color: blue; -webkit-text-fill-color: red; }
+hr { border: 0; border-top: 2px solid transparent; }
+hr.quarter { border-top-color: rgba(204, 0, 51, 0.25); }
+</style>
+</head>
+<body>
+<h1>Text and its alpha</h1>
+<p><span class="clear">Hidden words stay searchable.</span></p>
+<p><span class="half">Half seen</span> and fully seen.</p>
+<p><span class="fill-clear">Filled clear.</span></p>
+<p><span class="fill-red">Filled red.</span></p>
+<hr>
+<hr class="quarter">
+<p>The last line.</p>
+</body>
+</html>

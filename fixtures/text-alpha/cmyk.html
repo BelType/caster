@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inks and their alpha</title>
+<!-- *Transparent text is invisible text* (DESIGN.md S110): a transparent run in a declared CMYK ink, which stays invisible, and a translucent one in a declared ink that overprints, which is painted at its alpha inside its overprint state. `test/textAlpha.test.ts` prints it with the test CMYK profile. -->
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url(../cast/SourceSans3-Variable.woff2) format('woff2'); font-weight: 200 900; font-style: normal; }
+body { margin: 0; width: 160mm; padding: 10mm; font: 12pt/1.4 'Source Sans 3', sans-serif; color: #222; }
+.clear { color: transparent; --pdf-color: device-cmyk(0 1 0.65 0.15); }
+.half { color: rgba(0, 0, 0, 0.5); --pdf-color: device-cmyk(1 0 0 0); --pdf-overprint: fill; }
+</style>
+</head>
+<body>
+<h1>Inks and their alpha</h1>
+<p><span class="clear">Hidden in an ink.</span></p>
+<p><span class="half">Half an ink, overprinting</span> and plain.</p>
+</body>
+</html>
