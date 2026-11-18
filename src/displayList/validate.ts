@@ -121,7 +121,7 @@ export function checkGaps(list: DisplayList): void {
     if (item.kind !== 'text' || item.space !== 0) return;
     if (!item.leadingSpace && !item.segments.spaceBefore.some((gap, i) => i > 0 && gap)) return;
     const family = list.resources.fonts.find((instance) => instance.key === item.font)?.family || item.font;
-    throw new CasterError(`caster: the face ${family} (${item.font}) has no space glyph, so the word gap in text item ${at} of page ${p + 1} would be glyph 0, .notdef, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9); give the text a face with a space, or print with \`standard: 'none'\`, which claims no standard and writes the gap as positioning with no glyph`, { listItem: { page: p, item: at } });
+    throw new CasterError(`caster: the face ${family} (${item.font}) has no space glyph, so the word gap in text item ${at} of page ${p + 1} would be glyph 0, .notdef, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9); give the text a face with a space, or print with \`standard: 'none'\`, or \`'a-4'\` alone, which do not claim PDF/UA-2 and write the gap as positioning with no glyph`, { listItem: { page: p, item: at } });
   }));
 }
 
