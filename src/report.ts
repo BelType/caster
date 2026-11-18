@@ -732,6 +732,8 @@ export type Report = {
   inferred?: { element: string, tag: string, display: string }[];
   /** *the printer guesses, says so, and withdraws the claim* (S90): what the file claims. `'pdfua2'` writes the PDF/UA-2 identification into the XMP; `'tagged'` is a tagged PDF with a guess in it, which claims nothing more. */
   conformance: 'pdfua2'|'tagged';
+  /** *the standard is a list* (S109): present where the file claims PDF/A-4 as well, whatever `conformance` reads, so a host can say every claim the file makes. A print that cannot keep the claim is refused and has no report. */
+  archival?: 'pdfa4';
   /** *the printer guesses, says so, and withdraws the claim* (S90, amended 2026-11-08): every place on a page where the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, with the region it covers. Empty when there is none. */
   confessions: ReportConfession[];
   /** The flags the run was made with. */

@@ -32,7 +32,7 @@ const IMPORTS = `<script type="importmap">${JSON.stringify({ imports: Object.fro
 /** The CMYK profile the corpus's conversion documents pass (Ghostscript's, `test/assets/PROVENANCE.md`). */
 const CMYK_PROFILE = fs.readFileSync(path.join(PACKAGE, 'test', 'assets', 'default_cmyk.icc'));
 
-type Printed = { bytes?: Buffer; refused?: string; conformance?: string; list?: DisplayList };
+type Printed = { bytes?: Buffer; refused?: string; conformance?: string; archival?: string; list?: DisplayList };
 
 /**
  * Print a fixture file, a path under `fixtures/`, as one host-strip page, with Caster's options and, where given, the CMYK profile.
@@ -74,13 +74,13 @@ async function printDoc(file: string, options: Record<string, unknown>, { profil
         let binary = '';
         for (const byte of printed.bytes as Uint8Array) binary += String.fromCharCode(byte);
         const { blobs: _, ...resources } = printed.displayList.resources;
-        return { base64: btoa(binary), conformance: printed.report.conformance as string, list: JSON.stringify({ ...printed.displayList, resources }) };
+        return { base64: btoa(binary), conformance: printed.report.conformance as string, archival: printed.report.archival as string | undefined, list: JSON.stringify({ ...printed.displayList, resources }) };
       } catch (error) {
         return { refused: String((error as Error)?.message ?? error) };
       }
     }, { writer: WRITER, options, profile: profile ? CMYK_PROFILE.toString('base64') : '', inject });
     if ('refused' in out) return { refused: out.refused };
-    return { bytes: Buffer.from(out.base64, 'base64'), conformance: out.conformance, list: JSON.parse(out.list) };
+    return { bytes: Buffer.from(out.base64, 'base64'), conformance: out.conformance, archival: out.archival, list: JSON.parse(out.list) };
   } finally {
     await browser.close();
     server.close();
@@ -142,6 +142,7 @@ for (const standard of [['a-4'], ['ua-2', 'a-4']]) {
     assert.ok(printed.bytes, printed.refused);
     const claims = claimsIn(printed.bytes);
     assert.equal(printed.list?.info.archival, 'pdfa4', 'the list carries the claim');
+    assert.equal(printed.archival, 'pdfa4', 'the report names the claim');
     assert.deepEqual({ ...claims, pdfua: undefined }, { pdfa: true, pdfua: undefined, info: false, id: true, intents: ['GTS_PDFA1', 'GTS_PDFX'], oneProfile: true, smoothed: false }, 'the identification, no Info dictionary, both intents on one profile, nothing smoothed');
     assert.equal(claims.pdfua, standard.includes('ua-2'), 'PDF/UA-2 is claimed exactly where it is asked for');
     for (const flavour of standard.includes('ua-2') ? ['4', 'ua2'] : ['4']) {
@@ -157,6 +158,7 @@ test('the default claims PDF/UA-2 alone, and the archival document is then what 
   const printed = await printDoc('archival/index.html', {});
   assert.ok(printed.bytes, printed.refused);
   assert.equal(printed.list?.info.archival, undefined, 'the list makes no archival claim');
+  assert.equal(printed.archival, undefined, 'and the report names none');
   const claims = claimsIn(printed.bytes);
   assert.deepEqual(claims, { pdfa: false, pdfua: true, info: true, id: true, intents: [], oneProfile: false, smoothed: true }, 'no identification, the Info dictionary, no colour story, the image smoothed as the page asked');
 });
@@ -187,6 +189,7 @@ test('a guessed tag withdraws the PDF/UA-2 claim alone and leaves PDF/A-4 standi
   const printed = await printDoc('archival/index.html', { standard: ['ua-2', 'a-4'] }, { inject: '<x-aside style="display: block">Guessed by its layout.</x-aside>' });
   assert.ok(printed.bytes, printed.refused);
   assert.equal(printed.conformance, 'tagged', 'the guess withdrew PDF/UA-2');
+  assert.equal(printed.archival, 'pdfa4', 'the report still names PDF/A-4');
   const claims = claimsIn(printed.bytes);
   assert.equal(claims.pdfua, false);
   assert.equal(claims.pdfa, true, 'PDF/A-4 still stands');

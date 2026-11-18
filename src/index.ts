@@ -293,6 +293,7 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
     report.inferred = walk.inferred;
     // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own.
     report.conformance = !claimsOf(options.standard).includes('ua-2') || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
+    if (claimsOf(options.standard).includes('a-4')) report.archival = 'pdfa4';
     report.warnings.push(...walk.warnings);
     // The image bytes, before the measurement rather than after it. The order of `coordinates-and-pages.md` (E10) puts everything that is not a measurement outside the neutralised window, and this is outside it in both directions: fetching reads no layout at all. It has to happen first because only the file says what an image's stored pixel size and EXIF orientation are — `naturalWidth` is the size after the engine applied the orientation, so a sideways-stored JPEG measured from the DOM was placed with the identity orientation and printed on its side, with the file's own tag in the report saying otherwise.
     const imageBytes = await fetchImages(walk.images, gateway);
