@@ -85,6 +85,12 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
   const marginRoots: Set<Element> = new Set<any>();
   /** Every running element's clone, with the artifact kind its cell gave it (*the margins are lifted into the light DOM*, S57). */
   const running: Map<Element,'header'|'footer'> = new Map<any, any>();
+  /** What takes back each thing this adapter writes into the engine's presentation, for {@link PageStrip.restore}. */
+  const undo: (() => void)[] = [];
+  const stamp = (element: Element, kind: string) => {
+    if (!element.hasAttribute(ARTIFACT_ATTRIBUTE)) undo.push(() => element.removeAttribute(ARTIFACT_ATTRIBUTE));
+    element.setAttribute(ARTIFACT_ATTRIBUTE, kind);
+  };
 
   // Every margin cell's generated text, read on every page before any page is lifted: a lift writes to the document, and a read after a write makes the browser restyle it first (see `marginTextsOf`).
   const marginTexts = pageElements.map((element, index) => marginTextsOf(element, index));
@@ -115,7 +121,7 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
     const flow = (contentArea.querySelector('.flow') as HTMLElement|null) ?? contentArea;
 
     // R6: the margin cells, brought into the light DOM the walk runs over (*the margins are lifted into the light DOM*, S57).
-    liftMargins(element, strip, marginRoots, running, index, marginTexts[index]);
+    liftMargins(element, strip, marginRoots, running, index, marginTexts[index], undo, stamp);
 
     const trimBox = (contentArea.querySelector('.trim') as HTMLElement|null);
     pages.push({ element, index, flow: flowNodes, flowBox: flow, trimBox, nominal, declaredPx: { widthPx, heightPx: heightPx + 1 }, contentArea, continuations: [] });
@@ -128,7 +134,7 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
   for (const [clone, kind] of running) {
     const original = originalOf(clone, originals, strip);
     if (original && !original.hasAttribute(ARTIFACT_ATTRIBUTE)) {
-      original.setAttribute(ARTIFACT_ATTRIBUTE, kind);
+      stamp(original, kind);
       marginRoots.add(original);
     }
   }
@@ -203,7 +209,7 @@ export function adaptCicero(doc: Document, { note }: { note?: (note: DerivationN
   };
 
   const { backgrounds, images } = pageBackgroundsOf(pages);
-  const adapted: PageStrip = { strip, probeRoot: shadow, pageElements, pages, pageOfNode, twinOf: (element) => twins.get(element) ?? null, transparent: (element) => isEngineMark(element) && !element.hasAttribute(ARTIFACT_ATTRIBUTE), lang, pageElementOf, inMargin: (element) => marginRoots.has((topOf(element, strip) as Element)), backgrounds, ...(images.length ? { seatPageImages: (gateway: Gateway) => seatPageImages(images, strip, marginRoots, gateway) } : {}) };
+  const adapted: PageStrip = { strip, probeRoot: shadow, pageElements, pages, pageOfNode, twinOf: (element) => twins.get(element) ?? null, transparent: (element) => isEngineMark(element) && !element.hasAttribute(ARTIFACT_ATTRIBUTE), lang, pageElementOf, inMargin: (element) => marginRoots.has((topOf(element, strip) as Element)), backgrounds, restore: () => { for (const take of undo.splice(0).reverse()) take(); }, ...(images.length ? { seatPageImages: (gateway: Gateway) => seatPageImages(images, strip, marginRoots, gateway, undo) } : {}) };
   // The record (*an interval is a marked-content sequence*, DESIGN.md S71), derived from the pairing just made: an original presented whole is its own source, an element inside a clone is its twin's, and what the engine wrote itself — the Compositor's marks and its hyphen — is sourceless.
   adapted.intervals = deriveIntervals(adapted, {
     note,
@@ -577,7 +583,7 @@ function marginTextsOf(page: HTMLElement, index: number): MarginText[] {
  *
  * Every element that ends up in a cell is then stamped with the walk's artifact attribute, header or footer by R6's row rule. That keeps margin content out of the structure tree — a running head is pagination, not prose — and it is what the walk already knows how to ink: a stamped element's text is measured, and an `<img>` inside it is placed as the artifact's own XObject.
  *
- * This writes to the engine's presentation, and it may for the reason `prepare()` may: the print frame is Caster's own and is discarded after the export (D1). The span carries the `fragment` word because, like every clone, it is a product of the presentation rather than an element the author wrote, so it is never taken for an original.
+ * This writes to the engine's presentation, and every write is taken back after the export (`undo`, run by {@link PageStrip.restore}): a host may keep the presented pages and print them again, as a mail merge on a kept page does, and the engine parks a light child it did not make, so a lift left standing printed a kept page with empty margins (measured 2026-11-18, `@beltype/cli`'s soak: 1 bill in 20). The span carries the `fragment` word because, like every clone, it is a product of the presentation rather than an element the author wrote, so it is never taken for an original.
  *
  * @param page - The `<beltype-page>` host.
  * @param strip - `<beltype-root>`.
@@ -585,17 +591,22 @@ function marginTextsOf(page: HTMLElement, index: number): MarginText[] {
  * @param running - Filled with every running element's clone, and its kind.
  * @param index - The page's index, for the refusal.
  * @param texts - The page's generated margin text, from `marginTextsOf`.
+ * @param undo - Filled with what takes each write back.
+ * @param stamp - Writes the artifact attribute, and notes it for `undo`.
  * @throws {CasterError} An element in a margin cell that is neither a lifted span nor a copy the engine marked with the `artifact` word.
  */
-function liftMargins(page: HTMLElement, strip: HTMLElement, roots: Set<Element>, running: Map<Element,'header'|'footer'>, index: number, texts: MarginText[]) {
+function liftMargins(page: HTMLElement, strip: HTMLElement, roots: Set<Element>, running: Map<Element,'header'|'footer'>, index: number, texts: MarginText[], undo: (() => void)[], stamp: (element: Element, kind: string) => void) {
   const doc = page.ownerDocument;
   const shadow = (page.shadowRoot as ShadowRoot);
   const suppress = doc.createElement('style');
   suppress.textContent = '.margin-cell::before, .margin-cell::after { content: none !important; }';
   // The pseudo-elements first, made text nodes of the cell where they stand, so the lift below takes them like any other text.
+  const spelled: Set<Node> = new Set();
   for (const { cell, which, text } of texts) {
-    if (which === '::before') cell.prepend(doc.createTextNode(text));
-    else cell.append(doc.createTextNode(text));
+    const node = doc.createTextNode(text);
+    spelled.add(node);
+    if (which === '::before') cell.prepend(node);
+    else cell.append(node);
   }
   for (const cell of (shadow.querySelectorAll('.margin-cell') as NodeListOf<HTMLElement>)) {
     const kind = artifactKindOfBox(cell.dataset.box ?? '');
@@ -614,10 +625,12 @@ function liftMargins(page: HTMLElement, strip: HTMLElement, roots: Set<Element>,
       slot.assign(forward);
       node.replaceWith(slot);
       lifted.add(span);
+      // A pseudo-element's text goes back to being the pseudo-element; a string the engine wrote goes back where it stood.
+      undo.push(() => { span.remove(); forward.remove(); if (spelled.has(node)) slot.remove(); else slot.replaceWith(node); });
     }
     for (const slot of cell.querySelectorAll('slot')) {
       for (const element of slot.assignedElements({ flatten: true })) {
-        element.setAttribute(ARTIFACT_ATTRIBUTE, kind);
+        stamp(element, kind);
         roots.add(element);
         // A running element's copy is the one the engine marked with the `artifact` word (*the margins are lifted into the light DOM*, DESIGN.md S57 and *a running element's original is the element the engine hid*, S60; the artifact word); a lifted span is ours and carries none. Anything else in a cell means the engine stopped marking its copies, and that is refused by name rather than guessed at.
         if (hasWordOn(element, ARTIFACT_WORD)) running.set(element, kind);
@@ -627,6 +640,7 @@ function liftMargins(page: HTMLElement, strip: HTMLElement, roots: Set<Element>,
   }
   // Every cell read, the pseudo-elements go: the text they painted is the cells' own now.
   shadow.append(suppress);
+  undo.push(() => suppress.remove());
 }
 
 /** The strip child an element sits under, or the element itself when it is outside the strip's light DOM. */
@@ -754,7 +768,7 @@ async function pageImageTileSize(backgroundSize: string, area: { w: number; h: n
  *
  * @throws {CasterError} A tile that repeats inside the page, and whatever {@link pageImageSizeOf} refuses.
  */
-async function seatPageImages(images: PageImage[], strip: HTMLElement, marginRoots: Set<Element>, gateway: Gateway) {
+async function seatPageImages(images: PageImage[], strip: HTMLElement, marginRoots: Set<Element>, gateway: Gateway, undo: (() => void)[]) {
   const sizes: Map<string, Promise<[number,number]>> = new Map();
   for (const entry of images) {
     const { page, url, backgroundSize } = entry;
@@ -764,7 +778,7 @@ async function seatPageImages(images: PageImage[], strip: HTMLElement, marginRoo
       // A gradient has no size of its own and needs no load: one box over the page box carries the page's own background layers, and the walk tiles and draws them as it does any box's.
       const box = doc.createElement('div');
       const background = (['image', 'size', 'position', 'repeat'] as const).map((p) => `background-${p}: ${p === 'image' ? entry.gradients : p === 'size' ? backgroundSize : p === 'position' ? entry.backgroundPosition : entry.backgroundRepeat} !important;`).join(' ');
-      seatPageBox(box, page, strip, marginRoots, `left: 0 !important; top: 0 !important; width: ${area.w}px !important; height: ${area.h}px !important; ${background}`);
+      seatPageBox(box, page, strip, marginRoots, undo, `left: 0 !important; top: 0 !important; width: ${area.w}px !important; height: ${area.h}px !important; ${background}`);
       continue;
     }
     const image = doc.createElement('img');
@@ -781,12 +795,12 @@ async function seatPageImages(images: PageImage[], strip: HTMLElement, marginRoo
     const box = doc.createElement('div');
     image.style.cssText = 'all: initial !important; display: block !important; width: 100% !important; height: 100% !important;';
     box.append(image);
-    seatPageBox(box, page, strip, marginRoots, `left: ${placed.tile.x}px !important; top: ${placed.tile.y}px !important; width: ${w}px !important; height: ${h}px !important;`);
+    seatPageBox(box, page, strip, marginRoots, undo, `left: ${placed.tile.x}px !important; top: ${placed.tile.y}px !important; width: ${w}px !important; height: ${h}px !important;`);
   }
 }
 
 /** One page's background box, an artifact at `placement`, slotted into its page as a lifted margin is. */
-function seatPageBox(box: HTMLElement, page: StripPage, strip: HTMLElement, marginRoots: Set<Element>, placement: string) {
+function seatPageBox(box: HTMLElement, page: StripPage, strip: HTMLElement, marginRoots: Set<Element>, undo: (() => void)[], placement: string) {
   const doc = strip.ownerDocument;
   box.setAttribute(ARTIFACT_ATTRIBUTE, 'layout');
   addWordTo(box, FRAGMENT_WORD);
@@ -799,6 +813,7 @@ function seatPageBox(box: HTMLElement, page: StripPage, strip: HTMLElement, marg
   slot.assign(forward);
   (page.element.shadowRoot as ShadowRoot).append(slot);
   marginRoots.add(box);
+  undo.push(() => { box.remove(); forward.remove(); slot.remove(); });
 }
 
 /**

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **What the adapter writes into the pages it takes back after the print** (2026-11-18, found by `@beltype/cli`'s mail merge soak). A margin box's text is lifted into the light DOM for the walk, and a page's background image is seated as a box; both stayed after the export, on the ground that the print frame is discarded. A host that keeps the pages and prints them again, as `beltype serve` does for a mail merge's next customer, then printed a page Cicero had kept from the last cut with empty margins, no running head and no folio: the engine parks a light child it did not make. On the bill specimen it was 1 bill in 20 of 300 seeded customers. `PageStrip.restore` now takes every such write back, and `print()` calls it after the export on a strip it adapted itself, so the pages stand as the engine presented them and a second print of the same pages is the same file, where it was refused. No file's bytes change. Not taken back: a pseudo-element made real after the cut (DESIGN.md's amendment of the same day says what that leaves). One test, `test/printedAgain.test.ts`, red before.
+
 ## 0.2.11 — 2026-11-18
 
 - **The report names the archival claim** (2026-11-18, Egildo's "Yes, name it", asked whether the CLI's print line and header should name the PDF/A-4 claim). `report.archival` is `'pdfa4'` where the file claims PDF/A-4 and absent where it does not, beside `report.conformance`, which still says whether PDF/UA-2 is claimed; a guess that withdraws PDF/UA-2 leaves it standing. No file's bytes change.
