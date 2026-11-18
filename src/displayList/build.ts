@@ -52,8 +52,10 @@ export type BuildInputs = {
   writing: Omit<Writing, 'colour'> & { colour?: Omit<ColourWriting, 'profiles'> & { profileBytes: Uint8Array, srgbBytes: Uint8Array } };
   /** The list's `info.conformance`: `tagged` under `standard: 'none'` or once a guess withdrew the claim (S90, S103), as `print()` decided it for the report. */
   conformance: DocumentInfo['conformance'];
-  /** The list's `info.archival`: `standard` claims `a-4` (S109). */
-  archival?: boolean;
+  /** The list's `info.archival`: the PDF/A claim `print()` decided, `pdfa4` under `a-4` (S109), a PDF/A-2 level under a PDF/A-2 member (S111). */
+  archival?: DocumentInfo['archival'];
+  /** The list's `info.pdf`: `'1.7'` under a member of the PDF 1.7 family, and the tree is resolved for a 1.7 file (S111). */
+  pdf?: DocumentInfo['pdf'];
   /** `css` is the order a browser paints in; under `dom` the paint index is not consulted at all. */
   paintOrder?: 'dom' | 'css';
   /** The `@page` ground each page paints, already resolved. */
@@ -753,7 +755,7 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         linkRefs[at].order = rank;
     });
     // The tree, pruned, ordered and resolved (`displayList/structure.js`): the writer writes it and decides nothing.
-    const resolved = resolveStructure(walk.tree, contentRefs, linkRefs, figureBoxes, headings.map((h) => h.path));
+    const resolved = resolveStructure(walk.tree, contentRefs, linkRefs, figureBoxes, headings.map((h) => h.path), inputs.pdf === '1.7');
     contentStarts.forEach((start, i) => { start.element = resolved.contentElement[i]; });
     linkItems.forEach((link, i) => {
         link.element = resolved.linkElement[i];
@@ -897,8 +899,9 @@ export async function buildDisplayList(measurement: MeasureResult, walk: WalkRes
         info: {
             lang: walk.lang,
             title: inputs.title,
+            ...(inputs.pdf ? { pdf: inputs.pdf } : {}),
             conformance: inputs.conformance,
-            ...(inputs.archival ? { archival: 'pdfa4' as const } : {}),
+            ...(inputs.archival ? { archival: inputs.archival } : {}),
             pageCount: measurement.pageCount,
             created: inputs.created,
         },

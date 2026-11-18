@@ -77,8 +77,14 @@ export class ShadingBuilder {
   declare context: PDFContext;
   declare shadings: Map<string, EmittedShading>;
   declare patterns: Map<string, EmittedPattern>;
-  constructor(context: PDFContext) {
+  /** The colour space an RGB shading names in place of `/DeviceRGB`, under a PDF/A-2 claim alone (S111). */
+  declare rgbSpace: (() => unknown) | undefined;
+  /**
+   * @param rgbSpace - Under a PDF/A-2 claim, the document's sRGB profile as a colour space: veraPDF's PDF/A-2 profile reads a shading pattern's `/DeviceRGB` with no default colour space of its own (ISO 19005-2, 6.2.4.3), where PDF/A-4's reads the page's `/DefaultRGB` (S111).
+   */
+  constructor(context: PDFContext, rgbSpace?: () => unknown) {
     this.context = context;
+    this.rgbSpace = rgbSpace;
     this.shadings = new Map<any, any>();
     this.patterns = new Map<any, any>();
   }
@@ -161,7 +167,7 @@ export class ShadingBuilder {
     const ref = this.context.register(
       this.context.obj({
         ShadingType: spec.type,
-        ColorSpace: PDFName.of(space),
+        ColorSpace: (space === 'DeviceRGB' && this.rgbSpace ? this.rgbSpace() : PDFName.of(space)) as PDFName,
         Coords: spec.coords.map(round4),
         Domain: [0, 1],
         Extend: spec.extend,

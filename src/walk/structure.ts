@@ -152,7 +152,9 @@ export type WalkOptions = {
   /** *the printer guesses, says so, and withdraws the claim* (S90): what a custom element the table does not name becomes. `'refuse'` throws {@link UnknownElementError}; `'infer'`, the default, walks it as CSS laid it out, the `<span>` rule when inline and the `<div>` rule when a block, and lists the guess in {@link WalkResult}'s `inferred`. */
   unknownElements?: 'refuse'|'infer';
   /** *PDF/UA-2 is a flag, not a given* (S103, amended 2026-11-08): under `'none'` an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text, an inline `<svg>` with no description, an element with `role="img"` and no `aria-label`, a KaTeX formula with no TeX annotation and a link to an element that produced no structure element are each one sentence in {@link WalkResult}'s `warnings`, where under `'ua-2'`, the default, each is refused. */
-  standard?: 'ua-2'|'none';
+  standard?: 'ua-2'|'ua-1'|'none';
+  /** What a guess costs, the clause that ends its warning: `the file does not claim PDF/UA-2` unless the host names the claims a PDF 1.7 list loses (*a guess lowers PDF/A-2a to PDF/A-2u*, S111). */
+  guessCosts?: string;
   /** Which page element an element belongs to, as an index. E11 (`tables.md`) only, and only for naming: a `/ID` has to be unique in the document and `th-<page>-<n>` is a name a human reading the file can place. With no answer every table is on page 1 and the counter alone keeps the ids apart, which is what a fixture with no page elements gets. */
   pageIndexOf?: (element: Element) => number;
 };
@@ -1554,7 +1556,7 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             const asBlock = isBlockLevel(element);
             const became = asBlock ? visitAsDiv(element, parent) : visitAsSpan(element, parent);
             inferred.push({ element: domPath, tag: became, display });
-            warnings.push(`caster: <${name}> at ${domPath} was laid out ${asBlock ? 'as a block' : 'inline'} (display: ${display}) and printed ${became === 'transparent' ? 'transparent' : became === 'P' ? 'as an anonymous P' : `as a ${became}`}; the file does not claim PDF/UA-2`);
+            warnings.push(`caster: <${name}> at ${domPath} was laid out ${asBlock ? 'as a block' : 'inline'} (display: ${display}) and printed ${became === 'transparent' ? 'transparent' : became === 'P' ? 'as an anonymous P' : `as a ${became}`}; ${options.guessCosts ?? 'the file does not claim PDF/UA-2'}`);
             return;
         }
 
@@ -1625,8 +1627,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
         if (!(source.attrs.refs ??= []).includes(path)) source.attrs.refs.push(path);
         if (found.tag === 'FENote' && !(found.attrs.refs ??= []).includes(source.path)) found.attrs.refs.push(source.path);
     }
-    // Headings do not skip a level on the way down. No PDF/UA-2 rule says so — the walker asserts it because a tree whose levels jump is a document outline a reader cannot navigate, and the fixture is where that is caught.
-    headings.forEach((h, i) => {
+    // Headings do not skip a level on the way down. No PDF/UA-2 rule says so — the walker asserts it because a tree whose levels jump is a document outline a reader cannot navigate, and the fixture is where that is caught. Under PDF/UA-1, which has the rule, the file is printed as written and the claim is withdrawn instead (*a broken heading sequence withdraws PDF/UA-1*, S111; `headingBreaks`).
+    if (options.standard !== 'ua-1') headings.forEach((h, i) => {
         if (i > 0 && h.level > headings[i - 1].level + 1) {
             throw new CasterError(`caster: heading level jumps from H${headings[i - 1].level} to H${h.level} at ${h.path}`);
         }
@@ -1712,3 +1714,22 @@ export const ownsContent = (tag: string): boolean => CONTENT_OWNERS.has(tag);
 export const keepWhenEmpty = (tag: string): boolean => KEEP_WHEN_EMPTY.has(tag);
 /** Re-exported so a caller that only imports the walker can name a repeated row. */
 export { isRepeated };
+
+/**
+ * The headings that break PDF/UA-1's sequence, one warning each (*a broken heading sequence withdraws PDF/UA-1*, S111).
+ *
+ * @remarks
+ * ISO 14289-1, 7.4.2: where heading tags are used, `H1` is the first, and a descending sequence skips no level. So two breaks are counted: a first heading that is not an `H1`, and a heading more than one level below the one before it. A heading that climbs any number of levels, or repeats one, breaks nothing. Nothing is renumbered: the level is the author's statement of the outline.
+ *
+ * @param outline - The walk's headings with their text, in reading order.
+ */
+export function headingBreaks(outline: readonly { path: string, level: number, title: string }[]): string[] {
+  return outline.flatMap((h, i) => {
+    const named = `H${h.level} ${JSON.stringify(h.title)} at ${h.path}`;
+    if (i === 0 && h.level !== 1)
+      return [`caster: the first heading, ${named}, is not an H1, and PDF/UA-1 asks a document's headings to begin at H1 (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make the first heading an H1 to keep the claim`];
+    if (i > 0 && h.level > outline[i - 1].level + 1)
+      return [`caster: the heading ${named} follows an H${outline[i - 1].level} and skips a level, which PDF/UA-1 forbids (ISO 14289-1, 7.4.2); the file is tagged and does not claim PDF/UA-1. Nothing is renumbered: make it an H${outline[i - 1].level + 1} or higher to keep the claim`];
+    return [];
+  });
+}

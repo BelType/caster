@@ -55,7 +55,7 @@ export type CasterOptions = {
   unknownElements: 'refuse'|'infer';
   /** Default `'none'`, so an image keeps its own colour and late binding stays the default (Egildo's ruling 4 of 2026-11-03). `'cmyk'` converts every RGB or grey image to `DeviceCMYK` in the image pass, after the reduction, through the vendored lcms-wasm from the image's own profile (else sRGB) to the output intent's CMYK, relative colorimetric with black-point compensation, and the list carries the CMYK samples (version 7). A CMYK JPEG is left alone, and a converted image travels as Flate samples, since the browser writes no CMYK JPEG. Needs the colour objects: it is refused with `colour: 'off'`, and turns `colour: 'auto'` on. Basis: 8.3 MP converts in about 220 ms with the default optimisation, so it runs after the reduction and not before. */
   convertImages: 'none'|'cmyk';
-  /** Caster's own (*PDF/UA-2 is a flag, not a given*, S103; Egildo's ruling of 2026-11-03, after Typst's `--pdf-standard`, WeasyPrint's `--pdf-variant` and Prince's `--pdf-profile`). Default `'ua-2'`: the file claims PDF/UA-2 in its XMP, and forme adds both Well-Tagged PDF declarations beside it, and a word gap in a face with no space glyph is refused by name, since it would be glyph 0, `.notdef`, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9). Basis: the Rust writer's cff2 fixture, HarfBuzz's test subset of Source Serif 4 Variable, has no space glyph, and forme's file showed `.notdef` in every gap under a claim veraPDF's `ua2`, `wt1a` and `wt1r` all failed. Under `'none'` the file is tagged as ever and claims nothing, and such a gap is written as positioning with no glyph; an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text, an inline `<svg>` with no description, a `role="img"` element with no `aria-label`, a KaTeX formula with no TeX annotation and a link to an element with no structure element each warn by name instead of refusing (S103, amended 2026-11-08). A guess under `unknownElements: 'infer'` still withdraws a `'ua-2'` claim (S90), the one road on which the claim asked for is softened. Since *the standard is a list* (S109, 2026-11-17) the flag names the claims the file makes: `'ua-2'`, `'a-4'`, both as `'ua-2,a-4'`, or none as `'none'`, and a host may pass the list itself, `['ua-2', 'a-4']` in any order, `[]` for `'none'`, which `resolveOptions` writes in the table's spelling. Under `'a-4'` the file is PDF/A-4 or it is not printed (*an archival claim is kept or refused*): the colour objects are written (`colour: 'auto'` turns on, `'off'` refuses naming both), and a facsimile, or CMYK colour with no CMYK `profile` behind it, is refused by name. A guess withdraws the `ua-2` claim alone and leaves `a-4` standing. */
+  /** Caster's own (*PDF/UA-2 is a flag, not a given*, S103; Egildo's ruling of 2026-11-03, after Typst's `--pdf-standard`, WeasyPrint's `--pdf-variant` and Prince's `--pdf-profile`). Default `'ua-2'`: the file claims PDF/UA-2 in its XMP, and forme adds both Well-Tagged PDF declarations beside it, and a word gap in a face with no space glyph is refused by name, since it would be glyph 0, `.notdef`, which PDF/UA-2 forbids a file to show (ISO 14289-2, 8.4.5.9). Basis: the Rust writer's cff2 fixture, HarfBuzz's test subset of Source Serif 4 Variable, has no space glyph, and forme's file showed `.notdef` in every gap under a claim veraPDF's `ua2`, `wt1a` and `wt1r` all failed. Under `'none'` the file is tagged as ever and claims nothing, and such a gap is written as positioning with no glyph; an `<img>` with no `alt`, a `<canvas>` with no `aria-label`, a facsimile with no alternative text, an inline `<svg>` with no description, a `role="img"` element with no `aria-label`, a KaTeX formula with no TeX annotation and a link to an element with no structure element each warn by name instead of refusing (S103, amended 2026-11-08). A guess under `unknownElements: 'infer'` still withdraws a `'ua-2'` claim (S90), the one road on which the claim asked for is softened. Since *the standard is a list* (S109, 2026-11-17) the flag names the claims the file makes: `'ua-2'`, `'a-4'`, both as `'ua-2,a-4'`, or none as `'none'`, and a host may pass the list itself, `['ua-2', 'a-4']` in any order, `[]` for `'none'`, which `resolveOptions` writes in the table's spelling. Under `'a-4'` the file is PDF/A-4 or it is not printed (*an archival claim is kept or refused*): the colour objects are written (`colour: 'auto'` turns on, `'off'` refuses naming both), and a facsimile, or CMYK colour with no CMYK `profile` behind it, is refused by name. A guess withdraws the `ua-2` claim alone and leaves `a-4` standing. Since *the PDF 1.7 family joins the list* (S111, 2026-11-18) five more members name a PDF 1.7 file: `ua-1` (PDF/UA-1), `a-2b`, `a-2u` and `a-2a` (PDF/A-2 at its three levels) and `pdf-1.7`, a tagged 1.7 file with no claim. A member fixes the version, so a list naming members of both versions is refused by name, and so is a list naming two PDF/A members; `pdf-1.7` beside another 1.7 member adds nothing. A string with a comma is read as the list it spells, in any order. Under a PDF/A-2 member the claim is kept or refused as under `a-4`; under `a-2a` a guess lowers the claim to PDF/A-2u, and beside `ua-1` it withdraws PDF/UA-1; under `ua-1` a heading sequence that does not start at H1 or skips a level on the way down withdraws PDF/UA-1, with a warning per heading. */
   standard: Standard;
   /** Default `'pdf-lib'`. Which writer turns the display list into the file: `'pdf-lib'`, the TypeScript writer (`emit/structureEmit.ts`, through pdf-lib and HarfBuzz's subsetter), or `'forme'`, the Rust writer vendored as a WebAssembly module (`vendor/forme_bg.wasm`, loaded only under this value), which in a page writes in a dedicated worker (`emit/forme.ts`). Both read the same list and return the same `WriterResult`; forme is held to the oracle's files by every reader of *the same list prints the same bytes* (S102). The default stays the oracle's until Egildo has read the Rust writer's stage 9 gate. */
   writer: 'pdf-lib'|'forme';
@@ -70,18 +70,36 @@ export type CasterOptions = {
 /** What a host hands `print()`: any option, `standard` also as a list of claims. */
 export type GivenOptions = Partial<Omit<CasterOptions, 'standard'>> & { standard?: Standard | readonly Claim[] };
 
-/** One claim the file can make: PDF/UA-2 or PDF/A-4 (*the standard is a list*, S109). */
-export type Claim = 'ua-2' | 'a-4';
+/** One member of the list: PDF/UA-2 or PDF/A-4 (*the standard is a list*, S109), or a member of the PDF 1.7 family, PDF/UA-1, PDF/A-2 at a level, or a bare PDF 1.7 file (*the PDF 1.7 family joins the list*, S111). */
+export type Claim = 'ua-2' | 'a-4' | 'ua-1' | 'a-2b' | 'a-2u' | 'a-2a' | 'pdf-1.7';
 
-/** The `standard` flag in the table's spelling: the claims in the order {@link CLAIMS} gives, joined by a comma, or `none`. */
-export type Standard = 'ua-2' | 'a-4' | 'ua-2,a-4' | 'none';
+/** The `standard` flag in the table's spelling: the members in the order {@link CLAIMS} gives, joined by a comma, or `none`; every list one file can keep. */
+export type Standard = 'ua-2' | 'a-4' | 'ua-2,a-4' | 'none'
+  | 'ua-1' | 'a-2b' | 'a-2u' | 'a-2a' | 'ua-1,a-2b' | 'ua-1,a-2u' | 'ua-1,a-2a'
+  | 'pdf-1.7' | 'ua-1,pdf-1.7' | 'a-2b,pdf-1.7' | 'a-2u,pdf-1.7' | 'a-2a,pdf-1.7' | 'ua-1,a-2b,pdf-1.7' | 'ua-1,a-2u,pdf-1.7' | 'ua-1,a-2a,pdf-1.7';
 
-/** Every claim, in the order the flag's spelling lists them. */
-export const CLAIMS: readonly Claim[] = ['ua-2', 'a-4'];
+/** Every member, in the order the flag's spelling lists them. */
+export const CLAIMS: readonly Claim[] = ['ua-2', 'a-4', 'ua-1', 'a-2b', 'a-2u', 'a-2a', 'pdf-1.7'];
+
+/** The members built on PDF 1.7 (S111); the others are built on PDF 2.0. */
+const PDF_1_7: readonly Claim[] = ['ua-1', 'a-2b', 'a-2u', 'a-2a', 'pdf-1.7'];
+
+/** The PDF/A members: a file carries one PDF/A identification. */
+const ARCHIVAL: readonly Claim[] = ['a-4', 'a-2b', 'a-2u', 'a-2a'];
 
 /** The claims a `standard` value makes. */
 export function claimsOf(standard: Standard): Claim[] {
   return standard === 'none' ? [] : (standard.split(',') as Claim[]);
+}
+
+/** The PDF/A member of a `standard` value, if it names one. */
+export function archivalOf(standard: Standard): Claim | undefined {
+  return claimsOf(standard).find((claim) => ARCHIVAL.includes(claim));
+}
+
+/** Whether a `standard` value asks for a PDF 1.7 file (S111). */
+export function isPdf17(standard: Standard): boolean {
+  return claimsOf(standard).some((claim) => PDF_1_7.includes(claim));
 }
 
 /** The names {@link FLAGS} holds: every option but the two free strings the panel fills from the document and the profile's bytes. */
@@ -120,7 +138,7 @@ export const FLAGS = (({
   skipInk: { values: [true, false], default: true },
   colour: { values: ['auto', 'on', 'off'], default: 'auto' },
   unknownElements: { values: ['refuse', 'infer'], default: 'infer' },
-  standard: { values: ['ua-2', 'a-4', 'ua-2,a-4', 'none'], default: 'ua-2' },
+  standard: { values: ['ua-2', 'a-4', 'ua-2,a-4', 'none', 'ua-1', 'a-2b', 'a-2u', 'a-2a', 'ua-1,a-2b', 'ua-1,a-2u', 'ua-1,a-2a', 'pdf-1.7', 'ua-1,pdf-1.7', 'a-2b,pdf-1.7', 'a-2u,pdf-1.7', 'a-2a,pdf-1.7', 'ua-1,a-2b,pdf-1.7', 'ua-1,a-2u,pdf-1.7', 'ua-1,a-2a,pdf-1.7'], default: 'ua-2' },
   writer: { values: ['pdf-lib', 'forme'], default: 'pdf-lib' }
 } as const) satisfies { [K in FlagName]: FlagSpec<K> });
 
@@ -141,11 +159,12 @@ export const DEFAULTS = (casterFlags.defaults as unknown) as CasterOptions;
  * Fill in the defaults and refuse anything the table does not name.
  *
  * @param given - An `undefined` member is absent, so a panel may pass every field it has.
- * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi` or `imageResolution`, a `downsampleThreshold` outside 1 to 10, a value outside a flag's set, a `standard` list naming a claim twice or one there is not, or `'a-4'` with `colour: 'off'` — carrying `flag`.
+ * @throws {CasterError} An unknown option, a non-positive or non-finite `rasterDpi` or `imageResolution`, a `downsampleThreshold` outside 1 to 10, a value outside a flag's set, a `standard` list naming a claim twice or one there is not, members of both versions or two PDF/A members, or a PDF/A member with `colour: 'off'` — carrying `flag`.
  */
 export function resolveOptions(given: GivenOptions = {}): CasterOptions {
   const { title, lang, profile, ...flags } = given;
   if (Array.isArray(flags.standard)) flags.standard = standardOf(flags.standard);
+  else if (typeof flags.standard === 'string' && flags.standard.includes(',')) flags.standard = standardOf(flags.standard.split(','));
   let out: Record<string,unknown>;
   try { out = { ...casterFlags.resolve(flags as never) }; }
   catch (e) {
@@ -156,7 +175,9 @@ export function resolveOptions(given: GivenOptions = {}): CasterOptions {
   // The table says a positive number; the range is this flag's own, and Distiller's: from 1 to 10, refused here where Adobe reverts silently.
   const threshold = out['downsampleThreshold'] as number;
   if (threshold < 1 || threshold > 10) throw new CasterError(`caster: 'downsampleThreshold' takes a number from 1 to 10; got ${JSON.stringify(threshold)}.`, { flag: 'downsampleThreshold' });
-  if (claimsOf(out['standard'] as Standard).includes('a-4') && out['colour'] === 'off') throw new CasterError("caster: `standard` with 'a-4' needs the colour objects, an output intent that says what every colour means (ISO 19005-4, 6.2.4.3), which `colour: 'off'` does not write; set `colour` to 'auto' or 'on', or leave 'a-4' out of `standard`.", { flag: 'standard' });
+  const archival = archivalOf(out['standard'] as Standard);
+  if (archival === 'a-4' && out['colour'] === 'off') throw new CasterError("caster: `standard` with 'a-4' needs the colour objects, an output intent that says what every colour means (ISO 19005-4, 6.2.4.3), which `colour: 'off'` does not write; set `colour` to 'auto' or 'on', or leave 'a-4' out of `standard`.", { flag: 'standard' });
+  if (archival !== undefined && out['colour'] === 'off') throw new CasterError(`caster: \`standard\` with '${archival}' needs the colour objects, an output intent that says what every colour means (ISO 19005-2, 6.2.4.3), which \`colour: 'off'\` does not write; set \`colour\` to 'auto' or 'on', or leave '${archival}' out of \`standard\`.`, { flag: 'standard' });
   if (out['convertImages'] === 'cmyk' && out['colour'] === 'off') throw new CasterError("caster: `convertImages: 'cmyk'` writes DeviceCMYK samples under the output intent, which `colour: 'off'` does not write; set `colour` to 'auto' or 'on', or `convertImages` to 'none'.", { flag: 'convertImages' });
   if (profile !== undefined && !(profile instanceof Uint8Array)) throw new CasterError('caster: `profile` takes the bytes of an ICC profile, a Uint8Array.', { flag: 'profile' });
   if (profile === undefined && (out['convertImages'] === 'cmyk' || out['convertRgb'] === 'wasm')) {
@@ -172,14 +193,24 @@ export function resolveOptions(given: GivenOptions = {}): CasterOptions {
 /**
  * A list of claims in the table's spelling.
  *
- * @throws {CasterError} A member that is no claim, or one named twice, carrying `flag`.
+ * @remarks
+ * A file has one version and one PDF/A identification (*the PDF 1.7 family joins the list*, S111), so a list that names a member of each version, or two PDF/A members, is refused here, before anything is printed, naming one of each.
+ *
+ * @throws {CasterError} A member that is no claim, or one named twice; members of both versions; two PDF/A members — carrying `flag`.
  */
 function standardOf(list: readonly unknown[]): Standard {
   for (const [at, claim] of list.entries()) {
     if (!CLAIMS.includes(claim as Claim) || list.indexOf(claim) !== at)
-      throw new CasterError(`caster: 'standard' takes a list of ${CLAIMS.map((c) => JSON.stringify(c)).join(' and ')}, each once; got ${JSON.stringify(list)}.`, { flag: 'standard' });
+      throw new CasterError(`caster: 'standard' takes a list of ${CLAIMS.map((c) => JSON.stringify(c)).join(', ').replace(/, ([^,]+)$/u, ' and $1')}, each once; got ${JSON.stringify(list)}.`, { flag: 'standard' });
   }
   const named = CLAIMS.filter((claim) => list.includes(claim));
+  const older = named.find((claim) => PDF_1_7.includes(claim));
+  const newer = named.find((claim) => !PDF_1_7.includes(claim));
+  if (older !== undefined && newer !== undefined)
+    throw new CasterError(`caster: 'standard' names ${JSON.stringify(newer)}, a claim on PDF 2.0, beside ${JSON.stringify(older)}, a member of the PDF 1.7 family, and a file has one version; name the members of one version.`, { flag: 'standard' });
+  const archival = named.filter((claim) => ARCHIVAL.includes(claim));
+  if (archival.length > 1)
+    throw new CasterError(`caster: 'standard' names two PDF/A members, ${JSON.stringify(archival[0])} and ${JSON.stringify(archival[1])}, and a file carries one PDF/A identification; name one.`, { flag: 'standard' });
   return (named.length ? named.join(',') : 'none') as Standard;
 }
 
@@ -187,14 +218,14 @@ function standardOf(list: readonly unknown[]): Standard {
  * Whether this run writes the colour objects — PLAN.md D8's `colour` flag, with `auto` resolved.
  *
  * @remarks
- * `auto` is on when the document declares a `--pdf-*` colour hint, when a policy that produces device colour (`blackText`, `convertRgb`, `convertImages`) is on, or when `standard` claims `a-4`, whose device colour needs an output intent (S109): with no CMYK `profile` that intent is the sRGB profile.
+ * `auto` is on when the document declares a `--pdf-*` colour hint, when a policy that produces device colour (`blackText`, `convertRgb`, `convertImages`) is on, or when `standard` names a PDF/A member, whose device colour needs an output intent (S109, S111): with no CMYK `profile` that intent is the sRGB profile.
  *
  * @param needs - What the walk found; only `colourHints` is read.
  */
 export function colourOn(needs: { colourHints?: boolean; }, options: CasterOptions) {
   if (options.colour === 'on') return true;
   if (options.colour === 'off') return false;
-  return Boolean(needs?.colourHints) || claimsOf(options.standard).includes('a-4') || options.blackText !== 'none' || options.convertRgb !== 'none' || options.convertImages !== 'none';
+  return Boolean(needs?.colourHints) || archivalOf(options.standard) !== undefined || options.blackText !== 'none' || options.convertRgb !== 'none' || options.convertImages !== 'none';
 }
 
 /**

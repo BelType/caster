@@ -730,10 +730,12 @@ export type Report = {
   needs?: ReportNeeds;
   /** *the printer guesses, says so, and withdraws the claim* (S90): every custom element the walk tagged by its layout under `unknownElements: 'infer'`, with what it became and the computed `display` it was read from. */
   inferred?: { element: string, tag: string, display: string }[];
-  /** *the printer guesses, says so, and withdraws the claim* (S90): what the file claims. `'pdfua2'` writes the PDF/UA-2 identification into the XMP; `'tagged'` is a tagged PDF with a guess in it, which claims nothing more. */
-  conformance: 'pdfua2'|'tagged';
-  /** *the standard is a list* (S109): present where the file claims PDF/A-4 as well, whatever `conformance` reads, so a host can say every claim the file makes. A print that cannot keep the claim is refused and has no report. */
-  archival?: 'pdfa4';
+  /** *the printer guesses, says so, and withdraws the claim* (S90): what the file claims. `'pdfua2'` writes the PDF/UA-2 identification into the XMP, `'pdfua1'` the PDF/UA-1 one in a PDF 1.7 file (S111); `'tagged'` is a tagged PDF that claims nothing more: none was asked, a guess withdrew it, or under PDF/UA-1 a heading sequence broke it. */
+  conformance: 'pdfua2'|'pdfua1'|'tagged';
+  /** *the standard is a list* (S109): present where the file claims PDF/A as well, whatever `conformance` reads, so a host can say every claim the file makes: `'pdfa4'`, or PDF/A-2 at the level the file keeps, `'pdfa2b'`, `'pdfa2u'` or `'pdfa2a'` (S111), which a guess lowers from `'pdfa2a'` to `'pdfa2u'`. A print that cannot keep the claim is refused and has no report. */
+  archival?: 'pdfa4'|'pdfa2b'|'pdfa2u'|'pdfa2a';
+  /** The file's version where it is not PDF 2.0: `'1.7'` under a member of the PDF 1.7 family (S111). Absent, the file is PDF 2.0. */
+  version?: '1.7';
   /** *the printer guesses, says so, and withdraws the claim* (S90, amended 2026-11-08): every place on a page where the file was made to differ from what the screen composites, by a policy, a conversion or an approximation, with the region it covers. Empty when there is none. */
   confessions: ReportConfession[];
   /** The flags the run was made with. */

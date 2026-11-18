@@ -1,5 +1,5 @@
 /**
- * `emit/document.js` — the document scaffolding: the PDF 2.0 header, the catalog `/Version`, the Info dictionary and the XMP packet.
+ * `emit/document.js` — the document scaffolding: the PDF 2.0 header, the catalog `/Version`, the Info dictionary and the XMP packet; under a PDF 1.7 list the `%PDF-1.7` header and no `/Version` (*the PDF 1.7 family joins the list*, S111).
  *
  * Ported from `harness/src/export/document.ts` (E0, E3, E5, E12F). Guide: `docs/guide/structure-tree.md`.
  *
@@ -28,10 +28,12 @@ export type DocumentInfo = {
   title: string;
   producer: string;
   creator: string;
-  /** Whether the XMP claims PDF/UA-2 (*the printer guesses, says so, and withdraws the claim*, S90). `'tagged'` writes no `pdfuaid` block: the file is tagged, and a tag the printer guessed is not a claim it makes. */
-  conformance: 'pdfua2'|'tagged';
-  /** Whether the file claims PDF/A-4 (*an archival claim is kept or refused*, S109): the XMP carries the PDF/A identification and the file no document information dictionary. */
-  archival: boolean;
+  /** Whether the XMP claims PDF/UA-2 (*the printer guesses, says so, and withdraws the claim*, S90), or PDF/UA-1 in a 1.7 file (S111). `'tagged'` writes no `pdfuaid` block: the file is tagged, and a tag the printer guessed is not a claim it makes. */
+  conformance: 'pdfua2'|'pdfua1'|'tagged';
+  /** The PDF/A claim. `pdfa4` (*an archival claim is kept or refused*, S109): the XMP carries the PDF/A-4 identification and the file no document information dictionary. A PDF/A-2 level (S111): the XMP carries the PDF/A-2 identification with its conformance level, the dates beside the information dictionary it keeps, and the extension schema of `pdfuaid` where PDF/UA-1 is claimed. */
+  archival?: 'pdfa4'|'pdfa2b'|'pdfa2u'|'pdfa2a';
+  /** `'1.7'` in a PDF 1.7 file (S111). */
+  pdf?: '1.7';
   /** The display list's `info.created`, an ISO 8601 instant in UTC. */
   created: string;
 };
@@ -42,10 +44,10 @@ export type DocumentInfo = {
  * @remarks
  * Nothing is registered on it — the fonts are embedded by hand in `fontEmbed.js`, which is why pdf-lib's own fontkit registration is not wanted here.
  */
-export async function createDocument(): Promise<PDFDocument> {
+export async function createDocument(version?: '1.7'): Promise<PDFDocument> {
     const pdfDoc = await pdf().PDFDocument.create();
-    // PDFContext.header is a public mutable field, so the document's version lives here; PDF20Writer is what makes the writer honour it, since pdf-lib's own PDFWriter hardcodes pdf().PDFHeader.forVersion(1, 7).
-    pdfDoc.context.header = pdf().PDFHeader.forVersion(2, 0);
+    // PDFContext.header is a public mutable field, so the document's version lives here; PDF20Writer is what makes the writer honour it, since pdf-lib's own PDFWriter hardcodes pdf().PDFHeader.forVersion(1, 7). A 1.7 list asks for the header pdf-lib would have written (S111).
+    pdfDoc.context.header = version === '1.7' ? pdf().PDFHeader.forVersion(1, 7) : pdf().PDFHeader.forVersion(2, 0);
     return pdfDoc;
 }
 /**
@@ -54,7 +56,7 @@ export async function createDocument(): Promise<PDFDocument> {
  * @remarks
  * pdf-lib stamps `/CreationDate` and `/ModDate` with its own clock when the document is created; both are set again here from `info.created`, in the slots pdf-lib's dictionary already holds, so the dictionary's key order is the one it always was and only the two values are the list's.
  *
- * PDF/A-4 allows no Info dictionary but under a `PieceInfo` the catalog does not hold (veraPDF's 6.1.3-4), so under the claim it is deleted from the file and from the trailer once `setTitle` has written the window-title flag beside it; the title is the XMP's, and the cross-reference table skips the object number it held. A file that makes no such claim keeps it, since older viewers and file managers read the title from it.
+ * PDF/A-2 allows it, matched by the XMP (S111), and keeps it. PDF/A-4 allows no Info dictionary but under a `PieceInfo` the catalog does not hold (veraPDF's 6.1.3-4), so under the claim it is deleted from the file and from the trailer once `setTitle` has written the window-title flag beside it; the title is the XMP's, and the cross-reference table skips the object number it held. A file that makes no such claim keeps it, since older viewers and file managers read the title from it.
  *
  * @throws {CasterError} `info.created` is not an ISO 8601 instant in UTC.
  */
@@ -67,7 +69,7 @@ export function setInfo(pdfDoc: PDFDocument, info: DocumentInfo) {
     const infoDict = pdfDoc.context.lookup(pdfDoc.context.trailerInfo.Info, pdf().PDFDict);
     infoDict.set(pdf().PDFName.of('ModDate'), date);
     infoDict.set(pdf().PDFName.of('CreationDate'), date);
-    if (info.archival) {
+    if (info.archival === 'pdfa4') {
         pdfDoc.context.delete(pdfDoc.context.trailerInfo.Info as PDFRef);
         delete pdfDoc.context.trailerInfo.Info;
     }
@@ -83,6 +85,40 @@ export function pdfDate(iso: string): string {
         throw new CasterError(`caster: the display list's info.created is ${JSON.stringify(iso)}, which is not an ISO 8601 instant in UTC (YYYY-MM-DDTHH:mm:ssZ)`);
     return `D:${found.slice(1).join('')}Z`;
 }
+/**
+ * The XMP's creation and modification dates, the Info dictionary's two at whole seconds, which PDF/A-2 asks the packet to match (veraPDF's 6.6.3-1; S111). Written under a PDF/A-2 claim alone, so no other file moves.
+ */
+const xmpDates = (created: string): string => {
+    const at = `${pdfDate(created).replace(/^D:(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z$/u, '$1-$2-$3T$4:$5:$6')}Z`;
+    return `
+    <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+      <xmp:CreateDate>${at}</xmp:CreateDate>
+      <xmp:ModifyDate>${at}</xmp:ModifyDate>
+    </rdf:Description>`;
+};
+/** The PDF/A extension schema that declares `pdfuaid:part` to a PDF/A-2 reader, which does not predefine the namespace (S111). */
+const PDFUAID_EXTENSION = `
+    <rdf:Description rdf:about="" xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">
+      <pdfaExtension:schemas>
+        <rdf:Bag>
+          <rdf:li rdf:parseType="Resource">
+            <pdfaSchema:schema>PDF/UA Universal Accessibility Schema</pdfaSchema:schema>
+            <pdfaSchema:namespaceURI>http://www.aiim.org/pdfua/ns/id/</pdfaSchema:namespaceURI>
+            <pdfaSchema:prefix>pdfuaid</pdfaSchema:prefix>
+            <pdfaSchema:property>
+              <rdf:Seq>
+                <rdf:li rdf:parseType="Resource">
+                  <pdfaProperty:name>part</pdfaProperty:name>
+                  <pdfaProperty:valueType>Integer</pdfaProperty:valueType>
+                  <pdfaProperty:category>internal</pdfaProperty:category>
+                  <pdfaProperty:description>Indicates, which part of ISO 14289 standard is followed</pdfaProperty:description>
+                </rdf:li>
+              </rdf:Seq>
+            </pdfaSchema:property>
+          </rdf:li>
+        </rdf:Bag>
+      </pdfaExtension:schemas>
+    </rdf:Description>`;
 /** Escape `&`, `<` and `>` for XML text content. */
 const escapeXml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 /**
@@ -94,6 +130,7 @@ const escapeXml = (text: string): string => text.replace(/&/g, '&amp;').replace(
 export function addXmpMetadata(pdfDoc: PDFDocument, info: DocumentInfo) {
     const { title, language } = info;
     const escaped = escapeXml(title);
+    const pdfa2 = info.archival !== undefined && info.archival !== 'pdfa4';
     const xmp = `<?xpacket begin="\u{FEFF}" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -106,18 +143,25 @@ export function addXmpMetadata(pdfDoc: PDFDocument, info: DocumentInfo) {
     </rdf:Description>
     <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
       <xmp:CreatorTool>${escapeXml(info.creator)}</xmp:CreatorTool>
-    </rdf:Description>
+    </rdf:Description>${pdfa2 ? xmpDates(info.created) : ''}
     <rdf:Description rdf:about="" xmlns:pdf="http://ns.adobe.com/pdf/1.3/">
       <pdf:Producer>${escapeXml(info.producer)}</pdf:Producer>
     </rdf:Description>${info.conformance === 'pdfua2' ? `
     <rdf:Description rdf:about="" xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
       <pdfuaid:part>2</pdfuaid:part>
       <pdfuaid:rev>2024</pdfuaid:rev>
-    </rdf:Description>` : ''}${info.archival ? `
+    </rdf:Description>` : ''}${info.conformance === 'pdfua1' ? `
+    <rdf:Description rdf:about="" xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
+      <pdfuaid:part>1</pdfuaid:part>
+    </rdf:Description>` : ''}${info.archival === 'pdfa4' ? `
     <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
       <pdfaid:part>4</pdfaid:part>
       <pdfaid:rev>2020</pdfaid:rev>
-    </rdf:Description>` : ''}
+    </rdf:Description>` : ''}${pdfa2 ? `
+    <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
+      <pdfaid:part>2</pdfaid:part>
+      <pdfaid:conformance>${(info.archival as string).slice(5).toUpperCase()}</pdfaid:conformance>
+    </rdf:Description>` : ''}${pdfa2 && info.conformance === 'pdfua1' ? PDFUAID_EXTENSION : ''}
   </rdf:RDF>
 </x:xmpmeta>
 <?xpacket end="w"?>`;
@@ -135,8 +179,8 @@ export function addXmpMetadata(pdfDoc: PDFDocument, info: DocumentInfo) {
  *
  * The catalog /Version entry is what a PDF 2.0 reader consults when it disagrees with the header, and it is written here so it lands last in the catalog, after everything the emitters put there.
  */
-export async function serialize(pdfDoc: PDFDocument): Promise<Uint8Array> {
-    pdfDoc.catalog.set(pdf().PDFName.of('Version'), pdf().PDFName.of('2.0'));
+export async function serialize(pdfDoc: PDFDocument, version?: '1.7'): Promise<Uint8Array> {
+    if (version !== '1.7') pdfDoc.catalog.set(pdf().PDFName.of('Version'), pdf().PDFName.of('2.0'));
     await pdfDoc.flush();
     return PDF20Writer.create(pdfDoc.context).serializeToBuffer();
 }

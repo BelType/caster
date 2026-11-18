@@ -2,7 +2,7 @@
  * `displayList/structure.js` — the walk's structure tree resolved into the list's: pruned, ordered, every reference an index.
  *
  * @remarks
- * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it), except a `TR`'s cells, which keep the column order the walk declared; an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`; each element is written as its type, or as the flat type of an older one where ISO/TS 32005 forbids it there (`writtenTypes`), the older types in the PDF 1.7 namespace, and an element's `/Ref`s resolve to indices (*the older tag names are written in the older namespace*, DESIGN.md S108). A foreign writer inherits none of these rules: it writes the tree it is given.
+ * The rules are the ones the writer's `buildStructure` ran until stage 2 of `.claude/plans/the-rust-writer/plan-close-the-list.md` (the builder resolves the structure tree, Egildo's ruling of 2026-11-02), moved and not rewritten, so the file the writer makes from the result is byte for byte the one it made before. In the order they run: an element with no content, no annotation and no surviving child is pruned, a `TH` or `TD` never (`keepWhenEmpty`, an empty cell is what makes a row rectangular); the survivors are numbered in DOM order, which is the order the writer allocates their objects in; each element's `/K` is its content, its children and its annotation, sorted by reading key (the earliest content anywhere under a child, an empty child taking the key of the sibling before it), except a `TR`'s cells, which keep the column order the walk declared; an internal link's destination names the first element at or under its target, in reading order, that has content of its own, because a structure destination finds its page through that element's `/Pg`; each element is written as its type, or as the flat type of an older one where ISO/TS 32005 forbids it there (`writtenTypes`), the older types in the PDF 1.7 namespace, and an element's `/Ref`s resolve to indices (*the older tag names are written in the older namespace*, DESIGN.md S108). In a PDF 1.7 file the table is read backwards (*a PDF 1.7 file reads the tag table backwards*, S111): no element names a namespace or a `/Ref`, no older type is flattened, since ISO/TS 32005's containment is a rule of PDF 2.0's namespaces, a footnote's `FENote` is a `Note` with its own `/ID` and no `NoteType`, the PDF 2.0 types the tree holds, `Em`, `Strong` and `Aside`, stay custom names the role map sends to `Span`, `Span` and `Div` (`ROLE_MAP`), and a `Reference` that owns a link holds a `Link` that owns it, as PDF/UA-1 asks of every link annotation (ISO 14289-1, 7.18.5). A foreign writer inherits none of these rules: it writes the tree it is given.
  *
  * @packageDocumentation
  */
@@ -66,6 +66,8 @@ const PDF_1_7_TYPES = new Set(['BlockQuote', 'Code', 'Quote', 'TOC', 'TOCI', 'Re
 /** The type of the 2.0 namespace each older type is written as where ISO/TS 32005 forbids it: the type the walk wrote before 2026-11-17. `TOC` and `TOCI` have none: the walk decides a contents' position before it builds one (`visitAsToc`). */
 const FLAT: Record<string, string> = { BlockQuote: 'Div', Code: 'Span', Quote: 'Span', Reference: 'Link' };
 const HEADINGS = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+/** Of the types the walk makes, the PDF 2.0 ones PDF 1.7 does not have, each with the 1.7 type nearest in meaning, which a 1.7 file's `/RoleMap` names (*a PDF 1.7 file reads the tag table backwards*, S111). `FENote` is not here: it becomes a 1.7 `Note`. Measured 2026-11-17 on probe files under veraPDF's PDF/UA-1 and PDF/A-2a profiles. */
+const ROLE_MAP: Record<string, string> = { Em: 'Span', Strong: 'Span', Aside: 'Div' };
 /** Of the types the walk makes, what each older type may hold (ISO/TS 32005:2023, 7.2, Table 5), `content` being marked content of its own. A `Div` is not listed: it is folded, as veraPDF folds it. */
 const HOLDS: Record<string, Set<string>> = {
   BlockQuote: new Set(['Sect', 'TOC', 'BlockQuote', 'P', 'Code', ...HEADINGS, 'Lbl', 'Link', 'Reference', 'FENote', 'L', 'Table', 'Caption', 'Figure', 'Formula', 'content']),
@@ -122,9 +124,10 @@ function writtenTypes(kept: Entry[]): Map<Entry, string> {
  * @param links - Every link annotation, in any order; they are taken in `order`.
  * @param figureBoxes - Each Figure's Layout box `[x y w h]` in page points, by structure path.
  * @param headings - The structure path of each heading a bookmark names.
+ * @param pdf17 - The file is PDF 1.7, and the table is read backwards (S111).
  * @throws {CasterError} Content or a link owned by a path no element has; a destination with no content anywhere under it; a bookmark to a heading that was pruned.
  */
-export function resolveStructure(tree: StructureNode, contents: ContentRef[], links: LinkRef[], figureBoxes: Record<string, [number, number, number, number]>, headings: string[]): ResolvedStructure {
+export function resolveStructure(tree: StructureNode, contents: ContentRef[], links: LinkRef[], figureBoxes: Record<string, [number, number, number, number]>, headings: string[], pdf17 = false): ResolvedStructure {
   const byPath = new Map<string, Entry>();
   const attach = (node: StructureNode): Entry => {
     const entry: Entry = { node, kids: node.kids.map(attach), contents: [] };
@@ -155,6 +158,20 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
     return entry.contents.length > 0 || entry.objr !== undefined || entry.kids.length > 0;
   };
   prune(root);
+  // ISO 14289-1, 7.18.5: a link annotation is a `Link` element's, and veraPDF's PDF/UA-1 profile holds every annotation's parent to that type. So in a 1.7 file a `Reference` that owns a link keeps its name and holds one `Link`, which takes its content, its children and its annotation (S111).
+  const moved = new Map<Entry, Entry>();
+  if (pdf17) {
+    const split = (entry: Entry) => {
+      entry.kids.forEach(split);
+      if (entry.node.tag !== 'Reference' || entry.objr === undefined) return;
+      const inner: Entry = { node: { ...entry.node, tag: 'Link', path: `${entry.node.path}/Link[0]`, kids: [], attrs: {} }, kids: entry.kids, contents: entry.contents, objr: entry.objr };
+      entry.kids = [inner];
+      entry.contents = [];
+      delete entry.objr;
+      moved.set(entry, inner);
+    };
+    split(root);
+  }
   const kept: Entry[] = [];
   const allocate = (entry: Entry) => {
     entry.index = kept.length;
@@ -162,7 +179,8 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
     entry.kids.forEach(allocate);
   };
   allocate(root);
-  const written = writtenTypes(kept);
+  const written = pdf17 ? new Map(kept.map((entry) => [entry, entry.node.tag === 'FENote' ? 'Note' : entry.node.tag])) : writtenTypes(kept);
+  let notes = 0;
   const seqOf = (entry: Entry): number => {
     entry.seq ??= Math.min(...entry.contents.map((c) => c.seq), ...entry.kids.map(seqOf), NO_CONTENT);
     return entry.seq;
@@ -196,17 +214,19 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
     ].sort((a, b) => declared ? 0 : a.seq - b.seq);
     const { attrs, path } = entry.node;
     const type = written.get(entry) as string;
-    const attributes = attributesOf(entry.node, figureBoxes[path]);
+    const attributes = attributesOf(entry.node, figureBoxes[path]).filter((attribute) => !pdf17 || attribute.O !== 'FENote');
+    // A 1.7 `Note` carries an `/ID` of its own (ISO 32000-1, 14.8.4.5; ISO 14289-1, 7.9), which no table cell's can be: theirs are `th-` and `td-`.
+    const id = attrs.id ?? (type === 'Note' ? `note-${++notes}` : undefined);
     return {
       type,
-      ...(PDF_1_7_TYPES.has(type) ? { namespace: PDF_1_7_NAMESPACE } : {}),
+      ...(!pdf17 && PDF_1_7_TYPES.has(type) ? { namespace: PDF_1_7_NAMESPACE } : {}),
       path,
       ...(attrs.lang ? { lang: attrs.lang } : {}),
       ...(attrs.alt ? { alt: attrs.alt } : {}),
       ...(attrs.expansion ? { expansion: attrs.expansion } : {}),
-      ...(attrs.id ? { id: attrs.id } : {}),
+      ...(id ? { id } : {}),
       ...(attributes.length > 0 ? { attributes } : {}),
-      ...(attrs.refs && attrs.refs.length > 0 ? { refs: attrs.refs.map((ref) => indexOfRef(ref, path)) } : {}),
+      ...(!pdf17 && attrs.refs && attrs.refs.length > 0 ? { refs: attrs.refs.map((ref) => indexOfRef(ref, path)) } : {}),
       children: ordered.map((o) => o.child),
     };
   });
@@ -243,10 +263,11 @@ export function resolveStructure(tree: StructureNode, contents: ContentRef[], li
       throw new CasterError(`caster: the heading at ${path} was pruned, so no bookmark can name it`);
     return entry.index as number;
   });
+  const roleMap = pdf17 ? Object.keys(ROLE_MAP).filter((type) => elements.some((element) => element.type === type)).map((type) => ({ type, mapped: ROLE_MAP[type] })) : [];
   return {
-    structure: { elements },
-    contentElement: owners.map((entry) => entry.index as number),
-    linkElement: linkOwners.map((entry) => entry.index as number),
+    structure: { elements, ...(roleMap.length > 0 ? { roleMap } : {}) },
+    contentElement: owners.map((entry) => (moved.get(entry) ?? entry).index as number),
+    linkElement: linkOwners.map((entry) => (moved.get(entry) ?? entry).index as number),
     destElement,
     headingElement,
   };

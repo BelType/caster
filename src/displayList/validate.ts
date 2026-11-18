@@ -29,6 +29,7 @@ export const PDF_1_7_NAMESPACE = 'http://iso.org/pdf/ssn';
 export function validateList(list: DisplayList): void {
   if (list.version !== LIST_VERSION)
     throw new CasterError(`caster: the writer reads a display list of version ${LIST_VERSION}, and this one is version ${String(list.version)}; a list is written again by print(), never upgraded`);
+  checkVersion(list);
   checkBlobs(list);
   checkSamples(list);
   checkFonts(list);
@@ -37,6 +38,33 @@ export function validateList(list: DisplayList): void {
   checkItems(list);
   checkLinks(list);
   checkTree(list);
+}
+
+/**
+ * The claims fit the file's version, and a PDF 1.7 list holds nothing a 1.7 file cannot say (*the PDF 1.7 family joins the list* and *a PDF 1.7 file reads the tag table backwards*, S111): `pdfua2` and `pdfa4` are PDF 2.0 claims, `pdfua1` and the PDF/A-2 levels PDF 1.7 ones; a 1.7 list names no namespace and no `refs`, and only a 1.7 list carries a role map.
+ *
+ * @throws {CasterError} The first claim, element or role map that does not fit.
+ */
+function checkVersion(list: DisplayList) {
+  const { pdf, conformance, archival } = list.info;
+  if (pdf !== undefined && pdf !== '1.7')
+    throw new CasterError(`caster: the display list names its file PDF ${JSON.stringify(pdf)}; info.pdf is '1.7' or absent, for PDF 2.0`);
+  const older = pdf === '1.7';
+  for (const claim of [conformance, archival]) {
+    if (claim === undefined || claim === 'tagged') continue;
+    const needs17 = claim === 'pdfua1' || claim.startsWith('pdfa2');
+    if (needs17 !== older)
+      throw new CasterError(`caster: the display list claims ${claim}, a claim on PDF ${needs17 ? '1.7' : '2.0'}, and its file is PDF ${older ? '1.7' : '2.0'}; a claim fixes the version`);
+  }
+  if (!older) {
+    if (list.structure.roleMap !== undefined)
+      throw new CasterError('caster: the display list carries a role map and its file is PDF 2.0; only a PDF 1.7 file writes the custom types a role map names');
+    return;
+  }
+  list.structure.elements.forEach((element, index) => {
+    if (element.namespace !== undefined || element.refs !== undefined)
+      throw new CasterError(`caster: structure element ${index} (${element.path}) ${element.namespace !== undefined ? 'names a namespace' : 'carries refs'} in a PDF 1.7 list, and a PDF 1.7 file has neither namespaces nor the /Ref key`);
+  });
 }
 
 /** Every blob key a resource names is a key of `resources.blobs`. */
@@ -116,6 +144,7 @@ function checkFonts(list: DisplayList) {
  * @throws {CasterError} carrying `listItem`.
  */
 export function checkGaps(list: DisplayList): void {
+  if (list.info.conformance === 'pdfua1') return checkGapsUa1(list);
   if (list.info.conformance !== 'pdfua2') return;
   list.pages.forEach((page, p) => page.items.forEach((item, at) => {
     if (item.kind !== 'text' || item.space !== 0) return;
@@ -125,8 +154,18 @@ export function checkGaps(list: DisplayList): void {
   }));
 }
 
+/** The same rule under PDF/UA-1, which forbids `.notdef` too (ISO 14289-1, 7.21.8; S111). */
+function checkGapsUa1(list: DisplayList): void {
+  list.pages.forEach((page, p) => page.items.forEach((item, at) => {
+    if (item.kind !== 'text' || item.space !== 0) return;
+    if (!item.leadingSpace && !item.segments.spaceBefore.some((gap, i) => i > 0 && gap)) return;
+    const family = list.resources.fonts.find((instance) => instance.key === item.font)?.family || item.font;
+    throw new CasterError(`caster: the face ${family} (${item.font}) has no space glyph, so the word gap in text item ${at} of page ${p + 1} would be glyph 0, .notdef, which PDF/UA-1 forbids a file to show (ISO 14289-1, 7.21.8); give the text a face with a space, or print with \`standard: 'pdf-1.7'\`, or a PDF/A-2 member alone, which do not claim PDF/UA-1 and write the gap as positioning with no glyph`, { listItem: { page: p, item: at } });
+  }));
+}
+
 /**
- * A list that claims PDF/A-4 is one the file can keep the claim for, or it is refused by name (*an archival claim is kept or refused*, S109).
+ * A list that claims PDF/A-4 is one the file can keep the claim for, or it is refused by name (*an archival claim is kept or refused*, S109). A list that claims PDF/A-2 is held to the same rules, in PDF/A-2's words (S111).
  *
  * @remarks
  * It carries a colour story, so its device colour has an output intent; it places no page of another PDF, which the writer copies as it is and does not read; and no colour in it is CMYK unless the output profile is a CMYK one. CMYK is a declared ink, process or spot (whose alternate is CMYK), on a run or a rectangle; black text under `blackText: '100k'`; a vector paint or gradient in CMYK, a group's children and a mask's content among it; print marks, in the `/All` separation; and an image whose samples are `DeviceCMYK` or whose file is a four-component JPEG. It is not converted: a silent conversion would change the ink the author asked for. The facsimiles are read by image key, then the pages' items in order, then the forms by name. The builder calls this too, since it knows the flag.
@@ -135,15 +174,17 @@ export function checkGaps(list: DisplayList): void {
  */
 export function checkArchival(list: DisplayList): void {
   if (list.info.archival === undefined) return;
+  const four = list.info.archival === 'pdfa4';
+  const [claim, iso, member] = four ? ['PDF/A-4', 'ISO 19005-4', '`a-4`'] : ['PDF/A-2', 'ISO 19005-2', 'the PDF/A-2 member'];
   const story = list.writing.colour;
   if (!story)
-    throw new CasterError('caster: the display list claims PDF/A-4 and carries no colour story, so no output intent would say what its colours mean (ISO 19005-4, 6.2.4.3)');
+    throw new CasterError(`caster: the display list claims ${claim} and carries no colour story, so no output intent would say what its colours mean (${iso}, 6.2.4.3)`);
   for (const image of Object.values(list.resources.images)) {
     if (image.facsimile)
-      throw new CasterError(`caster: the facsimile at ${image.domPath} is page ${image.facsimile.page} of ${image.facsimile.url}, a page of another PDF, which Caster copies as it is and does not read, so it cannot stand behind it under PDF/A-4; print without \`a-4\` in \`standard\`, or place the page as an image`);
+      throw new CasterError(`caster: the facsimile at ${image.domPath} is page ${image.facsimile.page} of ${image.facsimile.url}, a page of another PDF, which Caster copies as it is and does not read, so it cannot stand behind it under ${claim}; print without ${member} in \`standard\`, or place the page as an image`);
   }
   if (String.fromCharCode(...list.resources.blobs[story.profiles.cmyk].subarray(16, 20)) === 'CMYK') return;
-  const refuse = (what: string, page: number, item: number) => new CasterError(`caster: ${what}, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which PDF/A-4 asks of every colour (ISO 19005-4, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without \`a-4\` in \`standard\``, { listItem: { page, item } });
+  const refuse = (what: string, page: number, item: number) => new CasterError(`caster: ${what}, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which ${claim} asks of every colour (${iso}, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without ${member} in \`standard\``, { listItem: { page, item } });
   list.pages.forEach((page, p) => page.items.forEach((item, at) => {
     if (item.kind === 'text' && story.blackText === '100k' && !item.fill.ink && item.fill.rgb.every((c) => c === 0))
       throw refuse(`text item ${at} of page ${p + 1} is painted in CMYK, by \`blackText: '100k'\``, p, at);
@@ -157,7 +198,7 @@ export function checkArchival(list: DisplayList): void {
   }));
   for (const [name, form] of Object.entries(list.resources.forms)) {
     if (form.items.some(vectorCmyk))
-      throw new CasterError(`caster: the form ${name} is painted in CMYK, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which PDF/A-4 asks of every colour (ISO 19005-4, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without \`a-4\` in \`standard\``);
+      throw new CasterError(`caster: the form ${name} is painted in CMYK, and no CMYK profile stands behind it: the output intent is an RGB profile, so the file could not say what the ink means, which ${claim} asks of every colour (${iso}, 6.2.4.3); pass a CMYK profile as the \`profile\` option, or print without ${member} in \`standard\``);
   }
 }
 

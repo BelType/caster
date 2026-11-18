@@ -13,7 +13,7 @@
  */
 
 import { CasterError, FontUnavailableError } from './errors.ts';
-import { refuseUnbuiltTiers, resolveOptions, colourOn, claimsOf } from './options.ts';
+import { refuseUnbuiltTiers, resolveOptions, colourOn, claimsOf, archivalOf, isPdf17 } from './options.ts';
 import { confessionsOf, createReport, recordProblem, stage } from './report.ts';
 import { load, neededCapabilities, capability } from './capabilities.ts';
 import { lock, precheck } from './precheck.ts';
@@ -26,7 +26,7 @@ import { reify } from './adapters/reify.ts';
 import { beginFrame, endFrame, toLocalOn } from './coordinates/frame.ts';
 import { clearPageGeometry, geometryOfPage, pageGeometries, pageGeometryFor, setPageGeometry, xToPt, yToPt } from './coordinates/pageGeometry.ts';
 import { beginChains, toPdfMatrix } from './coordinates/ctm.ts';
-import { walkStructure } from './walk/structure.ts';
+import { walkStructure, headingBreaks } from './walk/structure.ts';
 import { paintOrderOf } from './walk/paintOrder.ts';
 import { defaultIntrinsics, domPathOf, holdDomPaths, measureText, releaseDomPaths } from './measure/textMeasure.ts';
 import { assertConserved, assertGeneratedConserved, assertNothingBeside } from './measure/conservation.ts';
@@ -278,6 +278,11 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
 
     // 7 — walk. Over the strip's per-page flow, page by page, never over the light DOM directly (R3) — which the comment claimed and the call did not do until *M4 was three defects* (S43): `container.children` holds the unassigned originals too, and the composed mode makes every block one.
     const container = strip.strip;
+    // The list of claims (*the standard is a list*, S109; *the PDF 1.7 family joins the list*, S111): the accessibility claim asked for, the PDF/A member, and the file's version.
+    const claims = claimsOf(options.standard);
+    const accessible = claims.includes('ua-2') ? 'ua-2' : claims.includes('ua-1') ? 'ua-1' : 'none';
+    const archival = archivalOf(options.standard);
+    const pdf17 = isPdf17(options.standard);
     // The walk writes nothing to the tree, so its addresses are held too (`holdDomPaths`), and released before `inlineSvgImages` moves an element.
     holdDomPaths();
     const walk = walkStructure(container, {
@@ -288,15 +293,20 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
       // Which elements the engine actually put on a page (*the engine stopped showing the original*, S47). A divided block's original is on none of them since the first fragment is constructed, so it gives the tree its element and its first fragment gives that element its ink.
       renders: (element) => strip.pageElementOf(element) !== null,
       unknownElements: options.unknownElements,
-      // The walk asks one thing of the list of claims: whether PDF/UA-2 is on it, which makes a missing description a refusal (S103, amended 2026-11-08).
-      standard: claimsOf(options.standard).includes('ua-2') ? 'ua-2' : 'none'
+      // The walk asks two things of the list of claims: whether a PDF/UA claim is on it, which makes a missing description a refusal (S103, amended 2026-11-08), and whether it is PDF/UA-1, under which a skipped heading level withdraws the claim and is not refused (S111).
+      standard: accessible,
+      // In a 1.7 file a guess costs the claims about meaning it can make (S111); a PDF 2.0 file keeps the sentence it had.
+      ...(pdf17 ? { guessCosts: `the file ${[accessible === 'ua-1' ? 'does not claim PDF/UA-1' : '', archival === 'a-2a' ? 'claims PDF/A-2u in place of PDF/A-2a' : ''].filter(Boolean).join(', and ') || 'makes no claim about its tags'}` } : {})
     });
     // *The printer guesses, says so, and withdraws the claim* (S90): every guess the walk made is in the report twice, as a list and as a warning per guess, so every host that shows warnings shows them; and a file with a guess in it no longer claims PDF/UA-2. Under `standard: 'none'` it claims nothing anyway (*PDF/UA-2 is a flag, not a given*, S103).
     report.inferred = walk.inferred;
-    // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own.
-    report.conformance = !claimsOf(options.standard).includes('ua-2') || walk.inferred.length > 0 ? 'tagged' : 'pdfua2';
-    if (claimsOf(options.standard).includes('a-4')) report.archival = 'pdfa4';
-    report.warnings.push(...walk.warnings);
+    // The list of claims (*the standard is a list*, S109): a guess withdraws PDF/UA-2 alone, and PDF/A-4 is kept or refused on its own. Under PDF/UA-1 a guess, or a heading sequence that breaks ISO 14289-1 7.4.2, withdraws it (S111), and under PDF/A-2a a guess lowers the claim to PDF/A-2u: the report names what the file claims, never what was asked.
+    const breaks = accessible === 'ua-1' ? headingBreaks(walk.outline) : [];
+    report.conformance = accessible === 'none' || walk.inferred.length > 0 || breaks.length > 0 ? 'tagged' : accessible === 'ua-2' ? 'pdfua2' : 'pdfua1';
+    if (archival === 'a-4') report.archival = 'pdfa4';
+    else if (archival) report.archival = archival === 'a-2a' && walk.inferred.length > 0 ? 'pdfa2u' : (`pdfa2${archival.slice(3)}` as 'pdfa2b'|'pdfa2u'|'pdfa2a');
+    if (pdf17) report.version = '1.7';
+    report.warnings.push(...walk.warnings, ...breaks);
     // The image bytes, before the measurement rather than after it. The order of `coordinates-and-pages.md` (E10) puts everything that is not a measurement outside the neutralised window, and this is outside it in both directions: fetching reads no layout at all. It has to happen first because only the file says what an image's stored pixel size and EXIF orientation are — `naturalWidth` is the size after the engine applied the orientation, so a sideways-stored JPEG measured from the DOM was placed with the identity orientation and printed on its side, with the file's own tag in the report saying otherwise.
     const imageBytes = await fetchImages(walk.images, gateway);
     // A facsimile (DESIGN.md S80) is a page of another PDF: fetched, opened and refused here, before the measurement, because the measurement places it by the page's own size.
@@ -513,7 +523,8 @@ export async function print(input: PrintInput, given: GivenOptions = {}): Promis
       },
       paintOrder: options.paintOrder,
       conformance: report.conformance,
-      ...(claimsOf(options.standard).includes('a-4') ? { archival: true } : {}),
+      ...(report.archival ? { archival: report.archival } : {}),
+      ...(pdf17 ? { pdf: '1.7' as const } : {}),
       ...(strip.backgrounds.length ? { pageBackgrounds: strip.backgrounds } : {}),
       ...(printMarks ? { printMarks } : {}),
       outline: true,

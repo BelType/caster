@@ -59,10 +59,15 @@ export class ResourceScope {
     this.xobjects = new Map<any, any>();
   }
 
-  /** The `/Resources` dictionary a form XObject carries. */
-  dictionary(context: PDFContext): Record<string,unknown> {
+  /**
+   * The `/Resources` dictionary a form XObject carries.
+   *
+   * @param defaultRgb - Under a PDF/A-2 claim, the `/DefaultRGB` the form names itself: veraPDF's PDF/A-2 profile reads a form's `/DeviceRGB` against the form's own resources, where PDF/A-4's reads the page's (ISO 19005-2, 6.2.4.3; S111).
+   */
+  dictionary(context: PDFContext, defaultRgb?: unknown): Record<string,unknown> {
     const entry = (map: Map<string,PDFRef>): Record<string,PDFRef> => Object.fromEntries(map);
     return {
+      ...(defaultRgb !== undefined ? { ColorSpace: context.obj({ DefaultRGB: defaultRgb as PDFRef }) } : {}),
       ...(this.shadings.size > 0 ? { Shading: context.obj(entry(this.shadings)) } : {}),
       ...(this.patterns.size > 0 ? { Pattern: context.obj(entry(this.patterns)) } : {}),
       ...(this.extGStates.size > 0 ? { ExtGState: context.obj(entry(this.extGStates)) } : {}),
@@ -104,6 +109,8 @@ export type VectorEmitContext = {
   records: ReportPaint[];
   /** The document's sRGB profile as a colour space, the `/CS` of every transparency group (an opacity group, a soft mask's, a blend's) and of a page a blend mixes in; absent with no colour story, where `/DeviceRGB` stands. Every group named it since *an archival claim is kept or refused* (2026-11-17); a group that held no blend said `/DeviceRGB` before, under colour management too. */
   blendingSpace?: () => unknown;
+  /** Under a PDF/A-2 claim alone, the document's sRGB profile as the `/DefaultRGB` of every form's own resources (S111). */
+  formRgb?: () => unknown;
 };
 
 /**
@@ -246,7 +253,7 @@ function softMaskForm(node: VectorItem, ctx: VectorEmitContext, info: EmitInfo):
   const operators: PDFOperator[] = [];
   for (const child of node.softMask.items) emitItem(child, ctx, inner, operators, info);
   const content = operators.map((op) => op.toString()).join('\n');
-  const form = ctx.transparency.form(node.softMask.bbox, content, inner.dictionary(ctx.context), ctx.blendingSpace?.());
+  const form = ctx.transparency.form(node.softMask.bbox, content, inner.dictionary(ctx.context, ctx.formRgb?.()), ctx.blendingSpace?.());
   ctx.records.push({
     path: node.origin.domPath,
     owner: info.item.owner,
@@ -283,7 +290,7 @@ function alphaMaskForm(spec: ShadingSpec, path: Path, evenOdd: boolean, ctx: Vec
     PDFOperator.of(Ops.ShadingFill, [PDFName.of(alpha.name)]),
     PDFOperator.of(Ops.PopGraphicsState),
   ];
-  const form = ctx.transparency.form(bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), ctx.blendingSpace?.());
+  const form = ctx.transparency.form(bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context, ctx.formRgb?.()), ctx.blendingSpace?.());
   ctx.records.push({
     path: domPath,
     owner: info.item.owner,
@@ -367,7 +374,7 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
       const inner = new ResourceScope();
       const operators: PDFOperator[] = [];
       for (const child of node.items) emitItem(child, ctx, inner, operators, info);
-      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context), ctx.blendingSpace?.());
+      const form = ctx.transparency.form(node.bbox, operators.map((op) => op.toString()).join('\n'), inner.dictionary(ctx.context, ctx.formRgb?.()), ctx.blendingSpace?.());
       scope.xobjects.set(form.name, form.ref);
       out.push(
         ...stateFor(
@@ -415,7 +422,7 @@ function emitItem(node: VectorItem, ctx: VectorEmitContext, scope: ResourceScope
       const inner = new ResourceScope();
       const operators: PDFOperator[] = [];
       for (const child of definition.items) emitItem(child, ctx, inner, operators, info);
-      return { content: operators.map((op) => op.toString()).join('\n'), resources: inner.dictionary(ctx.context) };
+      return { content: operators.map((op) => op.toString()).join('\n'), resources: inner.dictionary(ctx.context, ctx.formRgb?.()) };
     });
     scope.xobjects.set(form.name, form.ref);
     out.push(...stateFor(node, ctx, scope, info, smaskRef ? { smaskForm: smaskRef, smaskType: maskType } : {}));

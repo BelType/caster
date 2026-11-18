@@ -26,6 +26,8 @@
  *
  * VERSION 8 (Egildo's ruling of 2026-11-18, *transparent text is invisible text*, S110). `Fill` gains `alpha`, the paint's alpha from 0 up to but not including 1, absent when the paint is opaque: for a run, the alpha of the colour the browser paints its glyphs with (`-webkit-text-fill-color`, which computes to `color` where it is unset), for a measured rectangle the alpha of its computed colour. A run at alpha 0 is written in text render mode 3, invisible, with its glyphs, ToUnicode, marked content and structure exactly those of a visible run, so its words stay searchable, tagged and claimed; a run or a rectangle between 0 and 1 is painted under an `/ExtGState` carrying `/ca`, shared by value with the vector items' states. A declared ink keeps its own colour and the computed alpha still applies to it. A writer of version 7 would paint such a list's transparent words black, so the definition is cut at 8; a list with no alpha anywhere writes the same file as at version 7.
  *
+ * VERSION 8, AMENDED WITHOUT A NEW NUMBER (*the PDF 1.7 family joins the list* and *a PDF 1.7 file reads the tag table backwards*, `codeberg.org/BelType/decisions`, 2026-11-18; S111). `info.pdf`, `'1.7'`, names the file's version where it is not 2.0; `info.conformance` gains `pdfua1` and `info.archival` gains `pdfa2b`, `pdfa2u` and `pdfa2a`, each only in a list with `info.pdf`; and `structure.roleMap` maps the custom types a 1.7 file writes to the 1.7 types nearest them. In a 1.7 list no element names a namespace or carries `refs`, a footnote is a `Note` with its own `id`, and the writers write the `%PDF-1.7` header, no catalog `/Version`, no `/Namespaces` and no `/NS`, the `/RoleMap`, a page and not a structure element as the first member of every destination, no Well-Tagged PDF declaration, and under a PDF/A-2 claim an XMP extension schema for `pdfuaid` and the dates beside the document information dictionary, which the file keeps. Every new member is optional and absent from every list of a PDF 2.0 file, so every list recorded before reads as it did and writes the same file; the number was kept. A writer that predates the amendment refuses a 1.7 list, since its reader denies a member it does not know.
+ *
  * @packageDocumentation
  */
 
@@ -52,10 +54,12 @@ export type DocumentInfo = {
   /** The catalog `/Lang`. */
   lang: string;
   title: string;
-  /** `tagged` under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103), or once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90): the file then claims nothing in its XMP. */
-  conformance: 'pdfua2' | 'tagged';
-  /** The archival claim, `pdfa4` under `standard` with `a-4` (*an archival claim is kept or refused*, S109): the file then carries the PDF/A-4 identification in its XMP, no document information dictionary, no image or raster fallback asking to be smoothed, and the archive's output intent beside the print shop's on the one profile. A guess in the tree does not touch it. Absent, the file makes no archival claim. Version 7, optional. */
-  archival?: 'pdfa4';
+  /** The file's version where it is not PDF 2.0: `'1.7'` under a member of the PDF 1.7 family (*the PDF 1.7 family joins the list*, S111). Absent, the file is PDF 2.0. Version 8, optional. */
+  pdf?: '1.7';
+  /** `tagged` under `standard: 'none'` (*PDF/UA-2 is a flag, not a given*, S103), or once a guess in the tree withdrew the claim (*the printer guesses, says so, and withdraws the claim*, S90): the file then claims nothing in its XMP. `pdfua1`, in a list with `pdf: '1.7'` alone, claims PDF/UA-1 (S111). */
+  conformance: 'pdfua2' | 'pdfua1' | 'tagged';
+  /** The archival claim, `pdfa4` under `standard` with `a-4` (*an archival claim is kept or refused*, S109): the file then carries the PDF/A-4 identification in its XMP, no document information dictionary, no image or raster fallback asking to be smoothed, and the archive's output intent beside the print shop's on the one profile. A guess in the tree does not touch it. `pdfa2b`, `pdfa2u` and `pdfa2a`, in a list with `pdf: '1.7'` alone, claim PDF/A-2 at its level, kept or refused as PDF/A-4 is, with the information dictionary kept and matched by the XMP (S111); a guess lowers `pdfa2a` to `pdfa2u`. Absent, the file makes no archival claim. Version 8, optional. */
+  archival?: 'pdfa4' | 'pdfa2b' | 'pdfa2u' | 'pdfa2a';
   pageCount: number;
   /** The moment the file says it was made: an ISO 8601 instant in UTC, `YYYY-MM-DDTHH:mm:ss` with optional fractional seconds and a final `Z`, as `Date.prototype.toISOString` writes it. Set by `print()` from the host's `created`, or from the wall clock when the host gives none; the writer writes it at whole seconds into both `/CreationDate` and `/ModDate`, and reads no clock. Version 3. */
   created: string;
@@ -551,13 +555,15 @@ export type LinkTarget = {
 export type Structure = {
   /** The order is data: the order the writer allocates the elements' objects in, which every index into the array names. */
   elements: StructElement[];
+  /** The `/RoleMap` of a PDF 1.7 file: each custom type its elements use, mapped to the PDF 1.7 standard type nearest it (`Em` and `Strong` to `Span`, `Aside` to `Div`), in the order written; only the types the tree holds (*a PDF 1.7 file reads the tag table backwards*, S111). Absent in a PDF 2.0 file. Version 8, optional. */
+  roleMap?: { type: string, mapped: string }[];
 };
 
 /** One structure element, as its dictionary is written. */
 export type StructElement = {
   /** The structure type, `/S`: a type of the PDF 2.0 standard namespace, or of the PDF 1.7 one where `namespace` names it. */
   type: string;
-  /** `/NS`, where it is not the PDF 2.0 standard namespace: `http://iso.org/pdf/ssn`, the PDF 1.7 one, which a PDF 2.0 file may use under ISO/TS 32005 and which holds the types PDF 2.0 left out of its own (`BlockQuote`, `Code`, `Quote`, `TOC`, `TOCI`, `Reference`). Absent, the element is in the 2.0 namespace. Version 7, optional. */
+  /** `/NS`, where it is not the PDF 2.0 standard namespace: `http://iso.org/pdf/ssn`, the PDF 1.7 one, which a PDF 2.0 file may use under ISO/TS 32005 and which holds the types PDF 2.0 left out of its own (`BlockQuote`, `Code`, `Quote`, `TOC`, `TOCI`, `Reference`). Absent, the element is in the 2.0 namespace, or in a PDF 1.7 file, which has no namespaces, a type of PDF 1.7 or a custom one the role map names. Version 8, optional. */
   namespace?: string;
   /** The walk's structure path, e.g. `Document/Sect[0]/P[2]`. Only the report reads it. */
   path: string;

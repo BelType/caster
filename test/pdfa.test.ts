@@ -130,9 +130,10 @@ test('the flag is a list of claims: every value accepted before means what it me
   assert.equal(resolveOptions({ standard: 'a-4' }).standard, 'a-4');
   assert.equal(resolveOptions({ standard: ['a-4', 'ua-2'] }).standard, 'ua-2,a-4', 'a list in any order is the table\'s spelling');
   assert.equal(resolveOptions({ standard: [] }).standard, 'none', 'claiming nothing stays possible');
-  assert.throws(() => resolveOptions({ standard: ['ua-2', 'ua-2'] }), /'standard' takes a list of "ua-2" and "a-4", each once; got \["ua-2","ua-2"\]/u);
-  assert.throws(() => resolveOptions({ standard: ['ua-1'] as never }), /'standard' takes a list of "ua-2" and "a-4", each once/u);
-  assert.throws(() => resolveOptions({ standard: 'a-4,ua-2' as never }), /'standard' takes "ua-2" or "a-4" or "ua-2,a-4" or "none"/u);
+  assert.throws(() => resolveOptions({ standard: ['ua-2', 'ua-2'] }), /'standard' takes a list of "ua-2", "a-4", "ua-1", "a-2b", "a-2u", "a-2a" and "pdf-1\.7", each once; got \["ua-2","ua-2"\]/u);
+  assert.throws(() => resolveOptions({ standard: ['ua-3'] as never }), /'standard' takes a list of "ua-2", "a-4", .* each once/u);
+  assert.equal(resolveOptions({ standard: 'a-4,ua-2' as never }).standard, 'ua-2,a-4', 'a string that spells a list is read as the list, in any order (S111)');
+  assert.throws(() => resolveOptions({ standard: 'ua-3' as never }), /'standard' takes "ua-2" or "a-4" or "ua-2,a-4" or "none" or "ua-1"/u);
   assert.throws(() => resolveOptions({ standard: 'a-4', colour: 'off' }), /`standard` with 'a-4' needs the colour objects/u);
 });
 

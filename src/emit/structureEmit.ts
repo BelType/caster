@@ -90,7 +90,7 @@ const ANNOTATION_PRINT_FLAG = 4;
  * @throws {CasterError} Every refusal of `validateList` (`displayList/validate.js`), first: a list of another version, a blob, font, width, image or element the list names and does not hold, marked content not closed, a tree that is not one, link orders with a gap; then what only writing finds: an image no filter reads (naming its element, *an SVG that arrives through an `<img>` is a drawing*, DESIGN.md S44); a colour cluster with no raster; print marks without colour options; two elements with one `/ID`; and every refusal of the modules it composes.
  */
 export async function emitStructure(list: DisplayList): Promise<WriterResult> {
-    const pdfDoc = await createDocument();
+    const pdfDoc = await createDocument(list.info.pdf);
     const context = pdfDoc.context;
     // A list the writer could not write is refused before a byte is written, each refusal a sentence (`displayList/validate.js`).
     validateList(list);
@@ -178,7 +178,10 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         const samples = samplesFromRgba(blobOf(list, cluster.blob), (cluster.width as number), (cluster.height as number));
         emojiImages.set(Number(key), await embedImage(imageContext, { kind: 'samples', samples, interpolate: smooth, label: `emoji:${cluster.text}@${cluster.sizePx}px` }));
     }
-    const shadings = new ShadingBuilder(context);
+    // Under a PDF/A-2 claim an RGB shading names the sRGB profile and every form its own `/DefaultRGB`, since veraPDF's PDF/A-2 profile reads neither against the page's (S111); every other file is what it was.
+    const pdfa2 = colour !== null && list.info.archival !== undefined && list.info.archival !== 'pdfa4';
+    const iccRgb = () => context.obj([pdf().PDFName.of('ICCBased'), (colour as ColorEmitter).resources.srgbRef()]);
+    const shadings = new ShadingBuilder(context, pdfa2 ? iccRgb : undefined);
     const transparency = new TransparencyBuilder(context);
     const paint: ReportPaint[] = [];
     const vectorContext = {
@@ -190,6 +193,7 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         resources: list.resources,
         records: paint,
         ...(colour ? { blendingSpace: () => context.obj([pdf().PDFName.of('ICCBased'), colour.resources.srgbRef()]) } : {}),
+        ...(pdfa2 ? { formRgb: iccRgb } : {}),
     };
     const pageScopes: ResourceScope[] = Array.from({ length: list.info.pageCount }, () => new ResourceScope());
     const pens: WriterPen[] = [];
@@ -348,7 +352,8 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         const headings = [];
         for (const heading of list.outline) {
             const element = elementOf(elements, heading.element, `the bookmark ${JSON.stringify(heading.title)}`);
-            headings.push({ path: element.path, ref: built.refs[heading.element], title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt });
+            // A PDF 1.7 file has no structure destinations, so its bookmark names the heading's page (*a PDF 1.7 file reads the tag table backwards*, S111).
+            headings.push({ path: element.path, ref: list.info.pdf === '1.7' ? pages[heading.page].ref : built.refs[heading.element], title: heading.title, level: heading.level, page: heading.page, topPt: heading.topPt });
         }
         const outline = buildOutline(context, headings);
         if (outline)
@@ -379,12 +384,13 @@ export async function emitStructure(list: DisplayList): Promise<WriterResult> {
         creator: PRODUCER,
         // *The printer guesses, says so, and withdraws the claim* (S90): a guess in the tree withdraws the claim.
         conformance: list.info.conformance,
-        archival: !smooth,
+        ...(list.info.archival ? { archival: list.info.archival } : {}),
+        ...(list.info.pdf ? { pdf: list.info.pdf } : {}),
         created: list.info.created,
     };
     setInfo(pdfDoc, info);
     addXmpMetadata(pdfDoc, info);
-    const bytes = await serialize(pdfDoc);
+    const bytes = await serialize(pdfDoc, list.info.pdf);
     const records: WriterRecords = {
         mcids: mcidAt.map((pageMcids) => [...pageMcids.keys()]),
         pens,
@@ -558,7 +564,9 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     // The tree is one, `validateList` has seen to it: each element's parent is the element that lists it, and the root's is -1.
     const parent = elements.map(() => -1);
     elements.forEach((element, index) => element.children.forEach((child) => { if (typeof child === 'number') parent[child] = index; }));
-    const namespaceRef = context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
+    // A PDF 1.7 file has no namespaces, and names a page, not an element, in every destination (*a PDF 1.7 file reads the tag table backwards*, S111).
+    const pdf17 = list.info.pdf === '1.7';
+    const namespaceRef = pdf17 ? null : context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_2_NAMESPACE) }));
     // *the older tag names are written in the older namespace*: the PDF 1.7 namespace object only in a file one element names it in, allocated right after the 2.0 one, so a file with none is the file it was.
     const olderRef = elements.some((element) => element.namespace) ? context.register(context.obj({ Type: 'Namespace', NS: pdf().PDFString.of(PDF_1_7_NAMESPACE) })) : null;
     const annotRefs: PDFRef[] = [];
@@ -621,7 +629,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
         context.assign(ref, context.obj({
             Type: 'StructElem',
             S: element.type,
-            NS: element.namespace ? olderRef as PDFRef : namespaceRef,
+            ...(namespaceRef ? { NS: element.namespace ? olderRef as PDFRef : namespaceRef } : {}),
             P: parent[index] === -1 ? rootRef : refs[parent[index]],
             ...(onePage ? { Pg: pages[contents[0].page].ref } : {}),
             ...(element.lang ? { Lang: pdf().PDFString.of(element.lang) } : {}),
@@ -658,7 +666,8 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     context.assign(rootRef, context.obj({
         Type: 'StructTreeRoot',
         K: [refs[0]],
-        Namespaces: olderRef ? [namespaceRef, olderRef] : [namespaceRef],
+        ...(namespaceRef ? { Namespaces: olderRef ? [namespaceRef, olderRef] : [namespaceRef] } : {}),
+        ...(list.structure.roleMap ? { RoleMap: Object.fromEntries(list.structure.roleMap.map(({ type, mapped }) => [type, pdf().PDFName.of(mapped)])) } : {}),
         ParentTree: parentTreeRef,
         ParentTreeNextKey: pageCount + parentsByAnnot.length,
         ...(idTreeRef ? { IDTree: idTreeRef } : {}),
@@ -672,7 +681,7 @@ function buildStructure(context: PDFContext, pages: PDFPage[], list: DisplayList
     // E12F (`structure-tree.md`): the structure destinations, now that every element has a ref. The element is the builder's: the first at or under the one the fragment named with content of its own, whose `/Pg` gives the destination its page.
     for (const { dict, dest } of pendingDestinations) {
         elementOf(elements, dest.element, `the destination at ${dest.struct}`);
-        dict.set(pdf().PDFName.of('Dest'), context.obj([refs[dest.element], pdf().PDFName.of('XYZ'), dest.x, dest.y, null]));
+        dict.set(pdf().PDFName.of('Dest'), context.obj([pdf17 ? pages[dest.page].ref : refs[dest.element], pdf().PDFName.of('XYZ'), dest.x, dest.y, null]));
     }
     return { refs };
 }
