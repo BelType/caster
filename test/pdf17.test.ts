@@ -154,7 +154,7 @@ test('the list takes the five members of the PDF 1.7 family, in any order and as
   assert.throws(() => resolveOptions({ standard: 'a-2b', colour: 'off' }), /caster: `standard` with 'a-2b' needs the colour objects, an output intent that says what every colour means \(ISO 19005-2, 6\.2\.4\.3\)/u);
 });
 
-for (const standard of ['ua-1', 'a-2b', 'a-2u', 'a-2a', 'ua-1,a-2a', 'pdf-1.7']) {
+for (const standard of ['ua-1', 'a-2b', 'a-2u', 'a-2a', 'ua-1,a-2b', 'ua-1,a-2u', 'ua-1,a-2a', 'pdf-1.7']) {
   test(`under ${standard}, the archival document prints a PDF 1.7 file that keeps every claim it makes`, async (t) => {
     const printed = await printDoc('archival/index.html', { standard });
     assert.ok(printed.bytes, printed.refused);
