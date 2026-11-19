@@ -150,6 +150,7 @@ test('the list takes the five members of the PDF 1.7 family, in any order and as
   assert.throws(() => resolveOptions({ standard: 'a-4,pdf-1.7' as never }), /names "a-4", a claim on PDF 2.0, beside "pdf-1\.7"/u);
   assert.throws(() => resolveOptions({ standard: ['a-2b', 'a-2a'] }), /caster: 'standard' names two PDF\/A members, "a-2b" and "a-2a", and a file carries one PDF\/A identification; name one\.$/u);
   assert.throws(() => resolveOptions({ standard: ['a-2u', 'ua-1', 'a-2b'] }), /two PDF\/A members, "a-2b" and "a-2u"/u);
+  assert.throws(() => resolveOptions({ standard: ['a-4', 'a-2b'] }), /names "a-4", a claim on PDF 2\.0, beside "a-2b"/u, 'a-4 beside a PDF/A-2 member is refused by name, as two versions');
   assert.throws(() => resolveOptions({ standard: 'a-2b', colour: 'off' }), /caster: `standard` with 'a-2b' needs the colour objects, an output intent that says what every colour means \(ISO 19005-2, 6\.2\.4\.3\)/u);
 });
 
@@ -250,6 +251,32 @@ test('under a-2a a guessed tag lowers the claim to PDF/A-2u with the guess\'s ow
     if (failed === null) { t.diagnostic('verapdf is not on the path'); continue; }
     assert.deepEqual(failed, [], `veraPDF -f 2u on ${name}`);
     PASSES.push(`${name} -f 2u`);
+  }
+});
+
+test('pdf-1.7 beside another member adds nothing: the list it builds is the one that member alone builds', async () => {
+  const bare = ({ list }: Printed) => { const { created: _, ...info } = list!.info; return JSON.stringify({ ...list, info }).replace(/127\.0\.0\.1:\d+/gu, 'host'); };
+  for (const member of ['ua-1', 'a-2a']) {
+    const alone = await printDoc('archival/index.html', { standard: member });
+    const beside = await printDoc('archival/index.html', { standard: `${member},pdf-1.7` });
+    assert.ok(alone.list && beside.list, alone.refused ?? beside.refused);
+    assert.equal(bare(beside), bare(alone), `${member},pdf-1.7 is ${member}`);
+    assert.deepEqual([beside.conformance, beside.archival, beside.version], [alone.conformance, alone.archival, alone.version]);
+  }
+});
+
+test('under unknownElements: \'refuse\' a custom element is refused under a-2a before any claim is weighed', async () => {
+  const printed = await printDoc('archival/index.html', { standard: 'a-2a', unknownElements: 'refuse' }, { inject: '<x-aside style="display: block">Guessed by its layout.</x-aside>' });
+  assert.match(printed.refused ?? '', /^caster: <x-aside> at .+ is a custom element, and the printer has no tag for it/u);
+});
+
+test('the heading check runs under ua-1 alone: a first heading that is no H1 leaves ua-2, a-2a and pdf-1.7 as they were', async () => {
+  const inject = '<h2>Two</h2><p>Text.</p><h3>Three</h3><p>Text.</p>';
+  for (const [standard, conformance, archival] of [['ua-2', 'pdfua2', undefined], ['a-2a', 'tagged', 'pdfa2a'], ['pdf-1.7', 'tagged', undefined]] as const) {
+    const printed = await printDoc('headings/index.html', { standard }, { inject });
+    assert.ok(printed.bytes, printed.refused);
+    assert.deepEqual([printed.conformance, printed.archival], [conformance, archival], standard);
+    assert.equal(printed.warnings?.filter((w) => w.includes('7.4.2')).length, 0, `no heading warning under ${standard}`);
   }
 });
 
