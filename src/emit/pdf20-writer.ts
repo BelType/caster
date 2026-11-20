@@ -64,16 +64,26 @@ function writerClass(): any {
             this.context.trailerInfo.ID = this.context.obj([PDFHexString.of(PLACEHOLDER), PDFHexString.of(PLACEHOLDER)]);
             const info = await super.computeBufferSize();
             const header = this.context.header;
-            return { ...info, header, size: info.size + header.sizeInBytes() - info.header.sizeInBytes() };
+            // One byte more than pdf-lib writes, for the end-of-line marker after `%%EOF` (see {@link FINAL_EOL}).
+            return { ...info, header, size: info.size + header.sizeInBytes() - info.header.sizeInBytes() + 1 };
         }
         async serializeToBuffer() {
             const bytes: Uint8Array = await super.serializeToBuffer();
+            bytes[bytes.length - 1] = FINAL_EOL;
             await writeFileId(bytes);
             return bytes;
         }
     };
     return Subclass;
 }
+
+/**
+ * The line feed the file ends with, after `%%EOF`.
+ *
+ * @remarks
+ * ISO 32000-2 §7.5.5 allows the marker to end the file bare, and pdf-lib ends it so. A signer appends its revision after the last byte (§7.5.6), and one that writes its first object straight on, as poppler's `pdfsig` 26.11 does, glues it to the marker (`%%EOF2 0 obj`), which PDF/A-4 refuses (veraPDF's 6.1.8-1: an object number is preceded by an end-of-line marker). Measured 2026-11-20: a `ua-2,a-4` letter signed by `pdfsig` failed PDF/A-4 there, and the same letter with this byte passed PDF/A-4 and PDF/UA-2 signed.
+ */
+const FINAL_EOL = 0x0a;
 
 /** 32 hex digits, the identifier's 16 bytes before the digest is known. */
 const PLACEHOLDER = '0'.repeat(32);
