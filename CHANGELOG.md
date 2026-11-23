@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **A running element that is itself an `<img>` prints** (2026-11-20, found in the ADM2 editor's print panel: a deliberation's crest, `.header-logo { position: running(header-logo) }` under `@top-center { content: element(header-logo) }`, presented by Cicero on each of three pages and missing from the file). The walk's artifact branch painted the images under an artifact and never the artifact itself, so a running image wrapped in a `<span>` printed and a bare one did not. `test/running-image.test.ts` holds both.
+
 - **The file ends on a line feed after `%%EOF`, under both writers** (2026-11-20). pdf-lib and pdf-writer both end the file on a bare marker, which ISO 32000-2 §7.5.5 allows. A signer appends its revision after the last byte, and poppler's `pdfsig` 26.11 writes its first object straight on (`%%EOF2 0 obj`), which PDF/A-4 refuses (veraPDF's 6.1.8-1): a `ua-2,a-4` letter signed by it failed PDF/A-4. With the byte the same letter, signed, passed PDF/A-4 and PDF/UA-2 with a valid signature (measured 2026-11-20). The TypeScript writer sizes its buffer one byte longer and writes the line feed (`emit/pdf20-writer.ts`, `FINAL_EOL`); forme pushes it after `finish` (forme `1fc7c4f`, vendored). The trailer `/ID` is unchanged, a digest of the file up to the cross-reference table. The 18 committed files of `fixtures/lists/` are each the old file plus that byte, which the determinism and display list suites prove byte for byte.
 
 ## 0.2.13 — 2026-11-19

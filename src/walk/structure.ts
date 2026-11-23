@@ -1101,8 +1101,8 @@ export function walkStructure(container: HTMLElement, options: WalkOptions = {})
             // A transparent box paints nothing, and a translucent one paints at its alpha (*transparent text is invisible text*, S110); `parseRgb` drops the alpha, so it is read beside it.
             if (kind === 'layout' && alphaOf(style.backgroundColor) > 0)
                 paints.push({ path: descriptor.path, element: (element as HTMLElement), rgb: parseRgb(style.backgroundColor), ...alphaField(style.backgroundColor) });
-            // An artifact is outside the tree entirely, and so is everything in it — but it is still painted, so an image inside one is collected here and owned by the artifact. That is what a logo in a running header is: the same XObject on every page, never a Figure, never in the tree, and never asked for an /Alt it has no business carrying.
-            for (const inner of element.querySelectorAll('img')) {
+            // An artifact is outside the tree entirely, and so is everything in it — but it is still painted, so an image inside one is collected here and owned by the artifact. That is what a logo in a running header is: the same XObject on every page, never a Figure, never in the tree, and never asked for an /Alt it has no business carrying. The artifact itself is one of them when it is the `<img>`: a running element written as the bare image (`running-image.test.ts`).
+            for (const inner of [...(element instanceof HTMLImageElement ? [element] : []), ...element.querySelectorAll('img')]) {
                 pushImage({
                     path: descriptor.path,
                     element: inner,
