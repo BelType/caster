@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.15 — 2026-11-23
 
 - **A PNG behind an address that names no type loads the decoder** (2026-11-23, found in the ADM2 editor's print panel once its crest printed: the crest has an alpha channel and reaches the page behind a `blob:` address, and the print was refused with `the 'fastPng' capability was not loaded`). `surveyNeeds` loaded fast-png only for an `<img>` whose address ends in `.png`, so a `blob:`, a `data:image/png` or an extension-less PNG that needed its samples decoded refused. An image now counts unless its address names another type (`data:image/…` other than PNG, or `.jpg`, `.jpeg`, `.gif`, `.webp`, `.avif`, `.svg`); a document whose images all name another type still never downloads the decoder. A background-image PNG is still not counted. `test/running-image.test.ts` holds a PNG with alpha behind both addresses.
 
