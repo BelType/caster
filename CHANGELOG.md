@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.14 — 2026-11-23
 
 - **A running element that is itself an `<img>` prints** (2026-11-20, found in the ADM2 editor's print panel: a deliberation's crest, `.header-logo { position: running(header-logo) }` under `@top-center { content: element(header-logo) }`, presented by Cicero on each of three pages and missing from the file). The walk's artifact branch painted the images under an artifact and never the artifact itself, so a running image wrapped in a `<span>` printed and a bare one did not. `test/running-image.test.ts` holds both.
 
