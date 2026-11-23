@@ -806,8 +806,11 @@ export { reify };
 export function surveyNeeds(doc: Document, container: HTMLElement, options: CasterOptions, hinted: boolean = declaresHints(doc)): ReportNeeds {
   const view = doc.defaultView ?? window;
   const images = [...container.querySelectorAll('img')];
-  // A URL test, and it is what it is: the survey runs before a byte is fetched, deliberately (a document with no raster at all must never pay for the decoder). A `data:` PNG, a background-image PNG or an extension-less one is not counted here, and `imageEmbed.js` refuses by name when a decode is reached without the capability rather than blaming this flag.
-  const forcedPngDecode = images.some((img) => /\.png(\?|#|$)/i.test(img.currentSrc || img.src));
+  // A URL test, and it is what it is: the survey runs before a byte is fetched, deliberately (a document with no raster at all must never pay for the decoder). An image counts unless its address names another type, because an address that names none may be a PNG: a `blob:` one, as a host that fetches its images behind a login hands them over, and an extension-less one (found in the ADM2 editor on 2026-11-23, whose crest behind a `blob:` address was refused for want of the decoder; `running-image.test.ts`). A background-image PNG is still not counted, and `imageEmbed.js` refuses by name when a decode is reached without the capability.
+  const forcedPngDecode = images.some((img) => {
+    const src = img.currentSrc || img.src;
+    return src !== '' && !/^data:image\/(?!png[;,])|\.(jpe?g|gif|webp|avif|svg)(\?|#|$)/i.test(src);
+  });
   let colourHints = false;
   const root = view.getComputedStyle(doc.documentElement);
   // Only `--pdf-marks` counts as a colour story among the page-level properties, and it counts because a registration mark is drawn in the `/All` separation, which needs the profiles. `--pdf-bleed`, `--pdf-trim-inset` and `--pdf-page-label` say nothing about ink, and counting them made a bleed-only document download 186 kB of profiles and gain `/OutputIntents` and `/DefaultRGB` it had no use for — which contradicts *`colour` is Caster's own flag* (S7), the flag's own reason for existing.

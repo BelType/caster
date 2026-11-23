@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A PNG behind an address that names no type loads the decoder** (2026-11-23, found in the ADM2 editor's print panel once its crest printed: the crest has an alpha channel and reaches the page behind a `blob:` address, and the print was refused with `the 'fastPng' capability was not loaded`). `surveyNeeds` loaded fast-png only for an `<img>` whose address ends in `.png`, so a `blob:`, a `data:image/png` or an extension-less PNG that needed its samples decoded refused. An image now counts unless its address names another type (`data:image/…` other than PNG, or `.jpg`, `.jpeg`, `.gif`, `.webp`, `.avif`, `.svg`); a document whose images all name another type still never downloads the decoder. A background-image PNG is still not counted. `test/running-image.test.ts` holds a PNG with alpha behind both addresses.
+
 ## 0.2.14 — 2026-11-23
 
 - **A running element that is itself an `<img>` prints** (2026-11-20, found in the ADM2 editor's print panel: a deliberation's crest, `.header-logo { position: running(header-logo) }` under `@top-center { content: element(header-logo) }`, presented by Cicero on each of three pages and missing from the file). The walk's artifact branch painted the images under an artifact and never the artifact itself, so a running image wrapped in a `<span>` printed and a bare one did not. `test/running-image.test.ts` holds both.

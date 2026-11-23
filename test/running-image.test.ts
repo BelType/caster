@@ -25,6 +25,8 @@ const FONTS = path.join(PACKAGE, 'fixtures', 'specimen', 'fonts');
 
 /** A 16 × 16 PNG, red. */
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGP4z8BAEmIY1TCqYfhqAAC9Iv8BTJBn8gAAAABJRU5ErkJggg==';
+/** A 16 × 16 PNG, red on its left half and transparent on its right: its alpha is a soft mask, so its samples are decoded. */
+const ALPHA_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAHElEQVR4nGM4wcDwnwBmwIcZRg0YNWDUgOFiAADMP0eQ/u4zjgAAAABJRU5ErkJggg==';
 const CSS = '@font-face { font-family: F; src: url("/fonts/CrimsonText-Regular.ttf"); } html { font: 11pt/1.4 F; } @page { size: A5; margin: 30mm 15mm 20mm; @top-center { content: element(logo); } } .logo { position: running(logo); width: 20mm; } .fill { height: 150mm; }';
 
 /** Cuts `body` with Cicero, prints it, and answers how many images each page of the file draws, or the refusal. */
@@ -53,6 +55,11 @@ async function imagesPerPage(body: string): Promise<number[] | { refused: string
     await tab.goto(`http://127.0.0.1:${(server.address() as { port: number }).port}/`);
     const printed = await tab.evaluate(async (flags: Record<string, unknown>) => {
       const caster = await import('/_beltype/caster/src/index.js' as string);
+      // An image marked `data-blob` is moved behind a `blob:` address first, as a host that fetches its images behind a login hands them over.
+      for (const img of document.querySelectorAll<HTMLImageElement>('img[data-blob]')) {
+        img.src = URL.createObjectURL(await (await fetch(img.src)).blob());
+        await img.decode();
+      }
       await caster.prepare(document).ready;
       await (window as unknown as { __beltypeCicero: { run: (flags: object) => Promise<unknown> } }).__beltypeCicero.run({});
       await document.fonts.ready;
@@ -87,6 +94,19 @@ test('a running element that is an <img> prints on every page', async () => {
 
 test('a running element that holds an <img> prints on every page', async () => {
   const pages = await imagesPerPage(`<span class="logo"><img alt="Crest" src="${PNG}"></span>${FLOW}`);
+  assert.ok(Array.isArray(pages), `the print is refused: ${!Array.isArray(pages) && pages.refused}`);
+  assert.deepEqual(pages, [1, 1]);
+});
+
+// Found in the ADM2 editor on 2026-11-23, once the crest printed: the crest has an alpha channel and reaches the page behind a `blob:` address, and the print was refused because `surveyNeeds` loads the PNG decoder only for an address ending in `.png`.
+test('a running PNG with alpha behind a data: address prints', async () => {
+  const pages = await imagesPerPage(`<img class="logo" alt="Crest" src="${ALPHA_PNG}">${FLOW}`);
+  assert.ok(Array.isArray(pages), `the print is refused: ${!Array.isArray(pages) && pages.refused}`);
+  assert.deepEqual(pages, [1, 1]);
+});
+
+test('a running PNG with alpha behind a blob: address prints', async () => {
+  const pages = await imagesPerPage(`<img class="logo" alt="Crest" data-blob src="${ALPHA_PNG}">${FLOW}`);
   assert.ok(Array.isArray(pages), `the print is refused: ${!Array.isArray(pages) && pages.refused}`);
   assert.deepEqual(pages, [1, 1]);
 });
